@@ -4,6 +4,9 @@
 ALTER TABLE categories DROP CONSTRAINT IF EXISTS fk_categories_parent;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_referred_by;
 
+-- 6단계
+DROP TABLE IF EXISTS refresh_tokens;
+
 -- 5단계
 DROP TABLE IF EXISTS event_participations;
 

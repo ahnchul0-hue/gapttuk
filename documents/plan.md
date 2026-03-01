@@ -1,8 +1,8 @@
 # 값뚝 구현 계획 (plan.md)
 
-> **상태: DRAFT v0.3**
+> **상태: DRAFT v0.4**
 > 작성일: 2026-03-01 | 갱신: 2026-03-01
-> 근거 문서: prd.md v0.5 | schema-design.md v0.4 | ui-architecture.md v0.3 | tech-stack-research.md
+> 근거 문서: prd.md v0.6 | schema-design.md v0.6 | ui-architecture.md v0.3 | tech-stack-research.md
 > **이 문서는 STEP 2 계획 단계입니다. 아직 구현하지 마.**
 
 ---
@@ -90,7 +90,7 @@ M1 시작 **전에** 병렬로 진행해야 하는 항목:
 | 8 | **Sentry 프로젝트** 생성 (무료 플랜) | 즉시 | ⬜ |
 | 9 | **PostgreSQL 17.9** 설치 확인 | - | ✅ 완료 |
 
-> **블로커:** #1 쿠팡파트너스가 승인되지 않으면 M1-6(크롤링)에서 API 연동 불가. 즉시 신청 필수.
+> **⚠️ 블로커:** #1 쿠팡파트너스 API 키 승인에 **2~4주 리드타임** 소요. 승인되지 않으면 M1-6(크롤링)에서 API 연동 불가하여 전체 일정 차단. **즉시 신청 필수.**
 
 ---
 
@@ -168,7 +168,8 @@ gapttuk/                             # 값뚝 프로젝트 루트
 | jsonwebtoken | JWT | 9.x |
 | reqwest | HTTP 클라이언트 | 0.12.x |
 | scraper | HTML 파싱 | 0.22.x |
-| tower-governor | Rate Limiting | 0.6.x |
+| tower_governor | Rate Limiting | 0.8.x |
+| tower-http | CORS + 공통 HTTP 미들웨어 | 0.6.x |
 | tokio-cron-scheduler | 스케줄러 | 0.13.x |
 | a2 | APNs 푸시 | 0.10.x |
 | fcm | FCM 푸시 | 0.9.x |
@@ -210,6 +211,9 @@ gapttuk/                             # 값뚝 프로젝트 루트
 | R4 | **Flutter Web 성능** (초기 로드 3~5MB) | 높음 | 중간 | deferred loading + 이미지 lazy load. 치명적이면 웹은 별도 경량 SPA 검토 |
 | R5 | **1인 개발 병목** | 높음 | 중간 | AI 보조로 생산성 극대화. 범위 초과 시 M5 기능 과감히 축소 |
 | R6 | **로컬 서버 장애** (정전/네트워크) | 중간 | 높음 | pg_dump 일일 백업 + UPS 검토. 치명적이면 VPS 이전 |
+| R7 | **쿠팡 이용약관/robots.txt 크롤링 위반** | 중간 | 높음 | robots.txt 준수 + 요청 간격 3~10초 + 파트너스 API 우선 사용. 법적 검토 필요 시 변호사 자문 |
+| R8 | **센트(¢) → 전자금융거래법 선불전자지급수단 등록 의무** | 낮음 | 높음 | 연간 발행액 기준 등록 의무 모니터링. 초기에는 소규모로 법적 임계치 미달 예상. 성장 시 법률 자문 필수 |
+| R9 | **확률형 룰렛 → App Store 3.1.1 확률 공개 의무** | 중간 | 중간 | 앱 내 룰렛 확률 분포 명시 공개 (예: 1¢ 당첨 30%, 미당첨 70%). Apple/Google 심사 가이드라인 사전 준수 |
 
 ---
 
@@ -251,6 +255,7 @@ struct AppCache {
 
 | 기법 | 설명 |
 |------|------|
+| **Semaphore 제한** | `tokio::sync::Semaphore(5)` — 동시 크롤링 요청 최대 5개. API 응답 지연 영향 최소화 |
 | **랜덤 딜레이** | 요청 간 3~10초 랜덤 sleep |
 | **UA 로테이션** | 10+ 브라우저 UA 풀에서 랜덤 선택 |
 | **요청 분산** | 카테고리별 시차 배치 (동시에 전체 수집하지 않음) |
@@ -307,7 +312,7 @@ struct AppCache {
 
 ---
 
-### M1. 기반 구축 (6주)
+### M1. 기반 구축 (8주)
 
 서버 + DB + 크롤링 + 인증 + 알림. Flutter는 M2에서 시작.
 
@@ -326,12 +331,14 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] Cargo.toml 의존성 추가
 - [ ] config.rs — 환경변수 (DATABASE_URL, JWT_SECRET, COUPANG_API_KEY 등)
 - [ ] db/mod.rs — PgPool 초기화
-- [ ] `migrations/001_initial_schema.sql` — 23개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results 추가)
+- [ ] `migrations/001_initial_schema.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
 - [ ] `migrations/002_seed_data.sql` — shopping_malls (2), categories (18)
 - [ ] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
 - [ ] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
 
-**DoD:** `cargo build` 성공 + `sqlx migrate run` 완료 + 23개 테이블 생성 확인
+- [ ] CORS 설정 — tower-http `CorsLayer` (dev: AllowAll, prod: 도메인 화이트리스트)
+
+**DoD:** `cargo build` 성공 + `sqlx migrate run` 완료 + 24개 테이블 생성 확인
 
 #### M1-2. 에러 처리 + 공통 (~2일)
 - [ ] error.rs — `AppError` (thiserror + IntoResponse). 에러 코드 체계: `AUTH_001`, `PRODUCT_001` 등
@@ -362,9 +369,15 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] POST `/api/v1/auth/google` — 구글 로그인
 - [ ] POST `/api/v1/auth/apple` — 애플 로그인
 - [ ] JWT Access(30분) + Refresh(7일) 토큰 발급/갱신
+- [ ] **Refresh Token 보안 전략:**
+  - refresh_tokens 테이블에 token_hash(SHA-256) 저장 (원본 미저장)
+  - **Refresh Token Rotation**: 갱신 시 기존 토큰 revoke → 새 토큰 발급
+  - 탈취 감지: revoked 토큰으로 갱신 시도 시 해당 사용자의 모든 Refresh Token 일괄 revoke
+  - 로그아웃: revoked_at 설정으로 즉시 무효화
+  - 만료된 토큰 정리: 주기적 크론 또는 lazy cleanup
 - [ ] auth.rs 미들웨어 — Authorization Bearer 검증
 - [ ] 추천 코드 자동 생성 (UUID 기반 8자리)
-- [ ] 단위 테스트: 토큰 발급/검증/만료
+- [ ] 단위 테스트: 토큰 발급/검증/만료/로테이션
 
 **DoD:** 소셜 로그인 → JWT 발급 → 인증 필요 API 호출 흐름 검증 (통합 테스트)
 
@@ -390,7 +403,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 크론 1회 실행 → 1,800개 상품 가격 수집 완료 + price_history 기록 확인
 
 #### M1-7. 보안 미들웨어 (~2일)
-- [ ] rate_limit.rs — tower-governor (IP별 60req/min, 검색 10req/min)
+- [ ] rate_limit.rs — tower_governor (IP별 60req/min, 검색 10req/min)
 - [ ] bot_guard.rs — blocked_ips 조회 (moka 캐시 5분) + UA 블랙리스트
 - [ ] api_access_logs INSERT (비동기, 요청 흐름 미차단)
 - [ ] Rate limit 응답 헤더: `X-RateLimit-Remaining`, `Retry-After`
@@ -415,7 +428,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 
 ---
 
-### M2. MVP 앱 개발 — P0+P1 (10주)
+### M2. MVP 앱 개발 — P0+P1 (12주)
 
 Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 구독 화면 없음. 모든 기능 무료/무제한.
@@ -455,7 +468,7 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 - [ ] FAVORITES + 7일 미니차트
 
 #### M2-8. 마이페이지 + 설정 (~3일)
-- [ ] MY_PAGE (프로필, 포인트 위젯, 메뉴)
+- [ ] MY_PAGE (프로필, 센트(¢) 잔액 위젯, 메뉴)
 - [ ] SETTINGS (알림 ON/OFF, 테마)
 
 #### M2-9. 웹 대응 (~5일)
@@ -548,7 +561,7 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 | 2 | 라우팅 | **GoRouter** | Flutter 공식. 웹 딥링크 네이티브 지원 | - |
 | 3 | HTTP (Flutter) | **dio** | 인터셉터(JWT), 요청 취소 지원 | - |
 | 4 | 인증 | **JWT 자체 발급** | Firebase Auth 의존성 제거. Access+Refresh 패턴 | 직접 구현 |
-| 5 | 크롤링 | **서버 내장** | 별도 프로세스 과잉. Semaphore로 동시성 제한 | API 영향 가능 |
+| 5 | 크롤링 | **서버 내장** | 별도 프로세스 과잉. Semaphore(5) 동시성 제한. 크롤링 시간대 API 응답 지연 <200ms 목표 | API 영향 가능 |
 | 6 | 푸시 | **자체 (a2+fcm)** | Firebase 의존성 제거. 세밀한 제어 | APNs 키 관리 |
 | 7 | 차트 | **fl_chart** | MIT 무료. 줌/스크롤 지원 | 커스터마이징 한계 |
 | 8 | 캐싱 | **moka (인메모리)** | Redis 사용 안 함. 단일 서버에 적합 | 서버 재시작 시 소실 |
@@ -630,7 +643,7 @@ Retry-After: 30  (429 응답 시)
 | **서버** | 로컬 머신 (집/사무실) |
 | **프로세스** | systemd 서비스 (auto-restart) |
 | **DB 백업** | pg_dump 일일 크론 → `backups/` 디렉토리. 7일 보관 후 순환 |
-| **모니터링** | Sentry (에러 트래킹) + /health 엔드포인트 |
+| **모니터링** | Sentry (에러 트래킹) + /health 엔드포인트 + systemd watchdog + /metrics 엔드포인트 |
 | **로그** | tracing → stdout JSON → journald |
 | **HTTPS** | Cloudflare (무료 SSL) 또는 Let's Encrypt |
 | **CI/CD** | GitHub Actions (M3 전에 구성). cargo test + flutter test + build |
@@ -643,6 +656,29 @@ Retry-After: 30  (429 응답 시)
 # 7일 이전 삭제
 0 4 * * * find /home/user/backups/ -name "*.sql.gz" -mtime +7 -delete
 ```
+
+### 서버 모니터링 계획
+
+| 항목 | 도구 | 설명 |
+|------|------|------|
+| **에러 트래킹** | Sentry | panic, 4xx/5xx 에러 캡처 + 알림 |
+| **헬스체크** | /health 엔드포인트 | DB 연결 + 서버 상태 확인 |
+| **프로세스 감시** | systemd watchdog | 서버 프로세스 비정상 종료 시 자동 재시작 |
+| **시스템 메트릭** | /metrics 엔드포인트 | CPU/메모리/디스크 사용률 + 크롤링 성공률/실패율 + API 응답 시간 P95 |
+| **크롤링 메트릭** | tracing + Sentry | 수집 성공/실패 건수, 차단 감지 횟수, 수집 소요 시간 |
+
+### DB 백업 복구 테스트 절차
+
+백업 무결성을 보장하기 위해 월 1회 복구 테스트 수행:
+
+1. **테스트 DB 생성:** `createdb gapttuk_restore_test`
+2. **백업 복구:** `gunzip -c backups/gapttuk_YYYYMMDD.sql.gz | psql gapttuk_restore_test`
+3. **검증:**
+   - 테이블 수 확인: `SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';` → 24개
+   - 핵심 데이터 카운트: users, products, price_history 행 수 비교
+   - 파티셔닝 무결성: 파티션 테이블 존재 확인
+4. **정리:** `dropdb gapttuk_restore_test`
+5. **결과 기록:** 복구 성공/실패 + 소요 시간 로그
 
 ---
 
@@ -665,7 +701,47 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 ---
 
-> **plan.md v0.3 승인됨 (2026-03-01).**
+## 13. 전략적 이슈 (해당 마일스톤에서 해결)
+
+### 일정 현실성 재평가
+
+| 마일스톤 | 이전 | 현재 | 근거 |
+|---------|------|------|------|
+| M1 | 6주 | **8주** | 270시간 필요 (6주=240시간, 부족) |
+| M2 | 10주 | **12주** | 295시간 + 3플랫폼 테스트 |
+| 전체 | 28주 | **~34주** | PRD "P2는 출시 후 3개월" → **6개월**로 정정 |
+
+### 수익성 검증 (M5 전 필수)
+
+- **현재 문제:** DAU 1,000 기준 월 수익 ~30만원 vs 센트(¢) 보상 비용 ~224만원 = **적자**
+- **breakeven:** DAU ~8,000명 이상 필요
+- **조치:** M5-1 진입 전 `documents/reward-economics-model.md` 작성 필수
+
+### 크롤러 설계 보강 (M1-6)
+
+- **순차 → 병렬:** `Semaphore(5~10)` 동시실행, 90분 → 10~15분 목표
+- **파티션 자동 생성:** 서버 시작 시 + 매월 크론으로 향후 3개월 파티션 생성
+- **price_history FK:** 파티셔닝 테이블 특성상 의도적 미적용 — 서비스 레이어에서 검증 (schema-design.md §4 참조)
+
+### 법적/규제 (M3 전 필수)
+
+| 항목 | 조치 |
+|------|------|
+| 확률형 룰렛 | 앱 내 확률 공개 UI + 이용약관 명시 |
+| 센트(¢) = 선불전자지급수단 | 연간 발행액 모니터링, 1억원 초과 시 금융감독원 등록 |
+| 개인정보보호법 | 탈퇴 후 데이터 보존기간 재검토 (현재 1년 → 법정 기준 확인) |
+| 쿠팡 크롤링 | 파트너스 API 우선, scraper 보조. robots.txt 준수 명시 |
+
+### 향후 생성 문서
+
+| 문서 | 시점 | 내용 |
+|------|------|------|
+| `documents/reward-economics-model.md` | M5 전 | 센트(¢) 경제성 모델 + breakeven 분석 |
+| `documents/security-threat-model.md` | M1-7 전 | 보안 위협 모델 + 대응 전략 |
+
+---
+
+> **plan.md v0.4 갱신됨 (2026-03-01).** 전수 검토 47건 이슈 반영.
 > **현재 단계: STEP 3 — M1-1 주석달기 진행 중.**
 > 주석 파일: `documents/m1-1-annotations.md`
 > **아직 구현하지 마.**

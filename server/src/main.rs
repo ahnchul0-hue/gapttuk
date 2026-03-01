@@ -37,7 +37,7 @@ async fn health_check(State(pool): State<PgPool>) -> impl IntoResponse {
     }
 }
 
-/// graceful shutdown — Ctrl+C / SIGTERM 대기
+/// graceful shutdown — Ctrl+C / SIGTERM 대기 + 30초 드레인 타임아웃
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
@@ -60,6 +60,13 @@ async fn shutdown_signal() {
         () = ctrl_c => tracing::info!("Ctrl+C received, shutting down..."),
         () = terminate => tracing::info!("SIGTERM received, shutting down..."),
     }
+
+    // 신호 수신 후 30초 watchdog — 드레인이 끝나지 않으면 강제 종료
+    tokio::spawn(async {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        tracing::warn!("Graceful shutdown timed out after 30s, forcing exit");
+        std::process::exit(1);
+    });
 }
 
 #[tokio::main]
@@ -112,12 +119,15 @@ async fn main() {
         .await
         .expect("Failed to bind address");
 
-    axum::serve(listener, app)
+    match axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .expect("Server error");
+    {
+        Ok(()) => tracing::info!("Server shut down gracefully"),
+        Err(e) => tracing::error!(error = %e, "Server error"),
+    }
 
     // 6. 정리
     pool.close().await;
-    tracing::info!("Server shut down gracefully");
+    tracing::info!("Cleanup complete, exiting");
 }

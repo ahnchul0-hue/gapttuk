@@ -223,7 +223,7 @@ Axum 미들웨어: 요청마다 blocked_ips 조회 (메모리 캐시 병행)
 - 로컬 서버: `fail2ban-client` + `iptables` 직접 차단
 - 클라우드 전환 시: Cloudflare Firewall Rules로 대체 가능
 
-### 8-3. Rate Limiting — tower-governor
+### 8-3. Rate Limiting — tower_governor
 
 - Axum Tower 미들웨어로 IP/사용자별 요청 제한
 - IP당: 60 req/min (일반), 10 req/min (검색 API)
@@ -276,7 +276,7 @@ systemd 서비스로 자동 시작/재시작
 | **크롤링** | **reqwest + scraper** + 쿠팡파트너스 API | 경량, API 우선 |
 | **스케줄링** | **tokio-cron-scheduler** | 인프로세스, Redis 불필요 |
 | **CAPTCHA** | **Cloudflare Turnstile** | 무료, UX 최상, HTTP API 검증 |
-| **봇 차단** | **Fail2Ban + tower-governor** | IP 차단 + Rate Limiting |
+| **봇 차단** | **Fail2Ban + tower_governor** | IP 차단 + Rate Limiting |
 | **배포** | **단일 바이너리 + systemd** | 로컬 우선, 의존성 제로 |
 
 ### 스택 다이어그램
@@ -294,7 +294,7 @@ systemd 서비스로 자동 시작/재시작
     ├── tokio-cron-scheduler ──→ 가격 크롤링 스케줄
     ├── reqwest + scraper ──→ 쿠팡 가격 수집
     │    + 쿠팡파트너스 API ──→ 딥링크 생성
-    ├── tower-governor ──→ Rate Limiting (IP/사용자별)
+    ├── tower_governor ──→ Rate Limiting (IP/사용자별)
     └── Fail2Ban ──→ IP 차단 (iptables + blocked_ips)
          + Cloudflare Turnstile ──→ CAPTCHA (비로그인/의심 트래픽)
 ```

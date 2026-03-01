@@ -1,6 +1,6 @@
 # 값뚝 DB 스키마 설계
 
-> **상태: DRAFT v0.4**
+> **상태: DRAFT v0.6**
 > 작성일: 2026-03-01 | 갱신: 2026-03-01
 > DB: PostgreSQL 17.9 (localhost:5432) | ORM: SQLx (Rust, 컴파일타임 검증)
 > MVP 대상: 쿠팡 + 네이버쇼핑
@@ -8,7 +8,7 @@
 
 ---
 
-## 테이블 총괄 (23개)
+## 테이블 총괄 (24개)
 
 | 그룹 | 테이블 | 설명 |
 |------|--------|------|
@@ -19,7 +19,8 @@
 | **카드 할인** | card_discounts | 카드사별 할인가 |
 | **보상** | user_points, point_transactions, referrals, daily_checkins, roulette_results | 센트(¢) + 추천 + 출석 + 룰렛 |
 | **이벤트** | events, event_participations | 이벤트/퀴즈 |
-| **보안** | api_access_logs, blocked_ips | 접근 로그 + IP 차단 ★ 신규 |
+| **인증** | refresh_tokens | Refresh Token 저장 + 로테이션 ★ 신규 |
+| **보안** | api_access_logs, blocked_ips | 접근 로그 + IP 차단 |
 | **기타** | user_favorites, popular_searches | 즐겨찾기 + 인기 검색어 |
 
 ---
@@ -40,6 +41,8 @@ erDiagram
     users ||--o{ daily_checkins : "1:N"
     users ||--o{ event_participations : "1:N"
     users ||--o{ roulette_results : "1:N"
+    users ||--o{ refresh_tokens : "1:N"
+    users ||--o{ users : "referred_by (self-ref)"
 
     products ||--o{ price_history : "1:N"
     products ||--o{ price_alerts : "1:N"
@@ -51,6 +54,7 @@ erDiagram
 
     events ||--o{ event_participations : "1:N"
     categories ||--o{ category_alerts : "1:N"
+    categories ||--o{ keyword_alerts : "N:1 (선택적)"
 ```
 
 ---
@@ -67,7 +71,6 @@ erDiagram
 | auth_provider | TEXT | NOT NULL | kakao, google, apple, naver |
 | auth_provider_id | TEXT | NOT NULL | 소셜 고유 ID |
 | profile_image_url | TEXT | | |
-| point_balance | INTEGER | NOT NULL, DEFAULT 0 | 현재 포인트 잔액 (비정규화) |
 | referral_code | TEXT | UNIQUE, NOT NULL | 내 추천 코드 (가입 시 자동 생성) |
 | referred_by | BIGINT | FK -> users(id) | 나를 추천한 사용자 |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
@@ -75,9 +78,11 @@ erDiagram
 | deleted_at | TIMESTAMPTZ | | soft delete |
 
 **변경점 (v0.1 → v0.2):**
-- `point_balance` 추가 — 매 조회마다 point_transactions 합산 불필요
 - `referral_code` 추가 — 추천 보상 시스템용 고유 코드
 - `referred_by` 추가 — 추천인 추적
+
+**변경점 (v0.4 → v0.5):**
+- `point_balance` 삭제 — user_points.balance가 SSOT(Single Source of Truth). 비정규화 중복 제거
 
 ### 2-2. user_devices (디바이스/푸시 토큰)
 
@@ -187,7 +192,19 @@ erDiagram
 
 ### 2-7. price_alerts (가격 알림 설정)
 
-v0.1과 동일. 4단계: target_price, below_average, near_lowest, all_time_low
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| user_id | BIGINT | FK -> users(id), NOT NULL | |
+| product_id | BIGINT | FK -> products(id), NOT NULL | |
+| alert_type | TEXT | NOT NULL | target_price, below_average, near_lowest, all_time_low |
+| target_price | INTEGER | | alert_type='target_price' 시 목표 가격 |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | |
+| last_triggered_at | TIMESTAMPTZ | | 마지막 알림 발송 시점 |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**4단계 프리셋:** target_price(지정가 이하), below_average(평균가 이하), near_lowest(최저가 근접), all_time_low(역대 최저가)
 
 ### 2-8. category_alerts (카테고리 패시브 알림) ★ 신규
 
@@ -220,7 +237,16 @@ v0.1과 동일. 4단계: target_price, below_average, near_lowest, all_time_low
 
 ### 2-9. keyword_alerts (키워드 핫딜 추적)
 
-v0.1과 동일. keyword + category_id(선택) + max_price(선택)
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| user_id | BIGINT | FK -> users(id), NOT NULL | |
+| keyword | TEXT | NOT NULL | 추적 키워드 |
+| category_id | INTEGER | FK -> categories(id) | 카테고리 필터 (선택) |
+| max_price | INTEGER | | 최대 가격 필터 (선택) |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 
 ### 2-10. notifications (알림 발송 이력)
 
@@ -255,10 +281,11 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 
 **설계 근거:**
 - 값뚝 "센트(¢)" 보상 화폐 — 기프티콘 교환 가능한 실질 가치
-- `balance`는 `users.point_balance`와 동기화 (이중 캐시로 빠른 조회)
+- `balance`가 센트(¢) 잔액의 SSOT (Single Source of Truth)
 - 센트 획득/사용은 모두 point_transactions에 기록
+- 잔액 변경 시 반드시 user_points.balance와 point_transactions INSERT를 동일 트랜잭션 내에서 수행
 
-### 2-12. point_transactions (포인트 거래 이력) ★ 신규
+### 2-12. point_transactions (센트 거래 이력) ★ 신규
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |---|---|---|---|
@@ -326,7 +353,7 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | title | TEXT | NOT NULL | 이벤트 제목 |
 | description | TEXT | | 설명 |
 | event_type | TEXT | NOT NULL | quiz, roulette, survey, promotion |
-| reward_points | INTEGER | NOT NULL, DEFAULT 0 | 참여 보상 포인트 |
+| reward_points | INTEGER | NOT NULL, DEFAULT 0 | 룰렛 최대 보상량 (¢). 확률형 룰렛의 당첨 상한값. 예: 2이면 0~2¢ 범위 |
 | max_participants | INTEGER | | 최대 참여자 (NULL = 무제한) |
 | quiz_data | JSONB | | 퀴즈 문제/정답 데이터 |
 | starts_at | TIMESTAMPTZ | NOT NULL | 시작일시 |
@@ -343,7 +370,7 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | user_id | BIGINT | FK -> users(id), NOT NULL | |
 | answer | JSONB | | 퀴즈 답변 등 |
 | is_correct | BOOLEAN | | 퀴즈 정답 여부 |
-| points_earned | INTEGER | NOT NULL, DEFAULT 0 | 획득 포인트 |
+| points_earned | INTEGER | NOT NULL, DEFAULT 0 | 획득 센트(¢) |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 
 **UNIQUE 제약:** `(event_id, user_id)` — 이벤트당 1회 참여
@@ -420,11 +447,59 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 - `blocked_until`이 NULL이면 영구 차단, 과거 시점이면 자동 해제
 - Fail2Ban이 감지 → 이 테이블에 INSERT → Axum이 요청 거부
 
-### 2-21. 나머지 테이블 (v0.1과 동일)
+### 2-21. refresh_tokens (Refresh Token 저장) ★ 신규
 
-- **categories** — 카테고리 계층 구조 (v0.1 그대로)
-- **user_favorites** — 즐겨찾기 (v0.1 그대로)
-- **shopping_malls** — 쇼핑몰 (v0.1 그대로, 초기값: 쿠팡 + 네이버쇼핑)
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| user_id | BIGINT | FK -> users(id), NOT NULL | 토큰 소유자 |
+| token_hash | TEXT | UNIQUE, NOT NULL | Refresh Token의 SHA-256 해시 (원본 저장하지 않음) |
+| expires_at | TIMESTAMPTZ | NOT NULL | 토큰 만료 시점 (기본 7일) |
+| revoked_at | TIMESTAMPTZ | | 토큰 무효화 시점 (로그아웃/로테이션 시 설정) |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**설계 근거:**
+- JWT Access Token(30분)은 stateless, Refresh Token(7일)은 DB에서 관리
+- `token_hash` — 원본 토큰 대신 해시만 저장하여 DB 유출 시에도 토큰 탈취 불가
+- **Refresh Token Rotation**: 갱신 시 기존 토큰 revoke → 새 토큰 발급. 탈취된 토큰 재사용 시 즉시 감지 가능
+- **블랙리스트**: 로그아웃 시 `revoked_at` 설정. 갱신 요청 시 revoked 여부 확인
+- 만료된 토큰은 주기적으로 정리 (크론 또는 트랜잭션 내 lazy cleanup)
+
+### 2-22. categories (카테고리)
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | INTEGER | PK, GENERATED ALWAYS AS IDENTITY | |
+| name | TEXT | NOT NULL | 카테고리 이름 |
+| slug | TEXT | UNIQUE, NOT NULL | URL 슬러그 |
+| parent_id | INTEGER | FK -> categories(id) | 상위 카테고리 (NULL = 최상위) |
+| depth | SMALLINT | NOT NULL, DEFAULT 0 | 계층 깊이 |
+| sort_order | INTEGER | NOT NULL, DEFAULT 0 | 정렬 순서 |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+### 2-23. user_favorites (즐겨찾기)
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| user_id | BIGINT | FK -> users(id), NOT NULL | |
+| product_id | BIGINT | FK -> products(id), NOT NULL | |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**UNIQUE 제약:** `(user_id, product_id)`
+
+### 2-24. shopping_malls (쇼핑몰)
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | INTEGER | PK, GENERATED ALWAYS AS IDENTITY | |
+| name | TEXT | NOT NULL | 쇼핑몰 이름 |
+| code | TEXT | UNIQUE, NOT NULL | 식별 코드 (coupang, naver) |
+| base_url | TEXT | | 쇼핑몰 URL |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**초기값:** 쿠팡 + 네이버쇼핑
 
 ---
 
@@ -454,13 +529,40 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | idx_card_discounts_product | card_discounts | (product_id) WHERE is_active = TRUE | 상품별 활성 카드 할인 조회 |
 | idx_category_alerts_cat | category_alerts | (category_id) WHERE is_active = TRUE | 카테고리 가격 변동 시 활성 알림 조회 |
 | idx_daily_checkins_user | daily_checkins | (user_id, checkin_date DESC) | 사용자 출석 이력 + 연속 체크 |
-| idx_point_transactions_user | point_transactions | (user_id, created_at DESC) | 사용자 포인트 이력 |
+| idx_point_transactions_user | point_transactions | (user_id, created_at DESC) | 사용자 센트(¢) 거래 이력 |
 | idx_referrals_referrer | referrals | (referrer_id) | 추천인의 추천 현황 조회 |
 | idx_roulette_user_type | roulette_results | (user_id, roulette_type, created_at DESC) | 사용자별 룰렛 이력 + 월별 횟수 집계 |
 | idx_popular_searches_rank | popular_searches | (rank) | 순위순 인기 검색어 조회 |
 | idx_access_logs_ip_time | api_access_logs | (ip_address, created_at DESC) | IP별 최근 요청 조회 (패턴 분석) |
 | idx_access_logs_status_time | api_access_logs | (status_code, created_at DESC) WHERE status_code = 429 | 429 응답 빈도 집계 (Fail2Ban) |
 | idx_blocked_ips_addr | blocked_ips | (ip_address) | 요청마다 차단 여부 확인 |
+| idx_refresh_tokens_user | refresh_tokens | (user_id) | 사용자별 활성 토큰 조회 + 로그아웃 시 일괄 revoke |
+
+### 보강 인덱스 (migration 003 추가)
+
+| 인덱스 | 테이블 | 컬럼 | 쿼리 패턴 |
+|---|---|---|---|
+| idx_category_alerts_user | category_alerts | (user_id) | 내 알림 목록 조회 |
+| idx_event_participations_user | event_participations | (user_id) | 참여 이벤트 조회 |
+| idx_categories_parent | categories | (parent_id) | 하위 카테고리 탐색 |
+| idx_price_alerts_user_active | price_alerts | (user_id) WHERE is_active = TRUE | 내 활성 가격 알림 조회 |
+| idx_users_active | users | (id) WHERE deleted_at IS NULL | soft delete 필터 — 활성 사용자 조회 |
+
+### CHECK 제약조건 (migration 003 추가)
+
+| 테이블 | 제약명 | 조건 |
+|--------|--------|------|
+| products | chk_products_current_price | `current_price >= 0` |
+| products | chk_products_lowest_price | `lowest_price >= 0` |
+| products | chk_products_highest_price | `highest_price >= 0` |
+| products | chk_products_average_price | `average_price >= 0` |
+| products | chk_products_buy_timing_score | `buy_timing_score BETWEEN 0 AND 100` |
+| ai_predictions | chk_ai_predictions_confidence | `confidence BETWEEN 0.00 AND 1.00` |
+| events | chk_events_date_range | `starts_at < ends_at` |
+| card_discounts | chk_card_discounts_date_range | `valid_from IS NULL OR valid_until IS NULL OR valid_from <= valid_until` |
+| card_discounts | chk_card_discounts_discount_value | `discount_value > 0` |
+| daily_checkins | chk_daily_checkins_streak | `streak_count >= 1` |
+| price_history | chk_price_history_price | `price >= 0` |
 
 ---
 
@@ -490,6 +592,37 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 - 접근 로그는 용량 급증 → 파티셔닝 + 30일 정리 필수
 - Fail2Ban 집계 결과만 blocked_ips에 장기 보관
 
+### 파티션 자동 생성 정책
+
+초기 파티션은 마이그레이션에서 4개월분(202603~202606)만 생성. 이후 자동 생성:
+
+| 항목 | 설정 |
+|------|------|
+| **생성 주기** | 매월 1일 00:00 (tokio-cron-scheduler) |
+| **생성 대상** | 다다음월 파티션 (예: 6월 1일 → 8월 파티션 생성) |
+| **대상 테이블** | price_history, api_access_logs |
+| **실패 시** | Sentry 알림 + 다음 주기에 재시도 (멱등성 보장: IF NOT EXISTS) |
+
+```sql
+-- 파티션 자동 생성 예시 (애플리케이션에서 실행)
+CREATE TABLE IF NOT EXISTS price_history_202608
+  PARTITION OF price_history
+  FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
+```
+
+### 파티셔닝 테이블의 애플리케이션 레벨 FK 검증 정책
+
+PostgreSQL 파티셔닝된 테이블(price_history, api_access_logs)은 FK 제약을 직접 설정하지 않음.
+대신 **서비스 레이어에서 무결성을 보장**:
+
+| 테이블 | FK 대상 | 검증 방법 |
+|--------|---------|----------|
+| price_history | products(id) | INSERT 전 products.id 존재 여부 SELECT 확인 (서비스 레이어) |
+| api_access_logs | users(id) | 인증 미들웨어에서 이미 검증된 user_id만 기록. NULL 허용 (비인증 요청) |
+
+- 모든 price_history INSERT는 반드시 `ProductService`를 통해 수행 → product_id 유효성 보장
+- api_access_logs는 미들웨어에서 기록하므로 별도 검증 불필요 (인증된 user_id이거나 NULL)
+
 ### 기타 테이블 — 파티셔닝 불필요
 
 - point_transactions: 데이터 증가 모니터링 후 판단
@@ -502,7 +635,7 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | 테이블 | 보관 기간 | 근거 |
 |---|---|---|
 | **price_history** | **무기한** | AI 학습, 장기 그래프 |
-| **point_transactions** | **무기한** | 포인트 감사 추적 |
+| **point_transactions** | **무기한** | 센트(¢) 감사 추적 |
 | **notifications** | **무기한** | 사용자 이력 |
 | **ai_predictions** | **무기한** | 예측 정확도 검증용 |
 | **users (deleted)** | 탈퇴 후 1년 | 개인정보보호법 |
@@ -527,6 +660,26 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | **판매 속도 알림** | products.sales_velocity + category_alerts | 급증 감지 선제 알림 |
 | **무기한 보관** | 전 테이블 | 삭제 없이 전체 보관 (api_access_logs 제외 30일) |
 | **봇 차단** | api_access_logs + blocked_ips | 접근 로그 + IP 차단 (Fail2Ban 연동) |
+
+---
+
+## 7. 향후 스키마 추가 예정 (M5)
+
+### gifticons (기프티콘 목록) — M5-1에서 추가
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| name | TEXT | NOT NULL | 기프티콘 이름 (예: CU 아메리카노) |
+| brand | TEXT | NOT NULL | 브랜드 (CU, 스타벅스 등) |
+| image_url | TEXT | | 기프티콘 이미지 |
+| exchange_price | INTEGER | NOT NULL | 교환에 필요한 센트(¢) |
+| wholesale_price | INTEGER | | 도매가 (원) — 시세 연동 |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+> **참고:** 실제 테이블 생성은 M5-1 migration에서 수행. 여기서는 설계만 기록.
 
 ---
 

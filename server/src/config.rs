@@ -79,29 +79,53 @@ impl Config {
             tracing::warn!("JWT_SECRET is shorter than 32 characters");
         }
 
+        let port: u16 = env::var("PORT")
+            .unwrap_or_else(|_| "8080".to_string())
+            .parse()
+            .expect("PORT must be a valid u16");
+
+        if port == 0 {
+            panic!("PORT must be non-zero (got 0)");
+        }
+
+        let coupang_access_key = optional("COUPANG_ACCESS_KEY");
+        let coupang_secret_key = optional("COUPANG_SECRET_KEY");
+        let kakao_rest_api_key = optional("KAKAO_REST_API_KEY");
+        let google_client_id = optional("GOOGLE_CLIENT_ID");
+        let apple_client_id = optional("APPLE_CLIENT_ID");
+        let sentry_dsn = optional("SENTRY_DSN");
+
+        // 선택 환경변수 미설정 시 경고 로그
+        if coupang_access_key.is_none() || coupang_secret_key.is_none() {
+            tracing::warn!("COUPANG_ACCESS_KEY / COUPANG_SECRET_KEY not set — 크롤링 API 비활성화");
+        }
+        if kakao_rest_api_key.is_none() {
+            tracing::warn!("KAKAO_REST_API_KEY not set — 카카오 로그인 비활성화");
+        }
+        if sentry_dsn.is_none() {
+            tracing::warn!("SENTRY_DSN not set — 에러 트래킹 비활성화");
+        }
+
         Self {
             database_url,
             jwt_secret,
             app_env,
             host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-            port: env::var("PORT")
-                .unwrap_or_else(|_| "8080".to_string())
-                .parse()
-                .expect("PORT must be a valid u16"),
+            port,
             jwt_access_ttl_secs: parse_u64("JWT_ACCESS_TTL_SECS", 1800),
             jwt_refresh_ttl_secs: parse_u64("JWT_REFRESH_TTL_SECS", 604_800),
-            coupang_access_key: optional("COUPANG_ACCESS_KEY"),
-            coupang_secret_key: optional("COUPANG_SECRET_KEY"),
+            coupang_access_key,
+            coupang_secret_key,
             naver_client_id: optional("NAVER_CLIENT_ID"),
             naver_client_secret: optional("NAVER_CLIENT_SECRET"),
-            kakao_rest_api_key: optional("KAKAO_REST_API_KEY"),
-            google_client_id: optional("GOOGLE_CLIENT_ID"),
-            apple_client_id: optional("APPLE_CLIENT_ID"),
+            kakao_rest_api_key,
+            google_client_id,
+            apple_client_id,
             apns_key_path: optional("APNS_KEY_PATH"),
             apns_key_id: optional("APNS_KEY_ID"),
             apns_team_id: optional("APNS_TEAM_ID"),
             fcm_service_account: optional("FCM_SERVICE_ACCOUNT"),
-            sentry_dsn: optional("SENTRY_DSN"),
+            sentry_dsn,
         }
     }
 }

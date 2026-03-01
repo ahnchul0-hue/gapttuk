@@ -1,4 +1,4 @@
--- 값뚝 초기 스키마: 23개 테이블 + 22개 인덱스 + 파티셔닝
+-- 값뚝 초기 스키마: 24개 테이블 + 23개 인덱스 + 파티셔닝
 -- FK 의존성 순서에 따라 생성
 
 ------------------------------------------------------------
@@ -72,7 +72,6 @@ CREATE TABLE users (
     auth_provider     TEXT NOT NULL,
     auth_provider_id  TEXT NOT NULL,
     profile_image_url TEXT,
-    point_balance     INTEGER NOT NULL DEFAULT 0,
     referral_code     TEXT UNIQUE NOT NULL,
     referred_by       BIGINT,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -341,6 +340,20 @@ CREATE TABLE event_participations (
 );
 
 ------------------------------------------------------------
+-- 6단계: 인증 (refresh tokens)
+------------------------------------------------------------
+
+-- ㉔ refresh_tokens
+CREATE TABLE refresh_tokens (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     BIGINT NOT NULL REFERENCES users(id),
+    token_hash  TEXT UNIQUE NOT NULL,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    revoked_at  TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+------------------------------------------------------------
 -- 후처리: self-referencing FK
 ------------------------------------------------------------
 
@@ -353,7 +366,7 @@ ALTER TABLE users
     FOREIGN KEY (referred_by) REFERENCES users(id);
 
 ------------------------------------------------------------
--- 인덱스 (22개)
+-- 인덱스 (23개)
 ------------------------------------------------------------
 
 -- 기존 (v0.1)
@@ -381,3 +394,4 @@ CREATE INDEX idx_popular_searches_rank ON popular_searches (rank);
 CREATE INDEX idx_access_logs_ip_time ON api_access_logs (ip_address, created_at DESC);
 CREATE INDEX idx_access_logs_status_time ON api_access_logs (status_code, created_at DESC) WHERE status_code = 429;
 CREATE INDEX idx_blocked_ips_addr ON blocked_ips (ip_address);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);

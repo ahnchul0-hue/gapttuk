@@ -1,8 +1,8 @@
 # M1-1 주석: 스캐폴딩 + DB 마이그레이션
 
-> **STEP 3 — 주석달기. 아직 구현하지 마.**
+> **STEP 3 — 주석달기. 스캐폴딩 코드 작성 완료, 리뷰 중.**
 > 이 문서는 M1-1의 로직을 주석으로 기술합니다.
-> 리뷰 → 피드백 → 반복 후 승인되면 STEP 4(구현)로 진입합니다.
+> 리뷰 → 피드백 → 반복 후 승인되면 STEP 4(구현 반영)로 진입합니다.
 
 ---
 
@@ -37,7 +37,7 @@ edition = "2021"
 # scraper 0.22.x
 
 # --- Rate Limiting ---
-# tower-governor 0.6.x
+# tower_governor 0.8.x
 
 # --- 스케줄러 ---
 # tokio-cron-scheduler 0.13.x
@@ -153,6 +153,20 @@ edition = "2021"
 - `tokio::signal::ctrl_c()` 대기
 - 종료 시: 진행 중인 요청 완료 대기 (30초 타임아웃) → PgPool close → 종료
 
+### CORS 설정
+
+`tower-http::cors::CorsLayer` 사용:
+
+| 환경 | 설정 |
+|------|------|
+| **dev** | `CorsLayer::very_permissive()` — 모든 Origin 허용 (로컬 개발 편의) |
+| **prod** | `AllowOrigin::list([도메인])` — gapttuk.com, app 스키마 등 화이트리스트 |
+
+- `AllowMethods`: GET, POST, PUT, DELETE, OPTIONS
+- `AllowHeaders`: Authorization, Content-Type
+- `MaxAge`: 1시간 (preflight 캐시)
+- Flutter Web에서 API 호출 시 CORS 필수 → M1-1에서 설정
+
 ---
 
 ## 5. migrations/001_initial_schema.sql
@@ -194,6 +208,9 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 
 5단계 (이벤트 참여):
   ㉓ event_participations → events, users
+
+6단계 (인증):
+  ㉔ refresh_tokens → users
 ```
 
 ### 각 테이블 상세
@@ -250,7 +267,6 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 - auth_provider: TEXT NOT NULL — kakao / google / apple
 - auth_provider_id: TEXT NOT NULL
 - profile_image_url: TEXT
-- point_balance: INTEGER NOT NULL DEFAULT 0
 - referral_code: TEXT UNIQUE NOT NULL
 - referred_by: BIGINT (FK → users.id) — 후처리 ALTER
 - created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -454,6 +470,14 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 - created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - UNIQUE(event_id, user_id)
 
+#### ㉔ refresh_tokens
+- id: BIGINT PK GENERATED ALWAYS AS IDENTITY
+- user_id: BIGINT FK → users(id) NOT NULL
+- token_hash: TEXT UNIQUE NOT NULL — Refresh Token SHA-256 해시 (원본 미저장)
+- expires_at: TIMESTAMPTZ NOT NULL — 기본 7일
+- revoked_at: TIMESTAMPTZ — 로그아웃/로테이션 시 설정
+- created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
 ### 후처리 ALTER (self-referencing FK)
 
 ```
@@ -468,7 +492,7 @@ ALTER TABLE users ADD CONSTRAINT fk_users_referred_by
 
 ### 인덱스 생성
 
-schema-design.md 3장 기준, 총 22개 인덱스:
+schema-design.md 3장 기준, 총 28개 인덱스 (기존 23 + migration 003에서 5개 추가):
 
 **기존 (v0.1):**
 1. idx_products_mall_external — products(shopping_mall_id, external_product_id, vendor_item_id)
@@ -495,6 +519,7 @@ schema-design.md 3장 기준, 총 22개 인덱스:
 20. idx_access_logs_ip_time — api_access_logs(ip_address, created_at DESC)
 21. idx_access_logs_status_time — api_access_logs(status_code, created_at DESC) WHERE status_code = 429
 22. idx_blocked_ips_addr — blocked_ips(ip_address)
+23. idx_refresh_tokens_user — refresh_tokens(user_id)
 
 ### 파티셔닝 설정
 
@@ -515,6 +540,16 @@ schema-design.md 3장 기준, 총 22개 인덱스:
 - api_access_logs: PK = (id, created_at)
 - FK를 파티셔닝된 테이블로 걸 때: PostgreSQL 11+에서 지원하지만, 성능상 애플리케이션 레벨에서 관리 권장
 
+**파티션 자동 생성 (크론):**
+- `tokio-cron-scheduler`에 매월 1일 00:00 작업 등록
+- 다다음월 파티션을 자동 생성 (예: 6월 1일 → price_history_202608 + api_access_logs_202608)
+- `CREATE TABLE IF NOT EXISTS` 사용하여 멱등성 보장
+- 실패 시 Sentry 알림 + 다음 주기에 재시도
+
+**서비스 레이어 FK 검증 정책 (파티셔닝 테이블):**
+- price_history: product_id FK 없음 → INSERT 전 `ProductService`에서 products.id 존재 여부 확인
+- api_access_logs: user_id FK 없음 → 인증 미들웨어에서 검증된 user_id만 기록 (NULL = 비인증 요청)
+
 ---
 
 ## 6. migrations/001_down.sql
@@ -524,7 +559,7 @@ schema-design.md 3장 기준, 총 22개 인덱스:
 생성의 역순으로 DROP:
 
 ```
-DROP 순서: ㉓→㉒→㉑→⑳→⑲→⑱→⑰→⑯→⑮→⑭→⑬→⑫→⑪→⑩→⑨→⑧→⑦→⑥→⑤→④→③→②→①
+DROP 순서: ㉔→㉓→㉒→㉑→⑳→⑲→⑱→⑰→⑯→⑮→⑭→⑬→⑫→⑪→⑩→⑨→⑧→⑦→⑥→⑤→④→③→②→①
 
 -- 먼저 self-referencing FK 제거
 ALTER TABLE categories DROP CONSTRAINT IF EXISTS fk_categories_parent;
@@ -593,14 +628,14 @@ DELETE FROM shopping_malls;
 ### 마이그레이션 실행 순서
 
 1. `gapttuk_dev` DB 생성 (없으면)
-2. `sqlx migrate run` — 001 + 002 순차 실행
+2. `sqlx migrate run` — 001 + 002 + 003 순차 실행
 3. `sqlx prepare` — 오프라인 모드 캐시 생성 (sqlx-data.json)
 4. `cargo build` — 컴파일타임 SQL 검증 통과 확인
 
 ### 검증 체크리스트
 
-- [ ] 23개 테이블 모두 생성 확인: `\dt` 명령
-- [ ] 22개 인덱스 생성 확인: `\di` 명령
+- [ ] 24개 테이블 모두 생성 확인: `\dt` 명령
+- [ ] 28개 인덱스 생성 확인: `\di` 명령
 - [ ] shopping_malls 2건 확인
 - [ ] categories 18건 확인
 - [ ] 파티셔닝 확인: price_history, api_access_logs 파티션 존재
@@ -634,12 +669,36 @@ app/build/
 
 ---
 
-## 11. DoD (Definition of Done)
+## 11. Refresh Token 보안 전략
+
+M1-4(인증 API)에서 구현. 여기서는 DB 관련 설계만 기술.
+
+### 토큰 저장
+- Refresh Token 원본은 클라이언트에만 존재 (flutter_secure_storage)
+- DB에는 `SHA-256(token)` 해시만 저장 → DB 유출 시에도 토큰 재사용 불가
+
+### Refresh Token Rotation
+1. 클라이언트가 `/api/v1/auth/refresh` 호출 시:
+   - 기존 Refresh Token의 `revoked_at` 설정 (무효화)
+   - 새 Refresh Token 발급 → `refresh_tokens` INSERT
+   - 새 Access Token + 새 Refresh Token 반환
+2. **탈취 감지:** revoked 상태인 토큰으로 갱신 시도 시 → 해당 user_id의 **모든** Refresh Token 일괄 revoke (보안 격리)
+
+### 로그아웃
+- 해당 Refresh Token의 `revoked_at` 설정
+- 전체 로그아웃(모든 디바이스): user_id 기준 전체 revoke
+
+### 만료 토큰 정리
+- `tokio-cron-scheduler`에서 일 1회: `DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '1 day'`
+
+---
+
+## 12. DoD (Definition of Done)
 
 M1-1 완료 조건:
 
-1. ✅ `cargo build` 성공 (경고 0)
-2. ✅ `sqlx migrate run` 완료 → 23개 테이블 + 22개 인덱스 생성
+1. ✅ `cargo build` 성공 (`dead_code` 경고만 허용 — M1-2~8에서 사용할 필드)
+2. ✅ `sqlx migrate run` 완료 → 24개 테이블 + 28개 인덱스 생성
 3. ✅ `sqlx migrate revert` → `sqlx migrate run` 왕복 테스트 통과
 4. ✅ seed data (shopping_malls 2건, categories 18건) 확인
 5. ✅ `/health` 엔드포인트 응답 확인 (200 OK + DB 연결 상태)
