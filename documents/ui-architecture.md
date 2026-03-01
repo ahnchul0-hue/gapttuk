@@ -86,8 +86,8 @@
     ┌──────────────────────────────────────────────────────────────────┐
     │                    ══ 하단 탭바 (앱) / 상단 GNB (웹) ══          │
     │                                                                  │
-    │  [HOME]      [SEARCH]     [FAVORITES]   [ALERT_CENTER]  [MY]    │
-    │   홈           검색         즐겨찾기        알림센터      마이    │
+    │  [HOME]     [SEARCH]    [FAVORITES]  [ALERT_CENTER] [MY_PAGE]   │
+    │   홈          검색        즐겨찾기       알림센터       마이     │
     └──┬──────────────┬──────────────┬──────────────┬──────────┬───────┘
        │              │              │              │          │
        ▼              ▼              │              ▼          ▼
@@ -105,6 +105,10 @@
                                         [KEYWORD]──┘  └──[CATEGORY_ALERT]
                                         키워드 핫딜       카테고리 알림
 ```
+
+> **약어 범례:** [SET]=SETTINGS, [ALERT]=ALERT_SETTING (하단시트), [SHARE]=SHARE_PREVIEW, [KEYWORD]=KEYWORD_ALERT, [CHECKIN]=DAILY_CHECKIN
+> **다이어그램 미표시 화면:** AUTH_LOGIN, AUTH_SIGNUP, ONBOARDING, WEB_LANDING (앱 진입 전 화면), SETTINGS (MY_PAGE 하위), SHARE_PREVIEW (외부 공유)
+> 해당 6개 화면은 와이어프레임 없이 §1 화면 목록에서 스펙 정의.
 
 ### 2.2 시나리오 1: 상품 검색 → 가격 확인 → 알림 설정
 

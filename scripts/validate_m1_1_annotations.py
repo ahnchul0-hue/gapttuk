@@ -27,8 +27,8 @@ def check_table_count():
     schema_declared = re.search(r"테이블 총괄\s*\((\d+)개\)", schema)
     schema_count = int(schema_declared.group(1)) if schema_declared else 0
 
-    # annotations 에서 실제 기술된 테이블 (①~㉓)
-    annot_tables = re.findall(r"####\s*[①-㉓㊀-㊿]\s+(\w+)", annot)
+    # annotations 에서 실제 기술된 테이블 (①~㉔)
+    annot_tables = re.findall(r"####\s*[①-㉔㊀-㊿]\s+(\w+)", annot)
 
     print(f"\n{'='*60}")
     print("1. 테이블 수 검증")

@@ -1,9 +1,9 @@
 # 값뚝 구현 계획 (plan.md)
 
-> **상태: DRAFT v0.5**
+> **상태: DRAFT v0.6**
 > 작성일: 2026-03-01 | 갱신: 2026-03-02
-> 근거 문서: prd.md v0.6 | schema-design.md v0.6 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
-> **이 문서는 STEP 5까지 완료되었습니다. M1-1 스캐폴딩 + DB 마이그레이션 구현 완료.**
+> 근거 문서: prd.md v0.7 | schema-design.md v0.7 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
+> **이 문서는 STEP 6까지 완료되었습니다. M1-1 구현 + 문서 최종 리뷰 반영 완료.**
 
 ---
 
@@ -42,6 +42,7 @@
 │  │  │ JWT  │ │rate_limit │ │ bot_guard  │ │ │                  │
 │  │  │ Auth │ │(tower_gov)│ │(blocked_ip)│ │ │                  │
 │  │  └──────┘ └───────────┘ └────────────┘ │ │                  │
+│  │  * tower_gov = tower_governor crate     │ │                  │
 │  └─────────────────────────────────────────┘ │                  │
 │                                               │                  │
 │  ┌──────────┐ ┌──────────┐ ┌──────────────┐ │                  │
@@ -331,7 +332,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] Cargo.toml 의존성 추가
 - [ ] config.rs — 환경변수 (DATABASE_URL, JWT_SECRET, COUPANG_API_KEY 등)
 - [ ] db/mod.rs — PgPool 초기화
-- [ ] `migrations/001_initial_schema.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
+- [ ] `migrations/001_initial_schema.up.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
 - [ ] `migrations/002_seed_data.sql` — shopping_malls (2), categories (18)
 - [ ] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
 - [ ] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
@@ -350,7 +351,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 에러 응답 + 페이지네이션 + 캐시가 동작하는 /health 엔드포인트
 
 #### M1-3. DB 모델 (~3일)
-- [ ] user.rs — users (subscription_tier 제거), user_devices
+- [ ] user.rs — users, user_devices
 - [ ] product.rs — products, shopping_malls, categories
 - [ ] price_history.rs
 - [ ] alert.rs — price_alerts, category_alerts, keyword_alerts
@@ -408,6 +409,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] bot_guard.rs — blocked_ips 조회 (moka 캐시 5분) + UA 블랙리스트
 - [ ] api_access_logs INSERT (비동기, 요청 흐름 미차단)
 - [ ] Rate limit 응답 헤더: `X-RateLimit-Remaining`, `Retry-After`
+- [ ] api_access_logs 파티션 정리 크론 (30일 초과 DROP) + price_history 파티션 자동 생성
 
 **DoD:** 429 응답 정상 반환 + blocked IP 요청 거부 확인
 
@@ -429,7 +431,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 
 ---
 
-### M2. MVP 앱 개발 — P0+P1 (12주)
+### M2. MVP 앱 개발 — P0+P1 (12주, 서브태스크 10개)
 
 Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 구독 화면 없음. 모든 기능 무료/무제한.
@@ -515,7 +517,7 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 
 ---
 
-### M5. 차별화 확장 — P2 (8주)
+### M5. 차별화 확장 — P2 (8주, 태스크 합산 ~8.5주)
 
 #### M5-1. 센트(¢) 보상 + 기프티콘 (~2주)
 - [ ] 센트(¢) 잔액 관리 API (`GET /api/v1/rewards/balance`)
@@ -705,10 +707,13 @@ STEP 3: M1-1 주석달기 ✅
 STEP 4: M1-1 구현 (스캐폴딩 + DB 마이그레이션) ✅
     │
     ▼
-STEP 5: 문서 3-pass 비판적 리뷰 + 전수 반영 ✅ ← 여기
+STEP 5: 문서 3-pass 비판적 리뷰 + 전수 반영 ✅
     │
     ▼
-STEP 4: M1-1 구현 → 커밋 → M1-2 → ... → M1-8 → M1 완료
+STEP 6: 최종 리뷰 30건 반영 ✅ ← 마지막 완료
+    │
+    ▼
+STEP 7: M1-2 에러 처리 → M1-3 → ... → M1-8 → M1 완료
     │
     ▼
 M2 주석 → 구현 → M3 → M4 → M5
@@ -757,7 +762,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 ---
 
-> **plan.md v0.5 갱신됨 (2026-03-02).** 전수 검토 47건 + 최종 리뷰 6건 반영.
-> **현재 단계: STEP 5 완료 — M1-1 스캐폴딩 + DB 마이그레이션 구현 완료.**
+> **plan.md v0.6 갱신됨 (2026-03-02).** 전수 검토 47건 + 최종 리뷰 30건 반영.
+> **현재 단계: STEP 6 완료 — 최종 리뷰 HIGH 6 + MEDIUM 14 + LOW 10건 반영.**
 > 주석 파일: `documents/m1-1-annotations.md`
-> **다음: STEP 6 — M1-2 크롤러 구현.**
+> **다음: STEP 7 — M1-2 에러 처리 + 공통 구현.**

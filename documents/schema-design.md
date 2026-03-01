@@ -145,11 +145,11 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |---|---|---|---|
-| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
-| product_id | BIGINT | FK -> products(id), NOT NULL | |
+| id | BIGINT | PK (복합: id + recorded_at) | RANGE 파티션 |
+| product_id | BIGINT | NOT NULL, → products(id) app-level | DB FK 없음 (파티션 제약) |
 | price | INTEGER | NOT NULL | 해당 시점 가격 |
 | is_out_of_stock | BOOLEAN | NOT NULL, DEFAULT FALSE | |
-| recorded_at | TIMESTAMPTZ | NOT NULL | 기록 시점 |
+| recorded_at | TIMESTAMPTZ | NOT NULL | 기록 시점 + 파티션 키 |
 
 **보관 정책: 기한 없이 전체 보관** (무기한)
 - 장기 가격 그래프, AI 예측 학습 데이터, 요일별/계절별 패턴 분석에 필수
@@ -422,15 +422,15 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |---|---|---|---|
-| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| id | BIGINT | PK (복합: id + created_at) | RANGE 파티션 |
 | ip_address | INET | NOT NULL | 요청 IP |
-| user_id | BIGINT | FK -> users(id) | 인증 사용자 (NULL=비인증) |
+| user_id | BIGINT | → users(id) app-level | DB FK 없음 (파티션 제약), NULL=비인증 |
 | endpoint | TEXT | NOT NULL | 요청 경로 (예: /api/products/123) |
 | method | TEXT | NOT NULL | GET, POST 등 |
 | status_code | SMALLINT | NOT NULL | HTTP 응답 코드 |
 | user_agent | TEXT | | User-Agent 헤더 |
 | response_time_ms | INTEGER | | 응답 시간 (ms) |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 파티션 키 |
 
 **설계 근거:**
 - 비정상 패턴 탐지: 동일 IP 단시간 대량 요청, 봇 UA, 비인간적 속도
