@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PullCents 문서 교차 검증 스크립트 v2
+값뚝(gapttuk) 문서 교차 검증 스크립트 v2
 - PRD ↔ Schema ↔ UI Architecture ↔ Tech Stack 간 누락/불일치 탐지
 - 아직 구현하지 마. 설계 문서 검증용.
 """
@@ -338,7 +338,7 @@ def main():
     # 3. 출력
     # ─────────────────────────────────────────────
     print("=" * 70)
-    print("  PullCents 문서 교차 검증 결과 (v2)")
+    print("  값뚝(gapttuk) 문서 교차 검증 결과 (v2)")
     print("=" * 70)
 
     print(f"\n🔴 ISSUE (수정 필요): {len(issues)}건")

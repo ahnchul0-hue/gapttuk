@@ -35,7 +35,7 @@ erDiagram
     users ||--o{ keyword_alerts : "1:N"
     users ||--o{ user_favorites : "1:N"
     users ||--o{ notifications : "1:N"
-    users ||--o{ user_points : "1:1"
+    users ||--o| user_points : "1:0..1"
     users ||--o{ point_transactions : "1:N"
     users ||--o{ referrals : "referrer 1:N"
     users ||--o{ daily_checkins : "1:N"
@@ -44,7 +44,6 @@ erDiagram
     users ||--o{ refresh_tokens : "1:N"
     users ||--o{ users : "referred_by (self-ref)"
 
-    products ||--o{ price_history : "1:N"
     products ||--o{ price_alerts : "1:N"
     products ||--o{ user_favorites : "1:N"
     products ||--o{ ai_predictions : "1:N"
@@ -55,6 +54,12 @@ erDiagram
     events ||--o{ event_participations : "1:N"
     categories ||--o{ category_alerts : "1:N"
     categories ||--o{ keyword_alerts : "N:1 (선택적)"
+    categories ||--o{ categories : "parent_id (self-ref)"
+    users ||--o| referrals : "referred_id 1:0..1"
+
+    %% 파티션 테이블 (DB-level FK 없음, app-level 참조)
+    products ||..o{ price_history : "1:N (app-level)"
+    users ||..o{ api_access_logs : "1:N (app-level)"
 ```
 
 ---
@@ -76,6 +81,8 @@ erDiagram
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 | deleted_at | TIMESTAMPTZ | | soft delete |
+
+**UNIQUE 제약:** `(auth_provider, auth_provider_id)` — 동일 소셜 계정 중복 가입 방지
 
 **변경점 (v0.1 → v0.2):**
 - `referral_code` 추가 — 추천 보상 시스템용 고유 코드
@@ -484,6 +491,7 @@ erDiagram
 | id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
 | user_id | BIGINT | FK -> users(id), NOT NULL | |
 | product_id | BIGINT | FK -> products(id), NOT NULL | |
+| memo | TEXT | | 사용자 메모 (선택) |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 
 **UNIQUE 제약:** `(user_id, product_id)`
@@ -495,7 +503,7 @@ erDiagram
 | id | INTEGER | PK, GENERATED ALWAYS AS IDENTITY | |
 | name | TEXT | NOT NULL | 쇼핑몰 이름 |
 | code | TEXT | UNIQUE, NOT NULL | 식별 코드 (coupang, naver) |
-| base_url | TEXT | | 쇼핑몰 URL |
+| base_url | TEXT | NOT NULL | 쇼핑몰 URL |
 | is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 

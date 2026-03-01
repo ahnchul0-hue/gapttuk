@@ -9,7 +9,7 @@ pub enum AppEnv {
 }
 
 impl AppEnv {
-    fn from_str(s: &str) -> Self {
+    fn parse(s: &str) -> Self {
         match s {
             "prod" => Self::Prod,
             "test" => Self::Test,
@@ -68,7 +68,7 @@ impl Config {
         let database_url = required("DATABASE_URL");
         let jwt_secret = required("JWT_SECRET");
 
-        let app_env = AppEnv::from_str(
+        let app_env = AppEnv::parse(
             &env::var("APP_ENV").unwrap_or_else(|_| "dev".to_string()),
         );
 
