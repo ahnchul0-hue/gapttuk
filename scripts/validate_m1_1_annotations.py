@@ -28,7 +28,7 @@ def check_table_count():
     schema_count = int(schema_declared.group(1)) if schema_declared else 0
 
     # annotations 에서 실제 기술된 테이블 (①~㉔)
-    annot_tables = re.findall(r"####\s*[①-㉔㊀-㊿]\s+(\w+)", annot)
+    annot_tables = re.findall(r"####\s*[①-⑳㉑-㉔㊀-㊿]\s+(\w+)", annot)
 
     print(f"\n{'='*60}")
     print("1. 테이블 수 검증")
@@ -237,7 +237,7 @@ def check_column_details():
     # users 테이블 주요 컬럼
     users_cols = [
         "email", "nickname", "auth_provider", "auth_provider_id",
-        "point_balance", "referral_code", "referred_by",
+        "referral_code", "referred_by",
         "created_at", "updated_at", "deleted_at"
     ]
     missing_user = [c for c in users_cols if c not in annot]

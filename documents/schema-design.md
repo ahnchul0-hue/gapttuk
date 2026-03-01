@@ -44,19 +44,19 @@ erDiagram
     users ||--o{ event_participations : "1:N"
     users ||--o{ roulette_results : "1:N"
     users ||--o{ refresh_tokens : "1:N"
-    users ||--o{ users : "referred_by (self-ref)"
+    users |o--o{ users : "referred_by (선택적 self-ref)"
 
     products ||--o{ price_alerts : "1:N"
     products ||--o{ user_favorites : "1:N"
     products ||--o{ ai_predictions : "1:N"
     products ||--o{ card_discounts : "1:N"
-    products }o--|| categories : "N:1"
+    products }o--o| categories : "N:0..1"
     products }o--|| shopping_malls : "N:1"
 
     events ||--o{ event_participations : "1:N"
     categories ||--o{ category_alerts : "1:N"
-    categories ||--o{ keyword_alerts : "N:1 (선택적)"
-    categories ||--o{ categories : "parent_id (self-ref)"
+    categories ||--o{ keyword_alerts : "1:N (선택적)"
+    categories |o--o{ categories : "parent_id (선택적 self-ref)"
     users ||--o| referrals : "referred_id 1:0..1"
 
     %% 파티션 테이블 (DB-level FK 없음, app-level 참조)
@@ -145,7 +145,7 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |---|---|---|---|
-| id | BIGINT | PK (복합: id + recorded_at) | RANGE 파티션 |
+| id | BIGINT | PK (복합: id + recorded_at), GENERATED ALWAYS AS IDENTITY | RANGE 파티션 |
 | product_id | BIGINT | NOT NULL, → products(id) app-level | DB FK 없음 (파티션 제약) |
 | price | INTEGER | NOT NULL | 해당 시점 가격 |
 | is_out_of_stock | BOOLEAN | NOT NULL, DEFAULT FALSE | |
@@ -422,7 +422,7 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |---|---|---|---|
-| id | BIGINT | PK (복합: id + created_at) | RANGE 파티션 |
+| id | BIGINT | PK (복합: id + created_at), GENERATED ALWAYS AS IDENTITY | RANGE 파티션 |
 | ip_address | INET | NOT NULL | 요청 IP |
 | user_id | BIGINT | → users(id) app-level | DB FK 없음 (파티션 제약), NULL=비인증 |
 | endpoint | TEXT | NOT NULL | 요청 경로 (예: /api/products/123) |
