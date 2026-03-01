@@ -1,6 +1,6 @@
 # PullCents DB 스키마 설계
 
-> **상태: DRAFT v0.2**
+> **상태: DRAFT v0.3**
 > 작성일: 2026-03-01 | 갱신: 2026-03-01
 > DB: PostgreSQL 17.9 (localhost:5432) | ORM: SQLx (Rust, 컴파일타임 검증)
 > MVP 대상: 쿠팡 + 네이버쇼핑
@@ -8,7 +8,7 @@
 
 ---
 
-## 테이블 총괄 (19개)
+## 테이블 총괄 (21개)
 
 | 그룹 | 테이블 | 설명 |
 |------|--------|------|
@@ -19,6 +19,7 @@
 | **카드 할인** | card_discounts | 카드사별 할인가 |
 | **보상** | user_points, point_transactions, referrals, daily_checkins | 포인트 + 추천 + 출석 |
 | **이벤트** | events, event_participations | 이벤트/퀴즈 |
+| **보안** | api_access_logs, blocked_ips | 접근 로그 + IP 차단 ★ 신규 |
 | **기타** | user_favorites, subscriptions, popular_searches | 즐겨찾기 + 구독 + 인기 검색어 |
 
 ---
@@ -364,7 +365,45 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 - 실시간 검색 로그에서 주기적으로 집계하여 이 테이블 갱신
 - `trend` — 순위 변동 방향 (↑↓ 화살표 표시용)
 
-### 2-18. 나머지 테이블 (v0.1과 동일)
+### 2-18. api_access_logs (API 접근 로그) ★ 신규
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, GENERATED ALWAYS AS IDENTITY | |
+| ip_address | INET | NOT NULL | 요청 IP |
+| user_id | BIGINT | FK -> users(id) | 인증 사용자 (NULL=비인증) |
+| endpoint | TEXT | NOT NULL | 요청 경로 (예: /api/products/123) |
+| method | TEXT | NOT NULL | GET, POST 등 |
+| status_code | SMALLINT | NOT NULL | HTTP 응답 코드 |
+| user_agent | TEXT | | User-Agent 헤더 |
+| response_time_ms | INTEGER | | 응답 시간 (ms) |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**설계 근거:**
+- 비정상 패턴 탐지: 동일 IP 단시간 대량 요청, 봇 UA, 비인간적 속도
+- Fail2Ban 연동: 429 응답 빈도 기반 자동 IP 차단
+- 주기적 집계 → blocked_ips 테이블로 차단 IP 등록
+- **보관 정책**: 30일 보관 후 삭제 (용량 관리) — 집계 데이터만 장기 보관
+
+### 2-19. blocked_ips (IP 차단 목록) ★ 신규
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | INTEGER | PK, GENERATED ALWAYS AS IDENTITY | |
+| ip_address | INET | UNIQUE, NOT NULL | 차단 IP |
+| reason | TEXT | NOT NULL | 차단 사유 (rate_limit, bot_ua, pattern_abuse 등) |
+| blocked_until | TIMESTAMPTZ | | 차단 해제 시점 (NULL = 영구 차단) |
+| hit_count | INTEGER | NOT NULL, DEFAULT 1 | 누적 위반 횟수 |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**설계 근거:**
+- Axum 미들웨어에서 요청마다 이 테이블 조회 (캐시 병행)
+- `hit_count` 기반 에스컬레이션: 1회 → 10분, 3회 → 1시간, 5회+ → 영구
+- `blocked_until`이 NULL이면 영구 차단, 과거 시점이면 자동 해제
+- Fail2Ban이 감지 → 이 테이블에 INSERT → Axum이 요청 거부
+
+### 2-20. 나머지 테이블 (v0.1과 동일)
 
 - **subscriptions** — 유료 구독 (v0.1 그대로)
 - **categories** — 카테고리 계층 구조 (v0.1 그대로)
@@ -402,6 +441,9 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | idx_point_transactions_user | point_transactions | (user_id, created_at DESC) | 사용자 포인트 이력 |
 | idx_referrals_referrer | referrals | (referrer_id) | 추천인의 추천 현황 조회 |
 | idx_popular_searches_rank | popular_searches | (rank) | 순위순 인기 검색어 조회 |
+| idx_access_logs_ip_time | api_access_logs | (ip_address, created_at DESC) | IP별 최근 요청 조회 (패턴 분석) |
+| idx_access_logs_status_time | api_access_logs | (status_code, created_at DESC) WHERE status_code = 429 | 429 응답 빈도 집계 (Fail2Ban) |
+| idx_blocked_ips_addr | blocked_ips | (ip_address) | 요청마다 차단 여부 확인 |
 
 ---
 
@@ -418,6 +460,18 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 
 - 삭제 없이 오래된 파티션은 압축(pg_compress) 또는 cold storage로 이동
 - AI 예측 학습에 장기 데이터 필수
+
+### api_access_logs — 월별 레인지 파티셔닝
+
+| 설정 | 값 |
+|---|---|
+| 파티션 키 | `created_at` |
+| 파티션 단위 | 월별 (RANGE) |
+| 명명 규칙 | `api_access_logs_YYYYMM` |
+| **보관 정책** | **30일 보관 후 오래된 파티션 DROP** |
+
+- 접근 로그는 용량 급증 → 파티셔닝 + 30일 정리 필수
+- Fail2Ban 집계 결과만 blocked_ips에 장기 보관
 
 ### 기타 테이블 — 파티셔닝 불필요
 
@@ -436,6 +490,8 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | **ai_predictions** | **무기한** | 예측 정확도 검증용 |
 | **subscriptions** | 무기한 | 결제 법적 의무 |
 | **users (deleted)** | 탈퇴 후 1년 | 개인정보보호법 |
+| **api_access_logs** | **30일** | 용량 관리 (집계 결과만 장기 보관) |
+| **blocked_ips** | **무기한** | 영구 차단 IP 이력 유지 |
 | 기타 모든 테이블 | **무기한** | 전체보관 원칙 |
 
 ---
@@ -453,7 +509,8 @@ v0.1과 동일. keyword + category_id(선택) + max_price(선택)
 | **이벤트/퀴즈** | events + event_participations | 참여 보상 포인트 |
 | **인기 검색어** | popular_searches | 스크롤링 표시, 주기적 집계 |
 | **판매 속도 알림** | products.sales_velocity + category_alerts | 급증 감지 선제 알림 |
-| **무기한 보관** | 전 테이블 | 삭제 없이 전체 보관 |
+| **무기한 보관** | 전 테이블 | 삭제 없이 전체 보관 (api_access_logs 제외 30일) |
+| **봇 차단** | api_access_logs + blocked_ips | 접근 로그 + IP 차단 (Fail2Ban 연동) |
 
 ---
 

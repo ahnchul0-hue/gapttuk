@@ -177,7 +177,62 @@ Rust 서버 (Axum)
 
 ---
 
-## 8. 배포/인프라 (로컬 우선)
+## 8. 보안/봇 차단
+
+### 8-1. CAPTCHA — Cloudflare Turnstile
+
+| 기준 | Cloudflare Turnstile | hCaptcha | reCAPTCHA v3 |
+|------|---------------------|----------|-------------|
+| **비용** | 무료 (무제한) | 무료 (제한적) | 무료 (100만/월) |
+| **UX** | 눈에 안 보임 (자동 통과) | 이미지 퍼즐 필요 | 눈에 안 보임 |
+| **개인정보** | 최소 수집 | 보통 | Google에 데이터 전송 |
+| **Rust 연동** | HTTP API 검증 (간단) | HTTP API | HTTP API |
+| **Flutter 연동** | WebView 위젯 | WebView | 공식 패키지 있음 |
+
+**추천: Cloudflare Turnstile**
+- 무료 + 무제한 + UX 최상 (사용자가 CAPTCHA 인식 못함)
+- 서버에서 `siteverify` API 호출로 토큰 검증 (reqwest로 간단 구현)
+- 적용 시점: 비로그인 검색 5회 이상, 회원가입, 비정상 패턴 탐지 시
+
+### 8-2. Fail2Ban
+
+```
+[Fail2Ban 연동 구조]
+
+Axum 서버 (접근 로그 → PostgreSQL api_access_logs)
+    │
+    │  status_code = 429 기록
+    ▼
+Fail2Ban (로그 모니터링 또는 DB 폴링)
+    │
+    │  10분 내 429 응답 20회 이상 탐지
+    ▼
+blocked_ips 테이블 INSERT + iptables 차단
+    │
+    │  에스컬레이션:
+    │    1회 위반 → 10분 차단
+    │    3회 위반 → 1시간 차단
+    │    5회+ 위반 → 영구 차단
+    ▼
+Axum 미들웨어: 요청마다 blocked_ips 조회 (메모리 캐시 병행)
+    → 차단된 IP → 403 Forbidden 즉시 반환
+```
+
+**구현 방식:**
+- Fail2Ban 커스텀 jail: Axum 로그 파일 또는 api_access_logs 테이블 기반
+- 로컬 서버: `fail2ban-client` + `iptables` 직접 차단
+- 클라우드 전환 시: Cloudflare Firewall Rules로 대체 가능
+
+### 8-3. Rate Limiting — tower-governor
+
+- Axum Tower 미들웨어로 IP/사용자별 요청 제한
+- IP당: 60 req/min (일반), 10 req/min (검색 API)
+- 인증 사용자: 120 req/min
+- 초과 시: 429 Too Many Requests + Retry-After 헤더
+
+---
+
+## 9. 배포/인프라 (로컬 우선)
 
 ### 현재 구조
 
@@ -207,7 +262,7 @@ systemd 서비스로 자동 시작/재시작
 
 ---
 
-## 9. 종합 확정 스택
+## 10. 종합 확정 스택
 
 | 레이어 | 선택 | 이유 |
 |--------|------|------|
@@ -220,6 +275,8 @@ systemd 서비스로 자동 시작/재시작
 | **앱-서버 통신** | **REST API (JSON)** | 가장 단순, 웹 호환 |
 | **크롤링** | **reqwest + scraper** + 쿠팡파트너스 API | 경량, API 우선 |
 | **스케줄링** | **tokio-cron-scheduler** | 인프로세스, Redis 불필요 |
+| **CAPTCHA** | **Cloudflare Turnstile** | 무료, UX 최상, HTTP API 검증 |
+| **봇 차단** | **Fail2Ban + tower-governor** | IP 차단 + Rate Limiting |
 | **배포** | **단일 바이너리 + systemd** | 로컬 우선, 의존성 제로 |
 
 ### 스택 다이어그램
@@ -235,8 +292,11 @@ systemd 서비스로 자동 시작/재시작
     ├── fcm ──→ FCM HTTP API (Android 푸시)
     ├── Web Push (VAPID) ──→ 브라우저 푸시
     ├── tokio-cron-scheduler ──→ 가격 크롤링 스케줄
-    └── reqwest + scraper ──→ 쿠팡 가격 수집
-         + 쿠팡파트너스 API ──→ 딥링크 생성
+    ├── reqwest + scraper ──→ 쿠팡 가격 수집
+    │    + 쿠팡파트너스 API ──→ 딥링크 생성
+    ├── tower-governor ──→ Rate Limiting (IP/사용자별)
+    └── Fail2Ban ──→ IP 차단 (iptables + blocked_ips)
+         + Cloudflare Turnstile ──→ CAPTCHA (비로그인/의심 트래픽)
 ```
 
 ### 핵심 장점
@@ -246,3 +306,4 @@ systemd 서비스로 자동 시작/재시작
 3. **로컬 우선**: PostgreSQL + Rust 바이너리만으로 전체 백엔드 운영
 4. **안전성**: Rust 컴파일러 + SQLx 컴파일타임 검증으로 런타임 에러 최소화
 5. **배포 간결**: 단일 실행 파일 + systemd = 프로덕션 준비 완료
+6. **봇 방어**: Rate Limiting + Fail2Ban + CAPTCHA 3중 방어, 접근 로그 DB 기록
