@@ -2,7 +2,7 @@
 
 > **상태: DRAFT v0.5**
 > 작성일: 2026-03-01 | 갱신: 2026-03-02
-> 근거 문서: prd.md v0.6 | schema-design.md v0.6 | ui-architecture.md v0.3 | tech-stack-research.md
+> 근거 문서: prd.md v0.6 | schema-design.md v0.6 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
 > **이 문서는 STEP 5까지 완료되었습니다. M1-1 스캐폴딩 + DB 마이그레이션 구현 완료.**
 
 ---
@@ -355,7 +355,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] price_history.rs
 - [ ] alert.rs — price_alerts, category_alerts, keyword_alerts
 - [ ] notification.rs
-- [ ] point.rs — user_points, point_transactions
+- [ ] cent.rs — user_points, point_transactions (센트(¢) 보상)
 - [ ] reward.rs — referrals, daily_checkins, roulette_results
 - [ ] event.rs — events, event_participations
 - [ ] card_discount.rs, ai_prediction.rs, popular_search.rs
@@ -722,7 +722,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 | 마일스톤 | 이전 | 현재 | 근거 |
 |---------|------|------|------|
-| M1 | 6주 | **8주** | 270시간 필요 (6주=240시간, 부족) |
+| M1 | 6주 | **8주** | 태스크 합산 28일 + 코드 리뷰/디버깅/예외 대응 오버헤드 ≈ 270시간 (6주=240시간, 부족) |
 | M2 | 10주 | **12주** | 295시간 + 3플랫폼 테스트 |
 | 전체 | 28주 | **~32주** | M1(8)+M2(12)+M3(2)+M4(2)+M5(8)=32주. 마일스톤 간 버퍼 별도 |
 
@@ -736,6 +736,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 - **순차 → 병렬:** `Semaphore(5~10)` 동시실행, 90분 → 10~15분 목표
 - **파티션 자동 생성:** 서버 시작 시 + 매월 크론으로 향후 3개월 파티션 생성
+- **파티션 정리:** 매일 크론으로 api_access_logs 30일 초과 파티션 DROP + price_history 필요 시 연 단위 아카이브
 - **price_history FK:** 파티셔닝 테이블 특성상 의도적 미적용 — 서비스 레이어에서 검증 (schema-design.md §4 참조)
 
 ### 법적/규제 (M3 전 필수)

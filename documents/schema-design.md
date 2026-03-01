@@ -1,7 +1,9 @@
 # 값뚝 DB 스키마 설계
 
-> **상태: DRAFT v0.6**
-> 작성일: 2026-03-01 | 갱신: 2026-03-01
+> **상태: DRAFT v0.7**
+> 작성일: 2026-03-01 | 갱신: 2026-03-02
+> **v0.6 → v0.7:** ER 카디널리티 정정(user_points 1:0..1, referrals.referred_id 1:0..1), 파티션 테이블 app-level FK 점선 표기, shopping_malls.base_url NOT NULL 반영, users 복합 UNIQUE 문서화, 중복 인덱스 2건 표기
+> **v0.5 → v0.6:** categories depth/created_at 추가(migration 004), user_favorites memo 컬럼 문서화, categories self-ref + referrals dual FK ER 반영
 > DB: PostgreSQL 17.9 (localhost:5432) | ORM: SQLx (Rust, 컴파일타임 검증)
 > MVP 대상: 쿠팡 + 네이버쇼핑
 > **주의: 설계 문서입니다. SQL 코드 아님. 아직 구현하지 마.**
@@ -532,7 +534,7 @@ erDiagram
 
 | 인덱스 | 테이블 | 컬럼 | 쿼리 패턴 |
 |---|---|---|---|
-| idx_users_referral_code | users | (referral_code) | 추천 코드로 사용자 조회 |
+| ~~idx_users_referral_code~~ | users | (referral_code) | ⚠️ UNIQUE 제약이 이미 인덱스 생성 — 중복, 추후 DROP 예정 |
 | idx_ai_predictions_product | ai_predictions | (product_id, expires_at DESC) | 상품별 최신 유효 예측 조회 |
 | idx_card_discounts_product | card_discounts | (product_id) WHERE is_active = TRUE | 상품별 활성 카드 할인 조회 |
 | idx_category_alerts_cat | category_alerts | (category_id) WHERE is_active = TRUE | 카테고리 가격 변동 시 활성 알림 조회 |
@@ -543,7 +545,7 @@ erDiagram
 | idx_popular_searches_rank | popular_searches | (rank) | 순위순 인기 검색어 조회 |
 | idx_access_logs_ip_time | api_access_logs | (ip_address, created_at DESC) | IP별 최근 요청 조회 (패턴 분석) |
 | idx_access_logs_status_time | api_access_logs | (status_code, created_at DESC) WHERE status_code = 429 | 429 응답 빈도 집계 (Fail2Ban) |
-| idx_blocked_ips_addr | blocked_ips | (ip_address) | 요청마다 차단 여부 확인 |
+| ~~idx_blocked_ips_addr~~ | blocked_ips | (ip_address) | ⚠️ UNIQUE 제약이 이미 인덱스 생성 — 중복, 추후 DROP 예정 |
 | idx_refresh_tokens_user | refresh_tokens | (user_id) | 사용자별 활성 토큰 조회 + 로그아웃 시 일괄 revoke |
 
 ### 보강 인덱스 (migration 003 추가)
