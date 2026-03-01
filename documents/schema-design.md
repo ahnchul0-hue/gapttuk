@@ -78,7 +78,7 @@ erDiagram
 | auth_provider | TEXT | NOT NULL | kakao, google, apple, naver |
 | auth_provider_id | TEXT | NOT NULL | 소셜 고유 ID |
 | profile_image_url | TEXT | | |
-| referral_code | TEXT | UNIQUE, NOT NULL | 내 추천 코드 (가입 시 자동 생성) |
+| referral_code | TEXT | UNIQUE, NOT NULL | 내 추천 코드 (GAP-XXXX, 가입 시 자동 생성) |
 | referred_by | BIGINT | FK -> users(id) | 나를 추천한 사용자 |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
