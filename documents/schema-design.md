@@ -123,7 +123,7 @@ erDiagram
 | average_price | INTEGER | | 평균가 |
 | unit_type | TEXT | | 단가 단위 (1정당, 100ml당 등) |
 | unit_price | NUMERIC(12,2) | | 단가 금액 |
-| rating | NUMERIC(2,1) | | 별점 |
+| rating | NUMERIC(3,1) | | 별점 (0.0~10.0) |
 | review_count | INTEGER | DEFAULT 0 | |
 | is_out_of_stock | BOOLEAN | NOT NULL, DEFAULT FALSE | |
 | price_trend | TEXT | | rising, falling, stable |
@@ -393,7 +393,7 @@ erDiagram
 | roulette_type | TEXT | NOT NULL | checkin, event, quiz |
 | reference_id | BIGINT | | 관련 엔티티 ID (daily_checkin_id 또는 event_participation_id) |
 | is_winner | BOOLEAN | NOT NULL | 당첨 여부 |
-| reward_amount | INTEGER | NOT NULL, DEFAULT 0 | 당첨 센트(¢) (0=미당첨, 1~2=당첨) |
+| reward_amount | INTEGER | NOT NULL, DEFAULT 0 | 당첨 센트(¢) (0=미당첨, 출석 1¢, 이벤트/퀴즈 1~2¢) |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 
 **설계 근거:**

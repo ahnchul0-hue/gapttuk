@@ -616,9 +616,8 @@ DROP TABLE IF EXISTS shopping_malls;
 
 ### 로직
 
-```
-DELETE FROM categories;
-DELETE FROM shopping_malls;
+```sql
+TRUNCATE categories, shopping_malls CASCADE;
 ```
 
 ---

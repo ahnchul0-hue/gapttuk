@@ -10,7 +10,7 @@ pub enum AppEnv {
 
 impl AppEnv {
     fn parse(s: &str) -> Self {
-        match s {
+        match s.to_ascii_lowercase().as_str() {
             "prod" => Self::Prod,
             "test" => Self::Test,
             "dev" => Self::Dev,
@@ -72,10 +72,14 @@ impl Config {
             &env::var("APP_ENV").unwrap_or_else(|_| "dev".to_string()),
         );
 
-        // prod 환경에서 JWT_SECRET 32자 미만이면 panic
+        // prod 환경에서 JWT_SECRET 검증 (길이 + 플레이스홀더 차단)
         if app_env == AppEnv::Prod && jwt_secret.len() < 32 {
             panic!("JWT_SECRET must be at least 32 characters in prod");
-        } else if jwt_secret.len() < 32 {
+        }
+        if app_env == AppEnv::Prod && jwt_secret.contains("change-me") {
+            panic!("JWT_SECRET contains placeholder value — set a real secret for prod");
+        }
+        if jwt_secret.len() < 32 {
             tracing::warn!("JWT_SECRET is shorter than 32 characters");
         }
 

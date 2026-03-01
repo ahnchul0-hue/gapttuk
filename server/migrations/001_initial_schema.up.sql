@@ -190,7 +190,7 @@ CREATE TABLE products (
     average_price        INTEGER,
     unit_type            TEXT,
     unit_price           NUMERIC(12, 2),
-    rating               NUMERIC(2, 1),
+    rating               NUMERIC(3, 1),
     review_count         INTEGER DEFAULT 0,
     is_out_of_stock      BOOLEAN NOT NULL DEFAULT FALSE,
     price_trend          TEXT,

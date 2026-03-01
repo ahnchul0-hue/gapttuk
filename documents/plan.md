@@ -333,7 +333,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [ ] config.rs — 환경변수 (DATABASE_URL, JWT_SECRET, COUPANG_API_KEY 등)
 - [ ] db/mod.rs — PgPool 초기화
 - [ ] `migrations/001_initial_schema.up.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
-- [ ] `migrations/002_seed_data.sql` — shopping_malls (2), categories (18)
+- [ ] `migrations/002_seed_data.up.sql` — shopping_malls (2), categories (18)
 - [ ] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
 - [ ] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
 
@@ -540,6 +540,7 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 #### M5-4. 이벤트/퀴즈 룰렛 (~1주)
 - [ ] 이벤트 CRUD API
 - [ ] 참여 완료 → 룰렛 기회 획득 → 확률형 룰렛으로 0~2¢ 지급
+- [ ] 주간 상한 2¢ / 월간 상한 8¢ 서버 측 검증 로직
 - [ ] EVENT 화면 (이벤트 목록 + 퀴즈 + 룰렛)
 
 #### M5-5. AI 가격 예측 (~2주)
