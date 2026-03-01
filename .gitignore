@@ -1,0 +1,30 @@
+# 환경변수
+.env
+.env.*
+!.env.example
+
+# 백업
+backups/
+
+# Rust
+target/
+
+# SQLx 오프라인 캐시 (CI에서는 필요할 수 있으므로 선택적)
+# sqlx-data.json
+
+# Flutter
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
