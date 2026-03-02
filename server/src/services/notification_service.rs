@@ -41,25 +41,20 @@ pub async fn create_and_push(
     .fetch_all(pool)
     .await?;
 
-    // 3. 각 디바이스에 푸시 전송
+    // 3. 각 디바이스에 푸시 전송 — 무효 토큰은 수집 후 배치 비활성화
+    let mut invalid_device_ids: Vec<i64> = Vec::new();
     for device in &devices {
         if let Err(e) = push
             .send(&device.platform, &device.device_token, title, body, deep_link)
             .await
         {
-            // 토큰이 영구 무효(FCM UNREGISTERED / APNs 410)이면 디바이스 비활성화
             if e.is_invalid_token() {
                 tracing::info!(
                     device_id = device.id,
                     platform = ?device.platform,
-                    "Device token invalid — deactivating"
+                    "Device token invalid — will deactivate"
                 );
-                let _ = sqlx::query(
-                    "UPDATE user_devices SET push_enabled = FALSE, updated_at = NOW() WHERE id = $1",
-                )
-                .bind(device.id)
-                .execute(pool)
-                .await;
+                invalid_device_ids.push(device.id);
             } else {
                 tracing::warn!(
                     user_id,
@@ -70,6 +65,16 @@ pub async fn create_and_push(
                 );
             }
         }
+    }
+
+    // 4. 무효 디바이스 배치 비활성화 (N회 UPDATE → 1회)
+    if !invalid_device_ids.is_empty() {
+        let _ = sqlx::query(
+            "UPDATE user_devices SET push_enabled = FALSE, updated_at = NOW() WHERE id = ANY($1)",
+        )
+        .bind(&invalid_device_ids[..])
+        .execute(pool)
+        .await;
     }
 
     Ok(())
@@ -114,34 +119,33 @@ pub async fn get_user_notifications(
     Ok(notifications)
 }
 
-/// 단건 읽음 처리.
+/// 단건 읽음 처리 — CTE로 UPDATE + 존재 확인을 단일 쿼리로 수행.
 pub async fn mark_as_read(
     pool: &PgPool,
     user_id: i64,
     notification_id: i64,
 ) -> Result<(), AppError> {
-    let result = sqlx::query(
-        "UPDATE notifications SET is_read = TRUE, read_at = NOW() WHERE id = $1 AND user_id = $2 AND is_read = FALSE",
+    let row: (i64, i64) = sqlx::query_as(
+        r#"
+        WITH do_update AS (
+            UPDATE notifications SET is_read = TRUE, read_at = NOW()
+            WHERE id = $1 AND user_id = $2 AND is_read = FALSE
+            RETURNING id
+        )
+        SELECT
+            (SELECT COUNT(*) FROM notifications WHERE id = $1 AND user_id = $2) AS found,
+            (SELECT COUNT(*) FROM do_update) AS updated
+        "#,
     )
     .bind(notification_id)
     .bind(user_id)
-    .execute(pool)
+    .fetch_one(pool)
     .await?;
 
-    if result.rows_affected() == 0 {
-        // 이미 읽었거나 존재하지 않음 — 멱등성 유지
-        let exists = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS(SELECT 1 FROM notifications WHERE id = $1 AND user_id = $2)",
-        )
-        .bind(notification_id)
-        .bind(user_id)
-        .fetch_one(pool)
-        .await?;
-
-        if !exists {
-            return Err(AppError::NotFound("알림".to_string()));
-        }
+    if row.0 == 0 {
+        return Err(AppError::NotFound("알림".to_string()));
     }
+    // row.1 == 0이면 이미 읽은 상태 — 멱등성 유지
 
     Ok(())
 }

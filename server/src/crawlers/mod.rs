@@ -105,8 +105,11 @@ impl CrawlerService {
             let abort = abort_flag.clone();
 
             let handle = tokio::spawn(async move {
-                // Semaphore 획득
-                let _permit = sem.acquire().await.expect("Semaphore closed");
+                // Semaphore 획득 — closed 시 panic 대신 Aborted 반환
+                let _permit = match sem.acquire().await {
+                    Ok(p) => p,
+                    Err(_) => return ScrapeOutcome::Aborted,
+                };
 
                 // abort 확인
                 if abort.load(Ordering::Relaxed) {

@@ -149,8 +149,9 @@ pub async fn rotate_refresh_token(
         return Err(AppError::TokenInvalid);
     }
 
-    // 3. 만료 체크
+    // 3. 만료 체크 — tx를 명시적으로 해제하여 풀 커넥션 조기 반환
     if expires_at < Utc::now() {
+        drop(tx);
         return Err(AppError::TokenExpired);
     }
 

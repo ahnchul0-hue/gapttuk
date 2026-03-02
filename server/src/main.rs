@@ -15,7 +15,7 @@ use cache::AppCache;
 use config::Config;
 use error::AppError;
 
-use axum::{extract::State, routing::get, Router};
+use axum::{extract::{DefaultBodyLimit, State}, routing::get, Router};
 use axum::http::{header, HeaderName, HeaderValue, Method};
 use serde::Serialize;
 use std::net::SocketAddr;
@@ -232,6 +232,7 @@ async fn main() {
         .nest("/api/v1/alerts", api::routes::alerts::router())
         .nest("/api/v1/notifications", api::routes::notifications::router())
         // innermost → outermost 순서
+        .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),

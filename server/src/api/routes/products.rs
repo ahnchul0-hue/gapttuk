@@ -125,6 +125,17 @@ async fn prices(
     Path(id): Path<i64>,
     Query(params): Query<PriceHistoryQuery>,
 ) -> Result<PaginatedResponse<crate::models::PriceHistory>, AppError> {
+    // 날짜 범위 검증
+    if let (Some(from), Some(to)) = (params.from, params.to) {
+        if from >= to {
+            return Err(AppError::BadRequest("from은 to보다 이전이어야 합니다".to_string()));
+        }
+        let span = (to - from).num_days();
+        if span > 730 {
+            return Err(AppError::BadRequest("조회 기간은 최대 730일입니다".to_string()));
+        }
+    }
+
     let limit = params.limit.clamp(1, 100);
     let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
 

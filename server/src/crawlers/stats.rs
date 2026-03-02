@@ -67,41 +67,33 @@ pub async fn refresh_product_stats(
     new_price: i32,
     is_out_of_stock: bool,
 ) -> Result<(), sqlx::Error> {
-    // 1) price_history에서 30일 평균 + 최저가 기록일 조회
-    let stats = sqlx::query_as::<_, PriceStats>(
+    // 1) 30일 평균 + 전체 기간 최저/최고 + 최저가 기록일을 단일 CTE 쿼리로 조회
+    let stats = sqlx::query_as::<_, CombinedStats>(
         r#"
+        WITH all_time AS (
+            SELECT MIN(price) AS min_price, MAX(price) AS max_price
+            FROM price_history WHERE product_id = $1
+        ),
+        recent_avg AS (
+            SELECT AVG(price)::int AS avg_price_30d
+            FROM price_history
+            WHERE product_id = $1 AND recorded_at >= NOW() - INTERVAL '30 days'
+        )
         SELECT
-            AVG(price)::int AS avg_price_30d,
+            ra.avg_price_30d,
             (SELECT MIN(recorded_at) FROM price_history
-             WHERE product_id = $1 AND price = (
-                SELECT MIN(price) FROM price_history WHERE product_id = $1
-             ))
-            AS lowest_date
-        FROM price_history ph
-        WHERE product_id = $1
-          AND recorded_at >= NOW() - INTERVAL '30 days'
+             WHERE product_id = $1 AND price = at.min_price) AS lowest_date,
+            at.min_price,
+            at.max_price
+        FROM all_time at, recent_avg ra
         "#,
     )
     .bind(product_id)
     .fetch_one(pool)
     .await?;
 
-    // 전체 기간 lowest/highest
-    let all_time = sqlx::query_as::<_, AllTimeStats>(
-        r#"
-        SELECT
-            MIN(price) AS min_price,
-            MAX(price) AS max_price
-        FROM price_history
-        WHERE product_id = $1
-        "#,
-    )
-    .bind(product_id)
-    .fetch_one(pool)
-    .await?;
-
-    let lowest_price = all_time.min_price.unwrap_or(new_price);
-    let highest_price = all_time.max_price.unwrap_or(new_price);
+    let lowest_price = stats.min_price.unwrap_or(new_price);
+    let highest_price = stats.max_price.unwrap_or(new_price);
     let average_price = stats.avg_price_30d.unwrap_or(new_price);
 
     // 2) 비즈니스 로직 계산
@@ -150,16 +142,11 @@ pub async fn refresh_product_stats(
     Ok(())
 }
 
-/// 30일 평균 + 최저가 기록일
+/// 30일 평균 + 전체 기간 최저/최고 + 최저가 기록일 (단일 CTE 쿼리 결과)
 #[derive(sqlx::FromRow)]
-struct PriceStats {
+struct CombinedStats {
     avg_price_30d: Option<i32>,
     lowest_date: Option<chrono::DateTime<chrono::Utc>>,
-}
-
-/// 전체 기간 최저/최고 쿼리 결과
-#[derive(sqlx::FromRow)]
-struct AllTimeStats {
     min_price: Option<i32>,
     max_price: Option<i32>,
 }
