@@ -14,9 +14,10 @@ pub async fn init_pool(database_url: &str) -> PgPool {
         match PgPoolOptions::new()
             .max_connections(10)
             .min_connections(2)
-            .acquire_timeout(Duration::from_secs(5))
-            .idle_timeout(Duration::from_secs(600))
+            .acquire_timeout(Duration::from_secs(15))
+            .idle_timeout(Duration::from_secs(300))
             .max_lifetime(Duration::from_secs(1800))
+            .test_before_acquire(true)
             .connect(database_url)
             .await
         {

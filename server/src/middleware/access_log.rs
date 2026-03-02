@@ -31,6 +31,15 @@ pub async fn access_log(
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
 
+    // JWT에서 user_id 추출 (인증되지 않은 요청은 None)
+    let user_id: Option<i64> = req
+        .headers()
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|h| h.strip_prefix("Bearer "))
+        .and_then(|t| crate::auth::jwt::decode_access_token(t, &state.config).ok())
+        .map(|c| c.sub);
+
     let response = next.run(req).await;
 
     let status_code = response.status().as_u16() as i16;
@@ -40,10 +49,11 @@ pub async fn access_log(
 
     tokio::spawn(async move {
         if let Err(e) = sqlx::query(
-            "INSERT INTO api_access_logs (ip_address, endpoint, method, status_code, user_agent, response_time_ms, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            "INSERT INTO api_access_logs (ip_address, user_id, endpoint, method, status_code, user_agent, response_time_ms, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
         )
         .bind(ip_net)
+        .bind(user_id)
         .bind(&endpoint)
         .bind(&method)
         .bind(status_code)

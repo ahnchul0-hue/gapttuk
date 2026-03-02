@@ -9,7 +9,7 @@ rust-version = "1.75"
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors", "request-id", "timeout", "compression-gzip", "set-header"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "request-id", "timeout", "compression-gzip", "compression-br", "set-header"] }
 
 # --- DB ---
 sqlx = { version = "0.8", features = [

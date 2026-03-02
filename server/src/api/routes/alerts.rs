@@ -5,7 +5,7 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::api::{ApiResponse, Created};
+use crate::api::{ApiResponse, Created, Deleted};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
 use crate::models::PriceAlert;
@@ -51,12 +51,12 @@ async fn list_alerts(
     Ok(ApiResponse::ok(AlertListResponse { price_alerts }))
 }
 
-/// DELETE /api/v1/alerts/:alert_type/:alert_id — 알림 삭제
+/// DELETE /api/v1/alerts/:alert_type/:alert_id — 알림 삭제 (204 No Content)
 async fn delete_alert(
     State(state): State<AppState>,
     Auth(claims): Auth,
     Path((alert_type, alert_id)): Path<(String, i64)>,
-) -> Result<ApiResponse<()>, AppError> {
+) -> Result<Deleted, AppError> {
     match alert_type.as_str() {
         "price" => {
             alert_service::delete_price_alert(&state.pool, claims.sub, alert_id).await?;
@@ -68,7 +68,7 @@ async fn delete_alert(
         }
     }
 
-    Ok(ApiResponse::ok(()))
+    Ok(Deleted)
 }
 
 /// PATCH /api/v1/alerts/:alert_type/:alert_id/toggle — 알림 토글

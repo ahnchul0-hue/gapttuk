@@ -5,7 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::api::{ApiResponse, Created};
+use crate::api::{ApiResponse, Created, Deleted};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
 use crate::models::{Platform, UserDevice};
@@ -97,12 +97,12 @@ async fn register_device(
     Ok(Created(DeviceResponse::from(device)))
 }
 
-/// DELETE /api/v1/devices/:device_id — 디바이스 삭제
+/// DELETE /api/v1/devices/:device_id — 디바이스 삭제 (204 No Content)
 async fn unregister_device(
     State(state): State<AppState>,
     Auth(claims): Auth,
     Path(device_id): Path<i64>,
-) -> Result<ApiResponse<()>, AppError> {
+) -> Result<Deleted, AppError> {
     let result =
         sqlx::query("DELETE FROM user_devices WHERE id = $1 AND user_id = $2")
             .bind(device_id)
@@ -114,7 +114,7 @@ async fn unregister_device(
         return Err(AppError::NotFound("디바이스".to_string()));
     }
 
-    Ok(ApiResponse::ok(()))
+    Ok(Deleted)
 }
 
 /// PATCH /api/v1/devices/:device_id/push — push_enabled 토글

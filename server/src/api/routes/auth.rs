@@ -103,8 +103,17 @@ async fn social_login(
     provider: AuthProvider,
     body: SocialLoginRequest,
 ) -> Result<Created<AuthResponse>, AppError> {
+    // 0. 입력 검증
+    let token = body.access_token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest("access_token이 비어있습니다".to_string()));
+    }
+    if token.len() > 4096 {
+        return Err(AppError::BadRequest("access_token이 너무 깁니다".to_string()));
+    }
+
     // 1. provider에서 사용자 정보 검증
-    let social_info = verify_social_token(&state, &provider, &body.access_token).await?;
+    let social_info = verify_social_token(&state, &provider, token).await?;
 
     // 2. 추천 코드로 추천인 조회 (있는 경우)
     let referred_by = if let Some(ref code) = body.referral_code {
@@ -116,35 +125,11 @@ async fn social_login(
     // 3. 추천 코드 생성 (신규 사용자용)
     let referral_code = auth_service::generate_referral_code(&state.pool).await?;
 
-    // 4. 사용자 upsert
+    // 4. 사용자 upsert (신규 시 user_points + referrals도 트랜잭션 내 원자적 생성)
     let (user, is_new_user) =
         auth_service::upsert_user(&state.pool, &social_info, &referral_code, referred_by).await?;
 
-    // 5. 추천 기록 저장 (신규 사용자 + 추천인이 있는 경우)
-    if is_new_user {
-        if let Some(referrer_id) = referred_by {
-            if let Some(ref code) = body.referral_code {
-                if let Err(e) = sqlx::query(
-                    "INSERT INTO referrals (referrer_id, referred_id, referral_code) VALUES ($1, $2, $3)"
-                )
-                .bind(referrer_id)
-                .bind(user.id)
-                .bind(code.as_str())
-                .execute(&state.pool)
-                .await
-                {
-                    tracing::warn!(
-                        referrer_id,
-                        referred_id = user.id,
-                        error = %e,
-                        "Failed to insert referral record"
-                    );
-                }
-            }
-        }
-    }
-
-    // 6. 토큰 쌍 생성
+    // 5. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;
 
     Ok(Created(AuthResponse {

@@ -52,11 +52,21 @@ pub async fn create_price_alert(
     user_id: i64,
     req: &CreatePriceAlertRequest,
 ) -> Result<PriceAlert, AppError> {
-    // TargetPrice는 target_price 필수
-    if matches!(req.alert_type, AlertTypeInput::TargetPrice) && req.target_price.is_none() {
-        return Err(AppError::BadRequest(
-            "target_price는 target_price 알림 유형에 필수입니다".to_string(),
-        ));
+    // TargetPrice는 target_price 필수 + 양수 검증
+    if matches!(req.alert_type, AlertTypeInput::TargetPrice) {
+        match req.target_price {
+            None => {
+                return Err(AppError::BadRequest(
+                    "target_price는 target_price 알림 유형에 필수입니다".to_string(),
+                ));
+            }
+            Some(tp) if tp <= 0 => {
+                return Err(AppError::BadRequest(
+                    "target_price는 1 이상이어야 합니다".to_string(),
+                ));
+            }
+            _ => {}
+        }
     }
 
     // 상품 존재 확인
@@ -174,7 +184,7 @@ pub async fn evaluate_price_alerts(
     push: &PushClient,
     product_id: i64,
     new_price: i32,
-) -> Result<usize, sqlx::Error> {
+) -> Result<usize, AppError> {
     // 1. 상품 통계 조회
     let stats = sqlx::query_as::<_, ProductStats>(
         "SELECT lowest_price, average_price, product_name FROM products WHERE id = $1",

@@ -66,6 +66,18 @@ pub async fn upsert_user(
             .execute(&mut *tx)
             .await?;
 
+        // 추천 기록 저장 (추천인이 있는 경우 — 같은 트랜잭션으로 원자성 보장)
+        if let Some(referrer_id) = referred_by {
+            sqlx::query(
+                "INSERT INTO referrals (referrer_id, referred_id, referral_code) VALUES ($1, $2, $3)",
+            )
+            .bind(referrer_id)
+            .bind(user.id)
+            .bind(referral_code)
+            .execute(&mut *tx)
+            .await?;
+        }
+
         tx.commit().await?;
         Ok((user, true))
     }

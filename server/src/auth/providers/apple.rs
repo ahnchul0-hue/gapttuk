@@ -74,7 +74,9 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     Ok(SocialUserInfo {
         provider: AuthProvider::Apple,
         provider_id: claims.sub,
-        email: claims.email.unwrap_or_default(),
+        email: claims.email.filter(|e| !e.is_empty()).ok_or(AppError::BadRequest(
+            "Apple 계정에서 이메일을 가져올 수 없습니다. 이메일 공유를 허용해 주세요.".to_string(),
+        ))?,
         nickname: None,
         profile_image_url: None,
     })

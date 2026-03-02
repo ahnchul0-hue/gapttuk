@@ -41,3 +41,12 @@ impl<T: Serialize> IntoResponse for Created<T> {
         (StatusCode::CREATED, Json(body)).into_response()
     }
 }
+
+/// 204 No Content 응답 (DELETE 엔드포인트용).
+pub struct Deleted;
+
+impl IntoResponse for Deleted {
+    fn into_response(self) -> Response {
+        StatusCode::NO_CONTENT.into_response()
+    }
+}

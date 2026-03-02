@@ -22,9 +22,11 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::{
+    compression::CompressionLayer,
     cors::CorsLayer,
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
     set_header::SetResponseHeaderLayer,
+    timeout::TimeoutLayer,
     trace::TraceLayer,
 };
 
@@ -69,7 +71,8 @@ async fn health_check(
     }))
 }
 
-/// graceful shutdown — Ctrl+C / SIGTERM 대기 + 30초 드레인 타임아웃
+/// graceful shutdown — Ctrl+C / SIGTERM 시그널 대기.
+/// 타임아웃은 main()의 `tokio::time::timeout()`으로 제어 — pool.close() 보장.
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
@@ -92,13 +95,6 @@ async fn shutdown_signal() {
         () = ctrl_c => tracing::info!("Ctrl+C received, shutting down..."),
         () = terminate => tracing::info!("SIGTERM received, shutting down..."),
     }
-
-    // 신호 수신 후 30초 watchdog — 드레인이 끝나지 않으면 강제 종료
-    tokio::spawn(async {
-        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-        tracing::warn!("Graceful shutdown timed out after 30s, forcing exit");
-        std::process::exit(1);
-    });
 }
 
 /// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
@@ -114,6 +110,10 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         let suffix = month.format("%Y_%m").to_string();
 
         for table in &["api_access_logs", "price_history"] {
+            // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
+            // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
+            debug_assert!(["api_access_logs", "price_history"].contains(table));
+            debug_assert!(suffix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
             let sql = format!(
                 "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
                  FOR VALUES FROM ('{start}') TO ('{next}')"
@@ -259,6 +259,19 @@ async fn main() {
             header::REFERRER_POLICY,
             HeaderValue::from_static("strict-origin-when-cross-origin"),
         ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::STRICT_TRANSPORT_SECURITY,
+            HeaderValue::from_static("max-age=63072000; includeSubDomains"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("permissions-policy"),
+            HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
+        ))
+        .layer(CompressionLayer::new())
+        .layer(TimeoutLayer::with_status_code(
+            axum::http::StatusCode::REQUEST_TIMEOUT,
+            std::time::Duration::from_secs(30),
+        ))
         .layer(cors_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state.clone());
@@ -332,18 +345,23 @@ async fn main() {
         .expect("Failed to bind address");
 
     // into_make_service_with_connect_info는 tower_governor PeerIpKeyExtractor에 필수
-    match axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
+    // timeout 래퍼로 셧다운 드레인 제한 — pool.close() 실행 보장
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown_signal()),
     )
-    .with_graceful_shutdown(shutdown_signal())
     .await
     {
-        Ok(()) => tracing::info!("Server shut down gracefully"),
-        Err(e) => tracing::error!(error = %e, "Server error"),
+        Ok(Ok(())) => tracing::info!("Server shut down gracefully"),
+        Ok(Err(e)) => tracing::error!(error = %e, "Server error"),
+        Err(_) => tracing::warn!("Graceful shutdown timed out after 30s"),
     }
 
-    // 11. 정리
+    // 11. 정리 — 타임아웃 시에도 반드시 실행되어 DB 커넥션 정리
     pool.close().await;
     tracing::info!("Cleanup complete, exiting");
 }
