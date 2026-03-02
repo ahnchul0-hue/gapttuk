@@ -37,6 +37,7 @@ scraper = "0.25"
 
 # --- Rate Limiting ---
 tower_governor = "0.8"
+governor = "0.10"
 
 # --- 스케줄러 ---
 tokio-cron-scheduler = "0.15"

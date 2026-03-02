@@ -56,8 +56,13 @@ pub struct AddProductByUrlRequest {
 // ── 라우터 ──────────────────────────────────────────────
 
 pub fn router() -> Router<AppState> {
-    Router::new()
+    // /search에만 별도 rate limiter 적용 (10 req/min per IP)
+    let search_route = Router::new()
         .route("/search", get(search))
+        .layer(crate::middleware::rate_limit::search_limiter());
+
+    Router::new()
+        .merge(search_route)
         .route("/url", post(add_by_url))
         .route("/popular", get(popular))
         .route("/{id}", get(get_product))

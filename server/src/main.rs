@@ -2,8 +2,10 @@ mod api;
 mod auth;
 mod cache;
 mod config;
+mod crawlers;
 mod db;
 mod error;
+mod middleware;
 mod models;
 mod services;
 
@@ -16,7 +18,12 @@ use axum::{extract::State, routing::get, Router};
 use serde::Serialize;
 use std::net::SocketAddr;
 use tokio::signal;
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
+    trace::TraceLayer,
+};
+
+use axum::http::HeaderName;
 
 /// 공유 애플리케이션 상태 — `State<AppState>`로 모든 핸들러에 전달.
 #[derive(Clone)]
@@ -90,6 +97,26 @@ async fn shutdown_signal() {
     });
 }
 
+/// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
+async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
+    let now = chrono::Utc::now().date_naive();
+    for offset in 0..=3i32 {
+        let month = now + chrono::Months::new(offset as u32);
+        let start = month.format("%Y-%m-01").to_string();
+        let next = (month + chrono::Months::new(1)).format("%Y-%m-01").to_string();
+        let suffix = month.format("%Y_%m").to_string();
+
+        for table in &["api_access_logs", "price_history"] {
+            let sql = format!(
+                "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
+                 FOR VALUES FROM ('{start}') TO ('{next}')"
+            );
+            sqlx::query(&sql).execute(pool).await?;
+        }
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // 1. tracing 초기화
@@ -128,7 +155,20 @@ async fn main() {
     let cache = AppCache::new();
     tracing::info!("Cache initialized (moka in-memory)");
 
-    // 5. AppState 조합
+    // 5. 크롤링 스케줄러 (Test 환경 skip)
+    if config.app_env != config::AppEnv::Test {
+        let crawler_service = std::sync::Arc::new(crawlers::CrawlerService::new(
+            pool.clone(),
+            cache.clone(),
+        ));
+        if let Err(e) = crawlers::scheduler::start_scheduler(crawler_service).await {
+            tracing::error!(error = %e, "Failed to start crawler scheduler");
+        }
+    } else {
+        tracing::info!("Skipping crawler scheduler in Test environment");
+    }
+
+    // 6. AppState 조합
     let http_client = reqwest::Client::new();
     let state = AppState {
         pool: pool.clone(),
@@ -137,16 +177,49 @@ async fn main() {
         http_client,
     };
 
-    // 6. Router
+    // 7. Router — 레이어 순서: 마지막 .layer()가 outermost
+    let x_request_id = HeaderName::from_static("x-request-id");
+
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
         .nest("/api/v1/products", api::routes::products::router())
+        // innermost → outermost 순서
+        .layer(middleware::rate_limit::global_limiter())
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::bot_guard::bot_guard,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::access_log::access_log,
+        ))
+        .layer(SetRequestIdLayer::new(
+            x_request_id.clone(),
+            MakeRequestUuid,
+        ))
+        .layer(PropagateRequestIdLayer::new(x_request_id))
         .layer(TraceLayer::new_for_http())
-        .with_state(state);
+        .with_state(state.clone());
 
-    // 7. 서버 시작
-    let addr: SocketAddr = format!("{}:{}", config.host, config.port)
+    // 8. 파티션 유지보수 (일일 크론)
+    if config.app_env != config::AppEnv::Test {
+        let partition_pool = pool.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(86400));
+            loop {
+                interval.tick().await;
+                if let Err(e) = ensure_partitions(&partition_pool).await {
+                    tracing::error!(error = %e, "Partition maintenance failed");
+                } else {
+                    tracing::info!("Partition maintenance completed");
+                }
+            }
+        });
+    }
+
+    // 9. 서버 시작
+    let addr: SocketAddr = format!("{}:{}", &config.host, config.port)
         .parse()
         .expect("Invalid host:port");
 
@@ -156,7 +229,7 @@ async fn main() {
         .await
         .expect("Failed to bind address");
 
-    // NOTE: into_make_service_with_connect_info는 tower_governor PeerIpKeyExtractor에 필수
+    // into_make_service_with_connect_info는 tower_governor PeerIpKeyExtractor에 필수
     match axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
@@ -168,7 +241,7 @@ async fn main() {
         Err(e) => tracing::error!(error = %e, "Server error"),
     }
 
-    // 8. 정리
+    // 10. 정리
     pool.close().await;
     tracing::info!("Cleanup complete, exiting");
 }
