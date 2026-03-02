@@ -25,22 +25,22 @@ impl AppCache {
         Self {
             blocked_ips: Cache::builder()
                 .time_to_live(Duration::from_secs(300)) // 5분
-                .max_capacity(10_000)
+                .max_capacity(5_000) // RAM↓: 10K→5K (차단 IP는 경량 bool)
                 .build(),
 
             categories: Cache::builder()
                 .time_to_live(Duration::from_secs(3600)) // 1시간
-                .max_capacity(100)
+                .max_capacity(100) // 카테고리는 고정 데이터, 유지
                 .build(),
 
             popular_searches: Cache::builder()
                 .time_to_live(Duration::from_secs(600)) // 10분
-                .max_capacity(10)
+                .max_capacity(10) // 유지 (극소량)
                 .build(),
 
             products: Cache::builder()
                 .time_to_live(Duration::from_secs(300)) // 5분
-                .max_capacity(10_000)
+                .max_capacity(3_000) // RAM↓: 10K→3K (Zipf 분포 상 히트율 90%+ 유지)
                 .build(),
         }
     }

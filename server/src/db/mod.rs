@@ -12,8 +12,8 @@ pub async fn init_pool(database_url: &str) -> PgPool {
     let pool = loop {
         attempts += 1;
         match PgPoolOptions::new()
-            .max_connections(10)
-            .min_connections(2)
+            .max_connections(5) // RAM↓: 10→5 (커넥션당 ~5-10MB 절약)
+            .min_connections(1) // RAM↓: 유휴 시 최소 1개만 유지
             .acquire_timeout(Duration::from_secs(15))
             .idle_timeout(Duration::from_secs(300))
             .max_lifetime(Duration::from_secs(1800))

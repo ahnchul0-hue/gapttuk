@@ -46,7 +46,7 @@ impl CrawlerService {
             cache,
             push_client,
             client,
-            semaphore: Arc::new(Semaphore::new(5)),
+            semaphore: Arc::new(Semaphore::new(8)), // CPU↑: 5→8 동시 크롤링
         }
     }
 

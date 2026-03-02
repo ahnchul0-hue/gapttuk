@@ -59,6 +59,9 @@ sha2 = "0.10"
 rand = "0.8"
 hex = "0.4"
 
+# --- 메모리 할당기 ---
+tikv-jemallocator = "0.6"
+
 # --- 유틸리티 ---
 dotenvy = "0.15"
 thiserror = "2"
@@ -67,3 +70,9 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rust_decimal = { version = "1", features = ["serde-with-str"] }
+
+[profile.release]
+lto = true              # Link-Time Optimization — 바이너리 크기↓ 성능↑
+codegen-units = 1       # 단일 코드젠 유닛 — 더 공격적 최적화 (빌드 느려짐)
+strip = true            # 디버그 심볼 제거 — 바이너리 크기↓↓
+opt-level = 3           # 최대 최적화 — CPU 강점 활용
