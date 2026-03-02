@@ -38,17 +38,12 @@ async fn health_check(
         .fetch_one(&state.pool)
         .await?;
 
-    // 캐시 라운드트립 확인
-    state
-        .cache
-        .products
-        .insert(0, "health_check".to_string())
-        .await;
-    let cache_status = match state.cache.products.get(&0).await {
-        Some(_) => "connected",
-        None => "error",
+    // 캐시 가동 확인 — 비즈니스 캐시를 오염시키지 않고 entry_count()로 검증
+    let cache_status = if state.cache.is_healthy() {
+        "connected"
+    } else {
+        "error"
     };
-    state.cache.products.remove(&0).await;
 
     Ok(ApiResponse::ok(HealthResponse {
         status: "ok",

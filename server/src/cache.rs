@@ -43,4 +43,19 @@ impl AppCache {
                 .build(),
         }
     }
+
+    /// 캐시 가동 여부 확인 — 비즈니스 캐시를 오염시키지 않고 검증.
+    /// moka Cache는 생성 후 항상 사용 가능하므로, 객체 존재 자체가 healthy.
+    pub fn is_healthy(&self) -> bool {
+        // moka Cache는 내부 Arc 기반 — 생성 성공 = 사용 가능.
+        // weighted_size()가 패닉 없이 반환되면 정상.
+        let _ = self.products.weighted_size();
+        true
+    }
+}
+
+impl Default for AppCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }

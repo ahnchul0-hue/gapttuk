@@ -10,7 +10,7 @@ use serde::Serialize;
 /// 통합 성공 응답 래퍼.
 /// 핸들러는 `Result<ApiResponse<T>, AppError>`를 반환한다.
 #[derive(Serialize)]
-pub struct ApiResponse<T: Serialize> {
+pub struct ApiResponse<T> {
     ok: bool,
     data: T,
 }
@@ -29,7 +29,7 @@ impl<T: Serialize> IntoResponse for ApiResponse<T> {
 }
 
 /// 201 Created 응답 (POST 엔드포인트용).
-pub struct Created<T: Serialize>(pub T);
+pub struct Created<T>(pub T);
 
 impl<T: Serialize> IntoResponse for Created<T> {
     fn into_response(self) -> Response {

@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct PaginationParams {
     pub cursor: Option<String>,
     #[serde(default = "default_limit")]
-    pub limit: i64,
+    limit: i64,
 }
 
 fn default_limit() -> i64 {
@@ -19,7 +19,8 @@ fn default_limit() -> i64 {
 }
 
 impl PaginationParams {
-    /// limit을 [1, 100] 범위로 제한.
+    /// limit을 [1, 100] 범위로 제한하여 반환.
+    /// 핸들러는 반드시 이 메서드를 통해 limit에 접근해야 한다.
     pub fn effective_limit(&self) -> i64 {
         self.limit.clamp(1, 100)
     }
@@ -28,7 +29,7 @@ impl PaginationParams {
 /// 페이지네이션 응답.
 /// 리스트 엔드포인트에서 `ApiResponse<Vec<T>>` 대신 사용한다.
 #[derive(Serialize)]
-pub struct PaginatedResponse<T: Serialize> {
+pub struct PaginatedResponse<T> {
     ok: bool,
     data: Vec<T>,
     cursor: Option<String>,

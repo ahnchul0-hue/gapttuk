@@ -3,7 +3,7 @@
 > **상태: DRAFT v0.6**
 > 작성일: 2026-03-01 | 갱신: 2026-03-02
 > 근거 문서: prd.md v0.7 | schema-design.md v0.7 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
-> **이 문서는 STEP 6까지 완료되었습니다. M1-1 구현 + 문서 최종 리뷰 반영 완료.**
+> **이 문서는 STEP 7까지 완료되었습니다. M1-2 에러 처리 + 공통 모듈 구현 완료.**
 
 ---
 
@@ -168,14 +168,14 @@ gapttuk/                             # 값뚝 프로젝트 루트
 | serde / serde_json | 직렬화 | 1.x |
 | jsonwebtoken | JWT | 9.x |
 | reqwest | HTTP 클라이언트 | 0.12.x |
-| scraper | HTML 파싱 | 0.22.x |
+| scraper | HTML 파싱 | 0.25.x |
 | tower_governor | Rate Limiting | 0.8.x |
 | tower-http | CORS + 공통 HTTP 미들웨어 | 0.6.x |
-| tokio-cron-scheduler | 스케줄러 | 0.13.x |
+| tokio-cron-scheduler | 스케줄러 | 0.15.x |
 | a2 | APNs 푸시 | 0.10.x |
-| fcm | FCM 푸시 | 0.9.x |
+| ~~fcm~~ | ~~FCM 푸시~~ | ~~0.9.x~~ (레거시 API 폐지, M1-8에서 fcm-v1 또는 reqwest 직접 호출로 교체) |
 | **moka** | **인메모리 캐시** | 0.12.x |
-| **sentry** | **에러 트래킹** | 0.35.x |
+| **sentry** | **에러 트래킹** | 0.37.x |
 | dotenvy | .env | 0.15.x |
 | thiserror | 에러 타입 | 2.x |
 | tracing | 로깅 | 0.1.x |
@@ -327,28 +327,28 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
                                        M1-7 (보안) ──────────────┘
 ```
 
-#### M1-1. 스캐폴딩 + DB 마이그레이션 (~3일)
-- [ ] `server/` Rust 프로젝트 생성
-- [ ] Cargo.toml 의존성 추가
-- [ ] config.rs — 환경변수 (DATABASE_URL, JWT_SECRET, COUPANG_API_KEY 등)
-- [ ] db/mod.rs — PgPool 초기화
-- [ ] `migrations/001_initial_schema.up.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
-- [ ] `migrations/002_seed_data.up.sql` — shopping_malls (2), categories (18)
-- [ ] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
-- [ ] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
+#### M1-1. 스캐폴딩 + DB 마이그레이션 (~3일) ✅
+- [x] `server/` Rust 프로젝트 생성
+- [x] Cargo.toml 의존성 추가
+- [x] config.rs — 환경변수 (DATABASE_URL, JWT_SECRET, COUPANG_API_KEY 등)
+- [x] db/mod.rs — PgPool 초기화
+- [x] `migrations/001_initial_schema.up.sql` — 24개 테이블 + 인덱스 + 파티셔닝 (subscriptions 제거, roulette_results + refresh_tokens 추가)
+- [x] `migrations/002_seed_data.up.sql` — shopping_malls (2), categories (18)
+- [x] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
+- [x] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
 
-- [ ] CORS 설정 — tower-http `CorsLayer` (dev: AllowAll, prod: 도메인 화이트리스트)
+- [ ] CORS 설정 — tower-http `CorsLayer` (dev: AllowAll, prod: 도메인 화이트리스트) → M1-4 전 적용 예정
 
-**DoD:** `cargo build` 성공 + `sqlx migrate run` 완료 + 24개 테이블 생성 확인
+**DoD:** `cargo build` 성공 + `sqlx migrate run` 완료 + 24개 테이블 생성 확인 ✅
 
-#### M1-2. 에러 처리 + 공통 (~2일)
-- [ ] error.rs — `AppError` (thiserror + IntoResponse). 에러 코드 체계: `AUTH_001`, `PRODUCT_001` 등
-- [ ] API 응답 포맷: `{ "ok": bool, "data": T, "error": { "code": string, "message": string }? }`
-- [ ] pagination.rs — Cursor 기반 페이지네이션: `{ "data": [], "cursor": "next_id", "has_more": bool }`
-- [ ] cache.rs — moka 캐시 초기화
-- [ ] tracing + sentry 초기화
+#### M1-2. 에러 처리 + 공통 (~2일) ✅
+- [x] error.rs — `AppError` (thiserror + IntoResponse). 에러 코드 체계: `AUTH_001~003`, `RESOURCE_001~002`, `VALIDATION_001`, `RATE_001`, `SECURITY_001`, `SYS_001~002`
+- [x] API 응답 포맷: `{ "ok": bool, "data": T, "error": { "code": string, "message": string }? }`
+- [x] pagination.rs — Cursor 기반 페이지네이션: `{ "data": [], "cursor": "next_id", "has_more": bool }`
+- [x] cache.rs — moka 캐시 초기화 (blocked_ips, categories, popular_searches, products)
+- [x] tracing + sentry 초기화 (TraceLayer + traces_sample_rate 0.2)
 
-**DoD:** 에러 응답 + 페이지네이션 + 캐시가 동작하는 /health 엔드포인트
+**DoD:** 에러 응답 + 페이지네이션 + 캐시가 동작하는 /health 엔드포인트 ✅
 
 #### M1-3. DB 모델 (~3일)
 - [ ] user.rs — users, user_devices
@@ -405,7 +405,9 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 크론 1회 실행 → 1,800개 상품 가격 수집 완료 + price_history 기록 확인
 
 #### M1-7. 보안 미들웨어 (~2일)
-- [ ] `axum::serve` → `into_make_service_with_connect_info::<SocketAddr>()` 전환 (tower_governor PeerIpKeyExtractor 필수)
+- [x] `axum::serve` → `into_make_service_with_connect_info::<SocketAddr>()` 전환 (tower_governor PeerIpKeyExtractor 필수) — M1-2에서 선 적용
+- [ ] `x-request-id` 전파 — `SetRequestIdLayer` + `PropagateRequestIdLayer` (tower-http request-id feature 활용)
+- [ ] Sentry tower layers — `NewSentryLayer` + `SentryHttpLayer` (sentry feature: `tower-axum-matched-path`)
 - [ ] rate_limit.rs — tower_governor (IP별 60req/min, 검색 10req/min)
 - [ ] bot_guard.rs — blocked_ips 조회 (moka 캐시 5분) + UA 블랙리스트
 - [ ] api_access_logs INSERT (비동기, 요청 흐름 미차단)
@@ -603,10 +605,11 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 
 | 프리픽스 | 범위 | 예시 |
 |---------|------|------|
-| AUTH_ | 인증/인가 | AUTH_001 토큰 만료, AUTH_002 권한 없음 |
-| PRODUCT_ | 상품 | PRODUCT_001 상품 없음, PRODUCT_002 잘못된 URL |
-| ALERT_ | 알림 | ALERT_001 알림 없음, ALERT_002 조건 오류 |
+| AUTH_ | 인증/인가 | AUTH_001 토큰 만료, AUTH_002 유효하지 않은 토큰, AUTH_003 인증 필요 |
+| RESOURCE_ | 리소스 | RESOURCE_001 리소스 없음 (상품/알림 등), RESOURCE_002 중복 리소스 |
+| VALIDATION_ | 입력 검증 | VALIDATION_001 잘못된 요청 (필드 누락, 형식 오류) |
 | RATE_ | 제한 | RATE_001 요청 초과 |
+| SECURITY_ | 보안 | SECURITY_001 접근 차단 (IP 블랙리스트) |
 | SYS_ | 시스템 | SYS_001 내부 오류, SYS_002 DB 오류 |
 
 ### Rate Limit 응답 헤더

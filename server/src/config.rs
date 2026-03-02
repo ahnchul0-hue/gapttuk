@@ -19,8 +19,9 @@ impl AppEnv {
     }
 }
 
-/// 전체 환경변수를 담는 설정 구조체
-#[derive(Debug, Clone)]
+/// 전체 환경변수를 담는 설정 구조체.
+/// Debug는 수동 구현 — jwt_secret, database_url 등 민감 정보를 로그에 노출하지 않음.
+#[derive(Clone)]
 pub struct Config {
     // --- 필수 ---
     pub database_url: String,
@@ -131,6 +132,19 @@ impl Config {
             fcm_service_account: optional("FCM_SERVICE_ACCOUNT"),
             sentry_dsn,
         }
+    }
+}
+
+impl std::fmt::Debug for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Config")
+            .field("app_env", &self.app_env)
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("database_url", &"[REDACTED]")
+            .field("jwt_secret", &"[REDACTED]")
+            .field("sentry_dsn", &self.sentry_dsn.as_ref().map(|_| "[SET]"))
+            .finish_non_exhaustive()
     }
 }
 
