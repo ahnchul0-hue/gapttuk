@@ -39,13 +39,7 @@ pub enum AppError {
     #[error("{0}")]
     BadRequest(String),
 
-    #[error("{0}")]
-    Conflict(String),
-
     // --- 보안 (M1-7) ---
-    #[error("요청이 너무 많습니다")]
-    RateLimited,
-
     #[error("접근이 차단되었습니다")]
     Forbidden,
 
@@ -70,10 +64,7 @@ impl IntoResponse for AppError {
             AppError::BadRequest(_) => {
                 (StatusCode::BAD_REQUEST, "VALIDATION_001", self.to_string())
             }
-            AppError::Conflict(_) => (StatusCode::CONFLICT, "RESOURCE_002", self.to_string()),
-
-            // RATE_ / SECURITY_
-            AppError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "RATE_001", self.to_string()),
+            // SECURITY_
             AppError::Forbidden => (StatusCode::FORBIDDEN, "SECURITY_001", self.to_string()),
 
             // SYS_
@@ -142,18 +133,6 @@ mod tests {
     }
 
     #[test]
-    fn conflict_status_409() {
-        let resp = AppError::Conflict("이미 존재".to_string()).into_response();
-        assert_eq!(resp.status(), StatusCode::CONFLICT);
-    }
-
-    #[test]
-    fn rate_limited_status_429() {
-        let resp = AppError::RateLimited.into_response();
-        assert_eq!(resp.status(), StatusCode::TOO_MANY_REQUESTS);
-    }
-
-    #[test]
     fn forbidden_status_403() {
         let resp = AppError::Forbidden.into_response();
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
@@ -176,7 +155,6 @@ mod tests {
             AppError::NotFound("상품".to_string()).to_string(),
             "상품을(를) 찾을 수 없습니다"
         );
-        assert_eq!(AppError::RateLimited.to_string(), "요청이 너무 많습니다");
         assert_eq!(AppError::Forbidden.to_string(), "접근이 차단되었습니다");
     }
 }

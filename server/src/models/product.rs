@@ -45,17 +45,6 @@ pub struct Product {
     pub updated_at: DateTime<Utc>,
 }
 
-/// shopping_malls 테이블
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub struct ShoppingMall {
-    pub id: i32,
-    pub name: String,
-    pub code: String,
-    pub base_url: String,
-    pub is_active: bool,
-    pub created_at: DateTime<Utc>,
-}
-
 /// categories 테이블
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Category {
