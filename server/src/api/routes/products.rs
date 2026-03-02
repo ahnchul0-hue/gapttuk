@@ -90,6 +90,11 @@ async fn search(
     if q.is_empty() {
         return Err(AppError::BadRequest("검색어를 입력해주세요".to_string()));
     }
+    if q.chars().count() < 2 {
+        return Err(AppError::BadRequest(
+            "검색어는 2자 이상 입력해주세요".to_string(),
+        ));
+    }
     if q.len() > 100 {
         return Err(AppError::BadRequest(
             "검색어는 100자 이하로 입력해주세요".to_string(),

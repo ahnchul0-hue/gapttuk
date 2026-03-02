@@ -7,7 +7,7 @@ use gapttuk_server::{api, config, crawlers, db, health_check, middleware, push, 
 use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderName, HeaderValue, Method, StatusCode};
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
-use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::signal;
@@ -83,8 +83,8 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         for table in &["api_access_logs", "price_history"] {
             // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
             // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
-            debug_assert!(["api_access_logs", "price_history"].contains(table));
-            debug_assert!(suffix
+            assert!(["api_access_logs", "price_history"].contains(table));
+            assert!(suffix
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '_'));
             let sql = format!(
@@ -133,8 +133,15 @@ async fn main() {
         ))
     });
 
-    // Prometheus 메트릭 레코더 설치
+    // Prometheus 메트릭 레코더 설치 — HTTP 히스토그램에 30s 버킷 추가 (TimeoutLayer 경계)
     let prometheus_handle = PrometheusBuilder::new()
+        .set_buckets_for_metric(
+            Matcher::Full("http_request_duration_seconds".to_string()),
+            &[
+                0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0,
+            ],
+        )
+        .expect("valid histogram buckets")
         .install_recorder()
         .expect("Failed to install Prometheus recorder");
 
@@ -146,14 +153,17 @@ async fn main() {
     );
 
     // 3. DB 연결 + 마이그레이션
-    let pool = db::init_pool(&config.database_url).await;
+    let pool = db::init_pool(&config.database_url, config.database_max_connections).await;
 
     // 4. 캐시 초기화
     let cache = AppCache::new();
     tracing::info!("Cache initialized (moka in-memory)");
 
     // 5. 푸시 클라이언트 초기화
-    let http_client = reqwest::Client::new();
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to build HTTP client");
     let push_client = Arc::new(push::PushClient::new(&config, http_client.clone()));
 
     // 6. 크롤링 스케줄러 (Test 환경 skip)
@@ -185,17 +195,22 @@ async fn main() {
     let x_request_id = HeaderName::from_static("x-request-id");
     let (global_governor_layer, global_governor_config) = middleware::rate_limit::global_limiter();
 
-    // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어, 미설정 시 Dev에서만 전체 허용
+    // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어. Prod에서 미설정 시 cross-origin 전면 차단.
     let cors_layer = if config.allowed_origins.is_empty() {
         if config.app_env == config::AppEnv::Prod {
             tracing::warn!(
-                "ALLOWED_ORIGINS not set in Prod — CORS will reject cross-origin requests"
+                "ALLOWED_ORIGINS not set in Prod — all cross-origin requests will be blocked"
             );
         }
-        CorsLayer::new()
-            .allow_origin(tower_http::cors::Any)
+        // Dev/Test: 전체 허용, Prod: 빈 origin 목록으로 차단
+        let base = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
-            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
+        if config.app_env == config::AppEnv::Prod {
+            base
+        } else {
+            base.allow_origin(tower_http::cors::Any)
+        }
     } else {
         let origins: Vec<HeaderValue> = config
             .allowed_origins
@@ -213,7 +228,10 @@ async fn main() {
         .route("/health", get(health_check))
         .route("/metrics", get(metrics_handler))
         .layer(axum::Extension(prometheus_handle))
-        .nest("/api/v1/auth", api::routes::auth::router())
+        .nest(
+            "/api/v1/auth",
+            api::routes::auth::router().layer(middleware::rate_limit::auth_limiter()),
+        )
         .nest("/api/v1/products", api::routes::products::router())
         .nest("/api/v1/devices", api::routes::devices::router())
         .nest("/api/v1/alerts", api::routes::alerts::router())
@@ -258,6 +276,10 @@ async fn main() {
             HeaderName::from_static("permissions-policy"),
             HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
         ))
+        .layer(SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("content-security-policy"),
+            HeaderValue::from_static("default-src 'none'"),
+        ))
         .layer(CompressionLayer::new())
         .layer(TimeoutLayer::with_status_code(
             axum::http::StatusCode::REQUEST_TIMEOUT,
@@ -271,7 +293,7 @@ async fn main() {
     if config.app_env != config::AppEnv::Test {
         // 9a. 파티션 유지보수 (일일)
         let partition_pool = pool.clone();
-        tokio::spawn(async move {
+        let h_partition = tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(86400));
             loop {
                 interval.tick().await;
@@ -287,7 +309,7 @@ async fn main() {
         // 내부 HashMap에 IP별 상태가 무한 누적되므로 주기적 GC 필요.
         // 시작 직후 빈 맵 GC는 무의미하므로 interval_at으로 1시간 후부터 시작.
         let gc_period = std::time::Duration::from_secs(3600);
-        tokio::spawn(async move {
+        let h_gc = tokio::spawn(async move {
             let mut interval =
                 tokio::time::interval_at(tokio::time::Instant::now() + gc_period, gc_period);
             loop {
@@ -301,7 +323,7 @@ async fn main() {
         // 만료됐거나 revoke된 토큰을 주기적으로 삭제하여 테이블 비대화 방지.
         let purge_pool = pool.clone();
         let purge_period = std::time::Duration::from_secs(6 * 3600);
-        tokio::spawn(async move {
+        let h_purge = tokio::spawn(async move {
             let mut interval =
                 tokio::time::interval_at(tokio::time::Instant::now() + purge_period, purge_period);
             loop {
@@ -320,6 +342,24 @@ async fn main() {
                     }
                     Err(e) => tracing::warn!(error = %e, "Refresh token purge failed"),
                 }
+            }
+        });
+
+        // 9d. 백그라운드 태스크 패닉 감시 — 무한 루프 태스크가 종료되면 에러 로그
+        tokio::spawn(async move {
+            tokio::select! {
+                result = h_partition => match result {
+                    Ok(()) => tracing::error!("Partition maintenance task exited unexpectedly"),
+                    Err(e) => tracing::error!(error = %e, "Partition maintenance task panicked"),
+                },
+                result = h_gc => match result {
+                    Ok(()) => tracing::error!("Governor GC task exited unexpectedly"),
+                    Err(e) => tracing::error!(error = %e, "Governor GC task panicked"),
+                },
+                result = h_purge => match result {
+                    Ok(()) => tracing::error!("Token purge task exited unexpectedly"),
+                    Err(e) => tracing::error!(error = %e, "Token purge task panicked"),
+                },
             }
         });
     }

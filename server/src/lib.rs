@@ -46,6 +46,7 @@ pub async fn health_check(
         .await?;
 
     let cache_status = if state.cache.is_healthy() {
+        state.cache.report_metrics();
         "connected"
     } else {
         "error"

@@ -82,6 +82,14 @@ fn is_bot_ua(ua: &str) -> bool {
         "libwww-perl",
         "mechanize",
         "scrapy",
+        "headlesschrome",
+        "phantomjs",
+        "selenium",
+        "puppeteer",
+        "playwright",
+        "axios/",
+        "node-fetch",
+        "httpx",
     ];
     BOT_PATTERNS.iter().any(|p| ua_lower.contains(p))
 }

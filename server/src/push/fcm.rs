@@ -77,7 +77,8 @@ impl FcmClient {
         })
     }
 
-    /// 푸시 전송. 내부적으로 OAuth2 토큰을 캐싱/갱신.
+    /// 푸시 전송 (429/5xx 시 최대 3회 재시도 + exponential backoff).
+    /// 404(UNREGISTERED) 및 4xx 클라이언트 에러는 즉시 반환.
     pub async fn send(
         &self,
         device_token: &str,
@@ -109,28 +110,54 @@ impl FcmClient {
             self.project_id
         );
 
-        let resp = self
-            .http
-            .post(&url)
-            .bearer_auth(&access_token)
-            .json(&req)
-            .send()
-            .await
-            .map_err(|e| FcmError::Send(e.to_string()))?;
+        const MAX_RETRIES: u32 = 3;
+        let mut last_err = None;
 
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-
-            // 404 = UNREGISTERED / NOT_FOUND — 토큰이 영구 무효
-            if status == reqwest::StatusCode::NOT_FOUND {
-                return Err(FcmError::InvalidToken(format!("FCM {status}: {body}")));
+        for attempt in 0..MAX_RETRIES {
+            if attempt > 0 {
+                // Exponential backoff: 1s, 2s, 4s + jitter 0~500ms
+                let base_ms = 1000u64 << attempt;
+                let jitter_ms = rand::Rng::gen_range(&mut rand::thread_rng(), 0..500u64);
+                tokio::time::sleep(Duration::from_millis(base_ms + jitter_ms)).await;
             }
 
-            return Err(FcmError::Send(format!("FCM {status}: {body}")));
+            let resp = match self
+                .http
+                .post(&url)
+                .bearer_auth(&access_token)
+                .json(&req)
+                .send()
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    last_err = Some(FcmError::Send(e.to_string()));
+                    continue;
+                }
+            };
+
+            if resp.status().is_success() {
+                return Ok(());
+            }
+
+            let status = resp.status();
+            let resp_body = resp.text().await.unwrap_or_default();
+
+            // 404 = UNREGISTERED — 토큰 영구 무효, 재시도 불필요
+            if status == reqwest::StatusCode::NOT_FOUND {
+                return Err(FcmError::InvalidToken(format!("FCM {status}: {resp_body}")));
+            }
+
+            // 4xx (400/401/403) = client error — 재시도 불필요
+            if status.is_client_error() {
+                return Err(FcmError::Send(format!("FCM {status}: {resp_body}")));
+            }
+
+            // 429/5xx = retryable
+            last_err = Some(FcmError::Send(format!("FCM {status}: {resp_body}")));
         }
 
-        Ok(())
+        Err(last_err.unwrap_or_else(|| FcmError::Send("FCM send failed after retries".into())))
     }
 
     /// OAuth2 access token 획득 (캐싱, 만료 5분 전 갱신).

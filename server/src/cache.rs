@@ -45,6 +45,16 @@ impl AppCache {
         let _ = self.products.weighted_size();
         true
     }
+
+    /// Prometheus gauge에 캐시 엔트리 수를 보고. O(1) — health_check에서 호출 적합.
+    pub fn report_metrics(&self) {
+        metrics::gauge!("cache_entries", "name" => "blocked_ips")
+            .set(self.blocked_ips.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "popular_searches")
+            .set(self.popular_searches.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "products")
+            .set(self.products.entry_count() as f64);
+    }
 }
 
 impl Default for AppCache {

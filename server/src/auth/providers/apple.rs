@@ -1,5 +1,8 @@
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::Deserialize;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 
 use super::SocialUserInfo;
 use crate::error::AppError;
@@ -14,16 +17,67 @@ struct AppleClaims {
 }
 
 /// Apple JWKS 응답
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct AppleJwks {
     keys: Vec<AppleJwk>,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct AppleJwk {
     kid: String,
     n: String,
     e: String,
+}
+
+// ── JWKS 캐시 (24시간 TTL, double-check locking) ──────────
+
+struct CachedJwks {
+    jwks: AppleJwks,
+    fetched_at: Instant,
+}
+
+const JWKS_CACHE_TTL: Duration = Duration::from_secs(24 * 3600);
+
+fn jwks_cache() -> &'static RwLock<Option<CachedJwks>> {
+    static CACHE: OnceLock<RwLock<Option<CachedJwks>>> = OnceLock::new();
+    CACHE.get_or_init(|| RwLock::new(None))
+}
+
+/// Apple JWKS 캐시 조회/갱신. 24시간 TTL, double-check locking으로 thundering herd 방지.
+async fn get_apple_jwks(client: &reqwest::Client) -> Result<AppleJwks, AppError> {
+    // Fast path: read lock
+    {
+        let guard = jwks_cache().read().await;
+        if let Some(ref cached) = *guard {
+            if cached.fetched_at.elapsed() < JWKS_CACHE_TTL {
+                return Ok(cached.jwks.clone());
+            }
+        }
+    }
+
+    // Slow path: write lock + double-check
+    let mut guard = jwks_cache().write().await;
+    if let Some(ref cached) = *guard {
+        if cached.fetched_at.elapsed() < JWKS_CACHE_TTL {
+            return Ok(cached.jwks.clone());
+        }
+    }
+
+    let jwks: AppleJwks = client
+        .get("https://appleid.apple.com/auth/keys")
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Apple JWKS fetch failed: {e}")))?
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Apple JWKS parse failed: {e}")))?;
+
+    *guard = Some(CachedJwks {
+        jwks: jwks.clone(),
+        fetched_at: Instant::now(),
+    });
+
+    Ok(jwks)
 }
 
 /// Apple id_token (JWT) 검증.
@@ -34,16 +88,8 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     let header = jsonwebtoken::decode_header(id_token).map_err(|_| AppError::TokenInvalid)?;
     let kid = header.kid.ok_or(AppError::TokenInvalid)?;
 
-    // 2. Apple JWKS 가져오기
-    let jwks: AppleJwks = state
-        .http_client
-        .get("https://appleid.apple.com/auth/keys")
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Apple JWKS fetch failed: {e}")))?
-        .json()
-        .await
-        .map_err(|e| AppError::Internal(format!("Apple JWKS parse failed: {e}")))?;
+    // 2. Apple JWKS 가져오기 (24시간 캐싱)
+    let jwks = get_apple_jwks(&state.http_client).await?;
 
     // 3. kid에 매칭되는 키 찾기
     let jwk = jwks

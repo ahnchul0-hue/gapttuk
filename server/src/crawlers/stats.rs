@@ -156,7 +156,7 @@ struct CombinedStats {
 pub async fn refresh_popular_searches(pool: &sqlx::PgPool) -> Result<u64, sqlx::Error> {
     let mut tx = pool.begin().await?;
 
-    sqlx::query("TRUNCATE popular_searches")
+    sqlx::query("DELETE FROM popular_searches")
         .execute(&mut *tx)
         .await?;
 

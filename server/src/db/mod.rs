@@ -5,14 +5,14 @@ use std::time::Duration;
 ///
 /// 연결 실패 시 3회 재시도 (5초 간격).
 /// 마이그레이션 실패 시 서버 종료.
-pub async fn init_pool(database_url: &str) -> PgPool {
+pub async fn init_pool(database_url: &str, max_connections: u32) -> PgPool {
     let mut attempts = 0;
     let max_attempts = 3;
 
     let pool = loop {
         attempts += 1;
         match PgPoolOptions::new()
-            .max_connections(5) // RAM↓: 10→5 (커넥션당 ~5-10MB 절약)
+            .max_connections(max_connections)
             .min_connections(1) // RAM↓: 유휴 시 최소 1개만 유지
             .acquire_timeout(Duration::from_secs(15))
             .idle_timeout(Duration::from_secs(300))

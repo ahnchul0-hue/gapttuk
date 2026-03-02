@@ -26,6 +26,7 @@ pub struct Config {
     // --- 필수 ---
     pub database_url: String,
     pub jwt_secret: String,
+    pub database_max_connections: u32,
 
     // --- 서버 ---
     pub app_env: AppEnv,
@@ -118,6 +119,10 @@ impl Config {
         Self {
             database_url,
             jwt_secret,
+            database_max_connections: env::var("DATABASE_MAX_CONNECTIONS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(5),
             app_env,
             host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
             port,
@@ -181,6 +186,36 @@ fn parse_u64(key: &str, default: u64) -> u64 {
         .unwrap_or(default)
 }
 
+/// 유닛 테스트용 Config — 환경변수 없이 기본값으로 구성.
+/// jwt.rs 등 크레이트 내부 테스트에서 공용으로 사용.
+#[cfg(test)]
+pub fn test_config() -> Config {
+    Config {
+        database_url: String::new(),
+        jwt_secret: "test-secret-key-at-least-32-chars-long!!".to_string(),
+        database_max_connections: 5,
+        app_env: AppEnv::Test,
+        host: "127.0.0.1".to_string(),
+        port: 8080,
+        jwt_access_ttl_secs: 1800,
+        jwt_refresh_ttl_secs: 604_800,
+        coupang_access_key: None,
+        coupang_secret_key: None,
+        naver_client_id: None,
+        naver_client_secret: None,
+        kakao_rest_api_key: None,
+        google_client_id: None,
+        apple_client_id: None,
+        apns_key_path: None,
+        apns_key_id: None,
+        apns_team_id: None,
+        fcm_service_account: None,
+        allowed_origins: vec![],
+        sentry_dsn: None,
+        crawl_on_start: false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +250,7 @@ mod tests {
         let config = Config {
             database_url: "postgres://secret@localhost/db".to_string(),
             jwt_secret: "super-secret-key-that-should-not-appear".to_string(),
+            database_max_connections: 5,
             app_env: AppEnv::Dev,
             host: "0.0.0.0".to_string(),
             port: 8080,

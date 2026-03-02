@@ -10,6 +10,7 @@ use crate::AppState;
 struct GoogleUserInfo {
     sub: String,
     email: Option<String>,
+    email_verified: Option<bool>,
     name: Option<String>,
     picture: Option<String>,
 }
@@ -33,6 +34,12 @@ pub async fn verify(state: &AppState, access_token: &str) -> Result<SocialUserIn
         .json()
         .await
         .map_err(|e| AppError::Internal(format!("Google response parse failed: {e}")))?;
+
+    if body.email_verified != Some(true) {
+        return Err(AppError::BadRequest(
+            "이메일 인증이 완료되지 않은 구글 계정입니다".to_string(),
+        ));
+    }
 
     let email = body.email.ok_or(AppError::Unauthorized)?;
 

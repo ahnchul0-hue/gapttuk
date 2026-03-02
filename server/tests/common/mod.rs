@@ -10,6 +10,7 @@ pub fn test_config() -> Config {
     Config {
         database_url: String::new(),
         jwt_secret: "test-secret-key-at-least-32-chars-long!!".to_string(),
+        database_max_connections: 5,
         app_env: config::AppEnv::Test,
         host: "127.0.0.1".to_string(),
         port: 8080,

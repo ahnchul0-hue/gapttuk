@@ -46,6 +46,20 @@ pub fn search_limiter() -> HeaderLayer {
     GovernorLayer::new(config).error_handler(json_error_response)
 }
 
+/// 인증 전용 Rate Limiter — 15 req/min per IP (브루트포스 방지).
+/// `per_second(4)` = 4초마다 토큰 1개, `burst_size(3)` = 최대 3개 누적.
+/// SmartIpKeyExtractor로 프록시 환경에서도 실제 클라이언트 IP 기반 제한.
+pub fn auth_limiter() -> HeaderLayer {
+    let config = GovernorConfigBuilder::default()
+        .key_extractor(SmartIpKeyExtractor)
+        .per_second(4)
+        .burst_size(3)
+        .use_headers()
+        .finish()
+        .expect("valid governor config");
+    GovernorLayer::new(config).error_handler(json_error_response)
+}
+
 /// GovernorError를 AppError JSON 포맷으로 변환.
 /// 기본 tower_governor 응답은 plain text이므로 커스텀 핸들러가 필수.
 fn json_error_response(err: GovernorError) -> axum::http::Response<axum::body::Body> {

@@ -48,7 +48,7 @@ pub fn decode_access_token(token: &str, config: &Config) -> Result<Claims, AppEr
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(config.jwt_secret.as_bytes()),
-        &Validation::default(),
+        &Validation::new(jsonwebtoken::Algorithm::HS256),
     )
     .map_err(|e| match e.kind() {
         jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
@@ -76,29 +76,7 @@ mod tests {
     use super::*;
 
     fn test_config() -> Config {
-        Config {
-            database_url: String::new(),
-            jwt_secret: "test-secret-key-at-least-32-chars-long!!".to_string(),
-            app_env: crate::config::AppEnv::Test,
-            host: "127.0.0.1".to_string(),
-            port: 8080,
-            jwt_access_ttl_secs: 1800,
-            jwt_refresh_ttl_secs: 604_800,
-            coupang_access_key: None,
-            coupang_secret_key: None,
-            naver_client_id: None,
-            naver_client_secret: None,
-            kakao_rest_api_key: None,
-            google_client_id: None,
-            apple_client_id: None,
-            apns_key_path: None,
-            apns_key_id: None,
-            apns_team_id: None,
-            fcm_service_account: None,
-            allowed_origins: vec![],
-            sentry_dsn: None,
-            crawl_on_start: false,
-        }
+        crate::config::test_config()
     }
 
     #[test]
