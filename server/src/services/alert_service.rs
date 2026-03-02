@@ -7,6 +7,14 @@ use crate::push::PushClient;
 
 use super::notification_service;
 
+// ── 상수 ────────────────────────────────────────────────
+
+/// 사용자당 가격 알림 최대 개수
+const MAX_ALERTS_PER_USER: i64 = 50;
+
+/// NearLowest 조건: 역대 최저가 대비 이 배율 이내
+const NEAR_LOWEST_THRESHOLD: f64 = 1.05;
+
 // ── 요청 DTO ────────────────────────────────────────────
 
 #[derive(Deserialize)]
@@ -69,9 +77,9 @@ pub async fn create_price_alert(
     .fetch_one(pool)
     .await?;
 
-    if count >= 50 {
+    if count >= MAX_ALERTS_PER_USER {
         return Err(AppError::BadRequest(
-            "가격 알림은 최대 50개까지 설정할 수 있습니다".to_string(),
+            format!("가격 알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"),
         ));
     }
 
@@ -196,6 +204,7 @@ pub async fn evaluate_price_alerts(
     .await?;
 
     let mut triggered = 0usize;
+    let deep_link = format!("gapttuk://product/{}", product_id);
 
     for alert in &alerts {
         let should_trigger = evaluate_condition(
@@ -210,16 +219,27 @@ pub async fn evaluate_price_alerts(
             continue;
         }
 
-        // 3. last_triggered_at 갱신
-        sqlx::query("UPDATE price_alerts SET last_triggered_at = NOW() WHERE id = $1")
-            .bind(alert.id)
-            .execute(pool)
-            .await?;
+        // 3. Atomic last_triggered_at 갱신 (TOCTOU 방어 — 동시 실행 시 중복 트리거 방지)
+        let claimed = sqlx::query_scalar::<_, i64>(
+            r#"
+            UPDATE price_alerts
+            SET last_triggered_at = NOW()
+            WHERE id = $1
+              AND (last_triggered_at IS NULL OR last_triggered_at < NOW() - INTERVAL '1 hour')
+            RETURNING id
+            "#,
+        )
+        .bind(alert.id)
+        .fetch_optional(pool)
+        .await?;
+
+        if claimed.is_none() {
+            continue; // 다른 프로세스가 이미 트리거함
+        }
 
         // 4. 알림 생성 + 푸시 전송
         let title = format_alert_title(&alert.alert_type, product_name);
         let body = format_alert_body(&alert.alert_type, new_price, alert.target_price);
-        let deep_link = format!("gapttuk://product/{}", product_id);
 
         if let Err(e) = notification_service::create_and_push(
             pool,
@@ -270,9 +290,9 @@ fn evaluate_condition(
             average_price.map_or(false, |avg| new_price < avg)
         }
         AlertType::NearLowest => {
-            // 역대 최저가의 105% 이내
+            // 역대 최저가의 NEAR_LOWEST_THRESHOLD(105%) 이내
             lowest_price.map_or(false, |lowest| {
-                let threshold = (lowest as f64 * 1.05) as i32;
+                let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD) as i32;
                 new_price <= threshold
             })
         }

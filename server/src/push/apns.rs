@@ -77,6 +77,14 @@ impl ApnsClient {
             .await
             .map_err(|e| ApnsError::Send(format!("APNs send failed: {e}")))?;
 
+        // 410 = Unregistered — 토큰이 영구 무효
+        if response.code == 410 {
+            return Err(ApnsError::InvalidToken(format!(
+                "APNs 410 Unregistered: {:?}",
+                response.error
+            )));
+        }
+
         if response.code != 200 {
             return Err(ApnsError::Send(format!(
                 "APNs error {}: {:?}",
@@ -94,4 +102,8 @@ pub enum ApnsError {
     Config(String),
     #[error("APNs send error: {0}")]
     Send(String),
+    /// 디바이스 토큰이 영구 무효 — BadDeviceToken(400) 또는 Unregistered(410).
+    /// 호출자는 해당 토큰을 DB에서 비활성화해야 한다.
+    #[error("APNs invalid token: {0}")]
+    InvalidToken(String),
 }

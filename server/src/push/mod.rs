@@ -102,3 +102,15 @@ pub enum PushError {
     #[error(transparent)]
     Apns(#[from] apns::ApnsError),
 }
+
+impl PushError {
+    /// 디바이스 토큰이 영구 무효인 에러인지 확인.
+    /// true이면 호출자는 해당 토큰을 DB에서 비활성화해야 한다.
+    pub fn is_invalid_token(&self) -> bool {
+        matches!(
+            self,
+            PushError::Fcm(fcm::FcmError::InvalidToken(_))
+                | PushError::Apns(apns::ApnsError::InvalidToken(_))
+        )
+    }
+}

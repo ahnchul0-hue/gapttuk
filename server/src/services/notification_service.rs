@@ -47,13 +47,28 @@ pub async fn create_and_push(
             .send(&device.platform, &device.device_token, title, body, deep_link)
             .await
         {
-            tracing::warn!(
-                user_id,
-                device_id = device.id,
-                platform = ?device.platform,
-                error = %e,
-                "Push delivery failed"
-            );
+            // 토큰이 영구 무효(FCM UNREGISTERED / APNs 410)이면 디바이스 비활성화
+            if e.is_invalid_token() {
+                tracing::info!(
+                    device_id = device.id,
+                    platform = ?device.platform,
+                    "Device token invalid — deactivating"
+                );
+                let _ = sqlx::query(
+                    "UPDATE user_devices SET push_enabled = FALSE, updated_at = NOW() WHERE id = $1",
+                )
+                .bind(device.id)
+                .execute(pool)
+                .await;
+            } else {
+                tracing::warn!(
+                    user_id,
+                    device_id = device.id,
+                    platform = ?device.platform,
+                    error = %e,
+                    "Push delivery failed"
+                );
+            }
         }
     }
 

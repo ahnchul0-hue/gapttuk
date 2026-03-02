@@ -121,6 +121,12 @@ impl FcmClient {
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
+
+            // 404 = UNREGISTERED / NOT_FOUND — 토큰이 영구 무효
+            if status == reqwest::StatusCode::NOT_FOUND {
+                return Err(FcmError::InvalidToken(format!("FCM {status}: {body}")));
+            }
+
             return Err(FcmError::Send(format!("FCM {status}: {body}")));
         }
 
@@ -209,4 +215,8 @@ pub enum FcmError {
     Config(String),
     #[error("FCM send error: {0}")]
     Send(String),
+    /// 디바이스 토큰이 영구 무효 — UNREGISTERED(404) 또는 NOT_FOUND.
+    /// 호출자는 해당 토큰을 DB에서 비활성화해야 한다.
+    #[error("FCM invalid token: {0}")]
+    InvalidToken(String),
 }
