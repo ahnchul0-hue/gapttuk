@@ -1,31 +1,12 @@
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-mod api;
-mod auth;
-mod cache;
-mod config;
-mod crawlers;
-mod db;
-mod error;
-mod middleware;
-mod models;
-mod push;
-mod services;
-
-use api::ApiResponse;
-use cache::AppCache;
-use config::Config;
-use error::AppError;
+use gapttuk_server::cache::AppCache;
+use gapttuk_server::{api, config, crawlers, db, health_check, middleware, push, AppState};
 
 use axum::http::{header, HeaderName, HeaderValue, Method};
-use axum::{
-    extract::{DefaultBodyLimit, State},
-    routing::get,
-    Router,
-};
+use axum::{extract::DefaultBodyLimit, routing::get, Router};
 use metrics_exporter_prometheus::PrometheusBuilder;
-use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::signal;
@@ -37,47 +18,6 @@ use tower_http::{
     timeout::TimeoutLayer,
     trace::TraceLayer,
 };
-
-/// 공유 애플리케이션 상태 — `State<AppState>`로 모든 핸들러에 전달.
-#[derive(Clone)]
-pub struct AppState {
-    pub pool: sqlx::PgPool,
-    pub cache: AppCache,
-    pub config: Config,
-    pub http_client: reqwest::Client,
-    pub push_client: Arc<push::PushClient>,
-}
-
-/// /health 응답 페이로드
-#[derive(Serialize)]
-struct HealthResponse {
-    status: &'static str,
-    db: &'static str,
-    cache: &'static str,
-}
-
-/// GET /health — 헬스체크 (DB + 캐시 검증)
-async fn health_check(
-    State(state): State<AppState>,
-) -> Result<ApiResponse<HealthResponse>, AppError> {
-    // DB 연결 확인
-    sqlx::query_scalar::<_, i32>("SELECT 1")
-        .fetch_one(&state.pool)
-        .await?;
-
-    // 캐시 가동 확인 — 비즈니스 캐시를 오염시키지 않고 entry_count()로 검증
-    let cache_status = if state.cache.is_healthy() {
-        "connected"
-    } else {
-        "error"
-    };
-
-    Ok(ApiResponse::ok(HealthResponse {
-        status: "ok",
-        db: "connected",
-        cache: cache_status,
-    }))
-}
 
 /// graceful shutdown — Ctrl+C / SIGTERM 시그널 대기.
 /// 타임아웃은 main()의 `tokio::time::timeout()`으로 제어 — pool.close() 보장.

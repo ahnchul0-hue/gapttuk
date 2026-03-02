@@ -17,8 +17,9 @@ pub async fn access_log(
     req: Request,
     next: Next,
 ) -> Response {
-    // /health는 LB 헬스체크로 빈번 — 로그 노이즈 방지
-    if req.uri().path() == "/health" {
+    // /health, /metrics는 인프라 트래픽 — 로그 + 메트릭 노이즈 방지
+    let path = req.uri().path();
+    if path == "/health" || path == "/metrics" {
         return next.run(req).await;
     }
 
@@ -42,8 +43,23 @@ pub async fn access_log(
 
     let response = next.run(req).await;
 
+    let elapsed = start.elapsed();
     let status_code = response.status().as_u16() as i16;
-    let elapsed_ms = start.elapsed().as_millis().min(i32::MAX as u128) as i32;
+    let elapsed_ms = elapsed.as_millis().min(i32::MAX as u128) as i32;
+
+    // Prometheus 메트릭 — 요청 카운터 + 응답 시간 히스토그램
+    metrics::counter!("http_requests_total",
+        "method" => method.clone(),
+        "endpoint" => endpoint.clone(),
+        "status" => status_code.to_string(),
+    )
+    .increment(1);
+    metrics::histogram!("http_request_duration_seconds",
+        "method" => method.clone(),
+        "endpoint" => endpoint.clone(),
+    )
+    .record(elapsed.as_secs_f64());
+
     let ip_net: IpNetwork = addr.ip().into();
     let pool = state.pool.clone();
 

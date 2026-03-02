@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.80"
 
+[lib]
+name = "gapttuk_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gapttuk-server"
+path = "src/main.rs"
+
 [dependencies]
 # --- HTTP 프레임워크 ---
 axum = { version = "0.8", features = ["macros"] }
@@ -72,6 +80,10 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rust_decimal = { version = "1", features = ["serde-with-str"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
 
 [profile.release]
 lto = true              # Link-Time Optimization — 바이너리 크기↓ 성능↑
