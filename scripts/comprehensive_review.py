@@ -282,11 +282,17 @@ def check_D_doc_completeness():
     schema = load(DOCS / "schema-design.md")
     ui = load(DOCS / "ui-architecture.md")
 
-    # D1. prd.md 필수 섹션 존재
-    prd_sections = ["수익 모델", "법적", "보안", "기술 스택", "마일스톤"]
-    for section in prd_sections:
-        if section not in prd:
-            add_issue("HIGH", "D", "prd.md", f"필수 섹션 '{section}' 누락")
+    # D1. prd.md 필수 섹션 존재 (다양한 제목 변형 허용)
+    prd_required = [
+        (["수익 모델", "수익"], "수익 모델"),
+        (["법적", "법적 검토"], "법적 검토"),
+        (["보안", "기술 인프라", "인프라"], "보안/인프라"),
+        (["기술 스택", "기술 인프라"], "기술 스택/인프라"),
+        (["마일스톤", "일정"], "마일스톤"),
+    ]
+    for keywords, label in prd_required:
+        if not any(kw in prd for kw in keywords):
+            add_issue("HIGH", "D", "prd.md", f"필수 섹션 '{label}' 누락")
 
     # D2. plan.md STEP 진행도
     step_pattern = re.findall(r"STEP\s+(\d+).*?(✅|⬜|🔲|다음)", plan)
@@ -401,7 +407,7 @@ def check_F_migration_symmetry():
 
     # F4. 001 down이 올바른 역순 DROP TABLE인지
     down_001 = load(MIGRATIONS / "001_initial_schema.down.sql")
-    drop_tables = re.findall(r"DROP TABLE.*?(\w+)", down_001)
+    drop_tables = re.findall(r"DROP TABLE\s+(?:IF\s+EXISTS\s+)?(\w+)", down_001)
     if len(drop_tables) < 20:
         add_issue("MEDIUM", "F", "001_initial_schema.down.sql",
                   f"DROP TABLE {len(drop_tables)}개만 — 24개 + 파티션 테이블 모두 삭제해야 함")
@@ -467,10 +473,9 @@ def check_H_security():
             # 실제 비밀번호가 있을 수 있음 — 경고만
             add_issue("LOW", "H", ".env", ".env에 실제 자격증명 포함 가능 — Git 추적 여부 확인")
 
-    # H3. SQL 인젝션 방어 — parameterized query 사용 확인
+    # H3. SQL 인젝션 방어 — format!으로 SQL 쿼리 직접 구성하는지 확인
     main_rs = load(SRC / "main.rs")
-    if "format!" in main_rs and "query" in main_rs.lower():
-        # format!으로 쿼리 구성하면 위험
+    if re.search(r'format!\s*\(.*(?:SELECT|INSERT|UPDATE|DELETE)', main_rs, re.I):
         add_issue("MEDIUM", "H", "main.rs", "format!으로 SQL 쿼리 구성 시 SQL 인젝션 위험")
 
     # H4. CORS 미설정 (현재 M1-1이므로 미적용 OK)

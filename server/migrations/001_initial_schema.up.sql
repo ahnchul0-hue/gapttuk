@@ -147,6 +147,7 @@ CREATE TABLE point_transactions (
 );
 
 -- ⑬ api_access_logs (파티셔닝 — RANGE by created_at)
+-- NOTE: user_id FK 미적용 — 파티셔닝 테이블의 FK는 app-level에서 관리 (schema-design.md §1 참조)
 CREATE TABLE api_access_logs (
     id               BIGINT GENERATED ALWAYS AS IDENTITY,
     ip_address       INET NOT NULL,
@@ -206,6 +207,7 @@ CREATE TABLE products (
 );
 
 -- ⑮ price_history (파티셔닝 — RANGE by recorded_at)
+-- NOTE: product_id FK 미적용 — 파티셔닝 테이블의 FK는 app-level에서 관리 (schema-design.md §1 참조)
 CREATE TABLE price_history (
     id               BIGINT GENERATED ALWAYS AS IDENTITY,
     product_id       BIGINT NOT NULL,
