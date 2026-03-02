@@ -17,6 +17,11 @@ pub async fn access_log(
     req: Request,
     next: Next,
 ) -> Response {
+    // /health는 LB 헬스체크로 빈번 — 로그 노이즈 방지
+    if req.uri().path() == "/health" {
+        return next.run(req).await;
+    }
+
     let start = std::time::Instant::now();
     let method = req.method().to_string();
     let endpoint = req.uri().path().to_string();

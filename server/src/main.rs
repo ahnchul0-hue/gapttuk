@@ -98,8 +98,11 @@ async fn shutdown_signal() {
 }
 
 /// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
-async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
+/// 개별 파티션 생성 실패 시 나머지를 계속 시도하고, 전체 실패 건수를 반환한다.
+async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
     let now = chrono::Utc::now().date_naive();
+    let mut errors = Vec::new();
+
     for offset in 0..=3i32 {
         let month = now + chrono::Months::new(offset as u32);
         let start = month.format("%Y-%m-01").to_string();
@@ -111,10 +114,18 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
                 "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
                  FOR VALUES FROM ('{start}') TO ('{next}')"
             );
-            sqlx::query(&sql).execute(pool).await?;
+            if let Err(e) = sqlx::query(&sql).execute(pool).await {
+                tracing::warn!(table = %table, suffix = %suffix, error = %e, "Partition creation failed");
+                errors.push(format!("{table}_{suffix}: {e}"));
+            }
         }
     }
-    Ok(())
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("{} partition(s) failed: {}", errors.len(), errors.join("; ")))
+    }
 }
 
 #[tokio::main]

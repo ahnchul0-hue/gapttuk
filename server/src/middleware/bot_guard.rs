@@ -37,29 +37,33 @@ pub async fn bot_guard(
         }
     }
 
-    // 2. 캐시 히트 → 즉시 차단
-    if state.cache.blocked_ips.get(&ip).await.is_some() {
-        return Err(AppError::Forbidden);
-    }
+    // 2. 캐시 확인 (차단 + 비차단 모두 캐시됨)
+    if let Some(is_blocked) = state.cache.blocked_ips.get(&ip).await {
+        if is_blocked {
+            return Err(AppError::Forbidden);
+        }
+        // 비차단 캐시 히트 → DB 스킵
+    } else {
+        // 3. DB 조회 (캐시 미스)
+        let ip_net: IpNetwork = addr.ip().into();
+        let blocked = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM blocked_ips
+                WHERE ip_address = $1
+                  AND (blocked_until IS NULL OR blocked_until > NOW())
+            )",
+        )
+        .bind(ip_net)
+        .fetch_one(&state.pool)
+        .await
+        .unwrap_or(false);
 
-    // 3. DB 조회 (캐시 미스)
-    let ip_net: IpNetwork = addr.ip().into();
-    let blocked = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(
-            SELECT 1 FROM blocked_ips
-            WHERE ip_address = $1
-              AND (blocked_until IS NULL OR blocked_until > NOW())
-        )",
-    )
-    .bind(ip_net)
-    .fetch_one(&state.pool)
-    .await
-    .unwrap_or(false);
+        // 차단/비차단 모두 캐시 (TTL 5분 — 비차단 IP도 캐시하여 DB 부하 방지)
+        state.cache.blocked_ips.insert(ip, blocked).await;
 
-    if blocked {
-        // 캐시에 등록 (TTL 5분)
-        state.cache.blocked_ips.insert(ip, true).await;
-        return Err(AppError::Forbidden);
+        if blocked {
+            return Err(AppError::Forbidden);
+        }
     }
 
     Ok(next.run(req).await)
