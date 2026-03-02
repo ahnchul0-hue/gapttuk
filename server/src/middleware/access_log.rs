@@ -34,7 +34,7 @@ pub async fn access_log(
     let response = next.run(req).await;
 
     let status_code = response.status().as_u16() as i16;
-    let elapsed_ms = start.elapsed().as_millis() as i32;
+    let elapsed_ms = start.elapsed().as_millis().min(i32::MAX as u128) as i32;
     let ip_net: IpNetwork = addr.ip().into();
     let pool = state.pool.clone();
 

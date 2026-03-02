@@ -34,6 +34,7 @@ pub fn global_limiter() -> (HeaderLayer, Arc<GovernorConfig<PeerIpKeyExtractor, 
 
 /// 검색 전용 Rate Limiter — 10 req/min per IP.
 /// `per_second(6)` = 6초마다 토큰 1개, `burst_size(10)` = 최대 10개 누적.
+/// 호출 시마다 독립 state가 생성되므로, 서버 시작 시 한 번만 호출해야 한다.
 pub fn search_limiter() -> HeaderLayer {
     let config = GovernorConfigBuilder::default()
         .per_second(6)

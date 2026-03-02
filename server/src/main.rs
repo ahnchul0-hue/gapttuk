@@ -233,8 +233,11 @@ async fn main() {
 
         // 8b. Governor rate limiter 메모리 정리 (1시간 주기)
         // 내부 HashMap에 IP별 상태가 무한 누적되므로 주기적 GC 필요.
+        // 시작 직후 빈 맵 GC는 무의미하므로 interval_at으로 1시간 후부터 시작.
+        let gc_period = std::time::Duration::from_secs(3600);
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
+            let mut interval =
+                tokio::time::interval_at(tokio::time::Instant::now() + gc_period, gc_period);
             loop {
                 interval.tick().await;
                 global_governor_config.limiter().retain_recent();
