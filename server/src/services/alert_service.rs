@@ -61,6 +61,20 @@ pub async fn create_price_alert(
         return Err(AppError::NotFound("상품".to_string()));
     }
 
+    // 사용자당 알림 개수 제한 (최대 50개)
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM price_alerts WHERE user_id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    if count >= 50 {
+        return Err(AppError::BadRequest(
+            "가격 알림은 최대 50개까지 설정할 수 있습니다".to_string(),
+        ));
+    }
+
     let alert = sqlx::query_as::<_, PriceAlert>(
         r#"
         INSERT INTO price_alerts (user_id, product_id, alert_type, target_price)

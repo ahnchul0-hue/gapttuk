@@ -223,13 +223,9 @@ async fn scrape_and_update(
         .await?;
     }
 
-    // 5. 상품명/이미지 업데이트 (크롤링에서 얻은 값이 있으면)
-    update_product_metadata(pool, &result).await?;
-
-    // 6. 통계 갱신 (10개 필드)
-    stats::refresh_product_stats(pool, product_id, new_price, result.is_out_of_stock).await?;
-
-    // 7. 가격 변동 시 알림 평가
+    // 5. 가격 변동 시 알림 평가 — 반드시 stats 갱신 전에 실행!
+    //    stats::refresh_product_stats()가 lowest_price/average_price를 업데이트하면
+    //    AllTimeLow/BelowAverage 조건이 정상 작동하지 않는다.
     if price_changed {
         if let Err(e) = crate::services::alert_service::evaluate_price_alerts(
             pool, push, product_id, new_price,
@@ -239,6 +235,12 @@ async fn scrape_and_update(
             tracing::warn!(product_id, error = %e, "Alert evaluation failed");
         }
     }
+
+    // 6. 상품명/이미지 업데이트 (크롤링에서 얻은 값이 있으면)
+    update_product_metadata(pool, &result).await?;
+
+    // 7. 통계 갱신 (10개 필드) — 알림 평가 이후에 실행
+    stats::refresh_product_stats(pool, product_id, new_price, result.is_out_of_stock).await?;
 
     // 8. 캐시 즉시 무효화
     cache.products.invalidate(&product_id).await;

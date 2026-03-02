@@ -128,8 +128,9 @@ impl FcmClient {
     }
 
     /// OAuth2 access token 획득 (캐싱, 만료 5분 전 갱신).
+    /// Double-check 패턴으로 thundering herd 방지.
     async fn get_access_token(&self) -> Result<String, FcmError> {
-        // 캐시 확인
+        // Fast path: read lock으로 캐시 확인
         {
             let guard = self.cached_token.read().await;
             if let Some(ref cached) = *guard {
@@ -139,12 +140,19 @@ impl FcmClient {
             }
         }
 
-        // 새 토큰 발급
+        // Slow path: write lock 획득 후 다시 확인 (다른 태스크가 이미 갱신했을 수 있음)
+        let mut guard = self.cached_token.write().await;
+        if let Some(ref cached) = *guard {
+            if Instant::now() + Duration::from_secs(300) < cached.expires_at {
+                return Ok(cached.access_token.clone());
+            }
+        }
+
+        // 새 토큰 발급 (write lock 보유 중 — 단일 교환만 발생)
         let token = self.exchange_token().await?;
         let expires_at = Instant::now() + Duration::from_secs(token.expires_in);
         let access_token = token.access_token.clone();
 
-        let mut guard = self.cached_token.write().await;
         *guard = Some(CachedToken {
             access_token: token.access_token,
             expires_at,
@@ -154,49 +162,44 @@ impl FcmClient {
     }
 
     /// self-signed JWT → OAuth2 token exchange.
-    fn exchange_token(
-        &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<OAuthResponse, FcmError>> + Send + '_>>
-    {
-        Box::pin(async move {
-            let now = chrono::Utc::now().timestamp();
-            let claims = serde_json::json!({
-                "iss": self.client_email,
-                "scope": "https://www.googleapis.com/auth/firebase.messaging",
-                "aud": self.token_uri,
-                "iat": now,
-                "exp": now + 3600,
-            });
+    async fn exchange_token(&self) -> Result<OAuthResponse, FcmError> {
+        let now = chrono::Utc::now().timestamp();
+        let claims = serde_json::json!({
+            "iss": self.client_email,
+            "scope": "https://www.googleapis.com/auth/firebase.messaging",
+            "aud": self.token_uri,
+            "iat": now,
+            "exp": now + 3600,
+        });
 
-            let encoding_key =
-                jsonwebtoken::EncodingKey::from_rsa_pem(self.private_key.as_bytes())
-                    .map_err(|e| FcmError::Config(format!("Invalid RSA key: {e}")))?;
+        let encoding_key =
+            jsonwebtoken::EncodingKey::from_rsa_pem(self.private_key.as_bytes())
+                .map_err(|e| FcmError::Config(format!("Invalid RSA key: {e}")))?;
 
-            let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
-            let jwt = jsonwebtoken::encode(&header, &claims, &encoding_key)
-                .map_err(|e| FcmError::Config(format!("JWT encode failed: {e}")))?;
+        let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
+        let jwt = jsonwebtoken::encode(&header, &claims, &encoding_key)
+            .map_err(|e| FcmError::Config(format!("JWT encode failed: {e}")))?;
 
-            let resp = self
-                .http
-                .post(&self.token_uri)
-                .form(&OAuthRequest {
-                    grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                    assertion: jwt,
-                })
-                .send()
-                .await
-                .map_err(|e| FcmError::Send(format!("OAuth2 exchange failed: {e}")))?;
+        let resp = self
+            .http
+            .post(&self.token_uri)
+            .form(&OAuthRequest {
+                grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                assertion: jwt,
+            })
+            .send()
+            .await
+            .map_err(|e| FcmError::Send(format!("OAuth2 exchange failed: {e}")))?;
 
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let body = resp.text().await.unwrap_or_default();
-                return Err(FcmError::Send(format!("OAuth2 {status}: {body}")));
-            }
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(FcmError::Send(format!("OAuth2 {status}: {body}")));
+        }
 
-            resp.json::<OAuthResponse>()
-                .await
-                .map_err(|e| FcmError::Send(format!("OAuth2 parse failed: {e}")))
-        })
+        resp.json::<OAuthResponse>()
+            .await
+            .map_err(|e| FcmError::Send(format!("OAuth2 parse failed: {e}")))
     }
 }
 

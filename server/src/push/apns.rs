@@ -53,10 +53,8 @@ impl ApnsClient {
             .set_body(body)
             .set_sound("default");
 
-        if let Some(link) = deep_link {
+        if deep_link.is_some() {
             builder = builder.set_mutable_content();
-            // deep_link를 custom data로 전달
-            let _ = link; // a2의 DefaultNotificationBuilder에서 custom data는 payload에 직접 추가
         }
 
         let options = NotificationOptions {
@@ -67,9 +65,9 @@ impl ApnsClient {
 
         let mut payload = builder.build(device_token, options);
 
-        // deep_link를 커스텀 데이터로 추가
         if let Some(link) = deep_link {
-            payload.add_custom_data("deep_link", &link)
+            payload
+                .add_custom_data("deep_link", &link)
                 .map_err(|e| ApnsError::Send(format!("Failed to add deep_link: {e}")))?;
         }
 

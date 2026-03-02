@@ -16,16 +16,17 @@ pub async fn create_and_push(
     body: &str,
     deep_link: Option<&str>,
 ) -> Result<(), AppError> {
-    // 1. notifications INSERT
+    // 1. notifications INSERT (reference_type = notification_type for filtering)
     sqlx::query(
         r#"
-        INSERT INTO notifications (user_id, notification_type, reference_id, title, body, deep_link)
-        VALUES ($1, $2::TEXT, $3, $4, $5, $6)
+        INSERT INTO notifications (user_id, notification_type, reference_id, reference_type, title, body, deep_link)
+        VALUES ($1, $2::TEXT, $3, $4, $5, $6, $7)
         "#,
     )
     .bind(user_id)
     .bind(ntype.as_str())
     .bind(reference_id)
+    .bind(ntype.as_str())
     .bind(title)
     .bind(body)
     .bind(deep_link)

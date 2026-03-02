@@ -73,9 +73,9 @@ async fn register_device(
     Auth(claims): Auth,
     Json(body): Json<RegisterDeviceRequest>,
 ) -> Result<Created<DeviceResponse>, AppError> {
-    if body.device_token.is_empty() {
+    if body.device_token.is_empty() || body.device_token.len() > 512 {
         return Err(AppError::BadRequest(
-            "device_token은 필수입니다".to_string(),
+            "device_token은 1~512자여야 합니다".to_string(),
         ));
     }
 
