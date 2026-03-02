@@ -6,7 +6,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
-use crate::api::pagination::{PaginatedResponse, PaginationParams};
+use crate::api::pagination::PaginatedResponse;
 use crate::api::{ApiResponse, Created};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
@@ -15,19 +15,27 @@ use crate::AppState;
 
 // ── 요청 DTO ────────────────────────────────────────────
 
+/// 검색 쿼리 — serde(flatten)은 Axum Query에서 비자기서술 포맷 이슈로 사용 불가.
+/// PaginationParams 필드를 직접 인라인.
 #[derive(Deserialize)]
 pub struct SearchQuery {
     pub q: String,
-    #[serde(flatten)]
-    pub pagination: PaginationParams,
+    pub cursor: Option<String>,
+    #[serde(default = "default_limit")]
+    pub limit: i64,
 }
 
 #[derive(Deserialize)]
 pub struct PriceHistoryQuery {
     pub from: Option<DateTime<Utc>>,
     pub to: Option<DateTime<Utc>>,
-    #[serde(flatten)]
-    pub pagination: PaginationParams,
+    pub cursor: Option<String>,
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+}
+
+fn default_limit() -> i64 {
+    20
 }
 
 #[derive(Deserialize)]
@@ -77,9 +85,12 @@ async fn search(
     if q.is_empty() {
         return Err(AppError::BadRequest("검색어를 입력해주세요".to_string()));
     }
+    if q.len() > 100 {
+        return Err(AppError::BadRequest("검색어는 100자 이하로 입력해주세요".to_string()));
+    }
 
-    let limit = params.pagination.effective_limit();
-    let cursor = params.pagination.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let limit = params.limit.clamp(1, 100);
+    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
 
     let items = product_service::search_products(&state.pool, q, cursor, limit).await?;
 
@@ -109,8 +120,8 @@ async fn prices(
     Path(id): Path<i64>,
     Query(params): Query<PriceHistoryQuery>,
 ) -> Result<PaginatedResponse<crate::models::PriceHistory>, AppError> {
-    let limit = params.pagination.effective_limit();
-    let cursor = params.pagination.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let limit = params.limit.clamp(1, 100);
+    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
 
     let items =
         product_service::get_price_history(&state.pool, id, params.from, params.to, cursor, limit)

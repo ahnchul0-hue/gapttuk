@@ -128,7 +128,12 @@ pub async fn search_products(
     cursor: Option<i64>,
     limit: i64,
 ) -> Result<Vec<ProductSearchItem>, AppError> {
-    let pattern = format!("%{}%", query);
+    // ILIKE 와일드카드 문자 이스케이프 (%, _, \)
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    let pattern = format!("%{}%", escaped);
     let fetch_limit = limit + 1; // limit+1 패턴
 
     let items: Vec<ProductSearchItem> = if let Some(cursor_id) = cursor {
@@ -164,6 +169,8 @@ pub async fn search_products(
 }
 
 /// URL로 상품 추가 (placeholder 등록 — 실제 크롤링은 M1-6)
+///
+/// `INSERT ON CONFLICT DO NOTHING`으로 TOCTOU 레이스 컨디션 방지.
 pub async fn add_product_by_url(
     pool: &PgPool,
     url_str: &str,
@@ -178,8 +185,21 @@ pub async fn add_product_by_url(
     .await?
     .ok_or_else(|| AppError::Internal("쿠팡 쇼핑몰 설정이 없습니다".to_string()))?;
 
-    // 기존 상품 조회 (중복 방지)
-    let existing: Option<Product> = sqlx::query_as(
+    // INSERT ON CONFLICT DO NOTHING — 동시 요청에도 안전
+    sqlx::query(
+        "INSERT INTO products (shopping_mall_id, external_product_id, vendor_item_id, product_name, product_url)
+         VALUES ($1, $2, $3, '가격 추적 대기 중', $4)
+         ON CONFLICT (shopping_mall_id, external_product_id, vendor_item_id) DO NOTHING",
+    )
+    .bind(mall_id)
+    .bind(&info.product_id)
+    .bind(&info.vendor_item_id)
+    .bind(url_str)
+    .execute(pool)
+    .await?;
+
+    // 삽입 여부와 무관하게 조회 (ON CONFLICT DO NOTHING은 RETURNING 불가일 수 있음)
+    let product: Product = sqlx::query_as(
         "SELECT * FROM products
          WHERE shopping_mall_id = $1 AND external_product_id = $2
            AND (vendor_item_id = $3 OR ($3::text IS NULL AND vendor_item_id IS NULL))",
@@ -187,38 +207,18 @@ pub async fn add_product_by_url(
     .bind(mall_id)
     .bind(&info.product_id)
     .bind(&info.vendor_item_id)
-    .fetch_optional(pool)
-    .await?;
-
-    if let Some(product) = existing {
-        return Ok(AddProductResponse {
-            id: product.id,
-            product_name: product.product_name,
-            product_url: product.product_url,
-            shopping_mall_id: product.shopping_mall_id,
-            is_new: false,
-        });
-    }
-
-    // placeholder 등록
-    let product: Product = sqlx::query_as(
-        "INSERT INTO products (shopping_mall_id, external_product_id, vendor_item_id, product_name, product_url)
-         VALUES ($1, $2, $3, '가격 추적 대기 중', $4)
-         RETURNING *",
-    )
-    .bind(mall_id)
-    .bind(&info.product_id)
-    .bind(&info.vendor_item_id)
-    .bind(url_str)
     .fetch_one(pool)
     .await?;
+
+    // product_name이 placeholder면 방금 삽입된 것
+    let is_new = product.product_name == "가격 추적 대기 중";
 
     Ok(AddProductResponse {
         id: product.id,
         product_name: product.product_name,
         product_url: product.product_url,
         shopping_mall_id: product.shopping_mall_id,
-        is_new: true,
+        is_new,
     })
 }
 
@@ -306,7 +306,8 @@ pub async fn get_popular_searches(
     limit: i32,
 ) -> Result<Vec<PopularSearch>, AppError> {
     // 캐시 히트 확인
-    if let Some(cached) = cache.popular_searches.get(&"top".to_string()).await {
+    let cache_key = "top".to_string();
+    if let Some(cached) = cache.popular_searches.get(&cache_key).await {
         return Ok(cached.into_iter().take(limit as usize).collect());
     }
 
@@ -320,7 +321,7 @@ pub async fn get_popular_searches(
     // 캐시 저장
     cache
         .popular_searches
-        .insert("top".to_string(), items.clone())
+        .insert(cache_key, items.clone())
         .await;
 
     Ok(items)
