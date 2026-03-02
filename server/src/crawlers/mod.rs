@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use rand::Rng;
 use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 
 use crate::cache::AppCache;
 use crate::push::PushClient;
@@ -93,65 +94,76 @@ impl CrawlerService {
         // 3. abort flag — 403/429 감지 시 전체 중단
         let abort_flag = Arc::new(AtomicBool::new(false));
 
-        // 4. 동시 크롤링 (Semaphore 제한)
-        let mut handles = Vec::with_capacity(total);
-
-        for product in products {
-            let pool = self.pool.clone();
-            let cache = self.cache.clone();
-            let push = self.push_client.clone();
-            let client = self.client.clone();
-            let sem = self.semaphore.clone();
-            let abort = abort_flag.clone();
-
-            let handle = tokio::spawn(async move {
-                // Semaphore 획득 — closed 시 panic 대신 Aborted 반환
-                let _permit = match sem.acquire().await {
-                    Ok(p) => p,
-                    Err(_) => return ScrapeOutcome::Aborted,
-                };
-
-                // abort 확인
-                if abort.load(Ordering::Relaxed) {
-                    return ScrapeOutcome::Aborted;
-                }
-
-                // 랜덤 딜레이 3~10초
-                let delay = rand::thread_rng().gen_range(3..=10);
-                tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
-
-                let url = match &product.product_url {
-                    Some(u) => u.as_str(),
-                    None => return ScrapeOutcome::Failed,
-                };
-
-                match scrape_and_update(&pool, &cache, &push, &client, product.id, url, &abort)
-                    .await
-                {
-                    Ok(changed) => {
-                        if changed {
-                            ScrapeOutcome::Updated
-                        } else {
-                            ScrapeOutcome::NoChange
-                        }
-                    }
-                    Err(_) => ScrapeOutcome::Failed,
-                }
-            });
-            handles.push(handle);
-        }
-
-        // 결과 집계
+        // 4. 동시 크롤링 (JoinSet + sliding window 배치)
+        const BATCH_SIZE: usize = 50;
+        let mut set = JoinSet::new();
         let mut success = 0usize;
         let mut failed = 0usize;
         let mut skipped = 0usize;
 
-        for handle in handles {
-            match handle.await {
-                Ok(ScrapeOutcome::Updated) => success += 1,
-                Ok(ScrapeOutcome::NoChange) => skipped += 1,
-                Ok(ScrapeOutcome::Failed) | Ok(ScrapeOutcome::Aborted) | Err(_) => failed += 1,
+        for chunk in products.chunks(BATCH_SIZE) {
+            for product in chunk {
+                let pool = self.pool.clone();
+                let cache = self.cache.clone();
+                let push = self.push_client.clone();
+                let client = self.client.clone();
+                let sem = self.semaphore.clone();
+                let abort = abort_flag.clone();
+                let product_id = product.id;
+                let product_url = product.product_url.clone();
+
+                set.spawn(async move {
+                    // abort 확인
+                    if abort.load(Ordering::Relaxed) {
+                        return ScrapeOutcome::Aborted;
+                    }
+
+                    // 랜덤 딜레이 3~10초 — permit 획득 전에 sleep하여 슬롯 낭비 방지
+                    let delay = rand::thread_rng().gen_range(3..=10);
+                    tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
+
+                    // Semaphore 획득 — closed 시 panic 대신 Aborted 반환
+                    let _permit = match sem.acquire().await {
+                        Ok(p) => p,
+                        Err(_) => return ScrapeOutcome::Aborted,
+                    };
+
+                    // permit 획득 후 abort 재확인
+                    if abort.load(Ordering::Relaxed) {
+                        return ScrapeOutcome::Aborted;
+                    }
+
+                    let url = match &product_url {
+                        Some(u) => u.as_str(),
+                        None => return ScrapeOutcome::Failed,
+                    };
+
+                    match scrape_and_update(&pool, &cache, &push, &client, product_id, url, &abort)
+                        .await
+                    {
+                        Ok(changed) => {
+                            if changed {
+                                ScrapeOutcome::Updated
+                            } else {
+                                ScrapeOutcome::NoChange
+                            }
+                        }
+                        Err(_) => ScrapeOutcome::Failed,
+                    }
+                });
             }
+
+            // 현재 배치가 절반 이하가 될 때까지 결과 수확
+            while set.len() > BATCH_SIZE / 2 {
+                if let Some(result) = set.join_next().await {
+                    tally_outcome(result, &mut success, &mut failed, &mut skipped);
+                }
+            }
+        }
+
+        // 잔여 태스크 수확
+        while let Some(result) = set.join_next().await {
+            tally_outcome(result, &mut success, &mut failed, &mut skipped);
         }
 
         let stats = CycleStats {
@@ -161,6 +173,16 @@ impl CrawlerService {
             skipped_no_change: skipped,
             duration_secs: start.elapsed().as_secs_f64(),
         };
+
+        // Prometheus 메트릭 기록
+        metrics::histogram!("crawler_cycle_duration_seconds").record(stats.duration_secs);
+        metrics::counter!("crawler_products_total", "status" => "success")
+            .increment(stats.success as u64);
+        metrics::counter!("crawler_products_total", "status" => "failed")
+            .increment(stats.failed as u64);
+        metrics::counter!("crawler_products_total", "status" => "skipped")
+            .increment(stats.skipped_no_change as u64);
+        metrics::gauge!("crawler_products_tracked").set(stats.total as f64);
 
         tracing::info!(
             total = stats.total,
@@ -291,6 +313,20 @@ async fn update_product_metadata(
     }
 
     Ok(())
+}
+
+/// JoinSet 결과를 집계 카운터에 반영
+fn tally_outcome(
+    result: Result<ScrapeOutcome, tokio::task::JoinError>,
+    success: &mut usize,
+    failed: &mut usize,
+    skipped: &mut usize,
+) {
+    match result {
+        Ok(ScrapeOutcome::Updated) => *success += 1,
+        Ok(ScrapeOutcome::NoChange) => *skipped += 1,
+        Ok(ScrapeOutcome::Failed) | Ok(ScrapeOutcome::Aborted) | Err(_) => *failed += 1,
+    }
 }
 
 /// 크롤링 결과 분류

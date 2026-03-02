@@ -24,6 +24,7 @@ use axum::{
     routing::get,
     Router,
 };
+use metrics_exporter_prometheus::PrometheusBuilder;
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -171,6 +172,11 @@ async fn main() {
         ))
     });
 
+    // Prometheus 메트릭 레코더 설치
+    let prometheus_handle = PrometheusBuilder::new()
+        .install_recorder()
+        .expect("Failed to install Prometheus recorder");
+
     tracing::info!(
         env = ?config.app_env,
         host = %config.host,
@@ -196,7 +202,9 @@ async fn main() {
             cache.clone(),
             push_client.clone(),
         ));
-        if let Err(e) = crawlers::scheduler::start_scheduler(crawler_service).await {
+        if let Err(e) =
+            crawlers::scheduler::start_scheduler(crawler_service, config.crawl_on_start).await
+        {
             tracing::error!(error = %e, "Failed to start crawler scheduler");
         }
     } else {
@@ -242,6 +250,16 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
+        .route(
+            "/metrics",
+            get({
+                let handle = prometheus_handle;
+                move || {
+                    let h = handle.clone();
+                    async move { h.render() }
+                }
+            }),
+        )
         .nest("/api/v1/auth", api::routes::auth::router())
         .nest("/api/v1/products", api::routes::products::router())
         .nest("/api/v1/devices", api::routes::devices::router())

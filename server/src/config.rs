@@ -60,6 +60,9 @@ pub struct Config {
 
     // --- 모니터링 ---
     pub sentry_dsn: Option<String>,
+
+    // --- 크롤러 ---
+    pub crawl_on_start: bool,
 }
 
 impl Config {
@@ -137,6 +140,9 @@ impl Config {
                 .map(|v| v.split(',').map(|s| s.trim().to_string()).collect())
                 .unwrap_or_default(),
             sentry_dsn,
+            crawl_on_start: env::var("CRAWL_ON_START")
+                .unwrap_or_default()
+                .eq_ignore_ascii_case("true"),
         }
     }
 }
@@ -227,6 +233,7 @@ mod tests {
             fcm_service_account: None,
             allowed_origins: vec![],
             sentry_dsn: None,
+            crawl_on_start: false,
         };
 
         let debug_str = format!("{config:?}");

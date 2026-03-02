@@ -2,7 +2,7 @@
 name = "gapttuk-server"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.80"
 
 [dependencies]
 # --- HTTP 프레임워크 ---
@@ -53,6 +53,8 @@ moka = { version = "0.12", features = ["future"] }
 
 # --- 모니터링 ---
 sentry = "0.37"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
 
 # --- 암호 ---
 sha2 = "0.10"

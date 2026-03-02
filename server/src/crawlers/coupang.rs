@@ -1,6 +1,24 @@
+use std::sync::LazyLock;
+
 use scraper::{Html, Selector};
 
 use super::ua;
+
+// --- 정적 CSS 셀렉터 (LazyLock) — 프로세스 수명 동안 1회만 파싱 ---
+static SEL_PRICE_STRONG: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("span.total-price > strong").unwrap());
+static SEL_PRICE_TOTAL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("span.total-price").unwrap());
+static SEL_PRICE_SALE: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".prod-sale-price .total-price").unwrap());
+static SEL_TITLE_H1: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("h1.prod-buy-header__title").unwrap());
+static SEL_TITLE_H2: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("h2.prod-buy-header__title").unwrap());
+static SEL_IMAGE: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("img.prod-image__detail").unwrap());
+static SEL_OOS: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".oos-label, .prod-not-find-known__text").unwrap());
 
 /// 크롤링 결과
 pub struct CrawlResult {
@@ -104,8 +122,7 @@ fn parse_product_html(product_id: i64, html: &str) -> Result<CrawlResult, CrawlE
     let price = parse_price(&doc);
 
     // 상품명
-    let product_name = parse_text(&doc, "h1.prod-buy-header__title")
-        .or_else(|| parse_text(&doc, "h2.prod-buy-header__title"));
+    let product_name = parse_text(&doc, &SEL_TITLE_H1).or_else(|| parse_text(&doc, &SEL_TITLE_H2));
 
     // 이미지 URL
     let image_url = parse_image(&doc);
@@ -124,19 +141,11 @@ fn parse_product_html(product_id: i64, html: &str) -> Result<CrawlResult, CrawlE
 
 /// 가격 파싱 — 쿠팡 페이지의 다양한 가격 셀렉터 시도
 fn parse_price(doc: &Html) -> Option<i32> {
-    let selectors = [
-        "span.total-price > strong",
-        "span.total-price",
-        ".prod-sale-price .total-price",
-    ];
-
-    for sel_str in &selectors {
-        if let Ok(sel) = Selector::parse(sel_str) {
-            if let Some(el) = doc.select(&sel).next() {
-                let text: String = el.text().collect();
-                if let Some(p) = extract_number(&text) {
-                    return Some(p);
-                }
+    for sel in [&*SEL_PRICE_STRONG, &*SEL_PRICE_TOTAL, &*SEL_PRICE_SALE] {
+        if let Some(el) = doc.select(sel).next() {
+            let text: String = el.text().collect();
+            if let Some(p) = extract_number(&text) {
+                return Some(p);
             }
         }
     }
@@ -144,9 +153,8 @@ fn parse_price(doc: &Html) -> Option<i32> {
 }
 
 /// 텍스트 추출
-fn parse_text(doc: &Html, selector_str: &str) -> Option<String> {
-    let sel = Selector::parse(selector_str).ok()?;
-    doc.select(&sel)
+fn parse_text(doc: &Html, sel: &Selector) -> Option<String> {
+    doc.select(sel)
         .next()
         .map(|el| el.text().collect::<String>().trim().to_string())
         .filter(|s| !s.is_empty())
@@ -154,8 +162,7 @@ fn parse_text(doc: &Html, selector_str: &str) -> Option<String> {
 
 /// 상품 이미지 URL 추출
 fn parse_image(doc: &Html) -> Option<String> {
-    let sel = Selector::parse("img.prod-image__detail").ok()?;
-    doc.select(&sel)
+    doc.select(&SEL_IMAGE)
         .next()
         .and_then(|el| {
             el.value()
@@ -173,12 +180,7 @@ fn parse_image(doc: &Html) -> Option<String> {
 
 /// 품절 확인
 fn check_out_of_stock(doc: &Html) -> bool {
-    if let Ok(sel) = Selector::parse(".oos-label, .prod-not-find-known__text") {
-        if doc.select(&sel).next().is_some() {
-            return true;
-        }
-    }
-    false
+    doc.select(&SEL_OOS).next().is_some()
 }
 
 /// 문자열에서 숫자만 추출 (콤마, 원 등 제거)

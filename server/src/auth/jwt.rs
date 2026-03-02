@@ -97,6 +97,7 @@ mod tests {
             fcm_service_account: None,
             allowed_origins: vec![],
             sentry_dsn: None,
+            crawl_on_start: false,
         }
     }
 
