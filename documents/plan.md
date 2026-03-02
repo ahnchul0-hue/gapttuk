@@ -405,6 +405,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 크론 1회 실행 → 1,800개 상품 가격 수집 완료 + price_history 기록 확인
 
 #### M1-7. 보안 미들웨어 (~2일)
+- [ ] `axum::serve` → `into_make_service_with_connect_info::<SocketAddr>()` 전환 (tower_governor PeerIpKeyExtractor 필수)
 - [ ] rate_limit.rs — tower_governor (IP별 60req/min, 검색 10req/min)
 - [ ] bot_guard.rs — blocked_ips 조회 (moka 캐시 5분) + UA 블랙리스트
 - [ ] api_access_logs INSERT (비동기, 요청 흐름 미차단)
@@ -479,6 +480,7 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 - [ ] CATEGORY — 카테고리별 상품 브라우징 (웹 사이드바 + 모바일 탭)
 - [ ] 웹 GNB
 - [ ] 반응형 그리드 (2열/3~4열)
+- [ ] Web Push (VAPID) 구현 — 브라우저 알림 (앱 미설치 사용자 대응)
 
 #### M2-10. 테스트 (~5일)
 - [ ] Widget 테스트 (핵심 화면)

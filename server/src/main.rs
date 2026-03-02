@@ -119,7 +119,8 @@ async fn main() {
         .await
         .expect("Failed to bind address");
 
-    match axum::serve(listener, app)
+    // NOTE: into_make_service_with_connect_info는 tower_governor PeerIpKeyExtractor에 필수
+    match axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
     {

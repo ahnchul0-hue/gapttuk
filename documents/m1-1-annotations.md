@@ -229,6 +229,8 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 - slug: TEXT UNIQUE NOT NULL
 - parent_id: INTEGER (FK → categories.id, NULL이면 최상위) — 테이블 생성 후 ALTER ADD CONSTRAINT
 - sort_order: INTEGER NOT NULL DEFAULT 0
+- depth: SMALLINT NOT NULL DEFAULT 0 — 카테고리 깊이 (migration 004 추가)
+- created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW() — (migration 004 추가)
 
 #### ③ events
 - id: BIGINT PK GENERATED ALWAYS AS IDENTITY
@@ -357,7 +359,7 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 - average_price: INTEGER
 - unit_type: TEXT
 - unit_price: NUMERIC(12,2)
-- rating: NUMERIC(2,1)
+- rating: NUMERIC(3,1) — 0.0~10.0
 - review_count: INTEGER DEFAULT 0
 - is_out_of_stock: BOOLEAN NOT NULL DEFAULT FALSE
 - price_trend: TEXT — rising / falling / stable

@@ -9,7 +9,7 @@ rust-version = "1.75"
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "request-id", "timeout", "compression-gzip"] }
 
 # --- DB ---
 sqlx = { version = "0.8", features = [
@@ -30,23 +30,25 @@ jsonwebtoken = "9"
 
 # --- HTTP 클라이언트 (크롤링용) ---
 reqwest = { version = "0.12", features = ["json", "cookies"] }
-scraper = "0.22"
+scraper = "0.25"
 
 # --- Rate Limiting ---
 tower_governor = "0.8"
 
 # --- 스케줄러 ---
-tokio-cron-scheduler = "0.13"
+tokio-cron-scheduler = "0.15"
 
 # --- 푸시 ---
 a2 = "0.10"
-fcm = "0.9"
+# NOTE: fcm 0.9는 Google 레거시 FCM API 사용 (2024.06 폐지됨)
+# M1-8 구현 시 fcm-v1 또는 google-authz + reqwest 직접 호출로 교체 예정
+# fcm = "0.9"
 
 # --- 캐시 ---
 moka = { version = "0.12", features = ["future"] }
 
 # --- 모니터링 ---
-sentry = "0.35"
+sentry = "0.37"
 
 # --- 유틸리티 ---
 dotenvy = "0.15"

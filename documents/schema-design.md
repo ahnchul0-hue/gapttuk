@@ -558,21 +558,22 @@ erDiagram
 | idx_price_alerts_user_active | price_alerts | (user_id) WHERE is_active = TRUE | 내 활성 가격 알림 조회 |
 | idx_users_active | users | (id) WHERE deleted_at IS NULL | soft delete 필터 — 활성 사용자 조회 |
 
-### CHECK 제약조건 (migration 003 추가)
+### CHECK 제약조건 (migration 003 + 005)
 
-| 테이블 | 제약명 | 조건 |
-|--------|--------|------|
-| products | chk_products_current_price | `current_price >= 0` |
-| products | chk_products_lowest_price | `lowest_price >= 0` |
-| products | chk_products_highest_price | `highest_price >= 0` |
-| products | chk_products_average_price | `average_price >= 0` |
-| products | chk_products_buy_timing_score | `buy_timing_score BETWEEN 0 AND 100` |
-| ai_predictions | chk_ai_predictions_confidence | `confidence BETWEEN 0.00 AND 1.00` |
-| events | chk_events_date_range | `starts_at < ends_at` |
-| card_discounts | chk_card_discounts_date_range | `valid_from IS NULL OR valid_until IS NULL OR valid_from <= valid_until` |
-| card_discounts | chk_card_discounts_discount_value | `discount_value > 0` |
-| daily_checkins | chk_daily_checkins_streak | `streak_count >= 1` |
-| price_history | chk_price_history_price | `price >= 0` |
+| 테이블 | 제약명 | 조건 | migration |
+|--------|--------|------|-----------|
+| products | chk_products_current_price | `current_price >= 0` | 003 |
+| products | chk_products_lowest_price | `lowest_price >= 0` | 003 |
+| products | chk_products_highest_price | `highest_price >= 0` | 003 |
+| products | chk_products_average_price | `average_price >= 0` | 003 |
+| products | chk_products_buy_timing_score | `buy_timing_score BETWEEN 0 AND 100` | 003 |
+| ai_predictions | chk_ai_predictions_confidence | `confidence BETWEEN 0.00 AND 1.00` | 003 |
+| events | chk_events_date_range | `starts_at < ends_at` | 003 |
+| card_discounts | chk_card_discounts_date_range | `valid_from IS NULL OR valid_until IS NULL OR valid_from <= valid_until` | 003 |
+| card_discounts | chk_card_discounts_discount_value | `discount_value > 0` | 003 |
+| daily_checkins | chk_daily_checkins_streak | `streak_count >= 1` | 003 |
+| price_history | chk_price_history_price | `price >= 0` | 003 |
+| user_points | chk_user_points_balance | `balance >= 0` | 005 |
 
 ---
 
