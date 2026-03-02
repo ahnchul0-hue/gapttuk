@@ -55,6 +55,9 @@ pub struct Config {
     pub apns_team_id: Option<String>,
     pub fcm_service_account: Option<String>,
 
+    // --- CORS ---
+    pub allowed_origins: Vec<String>,
+
     // --- 모니터링 ---
     pub sentry_dsn: Option<String>,
 }
@@ -130,6 +133,11 @@ impl Config {
             apns_key_id: optional("APNS_KEY_ID"),
             apns_team_id: optional("APNS_TEAM_ID"),
             fcm_service_account: optional("FCM_SERVICE_ACCOUNT"),
+            allowed_origins: env::var("ALLOWED_ORIGINS")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .map(|v| v.split(',').map(|s| s.trim().to_string()).collect())
+                .unwrap_or_default(),
             sentry_dsn,
         }
     }

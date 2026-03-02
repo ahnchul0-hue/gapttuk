@@ -44,7 +44,9 @@ pub async fn upsert_user(
         .await?;
         Ok((updated, false))
     } else {
-        // 신규 사용자
+        // 신규 사용자 — 트랜잭션으로 user + user_points 원자적 생성
+        let mut tx = pool.begin().await?;
+
         let user: User = sqlx::query_as(
             "INSERT INTO users (email, nickname, auth_provider, auth_provider_id, profile_image_url, referral_code, referred_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *"
         )
@@ -55,8 +57,16 @@ pub async fn upsert_user(
         .bind(&info.profile_image_url)
         .bind(referral_code)
         .bind(referred_by)
-        .fetch_one(pool)
+        .fetch_one(&mut *tx)
         .await?;
+
+        // user_points 초기화 (balance=0, total_earned=0, total_spent=0)
+        sqlx::query("INSERT INTO user_points (user_id) VALUES ($1)")
+            .bind(user.id)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
         Ok((user, true))
     }
 }

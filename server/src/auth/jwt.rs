@@ -95,6 +95,7 @@ mod tests {
             apns_key_id: None,
             apns_team_id: None,
             fcm_service_account: None,
+            allowed_origins: vec![],
             sentry_dsn: None,
         }
     }

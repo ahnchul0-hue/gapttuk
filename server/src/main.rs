@@ -16,16 +16,17 @@ use config::Config;
 use error::AppError;
 
 use axum::{extract::State, routing::get, Router};
+use axum::http::{header, HeaderName, HeaderValue, Method};
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::{
+    cors::CorsLayer,
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
+    set_header::SetResponseHeaderLayer,
     trace::TraceLayer,
 };
-
-use axum::http::HeaderName;
 
 /// 공유 애플리케이션 상태 — `State<AppState>`로 모든 핸들러에 전달.
 #[derive(Clone)]
@@ -201,6 +202,28 @@ async fn main() {
     let (global_governor_layer, global_governor_config) =
         middleware::rate_limit::global_limiter();
 
+    // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어, 미설정 시 Dev에서만 전체 허용
+    let cors_layer = if config.allowed_origins.is_empty() {
+        if config.app_env == config::AppEnv::Prod {
+            tracing::warn!("ALLOWED_ORIGINS not set in Prod — CORS will reject cross-origin requests");
+        }
+        CorsLayer::new()
+            .allow_origin(tower_http::cors::Any)
+            .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+    } else {
+        let origins: Vec<HeaderValue> = config
+            .allowed_origins
+            .iter()
+            .filter_map(|o| o.parse().ok())
+            .collect();
+        CorsLayer::new()
+            .allow_origin(origins)
+            .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+            .allow_credentials(true)
+    };
+
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
@@ -223,6 +246,20 @@ async fn main() {
             MakeRequestUuid,
         ))
         .layer(PropagateRequestIdLayer::new(x_request_id))
+        // Security response headers
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::REFERRER_POLICY,
+            HeaderValue::from_static("strict-origin-when-cross-origin"),
+        ))
+        .layer(cors_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state.clone());
 
@@ -253,6 +290,32 @@ async fn main() {
                 interval.tick().await;
                 global_governor_config.limiter().retain_recent();
                 tracing::debug!("Governor rate limiter GC completed");
+            }
+        });
+
+        // 9c. Refresh token 정리 (6시간 주기)
+        // 만료됐거나 revoke된 토큰을 주기적으로 삭제하여 테이블 비대화 방지.
+        let purge_pool = pool.clone();
+        let purge_period = std::time::Duration::from_secs(6 * 3600);
+        tokio::spawn(async move {
+            let mut interval =
+                tokio::time::interval_at(tokio::time::Instant::now() + purge_period, purge_period);
+            loop {
+                interval.tick().await;
+                match sqlx::query(
+                    "DELETE FROM refresh_tokens WHERE revoked_at IS NOT NULL OR expires_at < NOW()"
+                )
+                .execute(&purge_pool)
+                .await
+                {
+                    Ok(result) => {
+                        let count = result.rows_affected();
+                        if count > 0 {
+                            tracing::info!(deleted = count, "Refresh token purge completed");
+                        }
+                    }
+                    Err(e) => tracing::warn!(error = %e, "Refresh token purge failed"),
+                }
             }
         });
     }

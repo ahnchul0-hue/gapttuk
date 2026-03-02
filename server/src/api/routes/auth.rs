@@ -120,7 +120,31 @@ async fn social_login(
     let (user, is_new_user) =
         auth_service::upsert_user(&state.pool, &social_info, &referral_code, referred_by).await?;
 
-    // 5. 토큰 쌍 생성
+    // 5. 추천 기록 저장 (신규 사용자 + 추천인이 있는 경우)
+    if is_new_user {
+        if let Some(referrer_id) = referred_by {
+            if let Some(ref code) = body.referral_code {
+                if let Err(e) = sqlx::query(
+                    "INSERT INTO referrals (referrer_id, referred_id, referral_code) VALUES ($1, $2, $3)"
+                )
+                .bind(referrer_id)
+                .bind(user.id)
+                .bind(code.as_str())
+                .execute(&state.pool)
+                .await
+                {
+                    tracing::warn!(
+                        referrer_id,
+                        referred_id = user.id,
+                        error = %e,
+                        "Failed to insert referral record"
+                    );
+                }
+            }
+        }
+    }
+
+    // 6. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;
 
     Ok(Created(AuthResponse {
