@@ -117,7 +117,7 @@ async fn add_by_url(
         return Err(AppError::BadRequest("URL을 입력해주세요".to_string()));
     }
 
-    let response = product_service::add_product_by_url(&state.pool, url).await?;
+    let response = product_service::add_product_by_url(&state.pool, &state.cache, url).await?;
     Ok(Created(response))
 }
 

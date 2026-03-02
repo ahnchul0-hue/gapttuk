@@ -55,13 +55,14 @@ impl CrawlerService {
     pub async fn run_cycle(&self) -> CycleStats {
         let start = Instant::now();
 
-        // 1. DB에서 쿠팡 상품 전체 조회 (shopping_mall_id = 1)
+        // 1. DB에서 쿠팡 상품 전체 조회 (shopping_malls.code = 'coupang' 조인)
         let products = match sqlx::query_as::<_, ProductRow>(
             r#"
-            SELECT id, product_url
-            FROM products
-            WHERE shopping_mall_id = 1
-              AND product_url IS NOT NULL
+            SELECT p.id, p.product_url
+            FROM products p
+            JOIN shopping_malls sm ON sm.id = p.shopping_mall_id
+            WHERE sm.code = 'coupang'
+              AND p.product_url IS NOT NULL
             "#,
         )
         .fetch_all(&self.pool)
@@ -193,6 +194,18 @@ impl CrawlerService {
             "Crawl cycle completed"
         );
 
+        // 크롤링 완료 후 인기 검색어 자동 갱신 + 캐시 무효화
+        match stats::refresh_popular_searches(&self.pool).await {
+            Ok(count) => {
+                self.cache
+                    .popular_searches
+                    .invalidate(&"top".to_string())
+                    .await;
+                tracing::info!(count, "Popular searches refreshed");
+            }
+            Err(e) => tracing::warn!(error = %e, "Popular searches refresh failed"),
+        }
+
         stats
     }
 }
@@ -274,7 +287,8 @@ async fn scrape_and_update(
     Ok(price_changed)
 }
 
-/// 상품명, 이미지 URL 업데이트 (크롤링 결과가 있을 때)
+/// 상품명, 이미지 URL 업데이트 (크롤링 결과가 있을 때).
+/// COALESCE로 단일 쿼리 — NULL 파라미터는 기존 값 유지.
 async fn update_product_metadata(
     pool: &sqlx::PgPool,
     result: &CrawlResult,
@@ -283,34 +297,14 @@ async fn update_product_metadata(
         return Ok(());
     }
 
-    // product_name만 있는 경우, image_url만 있는 경우, 둘 다 있는 경우 처리
-    match (&result.product_name, &result.image_url) {
-        (Some(name), Some(img)) => {
-            sqlx::query(
-                "UPDATE products SET product_name = $2, image_url = $3, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(result.product_id)
-            .bind(name)
-            .bind(img)
-            .execute(pool)
-            .await?;
-        }
-        (Some(name), None) => {
-            sqlx::query("UPDATE products SET product_name = $2, updated_at = NOW() WHERE id = $1")
-                .bind(result.product_id)
-                .bind(name)
-                .execute(pool)
-                .await?;
-        }
-        (None, Some(img)) => {
-            sqlx::query("UPDATE products SET image_url = $2, updated_at = NOW() WHERE id = $1")
-                .bind(result.product_id)
-                .bind(img)
-                .execute(pool)
-                .await?;
-        }
-        (None, None) => {} // already handled above
-    }
+    sqlx::query(
+        "UPDATE products SET product_name = COALESCE($2, product_name), image_url = COALESCE($3, image_url), updated_at = NOW() WHERE id = $1",
+    )
+    .bind(result.product_id)
+    .bind(&result.product_name)
+    .bind(&result.image_url)
+    .execute(pool)
+    .await?;
 
     Ok(())
 }

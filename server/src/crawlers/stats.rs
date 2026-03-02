@@ -151,6 +151,40 @@ struct CombinedStats {
     max_price: Option<i32>,
 }
 
+/// 인기 검색어 자동 집계 — 가격 알림이 많은 상품명을 popular_searches에 반영.
+/// TRUNCATE + INSERT로 전체 갱신 (트랜잭션 내 실행으로 읽기 중단 최소화).
+pub async fn refresh_popular_searches(pool: &sqlx::PgPool) -> Result<u64, sqlx::Error> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("TRUNCATE popular_searches")
+        .execute(&mut *tx)
+        .await?;
+
+    let result = sqlx::query(
+        r#"
+        INSERT INTO popular_searches (keyword, search_count, rank, trend, updated_at)
+        SELECT
+            p.product_name,
+            COUNT(pa.id)::int,
+            ROW_NUMBER() OVER (ORDER BY COUNT(pa.id) DESC)::smallint,
+            'stable',
+            NOW()
+        FROM price_alerts pa
+        JOIN products p ON p.id = pa.product_id
+        WHERE pa.is_active = true
+        GROUP BY p.product_name
+        HAVING COUNT(pa.id) > 0
+        ORDER BY COUNT(pa.id) DESC
+        LIMIT 50
+        "#,
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(result.rows_affected())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

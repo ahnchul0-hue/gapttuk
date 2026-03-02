@@ -4,27 +4,24 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use tower_governor::{
     governor::{GovernorConfig, GovernorConfigBuilder},
-    key_extractor::PeerIpKeyExtractor,
+    key_extractor::SmartIpKeyExtractor,
     GovernorError, GovernorLayer,
 };
 
 type Middleware = ::governor::middleware::StateInformationMiddleware;
-type HeaderLayer = GovernorLayer<PeerIpKeyExtractor, Middleware, axum::body::Body>;
-
-// NOTE: PeerIpKeyExtractor는 TCP 소켓의 피어 IP를 사용한다.
-// 리버스 프록시(nginx/ALB) 뒤에 배포 시, 모든 클라이언트가 프록시 IP로 인식되어
-// 동일 버킷을 공유하게 된다. 프록시 배포 시 SmartIpKeyExtractor 또는
-// X-Forwarded-For를 검증하는 커스텀 KeyExtractor로 교체해야 한다.
+type HeaderLayer = GovernorLayer<SmartIpKeyExtractor, Middleware, axum::body::Body>;
 
 /// 전역 Rate Limiter — 60 req/min per IP.
 /// `per_second(1)` = 1초마다 토큰 1개 보충, `burst_size(60)` = 최대 60개 누적.
 /// `Arc<GovernorConfig>`도 함께 반환하여 주기적 메모리 정리(`retain_recent`)에 사용.
+/// SmartIpKeyExtractor: Forwarded/X-Forwarded-For 우선, 없으면 ConnectInfo 폴백.
 pub fn global_limiter() -> (
     HeaderLayer,
-    Arc<GovernorConfig<PeerIpKeyExtractor, Middleware>>,
+    Arc<GovernorConfig<SmartIpKeyExtractor, Middleware>>,
 ) {
     let config = Arc::new(
         GovernorConfigBuilder::default()
+            .key_extractor(SmartIpKeyExtractor)
             .per_second(1)
             .burst_size(60)
             .use_headers()
@@ -37,9 +34,10 @@ pub fn global_limiter() -> (
 
 /// 검색 전용 Rate Limiter — 10 req/min per IP.
 /// `per_second(6)` = 6초마다 토큰 1개, `burst_size(10)` = 최대 10개 누적.
-/// 호출 시마다 독립 state가 생성되므로, 서버 시작 시 한 번만 호출해야 한다.
+/// SmartIpKeyExtractor로 프록시 환경에서도 실제 클라이언트 IP 기반 제한.
 pub fn search_limiter() -> HeaderLayer {
     let config = GovernorConfigBuilder::default()
+        .key_extractor(SmartIpKeyExtractor)
         .per_second(6)
         .burst_size(10)
         .use_headers()

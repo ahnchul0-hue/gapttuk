@@ -164,6 +164,7 @@ pub async fn search_products(
 /// `INSERT ON CONFLICT DO NOTHING`으로 TOCTOU 레이스 컨디션 방지.
 pub async fn add_product_by_url(
     pool: &PgPool,
+    cache: &AppCache,
     url_str: &str,
 ) -> Result<AddProductResponse, AppError> {
     let info = parse_coupang_url(url_str)?;
@@ -199,6 +200,9 @@ pub async fn add_product_by_url(
     .fetch_one(pool)
     .await?;
 
+    // 캐시에 상품 저장 (get_product 캐시 일관성 보장)
+    cache.products.insert(product.id, product.clone()).await;
+
     // product_name이 placeholder면 방금 삽입된 것
     let is_new = product.product_name == "가격 추적 대기 중";
 
@@ -211,6 +215,18 @@ pub async fn add_product_by_url(
     })
 }
 
+/// 상품 존재 확인 — 존재하지 않으면 NotFound 반환.
+async fn ensure_product_exists(pool: &PgPool, product_id: i64) -> Result<(), AppError> {
+    let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
+        .bind(product_id)
+        .fetch_optional(pool)
+        .await?;
+    if exists.is_none() {
+        return Err(AppError::NotFound("상품".to_string()));
+    }
+    Ok(())
+}
+
 /// 가격 이력 조회 (커서 기반 페이지네이션)
 pub async fn get_price_history(
     pool: &PgPool,
@@ -220,15 +236,7 @@ pub async fn get_price_history(
     cursor: Option<i64>,
     limit: i64,
 ) -> Result<Vec<crate::models::PriceHistory>, AppError> {
-    // 상품 존재 확인
-    let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
-        .bind(product_id)
-        .fetch_optional(pool)
-        .await?;
-
-    if exists.is_none() {
-        return Err(AppError::NotFound("상품".to_string()));
-    }
+    ensure_product_exists(pool, product_id).await?;
 
     let fetch_limit = limit + 1;
 
@@ -258,15 +266,7 @@ pub async fn get_daily_price_aggregates(
     pool: &PgPool,
     product_id: i64,
 ) -> Result<Vec<DailyPriceAggregate>, AppError> {
-    // 상품 존재 확인
-    let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
-        .bind(product_id)
-        .fetch_optional(pool)
-        .await?;
-
-    if exists.is_none() {
-        return Err(AppError::NotFound("상품".to_string()));
-    }
+    ensure_product_exists(pool, product_id).await?;
 
     let aggregates: Vec<DailyPriceAggregate> = sqlx::query_as(
         "SELECT EXTRACT(DOW FROM recorded_at)::int AS day_of_week,
@@ -286,13 +286,15 @@ pub async fn get_daily_price_aggregates(
     Ok(aggregates)
 }
 
-/// 인기 검색어 조회 (캐시 적용)
+/// 인기 검색어 조회 (캐시 적용).
+/// DB에서는 항상 최대 50건을 캐시하고, 응답 시 limit으로 잘라냄.
+const POPULAR_SEARCHES_CACHE_MAX: i32 = 50;
+
 pub async fn get_popular_searches(
     pool: &PgPool,
     cache: &AppCache,
     limit: i32,
 ) -> Result<Vec<PopularSearch>, AppError> {
-    // 캐시 히트 확인
     let cache_key = "top".to_string();
     if let Some(cached) = cache.popular_searches.get(&cache_key).await {
         return Ok(cached.into_iter().take(limit as usize).collect());
@@ -300,17 +302,16 @@ pub async fn get_popular_searches(
 
     let items: Vec<PopularSearch> =
         sqlx::query_as("SELECT * FROM popular_searches ORDER BY rank ASC LIMIT $1")
-            .bind(limit)
+            .bind(POPULAR_SEARCHES_CACHE_MAX)
             .fetch_all(pool)
             .await?;
 
-    // 캐시 저장
     cache
         .popular_searches
         .insert(cache_key, items.clone())
         .await;
 
-    Ok(items)
+    Ok(items.into_iter().take(limit as usize).collect())
 }
 
 // ── 테스트 ──────────────────────────────────────────────

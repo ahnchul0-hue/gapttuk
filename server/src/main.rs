@@ -4,10 +4,11 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use gapttuk_server::cache::AppCache;
 use gapttuk_server::{api, config, crawlers, db, health_check, middleware, push, AppState};
 
-use axum::http::{header, HeaderName, HeaderValue, Method};
+use axum::extract::ConnectInfo;
+use axum::http::{header, HeaderName, HeaderValue, Method, StatusCode};
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
-use metrics_exporter_prometheus::PrometheusBuilder;
-use std::net::SocketAddr;
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::{
@@ -42,6 +43,26 @@ async fn shutdown_signal() {
     tokio::select! {
         () = ctrl_c => tracing::info!("Ctrl+C received, shutting down..."),
         () = terminate => tracing::info!("SIGTERM received, shutting down..."),
+    }
+}
+
+/// /metrics 접근 제한 — loopback/private IP만 허용.
+fn is_private_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => v4.is_loopback() || v4.is_private(),
+        IpAddr::V6(v6) => v6.is_loopback(),
+    }
+}
+
+/// /metrics 핸들러 — Prometheus 메트릭 렌더링 (private IP 전용).
+async fn metrics_handler(
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    axum::Extension(handle): axum::Extension<PrometheusHandle>,
+) -> Result<String, StatusCode> {
+    if is_private_ip(addr.ip()) {
+        Ok(handle.render())
+    } else {
+        Err(StatusCode::FORBIDDEN)
     }
 }
 
@@ -190,16 +211,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
-        .route(
-            "/metrics",
-            get({
-                let handle = prometheus_handle;
-                move || {
-                    let h = handle.clone();
-                    async move { h.render() }
-                }
-            }),
-        )
+        .route("/metrics", get(metrics_handler))
+        .layer(axum::Extension(prometheus_handle))
         .nest("/api/v1/auth", api::routes::auth::router())
         .nest("/api/v1/products", api::routes::products::router())
         .nest("/api/v1/devices", api::routes::devices::router())
@@ -322,7 +335,7 @@ async fn main() {
         .await
         .expect("Failed to bind address");
 
-    // into_make_service_with_connect_info는 tower_governor PeerIpKeyExtractor에 필수
+    // into_make_service_with_connect_info는 SmartIpKeyExtractor 폴백 + bot_guard/access_log에 필수
     // timeout 래퍼로 셧다운 드레인 제한 — pool.close() 실행 보장
     match tokio::time::timeout(
         std::time::Duration::from_secs(30),

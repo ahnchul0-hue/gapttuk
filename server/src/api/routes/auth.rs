@@ -130,12 +130,9 @@ async fn social_login(
         None
     };
 
-    // 3. 추천 코드 생성 (신규 사용자용)
-    let referral_code = auth_service::generate_referral_code(&state.pool).await?;
-
-    // 4. 사용자 upsert (신규 시 user_points + referrals도 트랜잭션 내 원자적 생성)
+    // 3. 사용자 upsert (신규 시 referral_code 생성 + user_points + referrals도 트랜잭션 내 원자적 생성)
     let (user, is_new_user) =
-        auth_service::upsert_user(&state.pool, &social_info, &referral_code, referred_by).await?;
+        auth_service::upsert_user(&state.pool, &social_info, referred_by).await?;
 
     // 5. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;

@@ -57,12 +57,11 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
         DecodingKey::from_rsa_components(&jwk.n, &jwk.e).map_err(|_| AppError::TokenInvalid)?;
 
     let mut validation = Validation::new(Algorithm::RS256);
-    // Apple의 id_token audience는 클라이언트 ID
-    if let Some(ref client_id) = state.config.apple_client_id {
-        validation.set_audience(&[client_id]);
-    } else {
-        validation.validate_aud = false;
-    }
+    // Apple의 id_token audience는 클라이언트 ID — 미설정 시 토큰 재사용 공격 방지를 위해 차단
+    let client_id = state.config.apple_client_id.as_ref().ok_or_else(|| {
+        AppError::Internal("APPLE_CLIENT_ID 미설정 — Apple 로그인 불가".to_string())
+    })?;
+    validation.set_audience(&[client_id]);
     validation.set_issuer(&["https://appleid.apple.com"]);
 
     let token_data = decode::<AppleClaims>(id_token, &decoding_key, &validation)

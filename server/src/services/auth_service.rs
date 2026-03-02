@@ -11,11 +11,11 @@ use crate::error::AppError;
 use crate::models::User;
 
 /// 소셜 로그인 사용자 upsert → 신규면 INSERT, 기존이면 UPDATE.
+/// referral_code는 신규 사용자에게만 내부 생성 — 기존 사용자 로그인 시 불필요한 DB 조회 방지.
 /// 반환: (User, is_new_user)
 pub async fn upsert_user(
     pool: &PgPool,
     info: &SocialUserInfo,
-    referral_code: &str,
     referred_by: Option<i64>,
 ) -> Result<(User, bool), AppError> {
     // auth_provider + auth_provider_id로 기존 사용자 조회
@@ -46,7 +46,8 @@ pub async fn upsert_user(
         .await?;
         Ok((updated, false))
     } else {
-        // 신규 사용자 — 트랜잭션으로 user + user_points 원자적 생성
+        // 신규 사용자 — referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
+        let referral_code = generate_referral_code(pool).await?;
         let mut tx = pool.begin().await?;
 
         let user: User = sqlx::query_as(
@@ -57,7 +58,7 @@ pub async fn upsert_user(
         .bind(provider_str)
         .bind(&info.provider_id)
         .bind(&info.profile_image_url)
-        .bind(referral_code)
+        .bind(&referral_code)
         .bind(referred_by)
         .fetch_one(&mut *tx)
         .await?;
@@ -75,7 +76,7 @@ pub async fn upsert_user(
             )
             .bind(referrer_id)
             .bind(user.id)
-            .bind(referral_code)
+            .bind(&referral_code)
             .execute(&mut *tx)
             .await?;
         }
