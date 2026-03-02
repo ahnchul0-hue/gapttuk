@@ -190,13 +190,15 @@ async fn main() {
 
     // 7. Router — 레이어 순서: 마지막 .layer()가 outermost
     let x_request_id = HeaderName::from_static("x-request-id");
+    let (global_governor_layer, global_governor_config) =
+        middleware::rate_limit::global_limiter();
 
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
         .nest("/api/v1/products", api::routes::products::router())
         // innermost → outermost 순서
-        .layer(middleware::rate_limit::global_limiter())
+        .layer(global_governor_layer)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             middleware::bot_guard::bot_guard,
@@ -213,8 +215,9 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(state.clone());
 
-    // 8. 파티션 유지보수 (일일 크론)
+    // 8. 백그라운드 유지보수 (Test 환경 skip)
     if config.app_env != config::AppEnv::Test {
+        // 8a. 파티션 유지보수 (일일)
         let partition_pool = pool.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(86400));
@@ -225,6 +228,17 @@ async fn main() {
                 } else {
                     tracing::info!("Partition maintenance completed");
                 }
+            }
+        });
+
+        // 8b. Governor rate limiter 메모리 정리 (1시간 주기)
+        // 내부 HashMap에 IP별 상태가 무한 누적되므로 주기적 GC 필요.
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
+            loop {
+                interval.tick().await;
+                global_governor_config.limiter().retain_recent();
+                tracing::debug!("Governor rate limiter GC completed");
             }
         });
     }
