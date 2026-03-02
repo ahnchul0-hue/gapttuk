@@ -31,8 +31,7 @@ struct AppleJwk {
 /// 서버는 Apple의 공개키(JWKS)로 서명을 검증한다.
 pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, AppError> {
     // 1. id_token 헤더에서 kid 추출
-    let header = jsonwebtoken::decode_header(id_token)
-        .map_err(|_| AppError::TokenInvalid)?;
+    let header = jsonwebtoken::decode_header(id_token).map_err(|_| AppError::TokenInvalid)?;
     let kid = header.kid.ok_or(AppError::TokenInvalid)?;
 
     // 2. Apple JWKS 가져오기
@@ -54,8 +53,8 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
         .ok_or(AppError::TokenInvalid)?;
 
     // 4. RSA 공개키로 id_token 검증
-    let decoding_key = DecodingKey::from_rsa_components(&jwk.n, &jwk.e)
-        .map_err(|_| AppError::TokenInvalid)?;
+    let decoding_key =
+        DecodingKey::from_rsa_components(&jwk.n, &jwk.e).map_err(|_| AppError::TokenInvalid)?;
 
     let mut validation = Validation::new(Algorithm::RS256);
     // Apple의 id_token audience는 클라이언트 ID
@@ -74,9 +73,13 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     Ok(SocialUserInfo {
         provider: AuthProvider::Apple,
         provider_id: claims.sub,
-        email: claims.email.filter(|e| !e.is_empty()).ok_or(AppError::BadRequest(
-            "Apple 계정에서 이메일을 가져올 수 없습니다. 이메일 공유를 허용해 주세요.".to_string(),
-        ))?,
+        email: claims
+            .email
+            .filter(|e| !e.is_empty())
+            .ok_or(AppError::BadRequest(
+                "Apple 계정에서 이메일을 가져올 수 없습니다. 이메일 공유를 허용해 주세요."
+                    .to_string(),
+            ))?,
         nickname: None,
         profile_image_url: None,
     })

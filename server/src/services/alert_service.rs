@@ -70,27 +70,27 @@ pub async fn create_price_alert(
     }
 
     // 상품 존재 확인
-    let exists = sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)")
-        .bind(req.product_id)
-        .fetch_one(pool)
-        .await?;
+    let exists =
+        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)")
+            .bind(req.product_id)
+            .fetch_one(pool)
+            .await?;
 
     if !exists {
         return Err(AppError::NotFound("상품".to_string()));
     }
 
     // 사용자당 알림 개수 제한 (최대 50개)
-    let count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM price_alerts WHERE user_id = $1",
-    )
-    .bind(user_id)
-    .fetch_one(pool)
-    .await?;
+    let count =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM price_alerts WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_one(pool)
+            .await?;
 
     if count >= MAX_ALERTS_PER_USER {
-        return Err(AppError::BadRequest(
-            format!("가격 알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"),
-        ));
+        return Err(AppError::BadRequest(format!(
+            "가격 알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+        )));
     }
 
     let alert = sqlx::query_as::<_, PriceAlert>(
@@ -254,12 +254,14 @@ pub async fn evaluate_price_alerts(
         if let Err(e) = notification_service::create_and_push(
             pool,
             push,
-            alert.user_id,
-            NotificationType::PriceAlert,
-            alert.id,
-            &title,
-            &body,
-            Some(&deep_link),
+            &notification_service::PushNotification {
+                user_id: alert.user_id,
+                ntype: NotificationType::PriceAlert,
+                reference_id: alert.id,
+                title: &title,
+                body: &body,
+                deep_link: Some(&deep_link),
+            },
         )
         .await
         {
@@ -290,18 +292,12 @@ fn evaluate_condition(
     average_price: Option<i32>,
 ) -> bool {
     match alert_type {
-        AlertType::TargetPrice => {
-            target_price.map_or(false, |target| new_price <= target)
-        }
-        AlertType::AllTimeLow => {
-            lowest_price.map_or(false, |lowest| new_price < lowest)
-        }
-        AlertType::BelowAverage => {
-            average_price.map_or(false, |avg| new_price < avg)
-        }
+        AlertType::TargetPrice => target_price.is_some_and(|target| new_price <= target),
+        AlertType::AllTimeLow => lowest_price.is_some_and(|lowest| new_price < lowest),
+        AlertType::BelowAverage => average_price.is_some_and(|avg| new_price < avg),
         AlertType::NearLowest => {
             // 역대 최저가의 NEAR_LOWEST_THRESHOLD(105%) 이내
-            lowest_price.map_or(false, |lowest| {
+            lowest_price.is_some_and(|lowest| {
                 let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD) as i32;
                 new_price <= threshold
             })

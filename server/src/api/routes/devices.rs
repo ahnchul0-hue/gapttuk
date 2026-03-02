@@ -103,12 +103,11 @@ async fn unregister_device(
     Auth(claims): Auth,
     Path(device_id): Path<i64>,
 ) -> Result<Deleted, AppError> {
-    let result =
-        sqlx::query("DELETE FROM user_devices WHERE id = $1 AND user_id = $2")
-            .bind(device_id)
-            .bind(claims.sub)
-            .execute(&state.pool)
-            .await?;
+    let result = sqlx::query("DELETE FROM user_devices WHERE id = $1 AND user_id = $2")
+        .bind(device_id)
+        .bind(claims.sub)
+        .execute(&state.pool)
+        .await?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound("디바이스".to_string()));

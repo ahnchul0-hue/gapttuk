@@ -27,9 +27,7 @@ pub async fn init_pool(database_url: &str) -> PgPool {
             }
             Err(e) => {
                 if attempts >= max_attempts {
-                    panic!(
-                        "Failed to connect to database after {max_attempts} attempts: {e}"
-                    );
+                    panic!("Failed to connect to database after {max_attempts} attempts: {e}");
                 }
                 tracing::warn!(
                     "Database connection attempt {attempts}/{max_attempts} failed: {e}. Retrying in 5s..."

@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Build artifacts
+server/target
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Flutter (프론트엔드)
+app/
+
+# Documents & scripts
+documents/
+scripts/
+*.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI
+.github/
+
+# MCP tools
+.serena/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

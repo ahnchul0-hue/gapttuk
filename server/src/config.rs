@@ -72,9 +72,7 @@ impl Config {
         let database_url = required("DATABASE_URL");
         let jwt_secret = required("JWT_SECRET");
 
-        let app_env = AppEnv::parse(
-            &env::var("APP_ENV").unwrap_or_else(|_| "dev".to_string()),
-        );
+        let app_env = AppEnv::parse(&env::var("APP_ENV").unwrap_or_else(|_| "dev".to_string()));
 
         // prod 환경에서 JWT_SECRET 검증 (길이 + 플레이스홀더 차단)
         if app_env == AppEnv::Prod && jwt_secret.len() < 32 {

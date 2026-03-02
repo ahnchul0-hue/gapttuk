@@ -91,7 +91,9 @@ async fn search(
         return Err(AppError::BadRequest("검색어를 입력해주세요".to_string()));
     }
     if q.len() > 100 {
-        return Err(AppError::BadRequest("검색어는 100자 이하로 입력해주세요".to_string()));
+        return Err(AppError::BadRequest(
+            "검색어는 100자 이하로 입력해주세요".to_string(),
+        ));
     }
 
     let limit = params.limit.clamp(1, 100);
@@ -128,11 +130,15 @@ async fn prices(
     // 날짜 범위 검증
     if let (Some(from), Some(to)) = (params.from, params.to) {
         if from >= to {
-            return Err(AppError::BadRequest("from은 to보다 이전이어야 합니다".to_string()));
+            return Err(AppError::BadRequest(
+                "from은 to보다 이전이어야 합니다".to_string(),
+            ));
         }
         let span = (to - from).num_days();
         if span > 730 {
-            return Err(AppError::BadRequest("조회 기간은 최대 730일입니다".to_string()));
+            return Err(AppError::BadRequest(
+                "조회 기간은 최대 730일입니다".to_string(),
+            ));
         }
     }
 

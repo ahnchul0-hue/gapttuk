@@ -2,7 +2,9 @@ use chrono::{Duration, Utc};
 use rand::Rng;
 use sqlx::PgPool;
 
-use crate::auth::jwt::{encode_access_token, generate_refresh_token, hash_refresh_token, TokenPair};
+use crate::auth::jwt::{
+    encode_access_token, generate_refresh_token, hash_refresh_token, TokenPair,
+};
 use crate::auth::providers::SocialUserInfo;
 use crate::config::Config;
 use crate::error::AppError;
@@ -95,14 +97,12 @@ pub async fn create_token_pair(
 
     let expires_at = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
 
-    sqlx::query(
-        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)"
-    )
-    .bind(user_id)
-    .bind(&token_hash)
-    .bind(expires_at)
-    .execute(pool)
-    .await?;
+    sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
+        .bind(user_id)
+        .bind(&token_hash)
+        .bind(expires_at)
+        .execute(pool)
+        .await?;
 
     Ok(TokenPair {
         access_token,
@@ -124,13 +124,18 @@ pub async fn rotate_refresh_token(
     let mut tx = pool.begin().await?;
 
     // 1. token_hash로 DB 조회
-    let row: Option<(i64, i64, Option<chrono::DateTime<Utc>>, chrono::DateTime<Utc>)> =
-        sqlx::query_as(
-            "SELECT id, user_id, revoked_at, expires_at FROM refresh_tokens WHERE token_hash = $1"
-        )
-        .bind(&token_hash)
-        .fetch_optional(&mut *tx)
-        .await?;
+    #[allow(clippy::type_complexity)]
+    let row: Option<(
+        i64,
+        i64,
+        Option<chrono::DateTime<Utc>>,
+        chrono::DateTime<Utc>,
+    )> = sqlx::query_as(
+        "SELECT id, user_id, revoked_at, expires_at FROM refresh_tokens WHERE token_hash = $1",
+    )
+    .bind(&token_hash)
+    .fetch_optional(&mut *tx)
+    .await?;
 
     let (token_id, user_id, revoked_at, expires_at) = row.ok_or(AppError::TokenInvalid)?;
 
@@ -167,14 +172,12 @@ pub async fn rotate_refresh_token(
     let new_hash = hash_refresh_token(&new_refresh);
     let new_expires = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
 
-    sqlx::query(
-        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)"
-    )
-    .bind(user_id)
-    .bind(&new_hash)
-    .bind(new_expires)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
+        .bind(user_id)
+        .bind(&new_hash)
+        .bind(new_expires)
+        .execute(&mut *tx)
+        .await?;
 
     tx.commit().await?;
 
@@ -191,7 +194,7 @@ pub async fn rotate_refresh_token(
 /// 로그아웃 — 해당 user의 모든 활성 refresh token revoke.
 pub async fn logout(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     sqlx::query(
-        "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL"
+        "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
     )
     .bind(user_id)
     .execute(pool)
@@ -214,19 +217,20 @@ pub async fn generate_referral_code(pool: &PgPool) -> Result<String, AppError> {
             format!("GAP-{suffix}")
         };
 
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE referral_code = $1)"
-        )
-        .bind(&code)
-        .fetch_one(pool)
-        .await?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE referral_code = $1)")
+                .bind(&code)
+                .fetch_one(pool)
+                .await?;
 
         if !exists {
             return Ok(code);
         }
     }
 
-    Err(AppError::Internal("Failed to generate unique referral code".to_string()))
+    Err(AppError::Internal(
+        "Failed to generate unique referral code".to_string(),
+    ))
 }
 
 /// 추천 코드로 추천인 user_id 조회.
@@ -234,11 +238,10 @@ pub async fn find_referrer_by_code(
     pool: &PgPool,
     referral_code: &str,
 ) -> Result<Option<i64>, AppError> {
-    let id: Option<i64> = sqlx::query_scalar(
-        "SELECT id FROM users WHERE referral_code = $1 AND deleted_at IS NULL"
-    )
-    .bind(referral_code)
-    .fetch_optional(pool)
-    .await?;
+    let id: Option<i64> =
+        sqlx::query_scalar("SELECT id FROM users WHERE referral_code = $1 AND deleted_at IS NULL")
+            .bind(referral_code)
+            .fetch_optional(pool)
+            .await?;
     Ok(id)
 }

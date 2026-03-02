@@ -15,8 +15,12 @@ use cache::AppCache;
 use config::Config;
 use error::AppError;
 
-use axum::{extract::{DefaultBodyLimit, State}, routing::get, Router};
 use axum::http::{header, HeaderName, HeaderValue, Method};
+use axum::{
+    extract::{DefaultBodyLimit, State},
+    routing::get,
+    Router,
+};
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -106,14 +110,18 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
     for offset in 0..=3i32 {
         let month = now + chrono::Months::new(offset as u32);
         let start = month.format("%Y-%m-01").to_string();
-        let next = (month + chrono::Months::new(1)).format("%Y-%m-01").to_string();
+        let next = (month + chrono::Months::new(1))
+            .format("%Y-%m-01")
+            .to_string();
         let suffix = month.format("%Y_%m").to_string();
 
         for table in &["api_access_logs", "price_history"] {
             // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
             // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
             debug_assert!(["api_access_logs", "price_history"].contains(table));
-            debug_assert!(suffix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+            debug_assert!(suffix
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_'));
             let sql = format!(
                 "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
                  FOR VALUES FROM ('{start}') TO ('{next}')"
@@ -128,7 +136,11 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
     if errors.is_empty() {
         Ok(())
     } else {
-        Err(format!("{} partition(s) failed: {}", errors.len(), errors.join("; ")))
+        Err(format!(
+            "{} partition(s) failed: {}",
+            errors.len(),
+            errors.join("; ")
+        ))
     }
 }
 
@@ -199,13 +211,14 @@ async fn main() {
 
     // 8. Router — 레이어 순서: 마지막 .layer()가 outermost
     let x_request_id = HeaderName::from_static("x-request-id");
-    let (global_governor_layer, global_governor_config) =
-        middleware::rate_limit::global_limiter();
+    let (global_governor_layer, global_governor_config) = middleware::rate_limit::global_limiter();
 
     // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어, 미설정 시 Dev에서만 전체 허용
     let cors_layer = if config.allowed_origins.is_empty() {
         if config.app_env == config::AppEnv::Prod {
-            tracing::warn!("ALLOWED_ORIGINS not set in Prod — CORS will reject cross-origin requests");
+            tracing::warn!(
+                "ALLOWED_ORIGINS not set in Prod — CORS will reject cross-origin requests"
+            );
         }
         CorsLayer::new()
             .allow_origin(tower_http::cors::Any)
@@ -230,7 +243,10 @@ async fn main() {
         .nest("/api/v1/products", api::routes::products::router())
         .nest("/api/v1/devices", api::routes::devices::router())
         .nest("/api/v1/alerts", api::routes::alerts::router())
-        .nest("/api/v1/notifications", api::routes::notifications::router())
+        .nest(
+            "/api/v1/notifications",
+            api::routes::notifications::router(),
+        )
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
@@ -317,7 +333,7 @@ async fn main() {
             loop {
                 interval.tick().await;
                 match sqlx::query(
-                    "DELETE FROM refresh_tokens WHERE revoked_at IS NOT NULL OR expires_at < NOW()"
+                    "DELETE FROM refresh_tokens WHERE revoked_at IS NOT NULL OR expires_at < NOW()",
                 )
                 .execute(&purge_pool)
                 .await

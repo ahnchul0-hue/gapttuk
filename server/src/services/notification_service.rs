@@ -4,18 +4,31 @@ use crate::error::AppError;
 use crate::models::{Notification, NotificationType, UserDevice};
 use crate::push::PushClient;
 
+/// 푸시 알림 전송 요청 파라미터.
+pub struct PushNotification<'a> {
+    pub user_id: i64,
+    pub ntype: NotificationType,
+    pub reference_id: i64,
+    pub title: &'a str,
+    pub body: &'a str,
+    pub deep_link: Option<&'a str>,
+}
+
 /// 알림 생성 + 유저의 활성 디바이스에 푸시 전송.
 /// 개별 디바이스 전송 실패는 warn 로그만 — 전체를 실패시키지 않음.
 pub async fn create_and_push(
     pool: &PgPool,
     push: &PushClient,
-    user_id: i64,
-    ntype: NotificationType,
-    reference_id: i64,
-    title: &str,
-    body: &str,
-    deep_link: Option<&str>,
+    notif: &PushNotification<'_>,
 ) -> Result<(), AppError> {
+    let PushNotification {
+        user_id,
+        ref ntype,
+        reference_id,
+        title,
+        body,
+        deep_link,
+    } = *notif;
     // 1. notifications INSERT (reference_type = notification_type for filtering)
     sqlx::query(
         r#"
@@ -45,7 +58,13 @@ pub async fn create_and_push(
     let mut invalid_device_ids: Vec<i64> = Vec::new();
     for device in &devices {
         if let Err(e) = push
-            .send(&device.platform, &device.device_token, title, body, deep_link)
+            .send(
+                &device.platform,
+                &device.device_token,
+                title,
+                body,
+                deep_link,
+            )
             .await
         {
             if e.is_invalid_token() {

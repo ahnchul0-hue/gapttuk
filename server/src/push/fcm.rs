@@ -178,9 +178,8 @@ impl FcmClient {
             "exp": now + 3600,
         });
 
-        let encoding_key =
-            jsonwebtoken::EncodingKey::from_rsa_pem(self.private_key.as_bytes())
-                .map_err(|e| FcmError::Config(format!("Invalid RSA key: {e}")))?;
+        let encoding_key = jsonwebtoken::EncodingKey::from_rsa_pem(self.private_key.as_bytes())
+            .map_err(|e| FcmError::Config(format!("Invalid RSA key: {e}")))?;
 
         let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
         let jwt = jsonwebtoken::encode(&header, &claims, &encoding_key)

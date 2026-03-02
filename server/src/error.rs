@@ -67,13 +67,13 @@ impl IntoResponse for AppError {
 
             // RESOURCE_
             AppError::NotFound(_) => (StatusCode::NOT_FOUND, "RESOURCE_001", self.to_string()),
-            AppError::BadRequest(_) => (StatusCode::BAD_REQUEST, "VALIDATION_001", self.to_string()),
+            AppError::BadRequest(_) => {
+                (StatusCode::BAD_REQUEST, "VALIDATION_001", self.to_string())
+            }
             AppError::Conflict(_) => (StatusCode::CONFLICT, "RESOURCE_002", self.to_string()),
 
             // RATE_ / SECURITY_
-            AppError::RateLimited => {
-                (StatusCode::TOO_MANY_REQUESTS, "RATE_001", self.to_string())
-            }
+            AppError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "RATE_001", self.to_string()),
             AppError::Forbidden => (StatusCode::FORBIDDEN, "SECURITY_001", self.to_string()),
 
             // SYS_

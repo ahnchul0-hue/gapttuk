@@ -28,6 +28,9 @@ app/.flutter-plugins-dependencies
 # MCP 도구 설정
 .serena/
 
+# Firebase
+firebase-debug.log
+
 # OS
 .DS_Store
 Thumbs.db

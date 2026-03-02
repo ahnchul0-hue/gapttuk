@@ -1,0 +1,67 @@
+# 값뚝(gapttuk) — Docker Compose
+# 사용법:
+#   cp .env.example .env  # 환경변수 설정
+#   docker compose up -d  # 시작
+#   docker compose logs -f app  # 로그
+
+services:
+  # --- PostgreSQL 17 ---
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gapttuk
+      POSTGRES_USER: glovis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gapttuk_dev_pw}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glovis -d gapttuk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- 값뚝 API 서버 ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_URL: postgres://glovis:${POSTGRES_PASSWORD:-gapttuk_dev_pw}@db:5432/gapttuk
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ACCESS_TTL_SECS: ${JWT_ACCESS_TTL_SECS:-1800}
+      JWT_REFRESH_TTL_SECS: ${JWT_REFRESH_TTL_SECS:-604800}
+      # 소셜 로그인 (선택)
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+      # 크롤링 (선택)
+      COUPANG_ACCESS_KEY: ${COUPANG_ACCESS_KEY:-}
+      COUPANG_SECRET_KEY: ${COUPANG_SECRET_KEY:-}
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
+      # 푸시 (선택)
+      APNS_KEY_PATH: ${APNS_KEY_PATH:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      FCM_SERVICE_ACCOUNT: ${FCM_SERVICE_ACCOUNT:-}
+      # CORS
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      # 모니터링
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      RUST_LOG: ${RUST_LOG:-gapttuk_server=info,tower_http=info}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

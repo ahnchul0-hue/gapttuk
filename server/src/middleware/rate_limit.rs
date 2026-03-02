@@ -19,7 +19,10 @@ type HeaderLayer = GovernorLayer<PeerIpKeyExtractor, Middleware, axum::body::Bod
 /// 전역 Rate Limiter — 60 req/min per IP.
 /// `per_second(1)` = 1초마다 토큰 1개 보충, `burst_size(60)` = 최대 60개 누적.
 /// `Arc<GovernorConfig>`도 함께 반환하여 주기적 메모리 정리(`retain_recent`)에 사용.
-pub fn global_limiter() -> (HeaderLayer, Arc<GovernorConfig<PeerIpKeyExtractor, Middleware>>) {
+pub fn global_limiter() -> (
+    HeaderLayer,
+    Arc<GovernorConfig<PeerIpKeyExtractor, Middleware>>,
+) {
     let config = Arc::new(
         GovernorConfigBuilder::default()
             .per_second(1)
@@ -73,11 +76,7 @@ fn json_error_response(err: GovernorError) -> axum::http::Response<axum::body::B
             }));
             (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
         }
-        GovernorError::Other {
-            code,
-            msg,
-            headers,
-        } => {
+        GovernorError::Other { code, msg, headers } => {
             let body = axum::Json(serde_json::json!({
                 "ok": false,
                 "error": {

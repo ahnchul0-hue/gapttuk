@@ -1,4 +1,8 @@
-use axum::{extract::State, routing::{get, post}, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::api::{ApiResponse, Created};
@@ -106,10 +110,14 @@ async fn social_login(
     // 0. 입력 검증
     let token = body.access_token.trim();
     if token.is_empty() {
-        return Err(AppError::BadRequest("access_token이 비어있습니다".to_string()));
+        return Err(AppError::BadRequest(
+            "access_token이 비어있습니다".to_string(),
+        ));
     }
     if token.len() > 4096 {
-        return Err(AppError::BadRequest("access_token이 너무 깁니다".to_string()));
+        return Err(AppError::BadRequest(
+            "access_token이 너무 깁니다".to_string(),
+        ));
     }
 
     // 1. provider에서 사용자 정보 검증
@@ -151,8 +159,7 @@ async fn refresh(
     Json(body): Json<RefreshRequest>,
 ) -> Result<ApiResponse<RefreshResponse>, AppError> {
     let (tokens, _user_id) =
-        auth_service::rotate_refresh_token(&state.pool, &state.config, &body.refresh_token)
-            .await?;
+        auth_service::rotate_refresh_token(&state.pool, &state.config, &body.refresh_token).await?;
 
     Ok(ApiResponse::ok(RefreshResponse {
         access_token: tokens.access_token,
@@ -175,13 +182,12 @@ async fn me(
     State(state): State<AppState>,
     Auth(claims): Auth,
 ) -> Result<ApiResponse<MeResponse>, AppError> {
-    let user: crate::models::User = sqlx::query_as(
-        "SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL"
-    )
-    .bind(claims.sub)
-    .fetch_optional(&state.pool)
-    .await?
-    .ok_or_else(|| AppError::NotFound("사용자".to_string()))?;
+    let user: crate::models::User =
+        sqlx::query_as("SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL")
+            .bind(claims.sub)
+            .fetch_optional(&state.pool)
+            .await?
+            .ok_or_else(|| AppError::NotFound("사용자".to_string()))?;
 
     Ok(ApiResponse::ok(MeResponse {
         id: user.id,

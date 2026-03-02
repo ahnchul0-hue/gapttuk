@@ -187,17 +187,20 @@ async fn scrape_and_update(
     abort_flag: &AtomicBool,
 ) -> Result<bool, CrawlError> {
     // 1. 스크래핑 (3회 재시도)
-    let result = coupang::scrape_product_page(client, product_id, product_url, abort_flag, 2).await?;
+    let result =
+        coupang::scrape_product_page(client, product_id, product_url, abort_flag, 2).await?;
 
     // 2. 가격이 없으면 품절 처리만
     let new_price = match result.price {
         Some(p) => p,
         None if result.is_out_of_stock => {
             // 품절 상태만 업데이트
-            sqlx::query("UPDATE products SET is_out_of_stock = true, updated_at = NOW() WHERE id = $1")
-                .bind(product_id)
-                .execute(pool)
-                .await?;
+            sqlx::query(
+                "UPDATE products SET is_out_of_stock = true, updated_at = NOW() WHERE id = $1",
+            )
+            .bind(product_id)
+            .execute(pool)
+            .await?;
             cache.products.invalidate(&product_id).await;
             return Ok(true);
         }
@@ -205,12 +208,11 @@ async fn scrape_and_update(
     };
 
     // 3. 현재 가격 조회
-    let current = sqlx::query_scalar::<_, Option<i32>>(
-        "SELECT current_price FROM products WHERE id = $1",
-    )
-    .bind(product_id)
-    .fetch_one(pool)
-    .await?;
+    let current =
+        sqlx::query_scalar::<_, Option<i32>>("SELECT current_price FROM products WHERE id = $1")
+            .bind(product_id)
+            .fetch_one(pool)
+            .await?;
 
     let price_changed = current != Some(new_price);
 
@@ -230,10 +232,9 @@ async fn scrape_and_update(
     //    stats::refresh_product_stats()가 lowest_price/average_price를 업데이트하면
     //    AllTimeLow/BelowAverage 조건이 정상 작동하지 않는다.
     if price_changed {
-        if let Err(e) = crate::services::alert_service::evaluate_price_alerts(
-            pool, push, product_id, new_price,
-        )
-        .await
+        if let Err(e) =
+            crate::services::alert_service::evaluate_price_alerts(pool, push, product_id, new_price)
+                .await
         {
             tracing::warn!(product_id, error = %e, "Alert evaluation failed");
         }
@@ -273,22 +274,18 @@ async fn update_product_metadata(
             .await?;
         }
         (Some(name), None) => {
-            sqlx::query(
-                "UPDATE products SET product_name = $2, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(result.product_id)
-            .bind(name)
-            .execute(pool)
-            .await?;
+            sqlx::query("UPDATE products SET product_name = $2, updated_at = NOW() WHERE id = $1")
+                .bind(result.product_id)
+                .bind(name)
+                .execute(pool)
+                .await?;
         }
         (None, Some(img)) => {
-            sqlx::query(
-                "UPDATE products SET image_url = $2, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(result.product_id)
-            .bind(img)
-            .execute(pool)
-            .await?;
+            sqlx::query("UPDATE products SET image_url = $2, updated_at = NOW() WHERE id = $1")
+                .bind(result.product_id)
+                .bind(img)
+                .execute(pool)
+                .await?;
         }
         (None, None) => {} // already handled above
     }

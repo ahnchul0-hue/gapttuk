@@ -68,10 +68,7 @@ pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
     }
 
     // /vp/products/{product_id} 패턴 파싱
-    let segments: Vec<&str> = url
-        .path_segments()
-        .map(|s| s.collect())
-        .unwrap_or_default();
+    let segments: Vec<&str> = url.path_segments().map(|s| s.collect()).unwrap_or_default();
 
     // ["vp", "products", "{id}", ...]
     let product_id = segments
@@ -97,23 +94,17 @@ pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
 // ── 서비스 함수 ─────────────────────────────────────────
 
 /// 상품 상세 조회 (캐시 적용)
-pub async fn get_product(
-    pool: &PgPool,
-    cache: &AppCache,
-    id: i64,
-) -> Result<Product, AppError> {
+pub async fn get_product(pool: &PgPool, cache: &AppCache, id: i64) -> Result<Product, AppError> {
     // 캐시 히트 확인
     if let Some(product) = cache.products.get(&id).await {
         return Ok(product);
     }
 
-    let product: Product = sqlx::query_as(
-        "SELECT * FROM products WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
+    let product: Product = sqlx::query_as("SELECT * FROM products WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
 
     // 캐시 저장
     cache.products.insert(id, product.clone()).await;
@@ -178,12 +169,10 @@ pub async fn add_product_by_url(
     let info = parse_coupang_url(url_str)?;
 
     // 쿠팡 shopping_mall_id 조회
-    let mall_id: i32 = sqlx::query_scalar(
-        "SELECT id FROM shopping_malls WHERE code = 'coupang'",
-    )
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| AppError::Internal("쿠팡 쇼핑몰 설정이 없습니다".to_string()))?;
+    let mall_id: i32 = sqlx::query_scalar("SELECT id FROM shopping_malls WHERE code = 'coupang'")
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::Internal("쿠팡 쇼핑몰 설정이 없습니다".to_string()))?;
 
     // INSERT ON CONFLICT DO NOTHING — 동시 요청에도 안전
     sqlx::query(
@@ -232,11 +221,10 @@ pub async fn get_price_history(
     limit: i64,
 ) -> Result<Vec<crate::models::PriceHistory>, AppError> {
     // 상품 존재 확인
-    let exists: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
-            .bind(product_id)
-            .fetch_optional(pool)
-            .await?;
+    let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
+        .bind(product_id)
+        .fetch_optional(pool)
+        .await?;
 
     if exists.is_none() {
         return Err(AppError::NotFound("상품".to_string()));
@@ -271,11 +259,10 @@ pub async fn get_daily_price_aggregates(
     product_id: i64,
 ) -> Result<Vec<DailyPriceAggregate>, AppError> {
     // 상품 존재 확인
-    let exists: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
-            .bind(product_id)
-            .fetch_optional(pool)
-            .await?;
+    let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM products WHERE id = $1")
+        .bind(product_id)
+        .fetch_optional(pool)
+        .await?;
 
     if exists.is_none() {
         return Err(AppError::NotFound("상품".to_string()));
@@ -311,12 +298,11 @@ pub async fn get_popular_searches(
         return Ok(cached.into_iter().take(limit as usize).collect());
     }
 
-    let items: Vec<PopularSearch> = sqlx::query_as(
-        "SELECT * FROM popular_searches ORDER BY rank ASC LIMIT $1",
-    )
-    .bind(limit)
-    .fetch_all(pool)
-    .await?;
+    let items: Vec<PopularSearch> =
+        sqlx::query_as("SELECT * FROM popular_searches ORDER BY rank ASC LIMIT $1")
+            .bind(limit)
+            .fetch_all(pool)
+            .await?;
 
     // 캐시 저장
     cache
