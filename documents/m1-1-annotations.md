@@ -34,23 +34,23 @@ edition = "2021"
 
 # --- HTTP 클라이언트 (크롤링용) ---
 # reqwest 0.12.x — features: json, cookies
-# scraper 0.22.x
+# scraper 0.25.x
 
 # --- Rate Limiting ---
 # tower_governor 0.8.x
 
 # --- 스케줄러 ---
-# tokio-cron-scheduler 0.13.x
+# tokio-cron-scheduler 0.15.x
 
 # --- 푸시 ---
 # a2 0.10.x (APNs)
-# fcm 0.9.x (FCM)
+# fcm 0.9.x — 레거시 API 폐지(2024.06), M1-8에서 fcm-v1 또는 reqwest 직접 호출로 교체 예정
 
 # --- 캐시 ---
 # moka 0.12.x — features: future
 
 # --- 모니터링 ---
-# sentry 0.35.x
+# sentry 0.37.x
 
 # --- 유틸리티 ---
 # dotenvy 0.15.x — .env 로드

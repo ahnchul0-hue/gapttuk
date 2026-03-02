@@ -574,6 +574,7 @@ erDiagram
 | daily_checkins | chk_daily_checkins_streak | `streak_count >= 1` | 003 |
 | price_history | chk_price_history_price | `price >= 0` | 003 |
 | user_points | chk_user_points_balance | `balance >= 0` | 005 |
+| users | chk_users_auth_provider | `auth_provider IN ('kakao','google','apple','naver')` | 006 |
 
 ---
 

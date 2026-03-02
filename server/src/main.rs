@@ -3,6 +3,7 @@ mod cache;
 mod config;
 mod db;
 mod error;
+mod models;
 
 use api::ApiResponse;
 use cache::AppCache;

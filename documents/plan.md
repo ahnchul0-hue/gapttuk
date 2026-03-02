@@ -1,9 +1,9 @@
 # 값뚝 구현 계획 (plan.md)
 
-> **상태: DRAFT v0.6**
+> **상태: DRAFT v0.7**
 > 작성일: 2026-03-01 | 갱신: 2026-03-02
 > 근거 문서: prd.md v0.7 | schema-design.md v0.7 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
-> **이 문서는 STEP 7까지 완료되었습니다. M1-2 에러 처리 + 공통 모듈 구현 완료.**
+> **이 문서는 STEP 9까지 완료되었습니다. M1-2 에러 처리 + 공통 모듈 구현 완료. M1-3 모델 파일 생성 완료.**
 
 ---
 
@@ -337,7 +337,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [x] 각 migration에 대응하는 **down migration** 작성 (`sqlx migrate revert` 지원)
 - [x] SQLx 마이그레이션 실행 + `sqlx prepare` 검증
 
-- [ ] CORS 설정 — tower-http `CorsLayer` (dev: AllowAll, prod: 도메인 화이트리스트) → M1-4 전 적용 예정
+- [ ] *(M1-4 연기)* CORS 설정 — tower-http `CorsLayer` (dev: AllowAll, prod: 도메인 화이트리스트)
 
 **DoD:** `cargo build` 성공 + `sqlx migrate run` 완료 + 24개 테이블 생성 확인 ✅
 
@@ -351,17 +351,17 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 에러 응답 + 페이지네이션 + 캐시가 동작하는 /health 엔드포인트 ✅
 
 #### M1-3. DB 모델 (~3일)
-- [ ] user.rs — users, user_devices
-- [ ] product.rs — products, shopping_malls, categories
-- [ ] price_history.rs
-- [ ] alert.rs — price_alerts, category_alerts, keyword_alerts
-- [ ] notification.rs
-- [ ] cent.rs — user_points, point_transactions (센트(¢) 보상)
-- [ ] reward.rs — referrals, daily_checkins, roulette_results
-- [ ] event.rs — events, event_participations
-- [ ] card_discount.rs, ai_prediction.rs, popular_search.rs
+- [x] user.rs — users, user_devices
+- [x] product.rs — products, shopping_malls, categories
+- [x] price_history.rs
+- [x] alert.rs — price_alerts, category_alerts, keyword_alerts
+- [x] notification.rs
+- [x] cent.rs — user_points, point_transactions (센트(¢) 보상)
+- [x] reward.rs — referrals, daily_checkins, roulette_results
+- [x] event.rs — events, event_participations
+- [x] card_discount.rs, ai_prediction.rs, popular_search.rs
 > **참고:** point_transactions 모델에 신규 transaction_type 반영: `roulette_checkin`, `roulette_event`, `gifticon_exchange`, `referral_welcome`
-- [ ] security.rs — api_access_logs, blocked_ips
+- [x] security.rs — api_access_logs, blocked_ips (ipnetwork::IpNetwork 사용)
 
 **DoD:** 모든 모델 `cargo build` 통과 + SQLx 컴파일타임 검증 성공
 
@@ -716,10 +716,19 @@ STEP 4: M1-1 구현 (스캐폴딩 + DB 마이그레이션) ✅
 STEP 5: 문서 3-pass 비판적 리뷰 + 전수 반영 ✅
     │
     ▼
-STEP 6: 최종 리뷰 30건 반영 ✅ ← 마지막 완료
+STEP 6: 최종 리뷰 30건 반영 ✅
     │
     ▼
-STEP 7: M1-2 에러 처리 → M1-3 → ... → M1-8 → M1 완료
+STEP 7: M1-2 에러 처리 + 공통 모듈 구현 ✅
+    │
+    ▼
+STEP 8: 8차 종합 리뷰 반영 ✅
+    │
+    ▼
+STEP 9: 9차 리뷰 14건 반영 ✅ ← 현재
+    │
+    ▼
+STEP 10: M1-3 DB 모델 구현 → M1-4 → ... → M1-8 → M1 완료
     │
     ▼
 M2 주석 → 구현 → M3 → M4 → M5
@@ -768,7 +777,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 ---
 
-> **plan.md v0.6 갱신됨 (2026-03-02).** 전수 검토 47건 + 최종 리뷰 30건 반영.
-> **현재 단계: STEP 6 완료 — 최종 리뷰 HIGH 6 + MEDIUM 14 + LOW 10건 반영.**
+> **plan.md v0.7 갱신됨 (2026-03-02).** 전수 검토 47건 + 리뷰 9회전 반영.
+> **현재 단계: STEP 9 완료 — M1-2 구현 완료 + 9차 리뷰 14건 반영.**
 > 주석 파일: `documents/m1-1-annotations.md`
-> **다음: STEP 7 — M1-2 에러 처리 + 공통 구현.**
+> **다음: STEP 10 — M1-3 DB 모델 구현.**

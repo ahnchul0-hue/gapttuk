@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-값뚝(gapttuk) 종합 검증 스크립트 — 5차 최종 리뷰
+값뚝(gapttuk) 종합 검증 스크립트 — 9차 리뷰 리뷰
 =================================================
 검증 범위:
  A. 문서 간 정합성 (숫자/버전/용어)
@@ -141,17 +141,23 @@ def check_B_migration_schema():
     if extra_in_sql:
         add_issue("LOW", "B", "migrations", f"SQL에 있지만 schema에 없는 인덱스: {extra_in_sql}")
 
-    # B3. CHECK 제약조건 수 일치 (11건)
+    # B3. CHECK 제약조건 수 일치 (전체 마이그레이션 합산)
     sql_checks = re.findall(r"ADD CONSTRAINT (chk_\w+)", migration_003)
+
+    # migration 005, 006 등 추가 CHECK 포함
+    extra_checks = []
+    for mig_file in sorted(MIGRATIONS.glob("*.up.sql")):
+        if mig_file.name.startswith("003"):
+            continue  # 이미 처리
+        content = load(mig_file)
+        extra = re.findall(r"ADD CONSTRAINT (chk_\w+)", content)
+        extra_checks.extend(extra)
+
+    all_sql_checks = set(sql_checks + extra_checks)
     schema_checks = re.findall(r"chk_\w+", schema)
     schema_check_set = set(schema_checks)
-    sql_check_set = set(sql_checks)
 
-    if len(sql_check_set) != 11:
-        add_issue("MEDIUM", "B", "003_schema_fixes.up.sql",
-                  f"CHECK 제약조건 {len(sql_check_set)}건 ≠ 11건")
-
-    missing_checks = schema_check_set - sql_check_set
+    missing_checks = schema_check_set - all_sql_checks
     if missing_checks:
         add_issue("MEDIUM", "B", "migrations", f"schema에 있지만 SQL에 없는 CHECK: {missing_checks}")
 
@@ -261,7 +267,23 @@ def check_C_code_quality():
         if env_key not in all_env_keys:
             add_issue("MEDIUM", "C", ".env.example", f"{env_key} 누락 (config.rs에 {field} 존재)")
 
-    # C13. naver auth provider — config.rs에 NAVER 관련 소셜 로그인 키 누락
+    # C13. M1-2 구현 파일 존재 확인
+    m1_2_files = ["error.rs", "cache.rs", "api/mod.rs", "api/pagination.rs"]
+    for f in m1_2_files:
+        if not (SRC / f).exists():
+            add_issue("HIGH", "C", f, f"M1-2 구현 파일 미존재: {f}")
+
+    # C14. models 디렉토리 + ipnetwork 사용 확인
+    models_dir = SRC / "models"
+    if models_dir.exists():
+        security_rs = models_dir / "security.rs"
+        if security_rs.exists():
+            sec_content = load(security_rs)
+            if "IpAddr" in sec_content and "IpNetwork" not in sec_content:
+                add_issue("HIGH", "C", "models/security.rs",
+                          "INET 컬럼에 IpAddr 사용 — ipnetwork::IpNetwork 필요")
+
+    # C15. naver auth provider — config.rs에 NAVER 관련 소셜 로그인 키 누락
     if "naver" in load(DOCS / "schema-design.md").lower():
         naver_auth_in_config = "NAVER_AUTH" in config or "naver_auth" in config
         # 네이버 로그인 전용 키가 별도 필요한지 (현재 naver_client_id/secret은 검색 API용)
@@ -297,8 +319,9 @@ def check_D_doc_completeness():
     # D2. plan.md STEP 진행도
     step_pattern = re.findall(r"STEP\s+(\d+).*?(✅|⬜|🔲|다음)", plan)
     completed_steps = [s for s, status in step_pattern if "✅" in status]
-    if "6" not in completed_steps:
-        add_issue("MEDIUM", "D", "plan.md", "STEP 6 완료 표시 누락")
+    for expected in ["6", "7", "8", "9"]:
+        if expected not in completed_steps:
+            add_issue("MEDIUM", "D", "plan.md", f"STEP {expected} 완료 표시 누락")
 
     # D3. ui-architecture.md 화면 수 일치
     screen_ids = re.findall(r"`([A-Z_]+)`\s*\|", ui)
@@ -549,7 +572,7 @@ def check_I_suggestions():
 
 def main():
     print("=" * 70)
-    print("  값뚝(gapttuk) 종합 검증 리포트 — 5차 최종")
+    print("  값뚝(gapttuk) 종합 검증 리포트 — 9차 리뷰")
     print("=" * 70)
 
     check_A_doc_consistency()

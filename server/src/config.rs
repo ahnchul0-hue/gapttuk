@@ -80,7 +80,7 @@ impl Config {
         if app_env == AppEnv::Prod && jwt_secret.contains("change-me") {
             panic!("JWT_SECRET contains placeholder value — set a real secret for prod");
         }
-        if jwt_secret.len() < 32 {
+        if app_env != AppEnv::Prod && jwt_secret.len() < 32 {
             tracing::warn!("JWT_SECRET is shorter than 32 characters");
         }
 

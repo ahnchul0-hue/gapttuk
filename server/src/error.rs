@@ -79,6 +79,7 @@ impl IntoResponse for AppError {
             // SYS_
             AppError::Internal(msg) => {
                 tracing::error!(error = %msg, "Internal server error");
+                sentry::capture_message(msg, sentry::Level::Error);
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "SYS_001",
