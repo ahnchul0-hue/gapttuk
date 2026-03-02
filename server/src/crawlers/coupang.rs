@@ -1,0 +1,255 @@
+use scraper::{Html, Selector};
+
+use super::ua;
+
+/// 크롤링 결과
+pub struct CrawlResult {
+    pub product_id: i64,
+    pub product_name: Option<String>,
+    pub price: Option<i32>,
+    pub is_out_of_stock: bool,
+    pub image_url: Option<String>,
+}
+
+/// 크롤링 에러
+#[derive(Debug, thiserror::Error)]
+pub enum CrawlError {
+    #[error("HTTP request failed: {0}")]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("Blocked by server (HTTP {0})")]
+    Blocked(u16),
+
+    #[error("HTTP status {0}")]
+    HttpStatus(u16),
+
+    #[error("Parse error: {0}")]
+    ParseError(String),
+
+    #[error("Database error: {0}")]
+    Db(#[from] sqlx::Error),
+}
+
+/// 쿠팡 상품 페이지 스크래핑.
+/// 최대 `max_retries`회 exponential backoff 재시도 (5s → 15s → 45s).
+pub async fn scrape_product_page(
+    client: &reqwest::Client,
+    product_id: i64,
+    product_url: &str,
+    abort_flag: &std::sync::atomic::AtomicBool,
+    max_retries: u32,
+) -> Result<CrawlResult, CrawlError> {
+    let mut last_err = CrawlError::ParseError("no attempts made".to_string());
+
+    for attempt in 0..=max_retries {
+        // abort 확인
+        if abort_flag.load(std::sync::atomic::Ordering::Relaxed) {
+            return Err(CrawlError::Blocked(0));
+        }
+
+        // 재시도 대기 (첫 시도는 skip)
+        if attempt > 0 {
+            let delay_secs = 5u64 * 3u64.pow(attempt - 1); // 5, 15, 45
+            tokio::time::sleep(std::time::Duration::from_secs(delay_secs)).await;
+        }
+
+        match fetch_and_parse(client, product_id, product_url).await {
+            Ok(result) => return Ok(result),
+            Err(CrawlError::Blocked(code)) => {
+                tracing::warn!(product_id, code, "Blocked by Coupang — setting abort flag");
+                abort_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                return Err(CrawlError::Blocked(code));
+            }
+            Err(e) => {
+                tracing::warn!(product_id, attempt, error = %e, "Scrape attempt failed");
+                last_err = e;
+            }
+        }
+    }
+
+    Err(last_err)
+}
+
+/// 단일 요청 + HTML 파싱
+async fn fetch_and_parse(
+    client: &reqwest::Client,
+    product_id: i64,
+    product_url: &str,
+) -> Result<CrawlResult, CrawlError> {
+    let resp = client
+        .get(product_url)
+        .header("User-Agent", ua::random_ua())
+        .header("Referer", "https://www.coupang.com/")
+        .header("Accept-Language", "ko-KR,ko;q=0.9")
+        .send()
+        .await?;
+
+    let status = resp.status().as_u16();
+    if status == 403 || status == 429 {
+        return Err(CrawlError::Blocked(status));
+    }
+    if !resp.status().is_success() {
+        return Err(CrawlError::HttpStatus(status));
+    }
+
+    let html = resp.text().await?;
+    parse_product_html(product_id, &html)
+}
+
+/// HTML에서 상품 정보 파싱
+fn parse_product_html(product_id: i64, html: &str) -> Result<CrawlResult, CrawlError> {
+    let doc = Html::parse_document(html);
+
+    // 가격 파싱 — 여러 셀렉터 순차 시도
+    let price = parse_price(&doc);
+
+    // 상품명
+    let product_name = parse_text(&doc, "h1.prod-buy-header__title")
+        .or_else(|| parse_text(&doc, "h2.prod-buy-header__title"));
+
+    // 이미지 URL
+    let image_url = parse_image(&doc);
+
+    // 품절 여부
+    let is_out_of_stock = check_out_of_stock(&doc);
+
+    Ok(CrawlResult {
+        product_id,
+        product_name,
+        price,
+        is_out_of_stock,
+        image_url,
+    })
+}
+
+/// 가격 파싱 — 쿠팡 페이지의 다양한 가격 셀렉터 시도
+fn parse_price(doc: &Html) -> Option<i32> {
+    let selectors = [
+        "span.total-price > strong",
+        "span.total-price",
+        ".prod-sale-price .total-price",
+    ];
+
+    for sel_str in &selectors {
+        if let Ok(sel) = Selector::parse(sel_str) {
+            if let Some(el) = doc.select(&sel).next() {
+                let text: String = el.text().collect();
+                if let Some(p) = extract_number(&text) {
+                    return Some(p);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// 텍스트 추출
+fn parse_text(doc: &Html, selector_str: &str) -> Option<String> {
+    let sel = Selector::parse(selector_str).ok()?;
+    doc.select(&sel)
+        .next()
+        .map(|el| el.text().collect::<String>().trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+/// 상품 이미지 URL 추출
+fn parse_image(doc: &Html) -> Option<String> {
+    let sel = Selector::parse("img.prod-image__detail").ok()?;
+    doc.select(&sel)
+        .next()
+        .and_then(|el| {
+            el.value()
+                .attr("src")
+                .or_else(|| el.value().attr("data-img-src"))
+        })
+        .map(|s| {
+            if s.starts_with("//") {
+                format!("https:{s}")
+            } else {
+                s.to_string()
+            }
+        })
+}
+
+/// 품절 확인
+fn check_out_of_stock(doc: &Html) -> bool {
+    if let Ok(sel) = Selector::parse(".oos-label, .prod-not-find-known__text") {
+        if doc.select(&sel).next().is_some() {
+            return true;
+        }
+    }
+    false
+}
+
+/// 문자열에서 숫자만 추출 (콤마, 원 등 제거)
+fn extract_number(text: &str) -> Option<i32> {
+    let digits: String = text.chars().filter(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok().filter(|&n| n > 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_number_basic() {
+        assert_eq!(extract_number("12,900원"), Some(12900));
+        assert_eq!(extract_number("1,234,567"), Some(1234567));
+        assert_eq!(extract_number(""), None);
+        assert_eq!(extract_number("무료"), None);
+    }
+
+    #[test]
+    fn parse_html_with_price_and_title() {
+        let html = r#"
+        <html><body>
+            <h1 class="prod-buy-header__title">테스트 상품</h1>
+            <span class="total-price"><strong>29,900</strong>원</span>
+            <img class="prod-image__detail" src="//img.coupang.com/test.jpg" />
+        </body></html>
+        "#;
+        let result = parse_product_html(1, html).unwrap();
+        assert_eq!(result.product_name.as_deref(), Some("테스트 상품"));
+        assert_eq!(result.price, Some(29900));
+        assert_eq!(
+            result.image_url.as_deref(),
+            Some("https://img.coupang.com/test.jpg")
+        );
+        assert!(!result.is_out_of_stock);
+    }
+
+    #[test]
+    fn parse_html_out_of_stock() {
+        let html = r#"
+        <html><body>
+            <h1 class="prod-buy-header__title">품절 상품</h1>
+            <div class="oos-label">일시품절</div>
+        </body></html>
+        "#;
+        let result = parse_product_html(2, html).unwrap();
+        assert!(result.is_out_of_stock);
+        assert_eq!(result.price, None);
+    }
+
+    #[test]
+    fn parse_html_no_price() {
+        let html = r#"<html><body><h1 class="prod-buy-header__title">상품</h1></body></html>"#;
+        let result = parse_product_html(3, html).unwrap();
+        assert_eq!(result.price, None);
+        assert!(!result.is_out_of_stock);
+    }
+
+    #[test]
+    fn parse_html_image_with_data_attr() {
+        let html = r#"
+        <html><body>
+            <img class="prod-image__detail" data-img-src="//img.coupang.com/lazy.jpg" />
+        </body></html>
+        "#;
+        let result = parse_product_html(4, html).unwrap();
+        assert_eq!(
+            result.image_url.as_deref(),
+            Some("https://img.coupang.com/lazy.jpg")
+        );
+    }
+}

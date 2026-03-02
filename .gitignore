@@ -25,6 +25,9 @@ app/.flutter-plugins-dependencies
 *.swp
 *.swo
 
+# MCP 도구 설정
+.serena/
+
 # OS
 .DS_Store
 Thumbs.db
