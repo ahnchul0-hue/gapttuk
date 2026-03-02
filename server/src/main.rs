@@ -1,12 +1,15 @@
 mod api;
+mod auth;
 mod cache;
 mod config;
 mod db;
 mod error;
 mod models;
+mod services;
 
 use api::ApiResponse;
 use cache::AppCache;
+use config::Config;
 use error::AppError;
 
 use axum::{extract::State, routing::get, Router};
@@ -20,6 +23,8 @@ use tower_http::trace::TraceLayer;
 pub struct AppState {
     pub pool: sqlx::PgPool,
     pub cache: AppCache,
+    pub config: Config,
+    pub http_client: reqwest::Client,
 }
 
 /// /health 응답 페이로드
@@ -124,15 +129,18 @@ async fn main() {
     tracing::info!("Cache initialized (moka in-memory)");
 
     // 5. AppState 조합
+    let http_client = reqwest::Client::new();
     let state = AppState {
         pool: pool.clone(),
         cache,
+        config: config.clone(),
+        http_client,
     };
 
     // 6. Router
     let app = Router::new()
         .route("/health", get(health_check))
-        // M1-4~8에서 /api/v1/ 라우트 추가 예정
+        .nest("/api/v1/auth", api::routes::auth::router())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

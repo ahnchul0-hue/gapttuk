@@ -6,7 +6,7 @@ rust-version = "1.75"
 
 [dependencies]
 # --- HTTP 프레임워크 ---
-axum = "0.8"
+axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors", "request-id", "timeout", "compression-gzip"] }
@@ -52,6 +52,11 @@ moka = { version = "0.12", features = ["future"] }
 
 # --- 모니터링 ---
 sentry = "0.37"
+
+# --- 암호 ---
+sha2 = "0.10"
+rand = "0.8"
+hex = "0.4"
 
 # --- 유틸리티 ---
 dotenvy = "0.15"

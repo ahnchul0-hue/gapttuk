@@ -1,4 +1,5 @@
 pub mod pagination;
+pub mod routes;
 
 use axum::{
     http::StatusCode,

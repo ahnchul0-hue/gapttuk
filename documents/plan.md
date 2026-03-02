@@ -366,20 +366,20 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 **DoD:** 모든 모델 `cargo build` 통과 + SQLx 컴파일타임 검증 성공
 
 #### M1-4. 인증 API (~4일)
-- [ ] POST `/api/v1/auth/kakao` — 카카오 로그인
-- [ ] POST `/api/v1/auth/google` — 구글 로그인
-- [ ] POST `/api/v1/auth/apple` — 애플 로그인
-- [ ] POST `/api/v1/auth/naver` — 네이버 로그인
-- [ ] JWT Access(30분) + Refresh(7일) 토큰 발급/갱신
-- [ ] **Refresh Token 보안 전략:**
+- [x] POST `/api/v1/auth/kakao` — 카카오 로그인
+- [x] POST `/api/v1/auth/google` — 구글 로그인
+- [x] POST `/api/v1/auth/apple` — 애플 로그인 (JWKS 검증)
+- [x] POST `/api/v1/auth/naver` — 네이버 로그인
+- [x] JWT Access(30분) + Refresh(7일) 토큰 발급/갱신
+- [x] **Refresh Token 보안 전략:**
   - refresh_tokens 테이블에 token_hash(SHA-256) 저장 (원본 미저장)
   - **Refresh Token Rotation**: 갱신 시 기존 토큰 revoke → 새 토큰 발급
   - 탈취 감지: revoked 토큰으로 갱신 시도 시 해당 사용자의 모든 Refresh Token 일괄 revoke
   - 로그아웃: revoked_at 설정으로 즉시 무효화
   - 만료된 토큰 정리: 주기적 크론 또는 lazy cleanup
-- [ ] auth.rs 미들웨어 — Authorization Bearer 검증
-- [ ] 추천 코드 자동 생성 (`GAP-` 프리픽스 + 영숫자 4자리, 총 8자리)
-- [ ] 단위 테스트: 토큰 발급/검증/만료/로테이션
+- [x] Auth extractor — `FromRequestParts<AppState>` Authorization Bearer 검증
+- [x] 추천 코드 자동 생성 (`GAP-` 프리픽스 + 영숫자 4자리, 총 8자리)
+- [x] 단위 테스트: JWT 발급/검증/만료/잘못된 시크릿 + refresh 해싱 (6건)
 
 **DoD:** 소셜 로그인 → JWT 발급 → 인증 필요 API 호출 흐름 검증 (통합 테스트)
 
@@ -725,10 +725,13 @@ STEP 7: M1-2 에러 처리 + 공통 모듈 구현 ✅
 STEP 8: 8차 종합 리뷰 반영 ✅
     │
     ▼
-STEP 9: 9차 리뷰 14건 반영 ✅ ← 현재
+STEP 9: 9차 리뷰 14건 반영 ✅
     │
     ▼
-STEP 10: M1-3 DB 모델 구현 → M1-4 → ... → M1-8 → M1 완료
+STEP 10: M1-4 인증 API 구현 ✅ ← 현재
+    │
+    ▼
+STEP 11: M1-5 상품+가격 API → ... → M1-8 → M1 완료
     │
     ▼
 M2 주석 → 구현 → M3 → M4 → M5
@@ -778,6 +781,6 @@ M2 주석 → 구현 → M3 → M4 → M5
 ---
 
 > **plan.md v0.7 갱신됨 (2026-03-02).** 전수 검토 47건 + 리뷰 9회전 반영.
-> **현재 단계: STEP 9 완료 — M1-2 구현 완료 + 9차 리뷰 14건 반영.**
+> **현재 단계: STEP 10 완료 — M1-4 인증 API 구현 (소셜 로그인 4종 + JWT + Refresh Token 보안 + Auth extractor).**
 > 주석 파일: `documents/m1-1-annotations.md`
-> **다음: STEP 10 — M1-3 DB 모델 구현.**
+> **다음: STEP 11 — M1-5 상품 + 가격 API.**
