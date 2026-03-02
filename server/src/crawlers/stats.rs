@@ -210,4 +210,55 @@ mod tests {
         // 50 + 30(capped) + 20 + 10 = 110 → clamped to 100
         assert_eq!(score, 100);
     }
+
+    // --- compute_trend 경계값 ---
+    #[test]
+    fn trend_exactly_at_2_percent() {
+        // +2% 정확히 → Stable (> 2.0 이어야 Rising)
+        assert_eq!(compute_trend(1020, 1000), PriceTrend::Stable);
+        // -2% 정확히 → Stable (< -2.0 이어야 Falling)
+        assert_eq!(compute_trend(980, 1000), PriceTrend::Stable);
+    }
+
+    #[test]
+    fn trend_just_over_2_percent() {
+        // +2.1% → Rising
+        assert_eq!(compute_trend(1021, 1000), PriceTrend::Rising);
+        // -2.1% → Falling
+        assert_eq!(compute_trend(979, 1000), PriceTrend::Falling);
+    }
+
+    #[test]
+    fn trend_negative_prices() {
+        // 음수 가격은 실제로 발생하지 않지만, 함수가 패닉하지 않는지 확인
+        let _ = compute_trend(-100, 1000);
+        let _ = compute_trend(100, -1000);
+    }
+
+    // --- compute_buy_timing_score 추가 ---
+    #[test]
+    fn score_zero_average() {
+        // average_price가 0이면 할인 보너스 0
+        let score = compute_buy_timing_score(100, 0, 0, &PriceTrend::Falling);
+        // 50 + 0(avg=0) + 20(lowest) + 10(falling) = 80
+        assert_eq!(score, 80);
+    }
+
+    #[test]
+    fn score_days_boundary() {
+        // days_since_lowest = 3 → +10
+        let score = compute_buy_timing_score(0, 1000, 3, &PriceTrend::Stable);
+        assert_eq!(score, 60); // 50 + 0 + 10 + 0
+                               // days_since_lowest = 4 → +0
+        let score = compute_buy_timing_score(0, 1000, 4, &PriceTrend::Stable);
+        assert_eq!(score, 50); // 50 + 0 + 0 + 0
+    }
+
+    #[test]
+    fn score_discount_bonus_cap() {
+        // drop_from_average가 매우 큰 경우 → 최대 30으로 캡
+        let score = compute_buy_timing_score(900, 1000, 10, &PriceTrend::Stable);
+        // 50 + min(30, 90) = 50 + 30 = 80
+        assert_eq!(score, 80);
+    }
 }

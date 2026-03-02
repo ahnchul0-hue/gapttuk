@@ -105,3 +105,78 @@ impl IntoResponse for AppError {
         (status, Json(body)).into_response()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::response::IntoResponse;
+
+    #[test]
+    fn token_expired_status_401() {
+        let resp = AppError::TokenExpired.into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn token_invalid_status_401() {
+        let resp = AppError::TokenInvalid.into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn unauthorized_status_401() {
+        let resp = AppError::Unauthorized.into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn not_found_status_404() {
+        let resp = AppError::NotFound("상품".to_string()).into_response();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn bad_request_status_400() {
+        let resp = AppError::BadRequest("잘못된 요청".to_string()).into_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn conflict_status_409() {
+        let resp = AppError::Conflict("이미 존재".to_string()).into_response();
+        assert_eq!(resp.status(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn rate_limited_status_429() {
+        let resp = AppError::RateLimited.into_response();
+        assert_eq!(resp.status(), StatusCode::TOO_MANY_REQUESTS);
+    }
+
+    #[test]
+    fn forbidden_status_403() {
+        let resp = AppError::Forbidden.into_response();
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[test]
+    fn internal_status_500() {
+        let resp = AppError::Internal("crash".to_string()).into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn error_display_messages() {
+        assert_eq!(AppError::TokenExpired.to_string(), "토큰이 만료되었습니다");
+        assert_eq!(
+            AppError::TokenInvalid.to_string(),
+            "유효하지 않은 토큰입니다"
+        );
+        assert_eq!(
+            AppError::NotFound("상품".to_string()).to_string(),
+            "상품을(를) 찾을 수 없습니다"
+        );
+        assert_eq!(AppError::RateLimited.to_string(), "요청이 너무 많습니다");
+        assert_eq!(AppError::Forbidden.to_string(), "접근이 차단되었습니다");
+    }
+}

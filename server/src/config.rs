@@ -174,3 +174,71 @@ fn parse_u64(key: &str, default: u64) -> u64 {
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn app_env_parse_dev() {
+        assert_eq!(AppEnv::parse("dev"), AppEnv::Dev);
+        assert_eq!(AppEnv::parse("DEV"), AppEnv::Dev);
+        assert_eq!(AppEnv::parse("Dev"), AppEnv::Dev);
+    }
+
+    #[test]
+    fn app_env_parse_test() {
+        assert_eq!(AppEnv::parse("test"), AppEnv::Test);
+        assert_eq!(AppEnv::parse("TEST"), AppEnv::Test);
+    }
+
+    #[test]
+    fn app_env_parse_prod() {
+        assert_eq!(AppEnv::parse("prod"), AppEnv::Prod);
+        assert_eq!(AppEnv::parse("PROD"), AppEnv::Prod);
+    }
+
+    #[test]
+    #[should_panic(expected = "APP_ENV must be dev/test/prod")]
+    fn app_env_parse_invalid() {
+        AppEnv::parse("staging");
+    }
+
+    #[test]
+    fn config_debug_redacts_secrets() {
+        let config = Config {
+            database_url: "postgres://secret@localhost/db".to_string(),
+            jwt_secret: "super-secret-key-that-should-not-appear".to_string(),
+            app_env: AppEnv::Dev,
+            host: "0.0.0.0".to_string(),
+            port: 8080,
+            jwt_access_ttl_secs: 1800,
+            jwt_refresh_ttl_secs: 604_800,
+            coupang_access_key: None,
+            coupang_secret_key: None,
+            naver_client_id: None,
+            naver_client_secret: None,
+            kakao_rest_api_key: None,
+            google_client_id: None,
+            apple_client_id: None,
+            apns_key_path: None,
+            apns_key_id: None,
+            apns_team_id: None,
+            fcm_service_account: None,
+            allowed_origins: vec![],
+            sentry_dsn: None,
+        };
+
+        let debug_str = format!("{config:?}");
+        assert!(debug_str.contains("[REDACTED]"));
+        assert!(!debug_str.contains("secret@localhost"));
+        assert!(!debug_str.contains("super-secret-key"));
+    }
+
+    #[test]
+    fn optional_returns_none_for_unset() {
+        // 존재하지 않는 환경변수
+        let result = optional("GAPTTUK_TEST_NONEXISTENT_VAR_12345");
+        assert!(result.is_none());
+    }
+}

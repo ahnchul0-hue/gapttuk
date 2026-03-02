@@ -219,3 +219,120 @@ pub enum FcmError {
     #[error("FCM invalid token: {0}")]
     InvalidToken(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fcm_request_serialization_without_data() {
+        let req = FcmRequest {
+            message: FcmMessage {
+                token: "device_token_abc".to_string(),
+                notification: FcmNotification {
+                    title: "테스트 제목".to_string(),
+                    body: "테스트 내용".to_string(),
+                },
+                data: None,
+            },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("device_token_abc"));
+        assert!(json.contains("테스트 제목"));
+        // data가 None이면 skip_serializing_if에 의해 JSON에서 제외
+        assert!(!json.contains("data"));
+    }
+
+    #[test]
+    fn fcm_request_serialization_with_deep_link() {
+        let mut data = std::collections::HashMap::new();
+        data.insert("deep_link".to_string(), "gapttuk://product/42".to_string());
+
+        let req = FcmRequest {
+            message: FcmMessage {
+                token: "tok".to_string(),
+                notification: FcmNotification {
+                    title: "t".to_string(),
+                    body: "b".to_string(),
+                },
+                data: Some(data),
+            },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("deep_link"));
+        assert!(json.contains("gapttuk://product/42"));
+    }
+
+    #[test]
+    fn service_account_deserialization_valid() {
+        let json = r#"{
+            "project_id": "my-project",
+            "client_email": "sa@my-project.iam.gserviceaccount.com",
+            "private_key": "-----BEGIN RSA PRIVATE KEY-----\nfake\n-----END RSA PRIVATE KEY-----\n",
+            "token_uri": "https://oauth2.googleapis.com/token"
+        }"#;
+        let sa: ServiceAccount = serde_json::from_str(json).unwrap();
+        assert_eq!(sa.project_id, "my-project");
+        assert_eq!(sa.client_email, "sa@my-project.iam.gserviceaccount.com");
+        assert!(sa.private_key.contains("RSA PRIVATE KEY"));
+        assert_eq!(sa.token_uri, "https://oauth2.googleapis.com/token");
+    }
+
+    #[test]
+    fn service_account_deserialization_missing_field() {
+        let json = r#"{"project_id": "p"}"#;
+        let result = serde_json::from_str::<ServiceAccount>(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn from_service_account_missing_file() {
+        let http = reqwest::Client::new();
+        let result = FcmClient::from_service_account("/nonexistent/path.json", http);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert!(matches!(err, FcmError::Config(_)));
+        assert!(err.to_string().contains("Cannot read"));
+    }
+
+    #[test]
+    fn from_service_account_invalid_json() {
+        let dir = std::env::temp_dir();
+        let path = dir.join("gapttuk_test_invalid_sa.json");
+        std::fs::write(&path, "not-json").unwrap();
+
+        let http = reqwest::Client::new();
+        let result = FcmClient::from_service_account(path.to_str().unwrap(), http);
+        assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("Invalid service account JSON"));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn oauth_request_serialization() {
+        let req = OAuthRequest {
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: "jwt_assertion_value".to_string(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("jwt-bearer"));
+        assert!(json.contains("jwt_assertion_value"));
+    }
+
+    #[test]
+    fn fcm_error_display() {
+        let config_err = FcmError::Config("bad key".into());
+        assert_eq!(config_err.to_string(), "FCM config error: bad key");
+
+        let send_err = FcmError::Send("timeout".into());
+        assert_eq!(send_err.to_string(), "FCM send error: timeout");
+
+        let invalid_err = FcmError::InvalidToken("404".into());
+        assert_eq!(invalid_err.to_string(), "FCM invalid token: 404");
+    }
+}

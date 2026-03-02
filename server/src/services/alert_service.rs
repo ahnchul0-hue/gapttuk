@@ -448,4 +448,123 @@ mod tests {
         assert_eq!(format_price(1_234_567), "1,234,567");
         assert_eq!(format_price(100), "100");
     }
+
+    // --- format_price 경계값 ---
+    #[test]
+    fn test_format_price_edge_cases() {
+        assert_eq!(format_price(0), "0");
+        assert_eq!(format_price(1), "1");
+        assert_eq!(format_price(999), "999");
+        assert_eq!(format_price(1_000_000), "1,000,000");
+        assert_eq!(format_price(10), "10");
+    }
+
+    // --- format_alert_title ---
+    #[test]
+    fn test_format_alert_title_all_types() {
+        assert!(format_alert_title(&AlertType::TargetPrice, "테스트 상품").contains("목표가 도달"));
+        assert!(format_alert_title(&AlertType::AllTimeLow, "테스트 상품").contains("역대 최저가"));
+        assert!(format_alert_title(&AlertType::BelowAverage, "테스트 상품").contains("평균 이하"));
+        assert!(format_alert_title(&AlertType::NearLowest, "테스트 상품").contains("최저가 근접"));
+        // 상품명이 포함되어야 함
+        assert!(format_alert_title(&AlertType::TargetPrice, "맥북 프로").contains("맥북 프로"));
+    }
+
+    // --- format_alert_body ---
+    #[test]
+    fn test_format_alert_body_target_price() {
+        let body = format_alert_body(&AlertType::TargetPrice, 49_000, Some(50_000));
+        assert!(body.contains("49,000원"));
+        assert!(body.contains("50,000원"));
+        assert!(body.contains("목표가"));
+    }
+
+    #[test]
+    fn test_format_alert_body_all_time_low() {
+        let body = format_alert_body(&AlertType::AllTimeLow, 9_900, None);
+        assert!(body.contains("9,900원"));
+        assert!(body.contains("역대 최저가"));
+    }
+
+    #[test]
+    fn test_format_alert_body_below_average() {
+        let body = format_alert_body(&AlertType::BelowAverage, 45_000, None);
+        assert!(body.contains("45,000원"));
+        assert!(body.contains("평균가"));
+    }
+
+    #[test]
+    fn test_format_alert_body_near_lowest() {
+        let body = format_alert_body(&AlertType::NearLowest, 10_200, None);
+        assert!(body.contains("10,200원"));
+        assert!(body.contains("최저가에 근접"));
+    }
+
+    // --- AlertTypeInput::as_str ---
+    #[test]
+    fn test_alert_type_input_as_str() {
+        assert_eq!(AlertTypeInput::TargetPrice.as_str(), "target_price");
+        assert_eq!(AlertTypeInput::BelowAverage.as_str(), "below_average");
+        assert_eq!(AlertTypeInput::NearLowest.as_str(), "near_lowest");
+        assert_eq!(AlertTypeInput::AllTimeLow.as_str(), "all_time_low");
+    }
+
+    // --- evaluate_condition 경계값 추가 ---
+    #[test]
+    fn test_evaluate_near_lowest_exact_boundary() {
+        // 10,000 * 1.05 = 10,500 — 정확히 경계
+        assert!(evaluate_condition(
+            &AlertType::NearLowest,
+            None,
+            10_500,
+            Some(10_000),
+            None
+        ));
+        // 10,501 — 경계 초과
+        assert!(!evaluate_condition(
+            &AlertType::NearLowest,
+            None,
+            10_501,
+            Some(10_000),
+            None
+        ));
+    }
+
+    #[test]
+    fn test_evaluate_condition_none_stats() {
+        // lowest_price/average_price가 None이면 모두 false
+        assert!(!evaluate_condition(
+            &AlertType::AllTimeLow,
+            None,
+            100,
+            None,
+            None
+        ));
+        assert!(!evaluate_condition(
+            &AlertType::BelowAverage,
+            None,
+            100,
+            None,
+            None
+        ));
+        assert!(!evaluate_condition(
+            &AlertType::NearLowest,
+            None,
+            100,
+            None,
+            None
+        ));
+    }
+
+    #[test]
+    fn test_evaluate_target_price_equal() {
+        // new_price == target_price → true (이하이므로)
+        assert!(evaluate_condition(
+            &AlertType::TargetPrice,
+            Some(10_000),
+            10_000,
+            None,
+            None
+        ));
+    }
 }

@@ -107,3 +107,32 @@ pub enum ApnsError {
     #[error("APNs invalid token: {0}")]
     InvalidToken(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apns_error_display() {
+        let config_err = ApnsError::Config("missing P8 key".into());
+        assert_eq!(config_err.to_string(), "APNs config error: missing P8 key");
+
+        let send_err = ApnsError::Send("connection refused".into());
+        assert_eq!(send_err.to_string(), "APNs send error: connection refused");
+
+        let invalid_err = ApnsError::InvalidToken("410 Unregistered".into());
+        assert_eq!(
+            invalid_err.to_string(),
+            "APNs invalid token: 410 Unregistered"
+        );
+    }
+
+    #[test]
+    fn apns_client_missing_key_file() {
+        let result = ApnsClient::new("/nonexistent/key.p8", "KEY123", "TEAM456", false);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert!(matches!(err, ApnsError::Config(_)));
+        assert!(err.to_string().contains("Cannot open P8 key"));
+    }
+}

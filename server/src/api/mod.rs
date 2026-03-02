@@ -50,3 +50,27 @@ impl IntoResponse for Deleted {
         StatusCode::NO_CONTENT.into_response()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::response::IntoResponse;
+
+    #[test]
+    fn api_response_ok_status_200() {
+        let resp = ApiResponse::ok("test data").into_response();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[test]
+    fn created_status_201() {
+        let resp = Created("new resource").into_response();
+        assert_eq!(resp.status(), StatusCode::CREATED);
+    }
+
+    #[test]
+    fn deleted_status_204() {
+        let resp = Deleted.into_response();
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    }
+}

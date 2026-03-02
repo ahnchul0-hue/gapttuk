@@ -114,3 +114,56 @@ impl PushError {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_invalid_token_fcm_invalid() {
+        let err = PushError::Fcm(fcm::FcmError::InvalidToken("UNREGISTERED".into()));
+        assert!(err.is_invalid_token());
+    }
+
+    #[test]
+    fn is_invalid_token_apns_invalid() {
+        let err = PushError::Apns(apns::ApnsError::InvalidToken("410 Unregistered".into()));
+        assert!(err.is_invalid_token());
+    }
+
+    #[test]
+    fn is_not_invalid_token_fcm_send() {
+        let err = PushError::Fcm(fcm::FcmError::Send("network error".into()));
+        assert!(!err.is_invalid_token());
+    }
+
+    #[test]
+    fn is_not_invalid_token_fcm_config() {
+        let err = PushError::Fcm(fcm::FcmError::Config("bad key".into()));
+        assert!(!err.is_invalid_token());
+    }
+
+    #[test]
+    fn is_not_invalid_token_apns_send() {
+        let err = PushError::Apns(apns::ApnsError::Send("timeout".into()));
+        assert!(!err.is_invalid_token());
+    }
+
+    #[test]
+    fn is_not_invalid_token_apns_config() {
+        let err = PushError::Apns(apns::ApnsError::Config("missing key".into()));
+        assert!(!err.is_invalid_token());
+    }
+
+    #[test]
+    fn push_error_display_fcm() {
+        let err = PushError::Fcm(fcm::FcmError::Send("fail".into()));
+        assert!(err.to_string().contains("fail"));
+    }
+
+    #[test]
+    fn push_error_display_apns() {
+        let err = PushError::Apns(apns::ApnsError::Send("timeout".into()));
+        assert!(err.to_string().contains("timeout"));
+    }
+}

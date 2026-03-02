@@ -60,3 +60,47 @@ impl Default for AppCache {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cache_creation() {
+        let cache = AppCache::new();
+        assert!(cache.is_healthy());
+    }
+
+    #[test]
+    fn cache_default_is_healthy() {
+        let cache = AppCache::default();
+        assert!(cache.is_healthy());
+    }
+
+    #[tokio::test]
+    async fn cache_insert_and_retrieve() {
+        let cache = AppCache::new();
+        cache.blocked_ips.insert("1.2.3.4".to_string(), true).await;
+        assert_eq!(
+            cache.blocked_ips.get(&"1.2.3.4".to_string()).await,
+            Some(true)
+        );
+        assert!(cache
+            .blocked_ips
+            .get(&"5.6.7.8".to_string())
+            .await
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn cache_invalidate() {
+        let cache = AppCache::new();
+        cache.blocked_ips.insert("1.2.3.4".to_string(), true).await;
+        cache.blocked_ips.invalidate(&"1.2.3.4".to_string()).await;
+        assert!(cache
+            .blocked_ips
+            .get(&"1.2.3.4".to_string())
+            .await
+            .is_none());
+    }
+}

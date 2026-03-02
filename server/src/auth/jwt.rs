@@ -165,4 +165,75 @@ mod tests {
         assert_ne!(t1, t2);
         assert_eq!(t1.len(), 64); // 32바이트 = 64 hex chars
     }
+
+    // --- 경계값 테스트 ---
+
+    #[test]
+    fn test_empty_token_is_invalid() {
+        let config = test_config();
+        let result = decode_access_token("", &config);
+        assert!(matches!(result, Err(AppError::TokenInvalid)));
+    }
+
+    #[test]
+    fn test_large_user_id() {
+        let config = test_config();
+        let user_id = i64::MAX;
+        let (token, _) = encode_access_token(user_id, &config).unwrap();
+        let claims = decode_access_token(&token, &config).unwrap();
+        assert_eq!(claims.sub, user_id);
+    }
+
+    #[test]
+    fn test_zero_user_id() {
+        let config = test_config();
+        let (token, _) = encode_access_token(0, &config).unwrap();
+        let claims = decode_access_token(&token, &config).unwrap();
+        assert_eq!(claims.sub, 0);
+    }
+
+    #[test]
+    fn test_claims_iat_is_set() {
+        let config = test_config();
+        let (token, _) = encode_access_token(1, &config).unwrap();
+        let claims = decode_access_token(&token, &config).unwrap();
+        // iat는 현재 시간 근처 (±5초)
+        let now = chrono::Utc::now().timestamp();
+        assert!((claims.iat - now).abs() < 5);
+    }
+
+    #[test]
+    fn test_custom_ttl() {
+        let mut config = test_config();
+        config.jwt_access_ttl_secs = 60; // 1분
+        let (_, ttl) = encode_access_token(1, &config).unwrap();
+        assert_eq!(ttl, 60);
+    }
+
+    #[test]
+    fn test_refresh_token_is_hex() {
+        let token = generate_refresh_token();
+        assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_hash_different_tokens_produce_different_hashes() {
+        let hash1 = hash_refresh_token("token_a");
+        let hash2 = hash_refresh_token("token_b");
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_hash_is_64_hex_chars() {
+        let hash = hash_refresh_token("any_token");
+        assert_eq!(hash.len(), 64); // SHA-256 = 32바이트 = 64 hex
+        assert!(hash.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_malformed_jwt_with_dots() {
+        let config = test_config();
+        let result = decode_access_token("a.b.c", &config);
+        assert!(matches!(result, Err(AppError::TokenInvalid)));
+    }
 }

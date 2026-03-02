@@ -194,3 +194,47 @@ impl NotificationType {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn notification_type_as_str_all_variants() {
+        assert_eq!(NotificationType::PriceAlert.as_str(), "price_alert");
+        assert_eq!(NotificationType::CategoryAlert.as_str(), "category_alert");
+        assert_eq!(NotificationType::KeywordAlert.as_str(), "keyword_alert");
+        assert_eq!(NotificationType::Referral.as_str(), "referral");
+        assert_eq!(NotificationType::Event.as_str(), "event");
+        assert_eq!(NotificationType::System.as_str(), "system");
+    }
+
+    #[test]
+    fn push_notification_struct_construction() {
+        let notif = PushNotification {
+            user_id: 42,
+            ntype: NotificationType::PriceAlert,
+            reference_id: 100,
+            title: "테스트 제목",
+            body: "테스트 내용",
+            deep_link: Some("gapttuk://product/1"),
+        };
+        assert_eq!(notif.user_id, 42);
+        assert_eq!(notif.reference_id, 100);
+        assert_eq!(notif.deep_link, Some("gapttuk://product/1"));
+    }
+
+    #[test]
+    fn push_notification_without_deep_link() {
+        let notif = PushNotification {
+            user_id: 1,
+            ntype: NotificationType::System,
+            reference_id: 0,
+            title: "시스템 알림",
+            body: "서버 점검 안내",
+            deep_link: None,
+        };
+        assert!(notif.deep_link.is_none());
+        assert_eq!(notif.ntype.as_str(), "system");
+    }
+}

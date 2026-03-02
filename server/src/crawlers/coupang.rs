@@ -252,4 +252,111 @@ mod tests {
             Some("https://img.coupang.com/lazy.jpg")
         );
     }
+
+    // --- extract_number 엣지케이스 ---
+    #[test]
+    fn extract_number_edge_cases() {
+        // 0은 필터링됨 (filter(|&n| n > 0))
+        assert_eq!(extract_number("0원"), None);
+        // 단일 숫자
+        assert_eq!(extract_number("5"), Some(5));
+        // 특수문자 혼합
+        assert_eq!(extract_number("$99.50"), Some(9950));
+        // 한글만
+        assert_eq!(extract_number("가격미정"), None);
+        // 매우 큰 수 (i32 범위 초과 시 None)
+        assert_eq!(extract_number("9,999,999,999"), None); // > i32::MAX
+    }
+
+    // --- parse_product_html 추가 엣지케이스 ---
+    #[test]
+    fn parse_html_empty_document() {
+        let result = parse_product_html(5, "<html><body></body></html>").unwrap();
+        assert_eq!(result.price, None);
+        assert_eq!(result.product_name, None);
+        assert_eq!(result.image_url, None);
+        assert!(!result.is_out_of_stock);
+    }
+
+    #[test]
+    fn parse_html_h2_title_fallback() {
+        let html = r#"
+        <html><body>
+            <h2 class="prod-buy-header__title">h2 제목</h2>
+        </body></html>
+        "#;
+        let result = parse_product_html(6, html).unwrap();
+        assert_eq!(result.product_name.as_deref(), Some("h2 제목"));
+    }
+
+    #[test]
+    fn parse_html_prod_not_find_known() {
+        let html = r#"
+        <html><body>
+            <div class="prod-not-find-known__text">찾을 수 없는 상품</div>
+        </body></html>
+        "#;
+        let result = parse_product_html(7, html).unwrap();
+        assert!(result.is_out_of_stock);
+    }
+
+    #[test]
+    fn parse_html_image_with_https_src() {
+        let html = r#"
+        <html><body>
+            <img class="prod-image__detail" src="https://img.coupang.com/full.jpg" />
+        </body></html>
+        "#;
+        let result = parse_product_html(8, html).unwrap();
+        assert_eq!(
+            result.image_url.as_deref(),
+            Some("https://img.coupang.com/full.jpg")
+        );
+    }
+
+    #[test]
+    fn parse_html_sale_price_selector() {
+        let html = r#"
+        <html><body>
+            <div class="prod-sale-price">
+                <span class="total-price">15,900원</span>
+            </div>
+        </body></html>
+        "#;
+        let result = parse_product_html(9, html).unwrap();
+        assert_eq!(result.price, Some(15900));
+    }
+
+    #[test]
+    fn parse_html_title_with_whitespace() {
+        let html = r#"
+        <html><body>
+            <h1 class="prod-buy-header__title">
+                공백 포함 제목
+            </h1>
+        </body></html>
+        "#;
+        let result = parse_product_html(10, html).unwrap();
+        assert_eq!(result.product_name.as_deref(), Some("공백 포함 제목"));
+    }
+
+    // --- CrawlError Display ---
+    #[test]
+    fn crawl_error_display() {
+        let blocked = CrawlError::Blocked(403);
+        assert!(blocked.to_string().contains("403"));
+
+        let http = CrawlError::HttpStatus(500);
+        assert!(http.to_string().contains("500"));
+
+        let parse = CrawlError::ParseError("missing selector".into());
+        assert!(parse.to_string().contains("missing selector"));
+    }
+
+    #[test]
+    fn product_id_preserved() {
+        let html = r#"<html><body></body></html>"#;
+        let result = parse_product_html(12345, html).unwrap();
+        assert_eq!(result.product_id, 12345);
+    }
 }

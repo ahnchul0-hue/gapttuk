@@ -66,3 +66,90 @@ impl<T: Serialize> IntoResponse for PaginatedResponse<T> {
         (StatusCode::OK, Json(self)).into_response()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn effective_limit_clamps_to_range() {
+        // 기본값
+        let p = PaginationParams {
+            cursor: None,
+            limit: 20,
+        };
+        assert_eq!(p.effective_limit(), 20);
+
+        // 하한 클램핑
+        let p = PaginationParams {
+            cursor: None,
+            limit: 0,
+        };
+        assert_eq!(p.effective_limit(), 1);
+
+        let p = PaginationParams {
+            cursor: None,
+            limit: -10,
+        };
+        assert_eq!(p.effective_limit(), 1);
+
+        // 상한 클램핑
+        let p = PaginationParams {
+            cursor: None,
+            limit: 200,
+        };
+        assert_eq!(p.effective_limit(), 100);
+
+        // 경계값
+        let p = PaginationParams {
+            cursor: None,
+            limit: 1,
+        };
+        assert_eq!(p.effective_limit(), 1);
+
+        let p = PaginationParams {
+            cursor: None,
+            limit: 100,
+        };
+        assert_eq!(p.effective_limit(), 100);
+    }
+
+    #[test]
+    fn paginated_response_no_more() {
+        let items = vec![1, 2, 3];
+        let resp = PaginatedResponse::new(items, 5, |x| x.to_string());
+        assert!(!resp.has_more);
+        assert!(resp.cursor.is_none());
+        assert_eq!(resp.data.len(), 3);
+    }
+
+    #[test]
+    fn paginated_response_has_more() {
+        // limit=3이고 items=4 → has_more=true, 마지막 항목 제거
+        let items = vec![10, 20, 30, 40];
+        let resp = PaginatedResponse::new(items, 3, |x| x.to_string());
+        assert!(resp.has_more);
+        assert_eq!(resp.data.len(), 3);
+        assert_eq!(resp.data, vec![10, 20, 30]);
+        assert_eq!(resp.cursor, Some("30".to_string()));
+    }
+
+    #[test]
+    fn paginated_response_exact_limit() {
+        // limit=3이고 items=3 → has_more=false
+        let items = vec![1, 2, 3];
+        let resp = PaginatedResponse::new(items, 3, |x| x.to_string());
+        assert!(!resp.has_more);
+        assert_eq!(resp.data.len(), 3);
+        assert!(resp.cursor.is_none());
+    }
+
+    #[test]
+    fn paginated_response_empty() {
+        let items: Vec<i32> = vec![];
+        let resp = PaginatedResponse::new(items, 10, |x| x.to_string());
+        assert!(!resp.has_more);
+        assert!(resp.cursor.is_none());
+        assert!(resp.data.is_empty());
+    }
+}
