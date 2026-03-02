@@ -45,6 +45,7 @@ pub struct CategoryAlert {
     pub threshold_percent: Option<i32>,
     pub max_price: Option<i32>,
     pub is_active: bool,
+    pub last_triggered_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -58,6 +59,7 @@ pub struct KeywordAlert {
     pub category_id: Option<i32>,
     pub max_price: Option<i32>,
     pub is_active: bool,
+    pub last_triggered_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

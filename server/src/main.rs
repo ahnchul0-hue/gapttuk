@@ -7,6 +7,7 @@ mod db;
 mod error;
 mod middleware;
 mod models;
+mod push;
 mod services;
 
 use api::ApiResponse;
@@ -17,6 +18,7 @@ use error::AppError;
 use axum::{extract::State, routing::get, Router};
 use serde::Serialize;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::signal;
 use tower_http::{
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
@@ -32,6 +34,7 @@ pub struct AppState {
     pub cache: AppCache,
     pub config: Config,
     pub http_client: reqwest::Client,
+    pub push_client: Arc<push::PushClient>,
 }
 
 /// /health 응답 페이로드
@@ -166,11 +169,16 @@ async fn main() {
     let cache = AppCache::new();
     tracing::info!("Cache initialized (moka in-memory)");
 
-    // 5. 크롤링 스케줄러 (Test 환경 skip)
+    // 5. 푸시 클라이언트 초기화
+    let http_client = reqwest::Client::new();
+    let push_client = Arc::new(push::PushClient::new(&config, http_client.clone()));
+
+    // 6. 크롤링 스케줄러 (Test 환경 skip)
     if config.app_env != config::AppEnv::Test {
-        let crawler_service = std::sync::Arc::new(crawlers::CrawlerService::new(
+        let crawler_service = Arc::new(crawlers::CrawlerService::new(
             pool.clone(),
             cache.clone(),
+            push_client.clone(),
         ));
         if let Err(e) = crawlers::scheduler::start_scheduler(crawler_service).await {
             tracing::error!(error = %e, "Failed to start crawler scheduler");
@@ -179,16 +187,16 @@ async fn main() {
         tracing::info!("Skipping crawler scheduler in Test environment");
     }
 
-    // 6. AppState 조합
-    let http_client = reqwest::Client::new();
+    // 7. AppState 조합
     let state = AppState {
         pool: pool.clone(),
         cache,
         config: config.clone(),
         http_client,
+        push_client,
     };
 
-    // 7. Router — 레이어 순서: 마지막 .layer()가 outermost
+    // 8. Router — 레이어 순서: 마지막 .layer()가 outermost
     let x_request_id = HeaderName::from_static("x-request-id");
     let (global_governor_layer, global_governor_config) =
         middleware::rate_limit::global_limiter();
@@ -197,6 +205,9 @@ async fn main() {
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
         .nest("/api/v1/products", api::routes::products::router())
+        .nest("/api/v1/devices", api::routes::devices::router())
+        .nest("/api/v1/alerts", api::routes::alerts::router())
+        .nest("/api/v1/notifications", api::routes::notifications::router())
         // innermost → outermost 순서
         .layer(global_governor_layer)
         .layer(axum::middleware::from_fn_with_state(
@@ -215,9 +226,9 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(state.clone());
 
-    // 8. 백그라운드 유지보수 (Test 환경 skip)
+    // 9. 백그라운드 유지보수 (Test 환경 skip)
     if config.app_env != config::AppEnv::Test {
-        // 8a. 파티션 유지보수 (일일)
+        // 9a. 파티션 유지보수 (일일)
         let partition_pool = pool.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(86400));
@@ -231,7 +242,7 @@ async fn main() {
             }
         });
 
-        // 8b. Governor rate limiter 메모리 정리 (1시간 주기)
+        // 9b. Governor rate limiter 메모리 정리 (1시간 주기)
         // 내부 HashMap에 IP별 상태가 무한 누적되므로 주기적 GC 필요.
         // 시작 직후 빈 맵 GC는 무의미하므로 interval_at으로 1시간 후부터 시작.
         let gc_period = std::time::Duration::from_secs(3600);
@@ -246,7 +257,7 @@ async fn main() {
         });
     }
 
-    // 9. 서버 시작
+    // 10. 서버 시작
     let addr: SocketAddr = format!("{}:{}", &config.host, config.port)
         .parse()
         .expect("Invalid host:port");
@@ -269,7 +280,7 @@ async fn main() {
         Err(e) => tracing::error!(error = %e, "Server error"),
     }
 
-    // 10. 정리
+    // 11. 정리
     pool.close().await;
     tracing::info!("Cleanup complete, exiting");
 }
