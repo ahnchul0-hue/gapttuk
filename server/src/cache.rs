@@ -1,22 +1,23 @@
 use moka::future::Cache;
 use std::time::Duration;
 
+use crate::models::{Category, PopularSearch, Product};
+
 /// 애플리케이션 인메모리 캐시 (moka).
 /// 각 캐시는 고유 TTL과 최대 용량을 가진다.
-/// M1-2에서는 String placeholder — M1-3에서 모델 타입으로 교체 예정.
 #[derive(Clone)]
 pub struct AppCache {
     /// 차단 IP — TTL 5분 (M1-7: bot_guard)
     pub blocked_ips: Cache<String, bool>,
 
-    /// 카테고리 — TTL 1시간 (M1-5: 거의 불변 데이터)
-    pub categories: Cache<i32, String>,
+    /// 카테고리 — TTL 1시간 (거의 불변 데이터)
+    pub categories: Cache<i32, Category>,
 
-    /// 인기 검색어 — TTL 10분 (M1-5: 읽기 빈도 높음)
-    pub popular_searches: Cache<String, String>,
+    /// 인기 검색어 — TTL 10분 (읽기 빈도 높음)
+    pub popular_searches: Cache<String, Vec<PopularSearch>>,
 
-    /// 상품 상세 — TTL 5분, 최대 10,000건 (M1-5)
-    pub products: Cache<i64, String>,
+    /// 상품 상세 — TTL 5분, 최대 10,000건
+    pub products: Cache<i64, Product>,
 }
 
 impl AppCache {

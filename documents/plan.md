@@ -383,13 +383,15 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 
 **DoD:** 소셜 로그인 → JWT 발급 → 인증 필요 API 호출 흐름 검증 (통합 테스트)
 
-#### M1-5. 상품 + 가격 API (~4일)
-- [ ] GET `/api/v1/products/:id` — 상품 상세 (moka 캐시 5분)
-- [ ] GET `/api/v1/products/search?q=&cursor=&limit=` — 검색 (cursor 페이지네이션)
-- [ ] POST `/api/v1/products/url` — URL로 상품 추가
-- [ ] GET `/api/v1/products/:id/prices?from=&to=` — 가격 이력
-- [ ] GET `/api/v1/products/:id/prices/daily` — 요일별 집계
-- [ ] GET `/api/v1/products/popular` — 인기 검색어 (moka 캐시 10분)
+#### M1-5. 상품 + 가격 API (~4일) ✅
+- [x] GET `/api/v1/products/:id` — 상품 상세 (moka 캐시 5분)
+- [x] GET `/api/v1/products/search?q=&cursor=&limit=` — 검색 (cursor 페이지네이션)
+- [x] POST `/api/v1/products/url` — URL로 상품 추가
+- [x] GET `/api/v1/products/:id/prices?from=&to=` — 가격 이력
+- [x] GET `/api/v1/products/:id/prices/daily` — 요일별 집계
+- [x] GET `/api/v1/products/popular` — 인기 검색어 (moka 캐시 10분)
+- [x] cache.rs String placeholder → 실 타입 (Product, Vec<PopularSearch>, Category)
+- [x] URL 파싱 테스트 4건 + JWT 6건 = 10건 통과
 
 **DoD:** 상품 CRUD + 가격 이력 API 작동 + 통합 테스트
 
@@ -728,10 +730,13 @@ STEP 8: 8차 종합 리뷰 반영 ✅
 STEP 9: 9차 리뷰 14건 반영 ✅
     │
     ▼
-STEP 10: M1-4 인증 API 구현 ✅ ← 현재
+STEP 10: M1-4 인증 API 구현 ✅
     │
     ▼
-STEP 11: M1-5 상품+가격 API → ... → M1-8 → M1 완료
+STEP 11: M1-5 상품+가격 API ✅ ← 현재
+    │
+    ▼
+STEP 12: M1-6 크롤링 파이프라인 → ... → M1-8 → M1 완료
     │
     ▼
 M2 주석 → 구현 → M3 → M4 → M5
@@ -781,6 +786,6 @@ M2 주석 → 구현 → M3 → M4 → M5
 ---
 
 > **plan.md v0.7 갱신됨 (2026-03-02).** 전수 검토 47건 + 리뷰 9회전 반영.
-> **현재 단계: STEP 10 완료 — M1-4 인증 API 구현 (소셜 로그인 4종 + JWT + Refresh Token 보안 + Auth extractor).**
+> **현재 단계: STEP 11 완료 — M1-5 상품 + 가격 API (6개 엔드포인트 + 캐시 타입 교체 + URL 파싱).**
 > 주석 파일: `documents/m1-1-annotations.md`
-> **다음: STEP 11 — M1-5 상품 + 가격 API.**
+> **다음: STEP 12 — M1-6 크롤링 파이프라인.**

@@ -141,6 +141,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
+        .nest("/api/v1/products", api::routes::products::router())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
