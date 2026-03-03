@@ -184,7 +184,7 @@ pub async fn delete_notification(pool: &PgPool, user_id: i64, notification_id: i
         .execute(pool)
         .await?;
     if result.rows_affected() == 0 {
-        return Err(AppError::NotFound("알림을 찾을 수 없습니다".to_string()));
+        return Err(AppError::NotFound("알림".to_string()));
     }
     Ok(())
 }

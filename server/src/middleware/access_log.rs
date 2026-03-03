@@ -76,7 +76,7 @@ pub async fn access_log(
         )
         .bind(ip_net)
         .bind(user_id)
-        .bind(&raw_path)
+        .bind(&matched_endpoint)
         .bind(&method)
         .bind(status_code)
         .bind(&user_agent)
@@ -84,7 +84,7 @@ pub async fn access_log(
         .execute(&pool)
         .await
         {
-            tracing::warn!(error = %e, endpoint = %raw_path, "Failed to insert access log");
+            tracing::warn!(error = %e, endpoint = %matched_endpoint, "Failed to insert access log");
         }
     });
 

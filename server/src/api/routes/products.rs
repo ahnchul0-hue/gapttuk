@@ -59,11 +59,11 @@ pub struct AddProductByUrlRequest {
 
 // ── 라우터 ──────────────────────────────────────────────
 
-pub fn router() -> Router<AppState> {
+pub fn router(search_limiter_layer: crate::middleware::rate_limit::SearchLayer) -> Router<AppState> {
     // /search에만 별도 rate limiter 적용 (10 req/min per IP)
     let search_route = Router::new()
         .route("/search", get(search))
-        .layer(crate::middleware::rate_limit::search_limiter());
+        .layer(search_limiter_layer);
 
     Router::new()
         .merge(search_route)

@@ -407,7 +407,7 @@ pub async fn update_price_alert(
     ?;
 
     if result.rows_affected() == 0 {
-        return Err(AppError::NotFound("알림을 찾을 수 없습니다".to_string()));
+        return Err(AppError::NotFound("가격 알림".to_string()));
     }
     Ok(())
 }
@@ -441,7 +441,7 @@ pub async fn update_keyword_alert(
     ?;
 
     if result.rows_affected() == 0 {
-        return Err(AppError::NotFound("알림을 찾을 수 없습니다".to_string()));
+        return Err(AppError::NotFound("키워드 알림".to_string()));
     }
     Ok(())
 }

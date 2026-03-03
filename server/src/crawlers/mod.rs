@@ -162,6 +162,12 @@ impl CrawlerService {
                         None => return ScrapeOutcome::Failed,
                     };
 
+                    // SSRF 방어: DB에서 가져온 URL이 허용된 쿠팡 도메인인지 재검증
+                    if !is_allowed_crawl_url(url) {
+                        tracing::warn!(product_id, url, "Blocked non-Coupang URL — possible SSRF");
+                        return ScrapeOutcome::Failed;
+                    }
+
                     match scrape_and_update(&pool, &cache, &push, &client, product_id, url, &abort)
                         .await
                     {
@@ -355,22 +361,42 @@ enum ScrapeOutcome {
 }
 
 /// Advisory lock의 패닉/에러 안전한 해제를 보장하는 Drop guard.
-/// tokio 런타임이 살아있는 동안 Drop이 호출되면 blocking으로 unlock.
+/// `block_in_place`로 동기 차단하여 런타임 종료 중에도 unlock 보장.
+/// (`tokio::spawn`은 런타임 shutdown 시 실행되지 않을 수 있음)
 struct AdvisoryLockGuard(sqlx::PgPool);
 
 impl Drop for AdvisoryLockGuard {
     fn drop(&mut self) {
         let pool = self.0.clone();
-        // spawn blocking unlock — panic/에러 시에도 잠금 해제
-        tokio::spawn(async move {
-            if let Err(e) = sqlx::query("SELECT pg_advisory_unlock(842937)")
-                .execute(&pool)
-                .await
-            {
-                tracing::error!(error = %e, "Failed to release advisory lock 842937");
-            }
-        });
+        // block_in_place: 현재 스레드에서 블로킹 실행 → 런타임 종료 시에도 안전
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            tokio::task::block_in_place(|| {
+                let rt = tokio::runtime::Handle::current();
+                if let Err(e) = rt.block_on(async {
+                    sqlx::query("SELECT pg_advisory_unlock(842937)")
+                        .execute(&pool)
+                        .await
+                }) {
+                    tracing::error!(error = %e, "Failed to release advisory lock 842937");
+                }
+            });
+        }));
     }
+}
+
+/// SSRF 방어: 허용된 쿠팡 도메인인지 확인.
+/// `evilcoupang.com` 같은 서브도메인 위장 공격을 차단.
+fn is_allowed_crawl_url(url_str: &str) -> bool {
+    let Ok(parsed) = reqwest::Url::parse(url_str) else {
+        return false;
+    };
+    let Some(host) = parsed.host_str() else {
+        return false;
+    };
+    matches!(parsed.scheme(), "https" | "http")
+        && (host == "www.coupang.com"
+            || host == "coupang.com"
+            || host.ends_with(".coupang.com"))
 }
 
 /// DB 상품 행 (크롤링용 최소 필드)
@@ -378,4 +404,31 @@ impl Drop for AdvisoryLockGuard {
 struct ProductRow {
     id: i64,
     product_url: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allowed_crawl_urls() {
+        assert!(is_allowed_crawl_url("https://www.coupang.com/vp/products/123"));
+        assert!(is_allowed_crawl_url("https://coupang.com/vp/products/456"));
+        assert!(is_allowed_crawl_url("http://m.coupang.com/vm/products/789"));
+    }
+
+    #[test]
+    fn blocked_crawl_urls_ssrf() {
+        // 서브도메인 위장
+        assert!(!is_allowed_crawl_url("https://evilcoupang.com/steal"));
+        assert!(!is_allowed_crawl_url("https://coupang.com.evil.com/x"));
+        // 내부 네트워크
+        assert!(!is_allowed_crawl_url("http://localhost:8080/admin"));
+        assert!(!is_allowed_crawl_url("http://169.254.169.254/metadata"));
+        // 잘못된 URL
+        assert!(!is_allowed_crawl_url("not-a-url"));
+        assert!(!is_allowed_crawl_url(""));
+        // 비 HTTP 스킴
+        assert!(!is_allowed_crawl_url("ftp://coupang.com/file"));
+    }
 }

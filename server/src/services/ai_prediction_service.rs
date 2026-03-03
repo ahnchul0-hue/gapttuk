@@ -32,7 +32,7 @@ async fn generate_prediction(pool: &PgPool, product_id: i64) -> Result<AiPredict
     .bind(product_id)
     .fetch_optional(pool)
     .await?
-    .ok_or_else(|| AppError::NotFound("상품을 찾을 수 없습니다".to_string()))?;
+    .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
 
     let score = row.buy_timing_score.unwrap_or(50) as i32;
     let trend = row.price_trend.as_deref().unwrap_or("stable");

@@ -10,6 +10,26 @@ use ipnetwork::IpNetwork;
 use crate::error::AppError;
 use crate::AppState;
 
+/// 프록시 환경에서 실제 클라이언트 IP를 추출.
+/// SmartIpKeyExtractor와 동일한 로직: X-Forwarded-For → X-Real-Ip → ConnectInfo 폴백.
+fn extract_client_ip(req: &Request, fallback: std::net::IpAddr) -> std::net::IpAddr {
+    // X-Forwarded-For: 첫 번째 IP (클라이언트 원본)
+    if let Some(xff) = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
+        if let Some(first) = xff.split(',').next() {
+            if let Ok(ip) = first.trim().parse::<std::net::IpAddr>() {
+                return ip;
+            }
+        }
+    }
+    // X-Real-Ip 폴백
+    if let Some(xri) = req.headers().get("x-real-ip").and_then(|v| v.to_str().ok()) {
+        if let Ok(ip) = xri.trim().parse::<std::net::IpAddr>() {
+            return ip;
+        }
+    }
+    fallback
+}
+
 /// 봇 차단 미들웨어 — blocked_ips DB/캐시 + UA 블랙리스트.
 /// `/health` 엔드포인트는 스킵한다.
 pub async fn bot_guard(
@@ -23,7 +43,8 @@ pub async fn bot_guard(
         return Ok(next.run(req).await);
     }
 
-    let ip = addr.ip().to_string();
+    let client_ip = extract_client_ip(&req, addr.ip());
+    let ip = client_ip.to_string();
 
     // 1. UA 필수 확인 + 블랙리스트
     let ua = req
@@ -41,7 +62,7 @@ pub async fn bot_guard(
     }
 
     // 2. 캐시 확인 + DB 조회 (moka get_with: 동일 키 동시 요청 합체)
-    let ip_net: IpNetwork = addr.ip().into();
+    let ip_net: IpNetwork = client_ip.into();
     let pool = state.pool.clone();
     let ip_for_log = ip_net.to_string();
     let is_blocked = state
@@ -132,5 +153,28 @@ mod tests {
         assert!(is_bot_ua("MyBOT/1.0"));
         assert!(is_bot_ua("CRAWLER-THING"));
         assert!(is_bot_ua("Python-Requests/2.31"));
+    }
+
+    #[test]
+    fn extract_client_ip_xff() {
+        let mut req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
+        req.headers_mut().insert("x-forwarded-for", "1.2.3.4, 10.0.0.1".parse().unwrap());
+        let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
+        assert_eq!(extract_client_ip(&req, fallback), "1.2.3.4".parse::<std::net::IpAddr>().unwrap());
+    }
+
+    #[test]
+    fn extract_client_ip_x_real_ip() {
+        let mut req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
+        req.headers_mut().insert("x-real-ip", "5.6.7.8".parse().unwrap());
+        let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
+        assert_eq!(extract_client_ip(&req, fallback), "5.6.7.8".parse::<std::net::IpAddr>().unwrap());
+    }
+
+    #[test]
+    fn extract_client_ip_fallback() {
+        let req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
+        let fallback: std::net::IpAddr = "192.168.1.1".parse().unwrap();
+        assert_eq!(extract_client_ip(&req, fallback), fallback);
     }
 }

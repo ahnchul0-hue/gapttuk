@@ -245,6 +245,7 @@ async fn main() {
     let x_request_id = HeaderName::from_static("x-request-id");
     let (global_governor_layer, global_governor_config) = middleware::rate_limit::global_limiter();
     let (auth_governor_layer, auth_governor_config) = middleware::rate_limit::auth_limiter();
+    let (search_governor_layer, search_governor_config) = middleware::rate_limit::search_limiter();
 
     // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어. Prod에서 미설정 시 cross-origin 전면 차단.
     let cors_layer = if config.allowed_origins.is_empty() {
@@ -283,7 +284,7 @@ async fn main() {
             "/api/v1/auth",
             api::routes::auth::router().layer(auth_governor_layer),
         )
-        .nest("/api/v1/products", api::routes::products::router())
+        .nest("/api/v1/products", api::routes::products::router(search_governor_layer))
         .nest("/api/v1/devices", api::routes::devices::router())
         .nest("/api/v1/alerts", api::routes::alerts::router())
         .nest(
@@ -375,6 +376,7 @@ async fn main() {
                 interval.tick().await;
                 global_governor_config.limiter().retain_recent();
                 auth_governor_config.limiter().retain_recent();
+                search_governor_config.limiter().retain_recent();
                 tracing::debug!("Governor rate limiter GC completed");
             }
         });

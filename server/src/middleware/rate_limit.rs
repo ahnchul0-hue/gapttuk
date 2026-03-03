@@ -10,6 +10,8 @@ use tower_governor::{
 
 type Middleware = ::governor::middleware::StateInformationMiddleware;
 type HeaderLayer = GovernorLayer<SmartIpKeyExtractor, Middleware, axum::body::Body>;
+/// 검색 rate limiter 레이어 타입 — products router에서 파라미터로 수신.
+pub type SearchLayer = HeaderLayer;
 
 /// 전역 Rate Limiter — 60 req/min per IP.
 /// `per_second(1)` = 1초마다 토큰 1개 보충, `burst_size(60)` = 최대 60개 누적.
@@ -34,16 +36,22 @@ pub fn global_limiter() -> (
 
 /// 검색 전용 Rate Limiter — 10 req/min per IP.
 /// `per_second(6)` = 6초마다 토큰 1개, `burst_size(10)` = 최대 10개 누적.
-/// products.rs 내부에서 사용되므로 layer만 반환 (검색 트래픽은 global 대비 적어 GC 불요).
-pub fn search_limiter() -> HeaderLayer {
-    let config = GovernorConfigBuilder::default()
-        .key_extractor(SmartIpKeyExtractor)
-        .per_second(6)
-        .burst_size(10)
-        .use_headers()
-        .finish()
-        .expect("valid governor config");
-    GovernorLayer::new(config).error_handler(json_error_response)
+/// `Arc<GovernorConfig>`도 반환하여 main.rs GC 루프에서 `retain_recent()` 호출.
+pub fn search_limiter() -> (
+    HeaderLayer,
+    Arc<GovernorConfig<SmartIpKeyExtractor, Middleware>>,
+) {
+    let config = Arc::new(
+        GovernorConfigBuilder::default()
+            .key_extractor(SmartIpKeyExtractor)
+            .per_second(6)
+            .burst_size(10)
+            .use_headers()
+            .finish()
+            .expect("valid governor config"),
+    );
+    let layer = GovernorLayer::new(config.clone()).error_handler(json_error_response);
+    (layer, config)
 }
 
 /// 인증 전용 Rate Limiter — 15 req/min per IP (브루트포스 방지).

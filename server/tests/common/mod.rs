@@ -51,7 +51,10 @@ pub fn build_test_app(pool: PgPool) -> Router {
     Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", api::routes::auth::router())
-        .nest("/api/v1/products", api::routes::products::router())
+        .nest("/api/v1/products", {
+            let (search_layer, _) = gapttuk_server::middleware::rate_limit::search_limiter();
+            api::routes::products::router(search_layer)
+        })
         .nest("/api/v1/devices", api::routes::devices::router())
         .nest("/api/v1/alerts", api::routes::alerts::router())
         .nest(

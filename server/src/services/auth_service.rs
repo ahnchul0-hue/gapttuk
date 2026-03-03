@@ -170,13 +170,22 @@ pub async fn rotate_refresh_token(
     // 2. 탈취 감지 — 이미 revoke된 토큰 재사용
     if revoked_at.is_some() {
         // 해당 user의 모든 활성 토큰 revoke
-        sqlx::query(
+        // DB 에러 시에도 반드시 TokenInvalid를 반환 (탈취된 토큰이 재사용 가능해지는 것을 방지)
+        match sqlx::query(
             "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL"
         )
         .bind(user_id)
         .execute(&mut *tx)
-        .await?;
-        tx.commit().await?;
+        .await
+        {
+            Ok(_) => {
+                let _ = tx.commit().await;
+            }
+            Err(e) => {
+                tracing::error!(user_id, error = %e, "Failed to revoke all tokens during theft detection");
+                // tx는 drop 시 자동 롤백되지만, 탈취 시도는 여전히 차단
+            }
+        }
 
         tracing::warn!(user_id, "Refresh token reuse detected — all tokens revoked");
         return Err(AppError::TokenInvalid);
