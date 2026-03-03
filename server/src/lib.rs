@@ -79,5 +79,11 @@ pub async fn health_check(
         cache: cache_status,
     };
 
-    axum::Json(api::ApiResponse::ok(body)).into_response()
+    let http_status = if db_ok {
+        axum::http::StatusCode::OK
+    } else {
+        axum::http::StatusCode::SERVICE_UNAVAILABLE
+    };
+
+    (http_status, axum::Json(api::ApiResponse::ok(body))).into_response()
 }

@@ -5,6 +5,7 @@ use axum::{
 };
 
 use crate::api::ApiResponse;
+use crate::auth::extractor::Auth;
 use crate::error::AppError;
 use crate::models::AiPrediction;
 use crate::services::ai_prediction_service;
@@ -14,9 +15,10 @@ pub fn router() -> Router<AppState> {
     Router::new().route("/{product_id}", get(get_prediction))
 }
 
-/// GET /api/v1/predictions/{product_id} -- 가격 예측 조회
+/// GET /api/v1/predictions/{product_id} -- 가격 예측 조회 (인증 필수)
 async fn get_prediction(
     State(state): State<AppState>,
+    Auth(_claims): Auth,
     Path(product_id): Path<i64>,
 ) -> Result<ApiResponse<AiPrediction>, AppError> {
     let prediction = ai_prediction_service::get_prediction(&state.pool, product_id).await?;

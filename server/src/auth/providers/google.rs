@@ -68,14 +68,25 @@ async fn get_google_jwks(client: &reqwest::Client) -> Result<GoogleJwks, AppErro
         }
     }
 
-    let jwks: GoogleJwks = client
+    let response = client
         .get(GOOGLE_JWKS_URL)
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("Google JWKS fetch failed: {e}")))?
+        .error_for_status()
+        .map_err(|e| AppError::Internal(format!("Google JWKS HTTP error: {e}")))?;
+
+    let jwks: GoogleJwks = response
         .json()
         .await
         .map_err(|e| AppError::Internal(format!("Google JWKS parse failed: {e}")))?;
+
+    // 빈 키셋은 캐싱하지 않음 — 캐시 오염 방지
+    if jwks.keys.is_empty() {
+        return Err(AppError::Internal(
+            "Google JWKS returned empty key set".to_string(),
+        ));
+    }
 
     *guard = Some(CachedGoogleJwks {
         jwks: jwks.clone(),
@@ -115,8 +126,15 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     validation.set_audience(&[client_id]);
     validation.set_issuer(&["accounts.google.com", "https://accounts.google.com"]);
 
-    let token_data = decode::<GoogleClaims>(id_token, &decoding_key, &validation)
-        .map_err(|_| AppError::TokenInvalid)?;
+    let token_data = decode::<GoogleClaims>(id_token, &decoding_key, &validation).map_err(
+        |e| {
+            tracing::warn!(error = %e, "Google id_token decode failed");
+            match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
+                _ => AppError::TokenInvalid,
+            }
+        },
+    )?;
 
     let claims = token_data.claims;
 

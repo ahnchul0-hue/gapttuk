@@ -141,4 +141,64 @@ mod tests {
         assert_eq!(action, PredictedAction::Neutral);
         assert_eq!(conf, Decimal::new(50, 2));
     }
+
+    // --- 경계값 테스트 ---
+
+    #[test]
+    fn test_predict_boundary_score_70_falling() {
+        // score=70 && falling → BuyNow (정확히 경계)
+        let (action, _) = predict_action(70, "falling", 5);
+        assert_eq!(action, PredictedAction::BuyNow);
+    }
+
+    #[test]
+    fn test_predict_boundary_score_69_falling() {
+        // score=69 && falling → NOT BuyNow (경계 미만)
+        let (action, _) = predict_action(69, "falling", 5);
+        assert_ne!(action, PredictedAction::BuyNow);
+    }
+
+    #[test]
+    fn test_predict_boundary_score_40_stable() {
+        // score=40 && stable → Neutral (40은 < 40 조건 불충족)
+        let (action, _) = predict_action(40, "stable", 20);
+        assert_eq!(action, PredictedAction::Neutral);
+    }
+
+    #[test]
+    fn test_predict_boundary_score_39_stable() {
+        // score=39 && stable → Wait (39 < 40)
+        let (action, _) = predict_action(39, "stable", 20);
+        assert_eq!(action, PredictedAction::Wait);
+    }
+
+    #[test]
+    fn test_predict_boundary_days_30() {
+        // Neutral + days_since_lowest=30 → conf 0.50 (30 < 30 is false)
+        let (action, conf) = predict_action(50, "stable", 30);
+        assert_eq!(action, PredictedAction::Neutral);
+        assert_eq!(conf, Decimal::new(50, 2));
+    }
+
+    #[test]
+    fn test_predict_boundary_days_29() {
+        // Neutral + days_since_lowest=29 → conf 0.60 (29 < 30)
+        let (action, conf) = predict_action(50, "stable", 29);
+        assert_eq!(action, PredictedAction::Neutral);
+        assert_eq!(conf, Decimal::new(60, 2));
+    }
+
+    #[test]
+    fn test_predict_score_70_rising_is_wait() {
+        // score=70 but rising → Wait (rising overrides high score)
+        let (action, _) = predict_action(70, "rising", 5);
+        assert_eq!(action, PredictedAction::Wait);
+    }
+
+    #[test]
+    fn test_predict_unknown_trend() {
+        // unknown trend + mid score → Neutral (not rising, not falling/stable)
+        let (action, _) = predict_action(55, "unknown", 20);
+        assert_eq!(action, PredictedAction::Neutral);
+    }
 }

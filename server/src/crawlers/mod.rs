@@ -53,6 +53,7 @@ impl CrawlerService {
 
     /// 전체 크롤링 주기 실행 (분산 잠금 포함).
     /// pg_try_advisory_lock으로 동시 크롤링 방지 — 다중 인스턴스 환경에서 안전.
+    /// AdvisoryLockGuard로 패닉/에러 시에도 unlock 보장.
     pub async fn run_cycle(&self) -> CycleStats {
         let acquired: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock(842937)")
             .fetch_one(&self.pool)
@@ -68,11 +69,9 @@ impl CrawlerService {
                 duration_secs: 0.0,
             };
         }
-        let stats = self.run_cycle_inner().await;
-        let _ = sqlx::query("SELECT pg_advisory_unlock(842937)")
-            .execute(&self.pool)
-            .await;
-        stats
+        // Guard가 Drop 시 unlock 보장 (패닉 포함)
+        let _guard = AdvisoryLockGuard(self.pool.clone());
+        self.run_cycle_inner().await
     }
 
     /// 실제 크롤링 주기 실행 (내부 구현).
@@ -353,6 +352,25 @@ enum ScrapeOutcome {
     NoChange,
     Failed,
     Aborted,
+}
+
+/// Advisory lock의 패닉/에러 안전한 해제를 보장하는 Drop guard.
+/// tokio 런타임이 살아있는 동안 Drop이 호출되면 blocking으로 unlock.
+struct AdvisoryLockGuard(sqlx::PgPool);
+
+impl Drop for AdvisoryLockGuard {
+    fn drop(&mut self) {
+        let pool = self.0.clone();
+        // spawn blocking unlock — panic/에러 시에도 잠금 해제
+        tokio::spawn(async move {
+            if let Err(e) = sqlx::query("SELECT pg_advisory_unlock(842937)")
+                .execute(&pool)
+                .await
+            {
+                tracing::error!(error = %e, "Failed to release advisory lock 842937");
+            }
+        });
+    }
 }
 
 /// DB 상품 행 (크롤링용 최소 필드)

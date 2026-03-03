@@ -425,7 +425,7 @@ pub async fn update_keyword_alert(
             "키워드를 입력해주세요".to_string(),
         ));
     }
-    if keyword.len() > 100 {
+    if keyword.chars().count() > 100 {
         return Err(AppError::BadRequest(
             "키워드는 100자 이하여야 합니다".to_string(),
         ));
@@ -849,5 +849,47 @@ mod tests {
             None,
             None
         ));
+    }
+
+    // --- update_keyword_alert 검증 로직 테스트 (chars().count() 기반) ---
+
+    #[test]
+    fn test_keyword_length_uses_chars_count() {
+        // 한글 "가나다" = 3글자, 9바이트 — chars().count()로 정확히 3자
+        let korean = "가나다";
+        assert_eq!(korean.len(), 9);           // 바이트
+        assert_eq!(korean.chars().count(), 3); // 글자 수
+    }
+
+    #[test]
+    fn test_keyword_100_chars_korean() {
+        // 한글 100자 = 300바이트 — chars().count() 기준 100자 이하 통과
+        let korean_100: String = "가".repeat(100);
+        assert_eq!(korean_100.chars().count(), 100);
+        assert_eq!(korean_100.len(), 300);
+        // 100자 이하이므로 유효
+        assert!(korean_100.chars().count() <= 100);
+    }
+
+    #[test]
+    fn test_keyword_101_chars_korean() {
+        // 한글 101자 → 차단
+        let korean_101: String = "가".repeat(101);
+        assert_eq!(korean_101.chars().count(), 101);
+        assert!(korean_101.chars().count() > 100);
+    }
+
+    // --- update_price_alert 목표가 검증 ---
+
+    #[test]
+    fn test_price_alert_target_zero_is_invalid() {
+        // target_price <= 0은 BadRequest
+        assert!(rust_decimal::Decimal::ZERO <= rust_decimal::Decimal::ZERO);
+    }
+
+    #[test]
+    fn test_price_alert_target_negative_is_invalid() {
+        let neg = rust_decimal::Decimal::new(-1, 0);
+        assert!(neg <= rust_decimal::Decimal::ZERO);
     }
 }

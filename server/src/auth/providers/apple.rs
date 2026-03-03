@@ -63,14 +63,24 @@ async fn get_apple_jwks(client: &reqwest::Client) -> Result<AppleJwks, AppError>
         }
     }
 
-    let jwks: AppleJwks = client
+    let response = client
         .get("https://appleid.apple.com/auth/keys")
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("Apple JWKS fetch failed: {e}")))?
+        .error_for_status()
+        .map_err(|e| AppError::Internal(format!("Apple JWKS HTTP error: {e}")))?;
+
+    let jwks: AppleJwks = response
         .json()
         .await
         .map_err(|e| AppError::Internal(format!("Apple JWKS parse failed: {e}")))?;
+
+    if jwks.keys.is_empty() {
+        return Err(AppError::Internal(
+            "Apple JWKS returned empty key set".to_string(),
+        ));
+    }
 
     *guard = Some(CachedJwks {
         jwks: jwks.clone(),
@@ -110,8 +120,15 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     validation.set_audience(&[client_id]);
     validation.set_issuer(&["https://appleid.apple.com"]);
 
-    let token_data = decode::<AppleClaims>(id_token, &decoding_key, &validation)
-        .map_err(|_| AppError::TokenInvalid)?;
+    let token_data = decode::<AppleClaims>(id_token, &decoding_key, &validation).map_err(
+        |e| {
+            tracing::warn!(error = %e, "Apple id_token decode failed");
+            match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
+                _ => AppError::TokenInvalid,
+            }
+        },
+    )?;
 
     let claims = token_data.claims;
 
