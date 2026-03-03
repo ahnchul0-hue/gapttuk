@@ -11,7 +11,7 @@ use crate::auth::extractor::Auth;
 use crate::auth::providers::verify_social_token;
 use crate::error::AppError;
 use crate::models::AuthProvider;
-use crate::services::auth_service;
+use crate::services::auth_service::{self, ConsentInfo};
 use crate::AppState;
 
 // ── 요청/응답 DTO ──────────────────────────────────────
@@ -20,6 +20,15 @@ use crate::AppState;
 pub struct SocialLoginRequest {
     pub access_token: String,
     pub referral_code: Option<String>,
+    /// 이용약관 동의 (신규 가입 시 필수)
+    #[serde(default)]
+    pub terms_agreed: bool,
+    /// 개인정보 처리방침 동의 (신규 가입 시 필수)
+    #[serde(default)]
+    pub privacy_agreed: bool,
+    /// 마케팅 수신 동의 (선택)
+    #[serde(default)]
+    pub marketing_agreed: bool,
 }
 
 #[derive(Serialize)]
@@ -86,6 +95,12 @@ async fn login_kakao(
 struct GoogleLoginRequest {
     id_token: String,
     referral_code: Option<String>,
+    #[serde(default)]
+    terms_agreed: bool,
+    #[serde(default)]
+    privacy_agreed: bool,
+    #[serde(default)]
+    marketing_agreed: bool,
 }
 
 async fn login_google(
@@ -116,9 +131,15 @@ async fn login_google(
         None
     };
 
+    let consent = ConsentInfo {
+        terms_agreed: body.terms_agreed,
+        privacy_agreed: body.privacy_agreed,
+        marketing_agreed: body.marketing_agreed,
+    };
+
     // 3. 사용자 upsert
     let (user, is_new_user) =
-        auth_service::upsert_user(&state.pool, &social_info, referred_by).await?;
+        auth_service::upsert_user(&state.pool, &social_info, referred_by, &consent).await?;
 
     // 4. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;
@@ -187,9 +208,15 @@ async fn social_login(
         None
     };
 
+    let consent = ConsentInfo {
+        terms_agreed: body.terms_agreed,
+        privacy_agreed: body.privacy_agreed,
+        marketing_agreed: body.marketing_agreed,
+    };
+
     // 3. 사용자 upsert (신규 시 referral_code 생성 + user_points + referrals도 트랜잭션 내 원자적 생성)
     let (user, is_new_user) =
-        auth_service::upsert_user(&state.pool, &social_info, referred_by).await?;
+        auth_service::upsert_user(&state.pool, &social_info, referred_by, &consent).await?;
 
     // 5. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;

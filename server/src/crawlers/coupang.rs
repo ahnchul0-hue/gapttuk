@@ -44,6 +44,9 @@ pub enum CrawlError {
     #[error("Parse error: {0}")]
     ParseError(String),
 
+    #[error("Possible CAPTCHA or anti-bot page (no product data found)")]
+    PossibleCaptcha,
+
     #[error("Database error: {0}")]
     Db(#[from] sqlx::Error),
 }
@@ -78,6 +81,11 @@ pub async fn scrape_product_page(
                 abort_flag.store(true, std::sync::atomic::Ordering::Relaxed);
                 return Err(CrawlError::Blocked(code));
             }
+            Err(CrawlError::PossibleCaptcha) => {
+                tracing::warn!(product_id, "CAPTCHA detected — setting abort flag");
+                abort_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                return Err(CrawlError::PossibleCaptcha);
+            }
             Err(e) => {
                 tracing::warn!(product_id, attempt, error = %e, "Scrape attempt failed");
                 last_err = e;
@@ -111,7 +119,16 @@ async fn fetch_and_parse(
     }
 
     let html = resp.text().await?;
-    parse_product_html(product_id, &html)
+    let result = parse_product_html(product_id, &html)?;
+
+    // CAPTCHA 감지: 200 응답인데 가격·상품명·품절 마커 전부 없으면 CAPTCHA 의심
+    if result.price.is_none() && result.product_name.is_none() && !result.is_out_of_stock {
+        metrics::counter!("crawler_captcha_suspected").increment(1);
+        tracing::warn!(product_id, "Possible CAPTCHA page — no product data extracted");
+        return Err(CrawlError::PossibleCaptcha);
+    }
+
+    Ok(result)
 }
 
 /// HTML에서 상품 정보 파싱
@@ -360,5 +377,11 @@ mod tests {
         let html = r#"<html><body></body></html>"#;
         let result = parse_product_html(12345, html).unwrap();
         assert_eq!(result.product_id, 12345);
+    }
+
+    #[test]
+    fn crawl_error_possible_captcha_display() {
+        let err = CrawlError::PossibleCaptcha;
+        assert!(err.to_string().contains("CAPTCHA"));
     }
 }

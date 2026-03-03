@@ -10,13 +10,22 @@ use crate::config::Config;
 use crate::error::AppError;
 use crate::models::User;
 
+/// 개인정보 동의 파라미터 — 소셜 로그인 요청에서 전달.
+pub struct ConsentInfo {
+    pub terms_agreed: bool,
+    pub privacy_agreed: bool,
+    pub marketing_agreed: bool,
+}
+
 /// 소셜 로그인 사용자 upsert → 신규면 INSERT, 기존이면 UPDATE.
 /// referral_code는 신규 사용자에게만 내부 생성 — 기존 사용자 로그인 시 불필요한 DB 조회 방지.
+/// 신규 사용자는 terms_agreed + privacy_agreed가 필수.
 /// 반환: (User, is_new_user)
 pub async fn upsert_user(
     pool: &PgPool,
     info: &SocialUserInfo,
     referred_by: Option<i64>,
+    consent: &ConsentInfo,
 ) -> Result<(User, bool), AppError> {
     // auth_provider + auth_provider_id로 기존 사용자 조회
     let provider_str = match info.provider {
@@ -46,12 +55,27 @@ pub async fn upsert_user(
         .await?;
         Ok((updated, false))
     } else {
-        // 신규 사용자 — referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
+        // 신규 사용자 — 동의 검증 필수
+        if !consent.terms_agreed || !consent.privacy_agreed {
+            return Err(AppError::BadRequest(
+                "이용약관 및 개인정보 처리방침 동의가 필요합니다".to_string(),
+            ));
+        }
+
+        let now = Utc::now();
+        let terms_at = Some(now);
+        let privacy_at = Some(now);
+        let marketing_at = if consent.marketing_agreed { Some(now) } else { None };
+
+        // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
         let referral_code = generate_referral_code(pool).await?;
         let mut tx = pool.begin().await?;
 
         let user: User = sqlx::query_as(
-            "INSERT INTO users (email, nickname, auth_provider, auth_provider_id, profile_image_url, referral_code, referred_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *"
+            r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
+                profile_image_url, referral_code, referred_by,
+                terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#
         )
         .bind(&info.email)
         .bind(&info.nickname)
@@ -60,6 +84,9 @@ pub async fn upsert_user(
         .bind(&info.profile_image_url)
         .bind(&referral_code)
         .bind(referred_by)
+        .bind(terms_at)
+        .bind(privacy_at)
+        .bind(marketing_at)
         .fetch_one(&mut *tx)
         .await?;
 
