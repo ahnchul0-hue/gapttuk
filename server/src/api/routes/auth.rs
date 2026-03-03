@@ -1,5 +1,6 @@
 use axum::{
     extract::State,
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
@@ -76,37 +77,93 @@ pub fn router() -> Router<AppState> {
 async fn login_kakao(
     State(state): State<AppState>,
     Json(body): Json<SocialLoginRequest>,
-) -> Result<Created<AuthResponse>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     social_login(state, AuthProvider::Kakao, body).await
+}
+
+/// Google 전용 요청 DTO — id_token (OIDC JWT) 기반
+#[derive(Deserialize)]
+struct GoogleLoginRequest {
+    id_token: String,
+    referral_code: Option<String>,
 }
 
 async fn login_google(
     State(state): State<AppState>,
-    Json(body): Json<SocialLoginRequest>,
-) -> Result<Created<AuthResponse>, AppError> {
-    social_login(state, AuthProvider::Google, body).await
+    Json(body): Json<GoogleLoginRequest>,
+) -> Result<axum::response::Response, AppError> {
+    // 0. 입력 검증
+    let token = body.id_token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest(
+            "id_token이 비어있습니다".to_string(),
+        ));
+    }
+    if token.len() > 4096 {
+        return Err(AppError::BadRequest(
+            "id_token이 너무 깁니다".to_string(),
+        ));
+    }
+
+    // 1. Google id_token (JWT/OIDC) 검증
+    let social_info =
+        crate::auth::providers::google::verify(&state, token).await?;
+
+    // 2. 추천 코드로 추천인 조회 (있는 경우)
+    let referred_by = if let Some(ref code) = body.referral_code {
+        auth_service::find_referrer_by_code(&state.pool, code).await?
+    } else {
+        None
+    };
+
+    // 3. 사용자 upsert
+    let (user, is_new_user) =
+        auth_service::upsert_user(&state.pool, &social_info, referred_by).await?;
+
+    // 4. 토큰 쌍 생성
+    let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;
+
+    let auth_response = AuthResponse {
+        user: UserDto {
+            id: user.id,
+            email: user.email,
+            nickname: user.nickname,
+            profile_image_url: user.profile_image_url,
+            referral_code: user.referral_code,
+        },
+        tokens,
+        is_new_user,
+    };
+
+    // 신규 사용자 → 201 Created, 기존 사용자 → 200 OK
+    if is_new_user {
+        Ok(Created(auth_response).into_response())
+    } else {
+        Ok(ApiResponse::ok(auth_response).into_response())
+    }
 }
 
 async fn login_apple(
     State(state): State<AppState>,
     Json(body): Json<SocialLoginRequest>,
-) -> Result<Created<AuthResponse>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     social_login(state, AuthProvider::Apple, body).await
 }
 
 async fn login_naver(
     State(state): State<AppState>,
     Json(body): Json<SocialLoginRequest>,
-) -> Result<Created<AuthResponse>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     social_login(state, AuthProvider::Naver, body).await
 }
 
 /// 공통 소셜 로그인 로직.
+/// 신규 사용자 → 201 Created, 기존 사용자 → 200 OK.
 async fn social_login(
     state: AppState,
     provider: AuthProvider,
     body: SocialLoginRequest,
-) -> Result<Created<AuthResponse>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     // 0. 입력 검증
     let token = body.access_token.trim();
     if token.is_empty() {
@@ -137,7 +194,7 @@ async fn social_login(
     // 5. 토큰 쌍 생성
     let tokens = auth_service::create_token_pair(&state.pool, &state.config, user.id).await?;
 
-    Ok(Created(AuthResponse {
+    let auth_response = AuthResponse {
         user: UserDto {
             id: user.id,
             email: user.email,
@@ -147,7 +204,14 @@ async fn social_login(
         },
         tokens,
         is_new_user,
-    }))
+    };
+
+    // 신규 사용자 → 201 Created, 기존 사용자 → 200 OK
+    if is_new_user {
+        Ok(Created(auth_response).into_response())
+    } else {
+        Ok(ApiResponse::ok(auth_response).into_response())
+    }
 }
 
 /// POST /api/v1/auth/refresh — 토큰 갱신
@@ -155,8 +219,17 @@ async fn refresh(
     State(state): State<AppState>,
     Json(body): Json<RefreshRequest>,
 ) -> Result<ApiResponse<RefreshResponse>, AppError> {
+    // 입력 검증
+    let token = body.refresh_token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest("리프레시 토큰을 입력해주세요".to_string()));
+    }
+    if token.len() > 512 {
+        return Err(AppError::BadRequest("유효하지 않은 리프레시 토큰입니다".to_string()));
+    }
+
     let (tokens, _user_id) =
-        auth_service::rotate_refresh_token(&state.pool, &state.config, &body.refresh_token).await?;
+        auth_service::rotate_refresh_token(&state.pool, &state.config, token).await?;
 
     Ok(ApiResponse::ok(RefreshResponse {
         access_token: tokens.access_token,

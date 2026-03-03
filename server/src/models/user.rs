@@ -33,6 +33,9 @@ pub struct User {
     pub referred_by: Option<i64>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub terms_agreed_at: Option<DateTime<Utc>>,
+    pub privacy_agreed_at: Option<DateTime<Utc>>,
+    pub marketing_agreed_at: Option<DateTime<Utc>>,
     pub deleted_at: Option<DateTime<Utc>>,
 }
 

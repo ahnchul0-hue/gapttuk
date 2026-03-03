@@ -1,12 +1,12 @@
 use axum::{
     extract::{Path, Query, State},
-    routing::{get, patch},
+    routing::{delete, get, patch},
     Router,
 };
 use serde::Serialize;
 
 use crate::api::pagination::{PaginatedResponse, PaginationParams};
-use crate::api::ApiResponse;
+use crate::api::{ApiResponse, Deleted};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
 use crate::models::Notification;
@@ -25,8 +25,10 @@ pub struct MarkAllReadResponse {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_notifications))
-        .route("/{id}/read", patch(mark_read))
+        .route("/unread-count", get(unread_count))
         .route("/read-all", patch(mark_all_read))
+        .route("/{id}", delete(delete_notification))
+        .route("/{id}/read", patch(mark_read))
 }
 
 // ── 핸들러 ─────────────────────────────────────────────
@@ -66,4 +68,23 @@ async fn mark_all_read(
 ) -> Result<ApiResponse<MarkAllReadResponse>, AppError> {
     let updated = notification_service::mark_all_read(&state.pool, claims.sub).await?;
     Ok(ApiResponse::ok(MarkAllReadResponse { updated }))
+}
+
+/// DELETE /api/v1/notifications/{id} — 알림 삭제
+async fn delete_notification(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+    Path(id): Path<i64>,
+) -> Result<Deleted, AppError> {
+    notification_service::delete_notification(&state.pool, claims.sub, id).await?;
+    Ok(Deleted)
+}
+
+/// GET /api/v1/notifications/unread-count — 읽지 않은 알림 수
+async fn unread_count(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+) -> Result<ApiResponse<serde_json::Value>, AppError> {
+    let count = notification_service::get_unread_count(&state.pool, claims.sub).await?;
+    Ok(ApiResponse::ok(serde_json::json!({ "count": count })))
 }

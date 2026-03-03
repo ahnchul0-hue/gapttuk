@@ -13,6 +13,7 @@ pub mod services;
 use std::sync::Arc;
 
 use axum::extract::State;
+use axum::response::IntoResponse;
 use serde::Serialize;
 
 pub use cache::AppCache;
@@ -29,32 +30,54 @@ pub struct AppState {
     pub push_client: Arc<push::PushClient>,
 }
 
+/// DB 헬스 상세 페이로드
+#[derive(Serialize)]
+pub struct DbHealth {
+    pub status: &'static str,
+    pub latency_ms: u64,
+    pub pool_size: u32,
+    pub pool_idle: u32,
+}
+
 /// /health 응답 페이로드
 #[derive(Serialize)]
 pub struct HealthResponse {
     pub status: &'static str,
-    pub db: &'static str,
+    pub version: &'static str,
+    pub db: DbHealth,
     pub cache: &'static str,
 }
 
 /// GET /health — 헬스체크 (DB + 캐시 검증)
 pub async fn health_check(
     State(state): State<AppState>,
-) -> Result<api::ApiResponse<HealthResponse>, AppError> {
-    sqlx::query_scalar::<_, i32>("SELECT 1")
-        .fetch_one(&state.pool)
-        .await?;
+) -> axum::response::Response {
+    let start = std::time::Instant::now();
+    let db_ok = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
+    let latency_ms = start.elapsed().as_millis() as u64;
+
+    let db = DbHealth {
+        status: if db_ok { "connected" } else { "disconnected" },
+        latency_ms,
+        pool_size: state.pool.size(),
+        pool_idle: state.pool.num_idle() as u32,
+    };
 
     let cache_status = if state.cache.is_healthy() {
         state.cache.report_metrics();
-        "connected"
+        "ok"
     } else {
         "error"
     };
 
-    Ok(api::ApiResponse::ok(HealthResponse {
-        status: "ok",
-        db: "connected",
+    let status = if db_ok { "healthy" } else { "degraded" };
+
+    let body = HealthResponse {
+        status,
+        version: env!("CARGO_PKG_VERSION"),
+        db,
         cache: cache_status,
-    }))
+    };
+
+    axum::Json(api::ApiResponse::ok(body)).into_response()
 }

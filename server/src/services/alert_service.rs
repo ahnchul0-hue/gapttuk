@@ -382,6 +382,70 @@ pub async fn toggle_keyword_alert(
     Ok(alert)
 }
 
+// ── 알림 수정 ────────────────────────────────────────────
+
+/// 가격 알림 목표가 수정.
+pub async fn update_price_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+    target_price: rust_decimal::Decimal,
+) -> Result<(), AppError> {
+    if target_price <= rust_decimal::Decimal::ZERO {
+        return Err(AppError::BadRequest(
+            "목표가는 0보다 커야 합니다".to_string(),
+        ));
+    }
+    let result = sqlx::query(
+        "UPDATE price_alerts SET target_price = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3",
+    )
+    .bind(target_price)
+    .bind(alert_id)
+    .bind(user_id)
+    .execute(pool)
+    .await
+    ?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("알림을 찾을 수 없습니다".to_string()));
+    }
+    Ok(())
+}
+
+/// 키워드 알림 키워드 수정.
+pub async fn update_keyword_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+    keyword: &str,
+) -> Result<(), AppError> {
+    let keyword = keyword.trim();
+    if keyword.is_empty() {
+        return Err(AppError::BadRequest(
+            "키워드를 입력해주세요".to_string(),
+        ));
+    }
+    if keyword.len() > 100 {
+        return Err(AppError::BadRequest(
+            "키워드는 100자 이하여야 합니다".to_string(),
+        ));
+    }
+    let result = sqlx::query(
+        "UPDATE keyword_alerts SET keyword = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3",
+    )
+    .bind(keyword)
+    .bind(alert_id)
+    .bind(user_id)
+    .execute(pool)
+    .await
+    ?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("알림을 찾을 수 없습니다".to_string()));
+    }
+    Ok(())
+}
+
 // ── 알림 평가 ────────────────────────────────────────────
 
 /// 상품 가격 통계 (평가용)

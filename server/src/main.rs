@@ -290,16 +290,20 @@ async fn main() {
             "/api/v1/notifications",
             api::routes::notifications::router(),
         )
+        .nest(
+            "/api/v1/predictions",
+            api::routes::predictions::router(),
+        )
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
-            middleware::bot_guard::bot_guard,
+            middleware::access_log::access_log,
         ))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
-            middleware::access_log::access_log,
+            middleware::bot_guard::bot_guard,
         ))
         .layer(SetRequestIdLayer::new(
             x_request_id.clone(),

@@ -51,8 +51,32 @@ impl CrawlerService {
         }
     }
 
-    /// 전체 크롤링 주기 실행.
+    /// 전체 크롤링 주기 실행 (분산 잠금 포함).
+    /// pg_try_advisory_lock으로 동시 크롤링 방지 — 다중 인스턴스 환경에서 안전.
     pub async fn run_cycle(&self) -> CycleStats {
+        let acquired: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock(842937)")
+            .fetch_one(&self.pool)
+            .await
+            .unwrap_or(false);
+        if !acquired {
+            tracing::info!("크롤링 잠금 획득 실패 — 다른 인스턴스가 실행 중");
+            return CycleStats {
+                total: 0,
+                success: 0,
+                failed: 0,
+                skipped_no_change: 0,
+                duration_secs: 0.0,
+            };
+        }
+        let stats = self.run_cycle_inner().await;
+        let _ = sqlx::query("SELECT pg_advisory_unlock(842937)")
+            .execute(&self.pool)
+            .await;
+        stats
+    }
+
+    /// 실제 크롤링 주기 실행 (내부 구현).
+    async fn run_cycle_inner(&self) -> CycleStats {
         let start = Instant::now();
 
         // 1. DB에서 쿠팡 상품 전체 조회 (shopping_malls.code = 'coupang' 조인)

@@ -25,16 +25,19 @@ pub async fn bot_guard(
 
     let ip = addr.ip().to_string();
 
-    // 1. UA 블랙리스트
-    if let Some(ua) = req
+    // 1. UA 필수 확인 + 블랙리스트
+    let ua = req
         .headers()
         .get(axum::http::header::USER_AGENT)
         .and_then(|v| v.to_str().ok())
-    {
-        if is_bot_ua(ua) {
-            tracing::info!(ip = %ip, user_agent = %ua, "Bot UA blocked");
-            return Err(AppError::Forbidden);
-        }
+        .ok_or_else(|| {
+            tracing::info!(ip = %ip, "Missing User-Agent header — blocked");
+            AppError::Forbidden
+        })?;
+
+    if is_bot_ua(ua) {
+        tracing::info!(ip = %ip, user_agent = %ua, "Bot UA blocked");
+        return Err(AppError::Forbidden);
     }
 
     // 2. 캐시 확인 + DB 조회 (moka get_with: 동일 키 동시 요청 합체)

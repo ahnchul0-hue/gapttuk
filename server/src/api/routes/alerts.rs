@@ -24,6 +24,16 @@ pub struct CreateKeywordAlertRequest {
     pub keyword: String,
 }
 
+#[derive(Deserialize)]
+pub struct UpdatePriceAlertRequest {
+    pub target_price: rust_decimal::Decimal,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateKeywordAlertRequest {
+    pub keyword: String,
+}
+
 // ── 응답 DTO ────────────────────────────────────────────
 
 #[derive(Serialize)]
@@ -51,6 +61,8 @@ pub fn router() -> Router<AppState> {
         .route("/category", post(create_category_alert))
         .route("/keyword", post(create_keyword_alert))
         .route("/", get(list_alerts))
+        .route("/price/{alert_id}", patch(update_price_alert_handler))
+        .route("/keyword/{alert_id}", patch(update_keyword_alert_handler))
         .route("/{alert_type}/{alert_id}", delete(delete_alert))
         .route("/{alert_type}/{alert_id}/toggle", patch(toggle_alert))
 }
@@ -159,4 +171,26 @@ async fn toggle_alert(
             "지원하지 않는 알림 유형: {alert_type}"
         ))),
     }
+}
+
+/// PATCH /api/v1/alerts/price/{alert_id} — 가격 알림 수정
+async fn update_price_alert_handler(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+    Path(alert_id): Path<i64>,
+    Json(body): Json<UpdatePriceAlertRequest>,
+) -> Result<ApiResponse<&'static str>, AppError> {
+    alert_service::update_price_alert(&state.pool, claims.sub, alert_id, body.target_price).await?;
+    Ok(ApiResponse::ok("수정되었습니다"))
+}
+
+/// PATCH /api/v1/alerts/keyword/{alert_id} — 키워드 알림 수정
+async fn update_keyword_alert_handler(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+    Path(alert_id): Path<i64>,
+    Json(body): Json<UpdateKeywordAlertRequest>,
+) -> Result<ApiResponse<&'static str>, AppError> {
+    alert_service::update_keyword_alert(&state.pool, claims.sub, alert_id, &body.keyword).await?;
+    Ok(ApiResponse::ok("수정되었습니다"))
 }

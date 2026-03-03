@@ -67,14 +67,11 @@ pub async fn refresh_product_stats(
     new_price: i32,
     is_out_of_stock: bool,
 ) -> Result<(), sqlx::Error> {
-    // 1) 30일 평균 + 전체 기간 최저/최고 + 최저가 기록일을 단일 CTE 쿼리로 조회
+    // 1) products 테이블의 lowest/highest_price 활용 + 30일 평균 + 최저가 기록일 조회
+    //    (all_time CTE 제거 — price_history 풀 스캔 방지)
     let stats = sqlx::query_as::<_, CombinedStats>(
         r#"
-        WITH all_time AS (
-            SELECT MIN(price) AS min_price, MAX(price) AS max_price
-            FROM price_history WHERE product_id = $1
-        ),
-        recent_avg AS (
+        WITH recent_avg AS (
             SELECT AVG(price)::int AS avg_price_30d
             FROM price_history
             WHERE product_id = $1 AND recorded_at >= NOW() - INTERVAL '30 days'
@@ -82,18 +79,20 @@ pub async fn refresh_product_stats(
         SELECT
             ra.avg_price_30d,
             (SELECT MIN(recorded_at) FROM price_history
-             WHERE product_id = $1 AND price = at.min_price) AS lowest_date,
-            at.min_price,
-            at.max_price
-        FROM all_time at, recent_avg ra
+             WHERE product_id = $1 AND price = p.lowest_price) AS lowest_date,
+            p.lowest_price AS min_price,
+            p.highest_price AS max_price
+        FROM products p, recent_avg ra
+        WHERE p.id = $1
         "#,
     )
     .bind(product_id)
     .fetch_one(pool)
     .await?;
 
-    let lowest_price = stats.min_price.unwrap_or(new_price);
-    let highest_price = stats.max_price.unwrap_or(new_price);
+    // new_price가 기존 최저/최고를 갱신하는지 반영
+    let lowest_price = std::cmp::min(stats.min_price.unwrap_or(new_price), new_price);
+    let highest_price = std::cmp::max(stats.max_price.unwrap_or(new_price), new_price);
     let average_price = stats.avg_price_30d.unwrap_or(new_price);
 
     // 2) 비즈니스 로직 계산

@@ -57,11 +57,16 @@ pub struct CoupangUrlInfo {
 /// - `https://www.coupang.com/vp/products/{product_id}?vendorItemId={vid}`
 /// - `https://www.coupang.com/vp/products/{product_id}` (vendorItemId 없음)
 pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
+    // URL 길이 제한
+    if url_str.len() > 2048 {
+        return Err(AppError::BadRequest("URL은 2048자 이하여야 합니다".to_string()));
+    }
+
     let url = reqwest::Url::parse(url_str)
         .map_err(|_| AppError::BadRequest("유효하지 않은 URL입니다".to_string()))?;
 
     let host = url.host_str().unwrap_or_default();
-    if !host.ends_with("coupang.com") {
+    if host != "coupang.com" && host != "www.coupang.com" && !host.ends_with(".coupang.com") {
         return Err(AppError::BadRequest(
             "현재 쿠팡 URL만 지원합니다".to_string(),
         ));
@@ -413,5 +418,25 @@ mod tests {
         let url = "https://www.coupang.com/vp/products/";
         let result = parse_coupang_url(url);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_evil_coupang_domain_rejected() {
+        let url = "https://evilcoupang.com/vp/products/123";
+        let result = parse_coupang_url(url);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_url_too_long() {
+        // 2049자 URL 생성
+        let long_path = "a".repeat(2049 - "https://www.coupang.com/".len());
+        let url = format!("https://www.coupang.com/{}", long_path);
+        assert!(url.len() > 2048);
+        let result = parse_coupang_url(&url);
+        assert!(result.is_err());
+        // 에러 메시지 확인
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("2048"));
     }
 }

@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::{delete, patch, post},
+    routing::{delete, get, patch},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -60,12 +60,28 @@ impl From<UserDevice> for DeviceResponse {
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", post(register_device))
+        .route("/", get(list_devices).post(register_device))
         .route("/{device_id}", delete(unregister_device))
         .route("/{device_id}/push", patch(toggle_push))
 }
 
 // ── 핸들러 ─────────────────────────────────────────────
+
+/// GET /api/v1/devices — 사용자 디바이스 목록
+async fn list_devices(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+) -> Result<ApiResponse<Vec<DeviceResponse>>, AppError> {
+    let devices = sqlx::query_as::<_, UserDevice>(
+        "SELECT * FROM user_devices WHERE user_id = $1 ORDER BY created_at DESC",
+    )
+    .bind(claims.sub)
+    .fetch_all(&state.pool)
+    .await?;
+
+    let response: Vec<DeviceResponse> = devices.into_iter().map(DeviceResponse::from).collect();
+    Ok(ApiResponse::ok(response))
+}
 
 /// POST /api/v1/devices — 디바이스 등록 (ON CONFLICT → 토큰 갱신)
 async fn register_device(
