@@ -14,7 +14,7 @@ pub fn test_config() -> Config {
         app_env: config::AppEnv::Test,
         host: "127.0.0.1".to_string(),
         port: 8080,
-        jwt_access_ttl_secs: 1800,
+        jwt_access_ttl_secs: 300,
         jwt_refresh_ttl_secs: 604_800,
         coupang_access_key: None,
         coupang_secret_key: None,
@@ -43,7 +43,7 @@ pub fn build_test_app(pool: PgPool) -> Router {
     let state = AppState {
         pool,
         cache,
-        config,
+        config: Arc::new(config),
         http_client,
         push_client,
     };

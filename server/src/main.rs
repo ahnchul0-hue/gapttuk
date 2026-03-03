@@ -11,6 +11,7 @@ use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::signal;
+use sentry::integrations::tower::{NewSentryLayer, SentryHttpLayer};
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
@@ -68,6 +69,7 @@ async fn metrics_handler(
 
 /// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
 /// 개별 파티션 생성 실패 시 나머지를 계속 시도하고, 전체 실패 건수를 반환한다.
+/// api_access_logs 파티션은 90일(3개월) 초과분을 자동 삭제한다 (price_history는 영구 보존).
 async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
     let now = chrono::Utc::now().date_naive();
     let mut errors = Vec::new();
@@ -98,6 +100,54 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         }
     }
 
+    // api_access_logs 파티션 자동 삭제 — 90일(3개월) 이전 파티션 삭제.
+    // price_history는 영구 보존하므로 삭제하지 않는다.
+    let cutoff = now - chrono::Months::new(3);
+    let cutoff_suffix = cutoff.format("%Y_%m").to_string();
+
+    // pg_inherits를 통해 api_access_logs의 파티션 목록 조회
+    let rows = sqlx::query_as::<_, (String,)>(
+        "SELECT c.relname \
+         FROM pg_inherits i \
+         JOIN pg_class c ON c.oid = i.inhrelid \
+         JOIN pg_class p ON p.oid = i.inhparent \
+         WHERE p.relname = 'api_access_logs' \
+         ORDER BY c.relname",
+    )
+    .fetch_all(pool)
+    .await;
+
+    match rows {
+        Ok(partitions) => {
+            for (partition_name,) in partitions {
+                // 파티션명은 반드시 "api_access_logs_YYYY_MM" 형식이어야 함
+                let Some(suffix) = partition_name.strip_prefix("api_access_logs_") else {
+                    continue;
+                };
+                // SAFETY: suffix를 alphanumeric + '_' 로 검증
+                if !suffix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+                    tracing::warn!(partition = %partition_name, "Unexpected partition name format, skipping");
+                    continue;
+                }
+                // suffix 형식 "YYYY_MM" — 사전순 비교로 cutoff 이전 여부 판단
+                if suffix < cutoff_suffix.as_str() {
+                    let sql = format!("DROP TABLE IF EXISTS {partition_name}");
+                    match sqlx::query(&sql).execute(pool).await {
+                        Ok(_) => tracing::info!(partition = %partition_name, "Old api_access_logs partition dropped"),
+                        Err(e) => {
+                            tracing::warn!(partition = %partition_name, error = %e, "Failed to drop old api_access_logs partition");
+                            errors.push(format!("drop {partition_name}: {e}"));
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Failed to query api_access_logs partitions for cleanup");
+            errors.push(format!("partition_list: {e}"));
+        }
+    }
+
     if errors.is_empty() {
         Ok(())
     } else {
@@ -121,7 +171,7 @@ async fn main() {
         .init();
 
     // 2. Config 로드 + Sentry 초기화
-    let config = config::Config::load();
+    let config = std::sync::Arc::new(config::Config::load());
     let _sentry_guard = config.sentry_dsn.as_ref().map(|dsn| {
         sentry::init((
             dsn.as_str(),
@@ -194,6 +244,7 @@ async fn main() {
     // 8. Router — 레이어 순서: 마지막 .layer()가 outermost
     let x_request_id = HeaderName::from_static("x-request-id");
     let (global_governor_layer, global_governor_config) = middleware::rate_limit::global_limiter();
+    let (auth_governor_layer, auth_governor_config) = middleware::rate_limit::auth_limiter();
 
     // CORS 설정: ALLOWED_ORIGINS 환경변수로 제어. Prod에서 미설정 시 cross-origin 전면 차단.
     let cors_layer = if config.allowed_origins.is_empty() {
@@ -230,7 +281,7 @@ async fn main() {
         .layer(axum::Extension(prometheus_handle))
         .nest(
             "/api/v1/auth",
-            api::routes::auth::router().layer(middleware::rate_limit::auth_limiter()),
+            api::routes::auth::router().layer(auth_governor_layer),
         )
         .nest("/api/v1/products", api::routes::products::router())
         .nest("/api/v1/devices", api::routes::devices::router())
@@ -287,6 +338,10 @@ async fn main() {
         ))
         .layer(cors_layer)
         .layer(TraceLayer::new_for_http())
+        // Sentry 레이어: outermost — sentry_dsn 미설정 시 no-op (Hub은 항상 유효)
+        // sentry_dsn이 설정된 경우에만 실제 트랜잭션/에러 캡처 활성화됨
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top())
         .with_state(state.clone());
 
     // 9. 백그라운드 유지보수 (Test 환경 skip)
@@ -315,6 +370,7 @@ async fn main() {
             loop {
                 interval.tick().await;
                 global_governor_config.limiter().retain_recent();
+                auth_governor_config.limiter().retain_recent();
                 tracing::debug!("Governor rate limiter GC completed");
             }
         });
@@ -345,23 +401,19 @@ async fn main() {
             }
         });
 
-        // 9d. 백그라운드 태스크 패닉 감시 — 무한 루프 태스크가 종료되면 에러 로그
-        tokio::spawn(async move {
-            tokio::select! {
-                result = h_partition => match result {
-                    Ok(()) => tracing::error!("Partition maintenance task exited unexpectedly"),
-                    Err(e) => tracing::error!(error = %e, "Partition maintenance task panicked"),
-                },
-                result = h_gc => match result {
-                    Ok(()) => tracing::error!("Governor GC task exited unexpectedly"),
-                    Err(e) => tracing::error!(error = %e, "Governor GC task panicked"),
-                },
-                result = h_purge => match result {
-                    Ok(()) => tracing::error!("Token purge task exited unexpectedly"),
-                    Err(e) => tracing::error!(error = %e, "Token purge task panicked"),
-                },
-            }
-        });
+        // 9d. 백그라운드 태스크 패닉 감시 — 각 태스크를 독립적으로 감시
+        for (name, handle) in [
+            ("Partition maintenance", h_partition),
+            ("Governor GC", h_gc),
+            ("Token purge", h_purge),
+        ] {
+            tokio::spawn(async move {
+                match handle.await {
+                    Ok(()) => tracing::error!("{name} task exited unexpectedly"),
+                    Err(e) => tracing::error!(error = %e, "{name} task panicked"),
+                }
+            });
+        }
     }
 
     // 10. 서버 시작

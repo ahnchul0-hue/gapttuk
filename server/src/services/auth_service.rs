@@ -203,7 +203,7 @@ pub async fn logout(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     Ok(())
 }
 
-/// 추천 코드 생성: GAP-XXXX (영숫자 4자리).
+/// 추천 코드 생성: GAP-XXXXXX (영숫자 6자리, 36^6 ≈ 22억 조합).
 /// 충돌 시 재생성 (최대 10회).
 pub async fn generate_referral_code(pool: &PgPool) -> Result<String, AppError> {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -212,7 +212,7 @@ pub async fn generate_referral_code(pool: &PgPool) -> Result<String, AppError> {
         // thread_rng()는 !Send이므로 await 전에 반드시 drop
         let code = {
             let mut rng = rand::thread_rng();
-            let suffix: String = (0..4)
+            let suffix: String = (0..6)
                 .map(|_| CHARSET[rng.gen_range(0..CHARSET.len())] as char)
                 .collect();
             format!("GAP-{suffix}")

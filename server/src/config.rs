@@ -119,14 +119,11 @@ impl Config {
         Self {
             database_url,
             jwt_secret,
-            database_max_connections: env::var("DATABASE_MAX_CONNECTIONS")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(5),
+            database_max_connections: parse_u32_env("DATABASE_MAX_CONNECTIONS", 15),
             app_env,
             host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
             port,
-            jwt_access_ttl_secs: parse_u64("JWT_ACCESS_TTL_SECS", 1800),
+            jwt_access_ttl_secs: parse_u64("JWT_ACCESS_TTL_SECS", 300),
             jwt_refresh_ttl_secs: parse_u64("JWT_REFRESH_TTL_SECS", 604_800),
             coupang_access_key,
             coupang_secret_key,
@@ -178,12 +175,32 @@ fn optional(key: &str) -> Option<String> {
     env::var(key).ok().filter(|v| !v.is_empty())
 }
 
-/// u64 환경변수 파싱. 없으면 기본값 사용.
+/// u64 환경변수 파싱. 파싱 실패 시 경고 로그 + 기본값 사용.
 fn parse_u64(key: &str, default: u64) -> u64 {
-    env::var(key)
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(default)
+    match env::var(key) {
+        Err(_) => default,
+        Ok(v) => match v.parse::<u64>() {
+            Ok(n) => n,
+            Err(e) => {
+                tracing::warn!(key, value = %v, error = %e, default, "Failed to parse env var — using default");
+                default
+            }
+        },
+    }
+}
+
+/// u32 환경변수 파싱. 파싱 실패 시 경고 로그 + 기본값 사용.
+fn parse_u32_env(key: &str, default: u32) -> u32 {
+    match env::var(key) {
+        Err(_) => default,
+        Ok(v) => match v.parse::<u32>() {
+            Ok(n) => n,
+            Err(e) => {
+                tracing::warn!(key, value = %v, error = %e, default, "Failed to parse env var — using default");
+                default
+            }
+        },
+    }
 }
 
 /// 유닛 테스트용 Config — 환경변수 없이 기본값으로 구성.
@@ -197,7 +214,7 @@ pub fn test_config() -> Config {
         app_env: AppEnv::Test,
         host: "127.0.0.1".to_string(),
         port: 8080,
-        jwt_access_ttl_secs: 1800,
+        jwt_access_ttl_secs: 300,
         jwt_refresh_ttl_secs: 604_800,
         coupang_access_key: None,
         coupang_secret_key: None,

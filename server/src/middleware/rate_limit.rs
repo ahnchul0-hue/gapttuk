@@ -34,7 +34,7 @@ pub fn global_limiter() -> (
 
 /// 검색 전용 Rate Limiter — 10 req/min per IP.
 /// `per_second(6)` = 6초마다 토큰 1개, `burst_size(10)` = 최대 10개 누적.
-/// SmartIpKeyExtractor로 프록시 환경에서도 실제 클라이언트 IP 기반 제한.
+/// products.rs 내부에서 사용되므로 layer만 반환 (검색 트래픽은 global 대비 적어 GC 불요).
 pub fn search_limiter() -> HeaderLayer {
     let config = GovernorConfigBuilder::default()
         .key_extractor(SmartIpKeyExtractor)
@@ -48,16 +48,22 @@ pub fn search_limiter() -> HeaderLayer {
 
 /// 인증 전용 Rate Limiter — 15 req/min per IP (브루트포스 방지).
 /// `per_second(4)` = 4초마다 토큰 1개, `burst_size(3)` = 최대 3개 누적.
-/// SmartIpKeyExtractor로 프록시 환경에서도 실제 클라이언트 IP 기반 제한.
-pub fn auth_limiter() -> HeaderLayer {
-    let config = GovernorConfigBuilder::default()
-        .key_extractor(SmartIpKeyExtractor)
-        .per_second(4)
-        .burst_size(3)
-        .use_headers()
-        .finish()
-        .expect("valid governor config");
-    GovernorLayer::new(config).error_handler(json_error_response)
+/// `Arc<GovernorConfig>`도 반환하여 main.rs GC 루프에서 `retain_recent()` 호출.
+pub fn auth_limiter() -> (
+    HeaderLayer,
+    Arc<GovernorConfig<SmartIpKeyExtractor, Middleware>>,
+) {
+    let config = Arc::new(
+        GovernorConfigBuilder::default()
+            .key_extractor(SmartIpKeyExtractor)
+            .per_second(4)
+            .burst_size(3)
+            .use_headers()
+            .finish()
+            .expect("valid governor config"),
+    );
+    let layer = GovernorLayer::new(config.clone()).error_handler(json_error_response);
+    (layer, config)
 }
 
 /// GovernorError를 AppError JSON 포맷으로 변환.

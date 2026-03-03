@@ -83,7 +83,7 @@ mod tests {
     fn test_encode_decode_access_token() {
         let config = test_config();
         let (token, ttl) = encode_access_token(42, &config).unwrap();
-        assert_eq!(ttl, 1800);
+        assert_eq!(ttl, 300);
 
         let claims = decode_access_token(&token, &config).unwrap();
         assert_eq!(claims.sub, 42);

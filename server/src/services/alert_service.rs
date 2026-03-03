@@ -2,7 +2,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::error::AppError;
-use crate::models::{AlertType, NotificationType, PriceAlert};
+use crate::models::{AlertType, CategoryAlert, KeywordAlert, NotificationType, PriceAlert};
 use crate::push::PushClient;
 
 use super::notification_service;
@@ -80,16 +80,11 @@ pub async fn create_price_alert(
         return Err(AppError::NotFound("상품".to_string()));
     }
 
-    // 사용자당 알림 개수 제한 (최대 50개)
-    let count =
-        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM price_alerts WHERE user_id = $1")
-            .bind(user_id)
-            .fetch_one(pool)
-            .await?;
-
+    // 사용자당 전체 알림 개수 제한 (최대 50개, 모든 유형 합산)
+    let count = count_all_user_alerts(pool, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
         return Err(AppError::BadRequest(format!(
-            "가격 알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
         )));
     }
 
@@ -166,6 +161,227 @@ pub async fn toggle_price_alert(
     Ok(alert)
 }
 
+// ── 전체 알림 개수 카운트 ────────────────────────────────
+
+/// 사용자의 전체 알림 개수 합산 (price + category + keyword)
+async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {
+    let count = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT
+            (SELECT COUNT(*) FROM price_alerts WHERE user_id = $1)
+          + (SELECT COUNT(*) FROM category_alerts WHERE user_id = $1)
+          + (SELECT COUNT(*) FROM keyword_alerts WHERE user_id = $1)
+        "#,
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(count)
+}
+
+// ── 카테고리 알림 CRUD ──────────────────────────────────
+
+/// 카테고리 알림 생성.
+///
+/// `alert_condition`은 NOT NULL 제약조건이 있으므로 기본값 `"any_drop"`을 사용한다.
+pub async fn create_category_alert(
+    pool: &PgPool,
+    user_id: i64,
+    category_id: i32,
+) -> Result<CategoryAlert, AppError> {
+    // 카테고리 존재 확인
+    let exists =
+        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)")
+            .bind(category_id)
+            .fetch_one(pool)
+            .await?;
+
+    if !exists {
+        return Err(AppError::NotFound("카테고리".to_string()));
+    }
+
+    // 전체 알림 개수 제한 확인
+    let count = count_all_user_alerts(pool, user_id).await?;
+    if count >= MAX_ALERTS_PER_USER {
+        return Err(AppError::BadRequest(format!(
+            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+        )));
+    }
+
+    let alert = sqlx::query_as::<_, CategoryAlert>(
+        r#"
+        INSERT INTO category_alerts (user_id, category_id, alert_condition)
+        VALUES ($1, $2, 'any_drop')
+        RETURNING *
+        "#,
+    )
+    .bind(user_id)
+    .bind(category_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(alert)
+}
+
+/// 사용자의 모든 카테고리 알림 조회.
+pub async fn get_user_category_alerts(
+    pool: &PgPool,
+    user_id: i64,
+) -> Result<Vec<CategoryAlert>, AppError> {
+    let alerts = sqlx::query_as::<_, CategoryAlert>(
+        "SELECT * FROM category_alerts WHERE user_id = $1 ORDER BY created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(alerts)
+}
+
+/// 카테고리 알림 삭제 (본인 소유 확인).
+pub async fn delete_category_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+) -> Result<(), AppError> {
+    let result =
+        sqlx::query("DELETE FROM category_alerts WHERE id = $1 AND user_id = $2")
+            .bind(alert_id)
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("알림".to_string()));
+    }
+    Ok(())
+}
+
+/// 카테고리 알림 활성/비활성 토글.
+pub async fn toggle_category_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+) -> Result<CategoryAlert, AppError> {
+    let alert = sqlx::query_as::<_, CategoryAlert>(
+        r#"
+        UPDATE category_alerts
+        SET is_active = NOT is_active, updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
+        RETURNING *
+        "#,
+    )
+    .bind(alert_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("알림".to_string()))?;
+
+    Ok(alert)
+}
+
+// ── 키워드 알림 CRUD ────────────────────────────────────
+
+/// 키워드 알림 생성.
+pub async fn create_keyword_alert(
+    pool: &PgPool,
+    user_id: i64,
+    keyword: String,
+) -> Result<KeywordAlert, AppError> {
+    // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
+    let keyword = keyword.trim().to_string();
+    if keyword.is_empty() {
+        return Err(AppError::BadRequest(
+            "키워드를 입력해주세요".to_string(),
+        ));
+    }
+    if keyword.chars().count() > 100 {
+        return Err(AppError::BadRequest(
+            "키워드는 100자 이하로 입력해주세요".to_string(),
+        ));
+    }
+
+    // 전체 알림 개수 제한 확인
+    let count = count_all_user_alerts(pool, user_id).await?;
+    if count >= MAX_ALERTS_PER_USER {
+        return Err(AppError::BadRequest(format!(
+            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+        )));
+    }
+
+    let alert = sqlx::query_as::<_, KeywordAlert>(
+        r#"
+        INSERT INTO keyword_alerts (user_id, keyword)
+        VALUES ($1, $2)
+        RETURNING *
+        "#,
+    )
+    .bind(user_id)
+    .bind(&keyword)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(alert)
+}
+
+/// 사용자의 모든 키워드 알림 조회.
+pub async fn get_user_keyword_alerts(
+    pool: &PgPool,
+    user_id: i64,
+) -> Result<Vec<KeywordAlert>, AppError> {
+    let alerts = sqlx::query_as::<_, KeywordAlert>(
+        "SELECT * FROM keyword_alerts WHERE user_id = $1 ORDER BY created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(alerts)
+}
+
+/// 키워드 알림 삭제 (본인 소유 확인).
+pub async fn delete_keyword_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+) -> Result<(), AppError> {
+    let result =
+        sqlx::query("DELETE FROM keyword_alerts WHERE id = $1 AND user_id = $2")
+            .bind(alert_id)
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("알림".to_string()));
+    }
+    Ok(())
+}
+
+/// 키워드 알림 활성/비활성 토글.
+pub async fn toggle_keyword_alert(
+    pool: &PgPool,
+    user_id: i64,
+    alert_id: i64,
+) -> Result<KeywordAlert, AppError> {
+    let alert = sqlx::query_as::<_, KeywordAlert>(
+        r#"
+        UPDATE keyword_alerts
+        SET is_active = NOT is_active, updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
+        RETURNING *
+        "#,
+    )
+    .bind(alert_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("알림".to_string()))?;
+
+    Ok(alert)
+}
+
 // ── 알림 평가 ────────────────────────────────────────────
 
 /// 상품 가격 통계 (평가용)
@@ -213,41 +429,45 @@ pub async fn evaluate_price_alerts(
     .fetch_all(pool)
     .await?;
 
-    let mut triggered = 0usize;
     let deep_link = format!("gapttuk://product/{}", product_id);
 
-    for alert in &alerts {
-        let should_trigger = evaluate_condition(
-            &alert.alert_type,
-            alert.target_price,
-            new_price,
-            stats.lowest_price,
-            stats.average_price,
-        );
+    // 3. 조건 충족 알림 ID 수집
+    let candidate_ids: Vec<i64> = alerts
+        .iter()
+        .filter(|alert| {
+            evaluate_condition(
+                &alert.alert_type,
+                alert.target_price,
+                new_price,
+                stats.lowest_price,
+                stats.average_price,
+            )
+        })
+        .map(|alert| alert.id)
+        .collect();
 
-        if !should_trigger {
-            continue;
-        }
+    if candidate_ids.is_empty() {
+        return Ok(0);
+    }
 
-        // 3. Atomic last_triggered_at 갱신 (TOCTOU 방어 — 동시 실행 시 중복 트리거 방지)
-        let claimed = sqlx::query_scalar::<_, i64>(
-            r#"
-            UPDATE price_alerts
-            SET last_triggered_at = NOW()
-            WHERE id = $1
-              AND (last_triggered_at IS NULL OR last_triggered_at < NOW() - INTERVAL '1 hour')
-            RETURNING id
-            "#,
-        )
-        .bind(alert.id)
-        .fetch_optional(pool)
-        .await?;
+    // 4. Batch UPDATE로 atomic claim (N+1 → 1쿼리, TOCTOU 방어 유지)
+    let claimed_ids: Vec<i64> = sqlx::query_scalar(
+        r#"
+        UPDATE price_alerts
+        SET last_triggered_at = NOW()
+        WHERE id = ANY($1)
+          AND (last_triggered_at IS NULL OR last_triggered_at < NOW() - INTERVAL '1 hour')
+        RETURNING id
+        "#,
+    )
+    .bind(&candidate_ids[..])
+    .fetch_all(pool)
+    .await?;
 
-        if claimed.is_none() {
-            continue; // 다른 프로세스가 이미 트리거함
-        }
+    // 5. claim 성공한 알림만 푸시 전송
+    let claimed_set: std::collections::HashSet<i64> = claimed_ids.iter().copied().collect();
 
-        // 4. 알림 생성 + 푸시 전송
+    for alert in alerts.iter().filter(|a| claimed_set.contains(&a.id)) {
         let title = format_alert_title(&alert.alert_type, product_name);
         let body = format_alert_body(&alert.alert_type, new_price, alert.target_price);
 
@@ -272,10 +492,9 @@ pub async fn evaluate_price_alerts(
                 "Failed to create notification for alert"
             );
         }
-
-        triggered += 1;
     }
 
+    let triggered = claimed_ids.len();
     if triggered > 0 {
         tracing::info!(product_id, triggered, "Price alerts evaluated");
     }

@@ -24,3 +24,32 @@ pub struct PriceAlert {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// category_alerts 테이블
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+pub struct CategoryAlert {
+    pub id: i64,
+    pub user_id: i64,
+    pub category_id: i32,
+    pub alert_condition: String,
+    pub threshold_percent: Option<i32>,
+    pub max_price: Option<i32>,
+    pub is_active: bool,
+    pub last_triggered_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// keyword_alerts 테이블
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+pub struct KeywordAlert {
+    pub id: i64,
+    pub user_id: i64,
+    pub keyword: String,
+    pub category_id: Option<i32>,
+    pub max_price: Option<i32>,
+    pub is_active: bool,
+    pub last_triggered_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}

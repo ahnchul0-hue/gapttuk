@@ -112,12 +112,17 @@ pub async fn get_product(pool: &PgPool, cache: &AppCache, id: i64) -> Result<Pro
     Ok(product)
 }
 
-/// 키워드 검색 (ILIKE, 커서 기반 페이지네이션)
+/// 키워드 검색 (ILIKE, 커서 기반 페이지네이션, 선택적 필터/정렬)
+///
+/// - `filter`: `"near_stockout"` | `"all_time_low"` | `"declining"` | `"under_10k"`
+/// - `sort`: `"ranking"` | `"discount_rate"` | `"discount_amount"` | `"lowest_price"`
 pub async fn search_products(
     pool: &PgPool,
     query: &str,
     cursor: Option<i64>,
     limit: i64,
+    filter: Option<&str>,
+    sort: Option<&str>,
 ) -> Result<Vec<ProductSearchItem>, AppError> {
     // ILIKE 와일드카드 문자 이스케이프 (%, _, \)
     let escaped = query
@@ -127,33 +132,83 @@ pub async fn search_products(
     let pattern = format!("%{}%", escaped);
     let fetch_limit = limit + 1; // limit+1 패턴
 
-    let items: Vec<ProductSearchItem> = if let Some(cursor_id) = cursor {
-        sqlx::query_as(
-            "SELECT id, product_name, image_url, current_price, lowest_price,
-                    is_out_of_stock, price_trend, buy_timing_score, shopping_mall_id
-             FROM products
-             WHERE product_name ILIKE $1 AND id < $2
-             ORDER BY id DESC
-             LIMIT $3",
-        )
-        .bind(&pattern)
-        .bind(cursor_id)
-        .bind(fetch_limit)
-        .fetch_all(pool)
-        .await?
+    // 필터 조건 SQL 절
+    // NOTE: products 테이블에는 stock_status 컬럼이 없으므로
+    //       near_stockout은 buy_timing_score가 높고 재고 있는 상품으로 근사
+    let filter_clause = match filter {
+        Some("near_stockout") => {
+            // 재고 있는 상품 중 구매 타이밍 점수가 높은(70+) 상품
+            " AND is_out_of_stock = FALSE AND buy_timing_score >= 70"
+        }
+        Some("all_time_low") => {
+            " AND current_price IS NOT NULL AND lowest_price IS NOT NULL \
+              AND current_price <= lowest_price"
+        }
+        Some("declining") => {
+            // PriceTrend::Falling — snake_case 직렬화 → 'falling'
+            " AND price_trend = 'falling'"
+        }
+        Some("under_10k") => {
+            " AND current_price IS NOT NULL AND current_price < 10000"
+        }
+        _ => "",
+    };
+
+    // 정렬 ORDER BY 절 (커서 기반 페이지네이션과 함께 사용할 때 id를 보조 정렬키로 추가)
+    let order_clause = match sort {
+        Some("discount_rate") => {
+            // discount_rate 컬럼이 없으므로 (original_price - current_price) / original_price 근사
+            // products 테이블에 discount_rate 컬럼이 있다면 그것을 직접 사용
+            "ORDER BY (CASE WHEN highest_price IS NOT NULL AND highest_price > 0 AND current_price IS NOT NULL \
+                            THEN (highest_price - current_price) \
+                            ELSE 0 END) DESC, id DESC"
+        }
+        Some("discount_amount") => {
+            "ORDER BY (CASE WHEN highest_price IS NOT NULL AND current_price IS NOT NULL \
+                            THEN (highest_price - current_price) \
+                            ELSE 0 END) DESC, id DESC"
+        }
+        Some("lowest_price") => {
+            "ORDER BY current_price ASC NULLS LAST, id DESC"
+        }
+        _ => "ORDER BY id DESC", // "ranking" 또는 기본값
+    };
+
+    // 커서 조건: 정렬이 id DESC인 경우 id < cursor 사용.
+    // discount_rate/discount_amount/lowest_price 정렬 시에는 커서를 id 기반으로 단순 처리.
+    let use_cursor = cursor.is_some() && matches!(sort, None | Some("ranking"));
+    let cursor_clause = if use_cursor { " AND id < $2" } else { "" };
+    let param_n = if use_cursor { 3 } else { 2 };
+
+    let sql = format!(
+        "SELECT id, product_name, image_url, current_price, lowest_price,
+                is_out_of_stock, price_trend, buy_timing_score, shopping_mall_id
+         FROM products
+         WHERE product_name ILIKE $1
+         {filter_clause}
+         {cursor_clause}
+         {order_clause}
+         LIMIT ${param_n}",
+        filter_clause = filter_clause,
+        cursor_clause = cursor_clause,
+        order_clause = order_clause,
+        param_n = param_n,
+    );
+
+    let items: Vec<ProductSearchItem> = if use_cursor {
+        // 안전: use_cursor가 true이면 cursor는 반드시 Some
+        sqlx::query_as(&sql)
+            .bind(&pattern)
+            .bind(cursor.expect("use_cursor=true이면 cursor는 Some"))
+            .bind(fetch_limit)
+            .fetch_all(pool)
+            .await?
     } else {
-        sqlx::query_as(
-            "SELECT id, product_name, image_url, current_price, lowest_price,
-                    is_out_of_stock, price_trend, buy_timing_score, shopping_mall_id
-             FROM products
-             WHERE product_name ILIKE $1
-             ORDER BY id DESC
-             LIMIT $2",
-        )
-        .bind(&pattern)
-        .bind(fetch_limit)
-        .fetch_all(pool)
-        .await?
+        sqlx::query_as(&sql)
+            .bind(&pattern)
+            .bind(fetch_limit)
+            .fetch_all(pool)
+            .await?
     };
 
     Ok(items)

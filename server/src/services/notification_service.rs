@@ -88,12 +88,19 @@ pub async fn create_and_push(
 
     // 4. 무효 디바이스 배치 비활성화 (N회 UPDATE → 1회)
     if !invalid_device_ids.is_empty() {
-        let _ = sqlx::query(
+        if let Err(e) = sqlx::query(
             "UPDATE user_devices SET push_enabled = FALSE, updated_at = NOW() WHERE id = ANY($1)",
         )
         .bind(&invalid_device_ids[..])
         .execute(pool)
-        .await;
+        .await
+        {
+            tracing::error!(
+                error = %e,
+                device_ids = ?invalid_device_ids,
+                "Failed to deactivate invalid device tokens — tokens will continue receiving failed pushes"
+            );
+        }
     }
 
     Ok(())

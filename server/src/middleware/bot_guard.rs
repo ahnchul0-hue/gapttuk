@@ -40,11 +40,12 @@ pub async fn bot_guard(
     // 2. 캐시 확인 + DB 조회 (moka get_with: 동일 키 동시 요청 합체)
     let ip_net: IpNetwork = addr.ip().into();
     let pool = state.pool.clone();
+    let ip_for_log = ip_net.to_string();
     let is_blocked = state
         .cache
         .blocked_ips
         .get_with(ip, async {
-            sqlx::query_scalar::<_, bool>(
+            match sqlx::query_scalar::<_, bool>(
                 "SELECT EXISTS(
                     SELECT 1 FROM blocked_ips
                     WHERE ip_address = $1
@@ -54,7 +55,17 @@ pub async fn bot_guard(
             .bind(ip_net)
             .fetch_one(&pool)
             .await
-            .unwrap_or(false)
+            {
+                Ok(blocked) => blocked,
+                Err(e) => {
+                    tracing::error!(
+                        error = %e,
+                        ip = %ip_for_log,
+                        "Bot guard DB query failed — failing open (security degraded)"
+                    );
+                    false // fail-open: DB 오류 시 차단하지 않음 (가용성 우선)
+                }
+            }
         })
         .await;
 

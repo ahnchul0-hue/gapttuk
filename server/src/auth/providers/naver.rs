@@ -30,7 +30,13 @@ pub async fn verify(state: &AppState, access_token: &str) -> Result<SocialUserIn
         .await
         .map_err(|e| AppError::Internal(format!("Naver API request failed: {e}")))?;
 
-    if !resp.status().is_success() {
+    let status = resp.status();
+    if status.is_server_error() || status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(AppError::Internal(format!(
+            "Naver API unavailable (HTTP {status})"
+        )));
+    }
+    if !status.is_success() {
         return Err(AppError::Unauthorized);
     }
 

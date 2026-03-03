@@ -24,7 +24,7 @@ pub use error::AppError;
 pub struct AppState {
     pub pool: sqlx::PgPool,
     pub cache: AppCache,
-    pub config: Config,
+    pub config: Arc<Config>,
     pub http_client: reqwest::Client,
     pub push_client: Arc<push::PushClient>,
 }

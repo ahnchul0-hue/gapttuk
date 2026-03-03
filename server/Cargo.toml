@@ -60,7 +60,7 @@ a2 = "0.10"
 moka = { version = "0.12", features = ["future"] }
 
 # --- 모니터링 ---
-sentry = "0.37"
+sentry = { version = "0.37", features = ["tower-http", "tower-axum-matched-path"] }
 metrics = "0.24"
 metrics-exporter-prometheus = "0.16"
 

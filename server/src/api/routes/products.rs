@@ -23,6 +23,10 @@ pub struct SearchQuery {
     pub cursor: Option<String>,
     #[serde(default = "default_limit")]
     pub limit: i64,
+    /// 필터: "near_stockout" | "all_time_low" | "declining" | "under_10k"
+    pub filter: Option<String>,
+    /// 정렬: "ranking" | "discount_rate" | "discount_amount" | "lowest_price"
+    pub sort: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -104,7 +108,39 @@ async fn search(
     let limit = params.limit.clamp(1, 100);
     let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
 
-    let items = product_service::search_products(&state.pool, q, cursor, limit).await?;
+    // 필터 검증
+    if let Some(ref f) = params.filter {
+        if !matches!(
+            f.as_str(),
+            "near_stockout" | "all_time_low" | "declining" | "under_10k"
+        ) {
+            return Err(AppError::BadRequest(format!(
+                "지원하지 않는 필터: {f}"
+            )));
+        }
+    }
+
+    // 정렬 검증
+    if let Some(ref s) = params.sort {
+        if !matches!(
+            s.as_str(),
+            "ranking" | "discount_rate" | "discount_amount" | "lowest_price"
+        ) {
+            return Err(AppError::BadRequest(format!(
+                "지원하지 않는 정렬: {s}"
+            )));
+        }
+    }
+
+    let items = product_service::search_products(
+        &state.pool,
+        q,
+        cursor,
+        limit,
+        params.filter.as_deref(),
+        params.sort.as_deref(),
+    )
+    .await?;
 
     Ok(PaginatedResponse::new(items, limit, |item| {
         item.id.to_string()

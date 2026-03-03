@@ -25,7 +25,13 @@ pub async fn access_log(
 
     let start = std::time::Instant::now();
     let method = req.method().to_string();
-    let endpoint = req.uri().path().to_string();
+    let raw_path = req.uri().path().to_string();
+    // 메트릭용: MatchedPath로 정규화 (카디널리티 폭발 방지)
+    let matched_endpoint = req
+        .extensions()
+        .get::<axum::extract::MatchedPath>()
+        .map(|p| p.as_str().to_string())
+        .unwrap_or_else(|| raw_path.clone());
     let user_agent = req
         .headers()
         .get(axum::http::header::USER_AGENT)
@@ -47,16 +53,16 @@ pub async fn access_log(
     let status_code = response.status().as_u16() as i16;
     let elapsed_ms = elapsed.as_millis().min(i32::MAX as u128) as i32;
 
-    // Prometheus 메트릭 — 요청 카운터 + 응답 시간 히스토그램
+    // Prometheus 메트릭 — 정규화된 endpoint 사용 (카디널리티 폭발 방지)
     metrics::counter!("http_requests_total",
         "method" => method.clone(),
-        "endpoint" => endpoint.clone(),
+        "endpoint" => matched_endpoint.clone(),
         "status" => status_code.to_string(),
     )
     .increment(1);
     metrics::histogram!("http_request_duration_seconds",
         "method" => method.clone(),
-        "endpoint" => endpoint.clone(),
+        "endpoint" => matched_endpoint.clone(),
     )
     .record(elapsed.as_secs_f64());
 
@@ -70,7 +76,7 @@ pub async fn access_log(
         )
         .bind(ip_net)
         .bind(user_id)
-        .bind(&endpoint)
+        .bind(&raw_path)
         .bind(&method)
         .bind(status_code)
         .bind(&user_agent)
@@ -78,7 +84,7 @@ pub async fn access_log(
         .execute(&pool)
         .await
         {
-            tracing::warn!(error = %e, endpoint = %endpoint, "Failed to insert access log");
+            tracing::warn!(error = %e, endpoint = %raw_path, "Failed to insert access log");
         }
     });
 
