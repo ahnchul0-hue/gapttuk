@@ -1,7 +1,7 @@
 use moka::future::Cache;
 use std::time::Duration;
 
-use crate::models::{PopularSearch, Product};
+use crate::models::{AiPrediction, PopularSearch, Product};
 
 /// 애플리케이션 인메모리 캐시 (moka).
 /// 각 캐시는 고유 TTL과 최대 용량을 가진다.
@@ -15,6 +15,9 @@ pub struct AppCache {
 
     /// 상품 상세 — TTL 5분, 최대 10,000건
     pub products: Cache<i64, Product>,
+
+    /// AI 예측 — TTL 1시간, 최대 1,000건 (thundering herd 방지)
+    pub predictions: Cache<i64, AiPrediction>,
 }
 
 impl AppCache {
@@ -33,6 +36,11 @@ impl AppCache {
             products: Cache::builder()
                 .time_to_live(Duration::from_secs(300)) // 5분
                 .max_capacity(3_000) // RAM↓: 10K→3K (Zipf 분포 상 히트율 90%+ 유지)
+                .build(),
+
+            predictions: Cache::builder()
+                .time_to_live(Duration::from_secs(3600)) // 1시간 (DB TTL 24시간 중 인메모리는 1시간)
+                .max_capacity(1_000)
                 .build(),
         }
     }

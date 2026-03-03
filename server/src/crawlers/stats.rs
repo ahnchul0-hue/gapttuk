@@ -141,6 +141,90 @@ pub async fn refresh_product_stats(
     Ok(())
 }
 
+/// 통계 갱신 + 메타데이터(상품명/이미지) 업데이트를 단일 UPDATE로 병합.
+/// `refresh_product_stats()`와 `update_product_metadata()`를 합쳐 DB 라운드트립 1회 절감.
+pub async fn refresh_product_stats_with_metadata(
+    pool: &sqlx::PgPool,
+    product_id: i64,
+    new_price: i32,
+    is_out_of_stock: bool,
+    product_name: Option<&str>,
+    image_url: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    // 1) 통계 조회 (refresh_product_stats와 동일)
+    let stats = sqlx::query_as::<_, CombinedStats>(
+        r#"
+        WITH recent_avg AS (
+            SELECT AVG(price)::int AS avg_price_30d
+            FROM price_history
+            WHERE product_id = $1 AND recorded_at >= NOW() - INTERVAL '30 days'
+        )
+        SELECT
+            ra.avg_price_30d,
+            (SELECT MIN(recorded_at) FROM price_history
+             WHERE product_id = $1 AND price = p.lowest_price) AS lowest_date,
+            p.lowest_price AS min_price,
+            p.highest_price AS max_price
+        FROM products p, recent_avg ra
+        WHERE p.id = $1
+        "#,
+    )
+    .bind(product_id)
+    .fetch_one(pool)
+    .await?;
+
+    let lowest_price = std::cmp::min(stats.min_price.unwrap_or(new_price), new_price);
+    let highest_price = std::cmp::max(stats.max_price.unwrap_or(new_price), new_price);
+    let average_price = stats.avg_price_30d.unwrap_or(new_price);
+
+    let trend = compute_trend(new_price, average_price);
+    let drop_from_average = average_price - new_price;
+    let days_since_lowest = stats
+        .lowest_date
+        .map(|d| (chrono::Utc::now() - d).num_days() as i32)
+        .unwrap_or(0);
+    let buy_timing_score =
+        compute_buy_timing_score(drop_from_average, average_price, days_since_lowest, &trend);
+
+    // 2) 통계 + 메타데이터를 단일 UPDATE로 병합
+    //    COALESCE($12, product_name) — 크롤링에서 상품명을 얻은 경우에만 갱신
+    sqlx::query(
+        r#"
+        UPDATE products SET
+            current_price = $2,
+            lowest_price = $3,
+            highest_price = $4,
+            average_price = $5,
+            price_trend = $6,
+            days_since_lowest = $7,
+            drop_from_average = $8,
+            buy_timing_score = $9,
+            is_out_of_stock = $10,
+            price_updated_at = NOW(),
+            product_name = COALESCE($11, product_name),
+            image_url = COALESCE($12, image_url),
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+    )
+    .bind(product_id)
+    .bind(new_price)
+    .bind(lowest_price)
+    .bind(highest_price)
+    .bind(average_price)
+    .bind(&trend as &PriceTrend)
+    .bind(days_since_lowest)
+    .bind(drop_from_average)
+    .bind(buy_timing_score)
+    .bind(is_out_of_stock)
+    .bind(product_name)
+    .bind(image_url)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 /// 30일 평균 + 전체 기간 최저/최고 + 최저가 기록일 (단일 CTE 쿼리 결과)
 #[derive(sqlx::FromRow)]
 struct CombinedStats {

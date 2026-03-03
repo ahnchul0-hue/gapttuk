@@ -21,6 +21,7 @@ async fn get_prediction(
     Auth(_claims): Auth,
     Path(product_id): Path<i64>,
 ) -> Result<ApiResponse<AiPrediction>, AppError> {
-    let prediction = ai_prediction_service::get_prediction(&state.pool, product_id).await?;
+    let prediction =
+        ai_prediction_service::get_prediction(&state.pool, &state.cache, product_id).await?;
     Ok(ApiResponse::ok(prediction))
 }

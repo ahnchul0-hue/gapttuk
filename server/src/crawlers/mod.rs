@@ -13,7 +13,7 @@ use tokio::task::JoinSet;
 
 use crate::cache::AppCache;
 use crate::push::PushClient;
-use coupang::{CrawlError, CrawlResult};
+use coupang::CrawlError;
 
 /// 크롤링 주기 통계
 pub struct CycleStats {
@@ -244,7 +244,7 @@ impl CrawlerService {
 async fn scrape_and_update(
     pool: &sqlx::PgPool,
     cache: &AppCache,
-    push: &PushClient,
+    push: &Arc<PushClient>,
     client: &reqwest::Client,
     product_id: i64,
     product_url: &str,
@@ -297,18 +297,23 @@ async fn scrape_and_update(
     //    AllTimeLow/BelowAverage 조건이 정상 작동하지 않는다.
     if price_changed {
         if let Err(e) =
-            crate::services::alert_service::evaluate_price_alerts(pool, push, product_id, new_price)
+            crate::services::alert_service::evaluate_price_alerts(pool, push.clone(), product_id, new_price)
                 .await
         {
             tracing::warn!(product_id, error = %e, "Alert evaluation failed");
         }
     }
 
-    // 6. 상품명/이미지 업데이트 (크롤링에서 얻은 값이 있으면)
-    update_product_metadata(pool, &result).await?;
-
-    // 7. 통계 갱신 (10개 필드) — 알림 평가 이후에 실행
-    stats::refresh_product_stats(pool, product_id, new_price, result.is_out_of_stock).await?;
+    // 6+7. 통계 갱신 + 메타데이터 업데이트 (단일 쿼리로 병합 — 라운드트립 1회 절감)
+    stats::refresh_product_stats_with_metadata(
+        pool,
+        product_id,
+        new_price,
+        result.is_out_of_stock,
+        result.product_name.as_deref(),
+        result.image_url.as_deref(),
+    )
+    .await?;
 
     // 8. 캐시 즉시 무효화
     cache.products.invalidate(&product_id).await;
@@ -316,27 +321,6 @@ async fn scrape_and_update(
     Ok(price_changed)
 }
 
-/// 상품명, 이미지 URL 업데이트 (크롤링 결과가 있을 때).
-/// COALESCE로 단일 쿼리 — NULL 파라미터는 기존 값 유지.
-async fn update_product_metadata(
-    pool: &sqlx::PgPool,
-    result: &CrawlResult,
-) -> Result<(), sqlx::Error> {
-    if result.product_name.is_none() && result.image_url.is_none() {
-        return Ok(());
-    }
-
-    sqlx::query(
-        "UPDATE products SET product_name = COALESCE($2, product_name), image_url = COALESCE($3, image_url), updated_at = NOW() WHERE id = $1",
-    )
-    .bind(result.product_id)
-    .bind(&result.product_name)
-    .bind(&result.image_url)
-    .execute(pool)
-    .await?;
-
-    Ok(())
-}
 
 /// JoinSet 결과를 집계 카운터에 반영
 fn tally_outcome(

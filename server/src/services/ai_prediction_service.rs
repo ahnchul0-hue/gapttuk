@@ -1,12 +1,32 @@
 use rust_decimal::Decimal;
 use sqlx::PgPool;
 
+use crate::cache::AppCache;
 use crate::error::AppError;
 use crate::models::{AiPrediction, PredictedAction};
 
-/// 예측 결과 조회 -- 캐시된 유효 예측이 있으면 반환, 없으면 생성.
-pub async fn get_prediction(pool: &PgPool, product_id: i64) -> Result<AiPrediction, AppError> {
-    // 유효한(만료 전) 예측 확인
+/// 예측 결과 조회 -- moka get_with로 thundering herd 방지.
+/// 동일 product_id에 대한 동시 요청이 하나의 DB 조회만 실행.
+pub async fn get_prediction(
+    pool: &PgPool,
+    cache: &AppCache,
+    product_id: i64,
+) -> Result<AiPrediction, AppError> {
+    // moka get_with: 동일 키 동시 요청을 하나로 합체
+    let pool = pool.clone();
+    let prediction = cache
+        .predictions
+        .try_get_with(product_id, async {
+            fetch_or_generate(&pool, product_id).await
+        })
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(prediction)
+}
+
+/// DB에서 유효한 예측 확인, 없으면 생성.
+async fn fetch_or_generate(pool: &PgPool, product_id: i64) -> Result<AiPrediction, AppError> {
     let existing = sqlx::query_as::<_, AiPrediction>(
         "SELECT * FROM ai_predictions WHERE product_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1",
     )

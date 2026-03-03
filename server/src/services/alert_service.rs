@@ -461,7 +461,7 @@ struct ProductStats {
 /// 반환: 트리거된 알림 수.
 pub async fn evaluate_price_alerts(
     pool: &PgPool,
-    push: &PushClient,
+    push: std::sync::Arc<PushClient>,
     product_id: i64,
     new_price: i32,
 ) -> Result<usize, AppError> {
@@ -528,35 +528,46 @@ pub async fn evaluate_price_alerts(
     .fetch_all(pool)
     .await?;
 
-    // 5. claim 성공한 알림만 푸시 전송
+    // 5. claim 성공한 알림만 푸시 전송 (병렬 — JoinSet으로 동시 발송)
     let claimed_set: std::collections::HashSet<i64> = claimed_ids.iter().copied().collect();
+    let mut push_tasks = tokio::task::JoinSet::new();
 
     for alert in alerts.iter().filter(|a| claimed_set.contains(&a.id)) {
         let title = format_alert_title(&alert.alert_type, product_name);
         let body = format_alert_body(&alert.alert_type, new_price, alert.target_price);
+        let alert_id = alert.id;
+        let user_id = alert.user_id;
+        let pool = pool.clone();
+        let push = std::sync::Arc::clone(&push);
+        let deep_link = deep_link.clone();
 
-        if let Err(e) = notification_service::create_and_push(
-            pool,
-            push,
-            &notification_service::PushNotification {
-                user_id: alert.user_id,
-                ntype: NotificationType::PriceAlert,
-                reference_id: alert.id,
-                title: &title,
-                body: &body,
-                deep_link: Some(&deep_link),
-            },
-        )
-        .await
-        {
-            tracing::warn!(
-                alert_id = alert.id,
-                user_id = alert.user_id,
-                error = %e,
-                "Failed to create notification for alert"
-            );
-        }
+        push_tasks.spawn(async move {
+            if let Err(e) = notification_service::create_and_push(
+                &pool,
+                &push,
+                &notification_service::PushNotification {
+                    user_id,
+                    ntype: NotificationType::PriceAlert,
+                    reference_id: alert_id,
+                    title: &title,
+                    body: &body,
+                    deep_link: Some(&deep_link),
+                },
+            )
+            .await
+            {
+                tracing::warn!(
+                    alert_id,
+                    user_id,
+                    error = %e,
+                    "Failed to create notification for alert"
+                );
+            }
+        });
     }
+
+    // 모든 푸시 완료 대기
+    while push_tasks.join_next().await.is_some() {}
 
     let triggered = claimed_ids.len();
     if triggered > 0 {
