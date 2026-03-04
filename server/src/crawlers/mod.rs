@@ -35,19 +35,33 @@ pub struct CrawlerService {
 
 impl CrawlerService {
     /// 크롤러 전용 HTTP 클라이언트로 생성 (cookie_store 활성화).
-    pub fn new(pool: sqlx::PgPool, cache: AppCache, push_client: Arc<PushClient>) -> Self {
+    /// `db_max_connections` 기반으로 Semaphore 동적 조정: min(pool * 60%, 8)
+    pub fn new(
+        pool: sqlx::PgPool,
+        cache: AppCache,
+        push_client: Arc<PushClient>,
+        db_max_connections: u32,
+    ) -> Self {
         let client = reqwest::Client::builder()
             .cookie_store(true)
             .timeout(std::time::Duration::from_secs(30))
             .build()
             .expect("Failed to build crawler HTTP client");
 
+        // DB 풀의 60%를 크롤러 동시성 상한으로 (나머지 40%는 API 요청용)
+        let concurrency = ((db_max_connections as f32 * 0.6) as usize).clamp(2, 8);
+        tracing::info!(
+            db_max_connections,
+            concurrency,
+            "Crawler semaphore configured"
+        );
+
         Self {
             pool,
             cache,
             push_client,
             client,
-            semaphore: Arc::new(Semaphore::new(8)), // CPU↑: 5→8 동시 크롤링
+            semaphore: Arc::new(Semaphore::new(concurrency)),
         }
     }
 
@@ -296,9 +310,13 @@ async fn scrape_and_update(
     //    stats::refresh_product_stats()가 lowest_price/average_price를 업데이트하면
     //    AllTimeLow/BelowAverage 조건이 정상 작동하지 않는다.
     if price_changed {
-        if let Err(e) =
-            crate::services::alert_service::evaluate_price_alerts(pool, push.clone(), product_id, new_price)
-                .await
+        if let Err(e) = crate::services::alert_service::evaluate_price_alerts(
+            pool,
+            push.clone(),
+            product_id,
+            new_price,
+        )
+        .await
         {
             tracing::warn!(product_id, error = %e, "Alert evaluation failed");
         }
@@ -320,7 +338,6 @@ async fn scrape_and_update(
 
     Ok(price_changed)
 }
-
 
 /// JoinSet 결과를 집계 카운터에 반영
 fn tally_outcome(
@@ -378,9 +395,7 @@ fn is_allowed_crawl_url(url_str: &str) -> bool {
         return false;
     };
     matches!(parsed.scheme(), "https" | "http")
-        && (host == "www.coupang.com"
-            || host == "coupang.com"
-            || host.ends_with(".coupang.com"))
+        && (host == "www.coupang.com" || host == "coupang.com" || host.ends_with(".coupang.com"))
 }
 
 /// DB 상품 행 (크롤링용 최소 필드)
@@ -396,7 +411,9 @@ mod tests {
 
     #[test]
     fn allowed_crawl_urls() {
-        assert!(is_allowed_crawl_url("https://www.coupang.com/vp/products/123"));
+        assert!(is_allowed_crawl_url(
+            "https://www.coupang.com/vp/products/123"
+        ));
         assert!(is_allowed_crawl_url("https://coupang.com/vp/products/456"));
         assert!(is_allowed_crawl_url("http://m.coupang.com/vm/products/789"));
     }

@@ -110,19 +110,14 @@ async fn login_google(
     // 0. 입력 검증
     let token = body.id_token.trim();
     if token.is_empty() {
-        return Err(AppError::BadRequest(
-            "id_token이 비어있습니다".to_string(),
-        ));
+        return Err(AppError::BadRequest("id_token이 비어있습니다".to_string()));
     }
     if token.len() > 4096 {
-        return Err(AppError::BadRequest(
-            "id_token이 너무 깁니다".to_string(),
-        ));
+        return Err(AppError::BadRequest("id_token이 너무 깁니다".to_string()));
     }
 
     // 1. Google id_token (JWT/OIDC) 검증
-    let social_info =
-        crate::auth::providers::google::verify(&state, token).await?;
+    let social_info = crate::auth::providers::google::verify(&state, token).await?;
 
     // 2. 추천 코드로 추천인 조회 (있는 경우)
     let referred_by = if let Some(ref code) = body.referral_code {
@@ -249,10 +244,14 @@ async fn refresh(
     // 입력 검증
     let token = body.refresh_token.trim();
     if token.is_empty() {
-        return Err(AppError::BadRequest("리프레시 토큰을 입력해주세요".to_string()));
+        return Err(AppError::BadRequest(
+            "리프레시 토큰을 입력해주세요".to_string(),
+        ));
     }
     if token.len() > 512 {
-        return Err(AppError::BadRequest("유효하지 않은 리프레시 토큰입니다".to_string()));
+        return Err(AppError::BadRequest(
+            "유효하지 않은 리프레시 토큰입니다".to_string(),
+        ));
     }
 
     let (tokens, _user_id) =

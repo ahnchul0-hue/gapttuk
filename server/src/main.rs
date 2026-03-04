@@ -8,10 +8,10 @@ use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderName, HeaderValue, Method, StatusCode};
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use sentry::integrations::tower::{NewSentryLayer, SentryHttpLayer};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::signal;
-use sentry::integrations::tower::{NewSentryLayer, SentryHttpLayer};
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
@@ -48,10 +48,16 @@ async fn shutdown_signal() {
 }
 
 /// /metrics 접근 제한 — loopback/private IP만 허용.
+/// IPv6 ULA(fc00::/7) 대역도 프라이빗으로 허용.
 fn is_private_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => v4.is_loopback() || v4.is_private(),
-        IpAddr::V6(v6) => v6.is_loopback(),
+        IpAddr::V6(v6) => {
+            v6.is_loopback() || {
+                let seg0 = v6.segments()[0];
+                seg0 & 0xfe00 == 0xfc00 // ULA fc00::/7
+            }
+        }
     }
 }
 
@@ -125,7 +131,10 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
                     continue;
                 };
                 // SAFETY: suffix를 alphanumeric + '_' 로 검증
-                if !suffix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+                if !suffix
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '_')
+                {
                     tracing::warn!(partition = %partition_name, "Unexpected partition name format, skipping");
                     continue;
                 }
@@ -133,7 +142,9 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
                 if suffix < cutoff_suffix.as_str() {
                     let sql = format!("DROP TABLE IF EXISTS {partition_name}");
                     match sqlx::query(&sql).execute(pool).await {
-                        Ok(_) => tracing::info!(partition = %partition_name, "Old api_access_logs partition dropped"),
+                        Ok(_) => {
+                            tracing::info!(partition = %partition_name, "Old api_access_logs partition dropped")
+                        }
                         Err(e) => {
                             tracing::warn!(partition = %partition_name, error = %e, "Failed to drop old api_access_logs partition");
                             errors.push(format!("drop {partition_name}: {e}"));
@@ -222,6 +233,7 @@ async fn main() {
             pool.clone(),
             cache.clone(),
             push_client.clone(),
+            config.database_max_connections,
         ));
         if let Err(e) =
             crawlers::scheduler::start_scheduler(crawler_service, config.crawl_on_start).await
@@ -284,17 +296,17 @@ async fn main() {
             "/api/v1/auth",
             api::routes::auth::router().layer(auth_governor_layer),
         )
-        .nest("/api/v1/products", api::routes::products::router(search_governor_layer))
+        .nest(
+            "/api/v1/products",
+            api::routes::products::router(search_governor_layer),
+        )
         .nest("/api/v1/devices", api::routes::devices::router())
         .nest("/api/v1/alerts", api::routes::alerts::router())
         .nest(
             "/api/v1/notifications",
             api::routes::notifications::router(),
         )
-        .nest(
-            "/api/v1/predictions",
-            api::routes::predictions::router(),
-        )
+        .nest("/api/v1/predictions", api::routes::predictions::router())
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
@@ -407,7 +419,9 @@ async fn main() {
             }
         });
 
-        // 9d. 백그라운드 태스크 패닉 감시 — 각 태스크를 독립적으로 감시
+        // 9d. 백그라운드 태스크 패닉 감시 + Sentry 보고
+        // 각 태스크는 내부 loop에서 에러를 개별 처리하므로 정상적으로는 종료되지 않음.
+        // 패닉 발생 시 로그 + Sentry 보고 + 메트릭 기록.
         for (name, handle) in [
             ("Partition maintenance", h_partition),
             ("Governor GC", h_gc),
@@ -415,8 +429,14 @@ async fn main() {
         ] {
             tokio::spawn(async move {
                 match handle.await {
-                    Ok(()) => tracing::error!("{name} task exited unexpectedly"),
-                    Err(e) => tracing::error!(error = %e, "{name} task panicked"),
+                    Ok(()) => {
+                        tracing::error!("{name} task exited unexpectedly");
+                        metrics::counter!("background_task_exit", "task" => name, "reason" => "normal").increment(1);
+                    }
+                    Err(e) => {
+                        tracing::error!(error = %e, "{name} task panicked — requires restart");
+                        metrics::counter!("background_task_exit", "task" => name, "reason" => "panic").increment(1);
+                    }
                 }
             });
         }

@@ -126,15 +126,13 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
     validation.set_audience(&[client_id]);
     validation.set_issuer(&["accounts.google.com", "https://accounts.google.com"]);
 
-    let token_data = decode::<GoogleClaims>(id_token, &decoding_key, &validation).map_err(
-        |e| {
-            tracing::warn!(error = %e, "Google id_token decode failed");
-            match e.kind() {
-                jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
-                _ => AppError::TokenInvalid,
-            }
-        },
-    )?;
+    let token_data = decode::<GoogleClaims>(id_token, &decoding_key, &validation).map_err(|e| {
+        tracing::warn!(error = %e, "Google id_token decode failed");
+        match e.kind() {
+            jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
+            _ => AppError::TokenInvalid,
+        }
+    })?;
 
     let claims = token_data.claims;
 

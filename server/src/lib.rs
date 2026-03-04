@@ -49,9 +49,7 @@ pub struct HealthResponse {
 }
 
 /// GET /health — 헬스체크 (DB + 캐시 검증)
-pub async fn health_check(
-    State(state): State<AppState>,
-) -> axum::response::Response {
+pub async fn health_check(State(state): State<AppState>) -> axum::response::Response {
     let start = std::time::Instant::now();
     let db_ok = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
     let latency_ms = start.elapsed().as_millis() as u64;

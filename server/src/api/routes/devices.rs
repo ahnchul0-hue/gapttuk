@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::{ApiResponse, Created, Deleted};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
-use crate::models::{Platform, UserDevice};
+use crate::models::Platform;
+use crate::services::device_service;
 use crate::AppState;
 
 // ── 요청/응답 DTO ──────────────────────────────────────
@@ -45,8 +46,8 @@ pub struct DeviceResponse {
     pub push_enabled: bool,
 }
 
-impl From<UserDevice> for DeviceResponse {
-    fn from(d: UserDevice) -> Self {
+impl From<crate::models::UserDevice> for DeviceResponse {
+    fn from(d: crate::models::UserDevice) -> Self {
         Self {
             id: d.id,
             device_token: d.device_token,
@@ -72,13 +73,7 @@ async fn list_devices(
     State(state): State<AppState>,
     Auth(claims): Auth,
 ) -> Result<ApiResponse<Vec<DeviceResponse>>, AppError> {
-    let devices = sqlx::query_as::<_, UserDevice>(
-        "SELECT * FROM user_devices WHERE user_id = $1 ORDER BY created_at DESC",
-    )
-    .bind(claims.sub)
-    .fetch_all(&state.pool)
-    .await?;
-
+    let devices = device_service::list_devices(&state.pool, claims.sub).await?;
     let response: Vec<DeviceResponse> = devices.into_iter().map(DeviceResponse::from).collect();
     Ok(ApiResponse::ok(response))
 }
@@ -89,27 +84,13 @@ async fn register_device(
     Auth(claims): Auth,
     Json(body): Json<RegisterDeviceRequest>,
 ) -> Result<Created<DeviceResponse>, AppError> {
-    if body.device_token.is_empty() || body.device_token.len() > 512 {
-        return Err(AppError::BadRequest(
-            "device_token은 1~512자여야 합니다".to_string(),
-        ));
-    }
-
-    let device = sqlx::query_as::<_, UserDevice>(
-        r#"
-        INSERT INTO user_devices (user_id, device_token, platform)
-        VALUES ($1, $2, $3::TEXT)
-        ON CONFLICT (user_id, device_token)
-        DO UPDATE SET platform = EXCLUDED.platform, updated_at = NOW()
-        RETURNING *
-        "#,
+    let device = device_service::register_device(
+        &state.pool,
+        claims.sub,
+        &body.device_token,
+        body.platform.as_str(),
     )
-    .bind(claims.sub)
-    .bind(&body.device_token)
-    .bind(body.platform.as_str())
-    .fetch_one(&state.pool)
     .await?;
-
     Ok(Created(DeviceResponse::from(device)))
 }
 
@@ -119,16 +100,7 @@ async fn unregister_device(
     Auth(claims): Auth,
     Path(device_id): Path<i64>,
 ) -> Result<Deleted, AppError> {
-    let result = sqlx::query("DELETE FROM user_devices WHERE id = $1 AND user_id = $2")
-        .bind(device_id)
-        .bind(claims.sub)
-        .execute(&state.pool)
-        .await?;
-
-    if result.rows_affected() == 0 {
-        return Err(AppError::NotFound("디바이스".to_string()));
-    }
-
+    device_service::unregister_device(&state.pool, claims.sub, device_id).await?;
     Ok(Deleted)
 }
 
@@ -138,19 +110,6 @@ async fn toggle_push(
     Auth(claims): Auth,
     Path(device_id): Path<i64>,
 ) -> Result<ApiResponse<DeviceResponse>, AppError> {
-    let device = sqlx::query_as::<_, UserDevice>(
-        r#"
-        UPDATE user_devices
-        SET push_enabled = NOT push_enabled, updated_at = NOW()
-        WHERE id = $1 AND user_id = $2
-        RETURNING *
-        "#,
-    )
-    .bind(device_id)
-    .bind(claims.sub)
-    .fetch_optional(&state.pool)
-    .await?
-    .ok_or_else(|| AppError::NotFound("디바이스".to_string()))?;
-
+    let device = device_service::toggle_push(&state.pool, claims.sub, device_id).await?;
     Ok(ApiResponse::ok(DeviceResponse::from(device)))
 }

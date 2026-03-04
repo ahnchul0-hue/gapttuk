@@ -79,7 +79,8 @@ pub async fn refresh_product_stats(
         SELECT
             ra.avg_price_30d,
             (SELECT MIN(recorded_at) FROM price_history
-             WHERE product_id = $1 AND price = p.lowest_price) AS lowest_date,
+             WHERE product_id = $1 AND price = p.lowest_price
+               AND recorded_at >= NOW() - INTERVAL '1 year') AS lowest_date,
             p.lowest_price AS min_price,
             p.highest_price AS max_price
         FROM products p, recent_avg ra
@@ -162,7 +163,8 @@ pub async fn refresh_product_stats_with_metadata(
         SELECT
             ra.avg_price_30d,
             (SELECT MIN(recorded_at) FROM price_history
-             WHERE product_id = $1 AND price = p.lowest_price) AS lowest_date,
+             WHERE product_id = $1 AND price = p.lowest_price
+               AND recorded_at >= NOW() - INTERVAL '1 year') AS lowest_date,
             p.lowest_price AS min_price,
             p.highest_price AS max_price
         FROM products p, recent_avg ra

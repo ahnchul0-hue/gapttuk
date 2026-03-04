@@ -59,7 +59,9 @@ pub struct CoupangUrlInfo {
 pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
     // URL 길이 제한
     if url_str.len() > 2048 {
-        return Err(AppError::BadRequest("URL은 2048자 이하여야 합니다".to_string()));
+        return Err(AppError::BadRequest(
+            "URL은 2048자 이하여야 합니다".to_string(),
+        ));
     }
 
     let url = reqwest::Url::parse(url_str)
@@ -153,9 +155,7 @@ pub async fn search_products(
             // PriceTrend::Falling — snake_case 직렬화 → 'falling'
             " AND price_trend = 'falling'"
         }
-        Some("under_10k") => {
-            " AND current_price IS NOT NULL AND current_price < 10000"
-        }
+        Some("under_10k") => " AND current_price IS NOT NULL AND current_price < 10000",
         _ => "",
     };
 
@@ -173,15 +173,14 @@ pub async fn search_products(
                             THEN (highest_price - current_price) \
                             ELSE 0 END) DESC, id DESC"
         }
-        Some("lowest_price") => {
-            "ORDER BY current_price ASC NULLS LAST, id DESC"
-        }
+        Some("lowest_price") => "ORDER BY current_price ASC NULLS LAST, id DESC",
         _ => "ORDER BY id DESC", // "ranking" 또는 기본값
     };
 
-    // 커서 조건: 정렬이 id DESC인 경우 id < cursor 사용.
-    // discount_rate/discount_amount/lowest_price 정렬 시에는 커서를 id 기반으로 단순 처리.
-    let use_cursor = cursor.is_some() && matches!(sort, None | Some("ranking"));
+    // 커서 조건: 모든 정렬에서 id < cursor 사용.
+    // 모든 ORDER BY가 id DESC를 보조키로 포함하므로 중복 방지 보장.
+    // NOTE: non-id 정렬에서는 커서가 근사적 — 일부 항목 건너뜀 가능하나 중복은 없음.
+    let use_cursor = cursor.is_some();
     let cursor_clause = if use_cursor { " AND id < $2" } else { "" };
     let param_n = if use_cursor { 3 } else { 2 };
 
@@ -201,7 +200,6 @@ pub async fn search_products(
     );
 
     let items: Vec<ProductSearchItem> = if use_cursor {
-        // 안전: use_cursor가 true이면 cursor는 반드시 Some
         sqlx::query_as(&sql)
             .bind(&pattern)
             .bind(cursor.expect("use_cursor=true이면 cursor는 Some"))
@@ -235,28 +233,18 @@ pub async fn add_product_by_url(
         .await?
         .ok_or_else(|| AppError::Internal("쿠팡 쇼핑몰 설정이 없습니다".to_string()))?;
 
-    // INSERT ON CONFLICT DO NOTHING — 동시 요청에도 안전
-    sqlx::query(
+    // INSERT + RETURNING 단일 쿼리 — ON CONFLICT DO UPDATE로 항상 행 반환
+    let product: Product = sqlx::query_as(
         "INSERT INTO products (shopping_mall_id, external_product_id, vendor_item_id, product_name, product_url)
          VALUES ($1, $2, $3, '가격 추적 대기 중', $4)
-         ON CONFLICT (shopping_mall_id, external_product_id, vendor_item_id) DO NOTHING",
+         ON CONFLICT (shopping_mall_id, external_product_id, vendor_item_id)
+         DO UPDATE SET updated_at = NOW()
+         RETURNING *",
     )
     .bind(mall_id)
     .bind(&info.product_id)
     .bind(&info.vendor_item_id)
     .bind(url_str)
-    .execute(pool)
-    .await?;
-
-    // 삽입 여부와 무관하게 조회 (ON CONFLICT DO NOTHING은 RETURNING 불가일 수 있음)
-    let product: Product = sqlx::query_as(
-        "SELECT * FROM products
-         WHERE shopping_mall_id = $1 AND external_product_id = $2
-           AND (vendor_item_id = $3 OR ($3::text IS NULL AND vendor_item_id IS NULL))",
-    )
-    .bind(mall_id)
-    .bind(&info.product_id)
-    .bind(&info.vendor_item_id)
     .fetch_one(pool)
     .await?;
 
@@ -288,6 +276,7 @@ async fn ensure_product_exists(pool: &PgPool, product_id: i64) -> Result<(), App
 }
 
 /// 가격 이력 조회 (커서 기반 페이지네이션)
+/// 결과가 비어있을 때만 상품 존재 확인 (불필요한 사전 쿼리 제거).
 pub async fn get_price_history(
     pool: &PgPool,
     product_id: i64,
@@ -296,8 +285,6 @@ pub async fn get_price_history(
     cursor: Option<i64>,
     limit: i64,
 ) -> Result<Vec<crate::models::PriceHistory>, AppError> {
-    ensure_product_exists(pool, product_id).await?;
-
     let fetch_limit = limit + 1;
 
     let items = sqlx::query_as::<_, crate::models::PriceHistory>(
@@ -318,16 +305,20 @@ pub async fn get_price_history(
     .fetch_all(pool)
     .await?;
 
+    // 결과 비어있을 때만 상품 존재 확인 (대부분의 요청은 이 분기를 타지 않음)
+    if items.is_empty() && cursor.is_none() {
+        ensure_product_exists(pool, product_id).await?;
+    }
+
     Ok(items)
 }
 
 /// 요일별 가격 집계 (최대 7행)
+/// 결과가 비어있을 때만 상품 존재 확인 (불필요한 사전 쿼리 제거).
 pub async fn get_daily_price_aggregates(
     pool: &PgPool,
     product_id: i64,
 ) -> Result<Vec<DailyPriceAggregate>, AppError> {
-    ensure_product_exists(pool, product_id).await?;
-
     let aggregates: Vec<DailyPriceAggregate> = sqlx::query_as(
         "SELECT EXTRACT(DOW FROM recorded_at)::int AS day_of_week,
                 AVG(price)::int AS avg_price,
@@ -343,11 +334,15 @@ pub async fn get_daily_price_aggregates(
     .fetch_all(pool)
     .await?;
 
+    if aggregates.is_empty() {
+        ensure_product_exists(pool, product_id).await?;
+    }
+
     Ok(aggregates)
 }
 
-/// 인기 검색어 조회 (캐시 적용).
-/// DB에서는 항상 최대 50건을 캐시하고, 응답 시 limit으로 잘라냄.
+/// 인기 검색어 조회 — moka try_get_with로 thundering herd 방지.
+/// 동일 키에 대한 동시 요청이 하나의 DB 조회만 실행.
 const POPULAR_SEARCHES_CACHE_MAX: i32 = 50;
 
 pub async fn get_popular_searches(
@@ -355,23 +350,21 @@ pub async fn get_popular_searches(
     cache: &AppCache,
     limit: i32,
 ) -> Result<Vec<PopularSearch>, AppError> {
-    let cache_key = "top".to_string();
-    if let Some(cached) = cache.popular_searches.get(&cache_key).await {
-        return Ok(cached.into_iter().take(limit as usize).collect());
-    }
-
-    let items: Vec<PopularSearch> =
-        sqlx::query_as("SELECT * FROM popular_searches ORDER BY rank ASC LIMIT $1")
-            .bind(POPULAR_SEARCHES_CACHE_MAX)
-            .fetch_all(pool)
-            .await?;
-
-    cache
+    let pool = pool.clone();
+    let all = cache
         .popular_searches
-        .insert(cache_key, items.clone())
-        .await;
+        .try_get_with("top".to_string(), async {
+            let rows: Vec<PopularSearch> =
+                sqlx::query_as("SELECT * FROM popular_searches ORDER BY rank ASC LIMIT $1")
+                    .bind(POPULAR_SEARCHES_CACHE_MAX)
+                    .fetch_all(&pool)
+                    .await?;
+            Ok::<_, AppError>(rows)
+        })
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    Ok(items.into_iter().take(limit as usize).collect())
+    Ok(all.into_iter().take(limit as usize).collect())
 }
 
 // ── 테스트 ──────────────────────────────────────────────

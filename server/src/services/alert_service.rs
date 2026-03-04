@@ -245,12 +245,11 @@ pub async fn delete_category_alert(
     user_id: i64,
     alert_id: i64,
 ) -> Result<(), AppError> {
-    let result =
-        sqlx::query("DELETE FROM category_alerts WHERE id = $1 AND user_id = $2")
-            .bind(alert_id)
-            .bind(user_id)
-            .execute(pool)
-            .await?;
+    let result = sqlx::query("DELETE FROM category_alerts WHERE id = $1 AND user_id = $2")
+        .bind(alert_id)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound("알림".to_string()));
@@ -292,9 +291,7 @@ pub async fn create_keyword_alert(
     // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
     let keyword = keyword.trim().to_string();
     if keyword.is_empty() {
-        return Err(AppError::BadRequest(
-            "키워드를 입력해주세요".to_string(),
-        ));
+        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
     }
     if keyword.chars().count() > 100 {
         return Err(AppError::BadRequest(
@@ -346,12 +343,11 @@ pub async fn delete_keyword_alert(
     user_id: i64,
     alert_id: i64,
 ) -> Result<(), AppError> {
-    let result =
-        sqlx::query("DELETE FROM keyword_alerts WHERE id = $1 AND user_id = $2")
-            .bind(alert_id)
-            .bind(user_id)
-            .execute(pool)
-            .await?;
+    let result = sqlx::query("DELETE FROM keyword_alerts WHERE id = $1 AND user_id = $2")
+        .bind(alert_id)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound("알림".to_string()));
@@ -421,9 +417,7 @@ pub async fn update_keyword_alert(
 ) -> Result<(), AppError> {
     let keyword = keyword.trim();
     if keyword.is_empty() {
-        return Err(AppError::BadRequest(
-            "키워드를 입력해주세요".to_string(),
-        ));
+        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
     }
     if keyword.chars().count() > 100 {
         return Err(AppError::BadRequest(
@@ -437,8 +431,7 @@ pub async fn update_keyword_alert(
     .bind(alert_id)
     .bind(user_id)
     .execute(pool)
-    .await
-    ?;
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound("키워드 알림".to_string()));
@@ -868,7 +861,7 @@ mod tests {
     fn test_keyword_length_uses_chars_count() {
         // 한글 "가나다" = 3글자, 9바이트 — chars().count()로 정확히 3자
         let korean = "가나다";
-        assert_eq!(korean.len(), 9);           // 바이트
+        assert_eq!(korean.len(), 9); // 바이트
         assert_eq!(korean.chars().count(), 3); // 글자 수
     }
 

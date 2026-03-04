@@ -14,7 +14,11 @@ use crate::AppState;
 /// SmartIpKeyExtractor와 동일한 로직: X-Forwarded-For → X-Real-Ip → ConnectInfo 폴백.
 fn extract_client_ip(req: &Request, fallback: std::net::IpAddr) -> std::net::IpAddr {
     // X-Forwarded-For: 첫 번째 IP (클라이언트 원본)
-    if let Some(xff) = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
+    if let Some(xff) = req
+        .headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+    {
         if let Some(first) = xff.split(',').next() {
             if let Ok(ip) = first.trim().parse::<std::net::IpAddr>() {
                 return ip;
@@ -157,23 +161,40 @@ mod tests {
 
     #[test]
     fn extract_client_ip_xff() {
-        let mut req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
-        req.headers_mut().insert("x-forwarded-for", "1.2.3.4, 10.0.0.1".parse().unwrap());
+        let mut req = Request::builder()
+            .uri("/test")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        req.headers_mut()
+            .insert("x-forwarded-for", "1.2.3.4, 10.0.0.1".parse().unwrap());
         let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
-        assert_eq!(extract_client_ip(&req, fallback), "1.2.3.4".parse::<std::net::IpAddr>().unwrap());
+        assert_eq!(
+            extract_client_ip(&req, fallback),
+            "1.2.3.4".parse::<std::net::IpAddr>().unwrap()
+        );
     }
 
     #[test]
     fn extract_client_ip_x_real_ip() {
-        let mut req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
-        req.headers_mut().insert("x-real-ip", "5.6.7.8".parse().unwrap());
+        let mut req = Request::builder()
+            .uri("/test")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        req.headers_mut()
+            .insert("x-real-ip", "5.6.7.8".parse().unwrap());
         let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
-        assert_eq!(extract_client_ip(&req, fallback), "5.6.7.8".parse::<std::net::IpAddr>().unwrap());
+        assert_eq!(
+            extract_client_ip(&req, fallback),
+            "5.6.7.8".parse::<std::net::IpAddr>().unwrap()
+        );
     }
 
     #[test]
     fn extract_client_ip_fallback() {
-        let req = Request::builder().uri("/test").body(axum::body::Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/test")
+            .body(axum::body::Body::empty())
+            .unwrap();
         let fallback: std::net::IpAddr = "192.168.1.1".parse().unwrap();
         assert_eq!(extract_client_ip(&req, fallback), fallback);
     }

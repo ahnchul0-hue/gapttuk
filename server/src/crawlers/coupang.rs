@@ -124,7 +124,10 @@ async fn fetch_and_parse(
     // CAPTCHA 감지: 200 응답인데 가격·상품명·품절 마커 전부 없으면 CAPTCHA 의심
     if result.price.is_none() && result.product_name.is_none() && !result.is_out_of_stock {
         metrics::counter!("crawler_captcha_suspected").increment(1);
-        tracing::warn!(product_id, "Possible CAPTCHA page — no product data extracted");
+        tracing::warn!(
+            product_id,
+            "Possible CAPTCHA page — no product data extracted"
+        );
         return Err(CrawlError::PossibleCaptcha);
     }
 

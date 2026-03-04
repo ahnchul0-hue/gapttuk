@@ -61,10 +61,7 @@ pub fn build_test_app(pool: PgPool) -> Router {
             "/api/v1/notifications",
             api::routes::notifications::router(),
         )
-        .nest(
-            "/api/v1/predictions",
-            api::routes::predictions::router(),
-        )
+        .nest("/api/v1/predictions", api::routes::predictions::router())
         .with_state(state)
 }
 

@@ -96,8 +96,7 @@ async fn create_keyword_alert(
     Auth(claims): Auth,
     Json(body): Json<CreateKeywordAlertRequest>,
 ) -> Result<Created<KeywordAlert>, AppError> {
-    let alert =
-        alert_service::create_keyword_alert(&state.pool, claims.sub, body.keyword).await?;
+    let alert = alert_service::create_keyword_alert(&state.pool, claims.sub, body.keyword).await?;
     Ok(Created(alert))
 }
 

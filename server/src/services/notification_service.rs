@@ -177,7 +177,11 @@ pub async fn mark_as_read(
 }
 
 /// 알림 삭제 — 해당 사용자의 알림만 삭제 가능.
-pub async fn delete_notification(pool: &PgPool, user_id: i64, notification_id: i64) -> Result<(), AppError> {
+pub async fn delete_notification(
+    pool: &PgPool,
+    user_id: i64,
+    notification_id: i64,
+) -> Result<(), AppError> {
     let result = sqlx::query("DELETE FROM notifications WHERE id = $1 AND user_id = $2")
         .bind(notification_id)
         .bind(user_id)
@@ -191,10 +195,11 @@ pub async fn delete_notification(pool: &PgPool, user_id: i64, notification_id: i
 
 /// 읽지 않은 알림 수 조회.
 pub async fn get_unread_count(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {
-    let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false")
-        .bind(user_id)
-        .fetch_one(pool)
-        .await?;
+    let count: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false")
+            .bind(user_id)
+            .fetch_one(pool)
+            .await?;
     Ok(count.0)
 }
 

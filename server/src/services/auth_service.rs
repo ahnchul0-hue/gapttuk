@@ -65,7 +65,11 @@ pub async fn upsert_user(
         let now = Utc::now();
         let terms_at = Some(now);
         let privacy_at = Some(now);
-        let marketing_at = if consent.marketing_agreed { Some(now) } else { None };
+        let marketing_at = if consent.marketing_agreed {
+            Some(now)
+        } else {
+            None
+        };
 
         // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
         let referral_code = generate_referral_code(pool).await?;
@@ -75,7 +79,7 @@ pub async fn upsert_user(
             r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
                 profile_image_url, referral_code, referred_by,
                 terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#,
         )
         .bind(&info.email)
         .bind(&info.nickname)

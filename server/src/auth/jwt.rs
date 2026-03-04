@@ -6,6 +6,11 @@ use sha2::{Digest, Sha256};
 use crate::config::Config;
 use crate::error::AppError;
 
+/// JWT audience — 토큰 수신자 식별.
+pub const JWT_AUDIENCE: &str = "gapttuk-api";
+/// JWT issuer — 토큰 발급자 식별.
+pub const JWT_ISSUER: &str = "gapttuk-server";
+
 /// JWT claims (access token 페이로드)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
@@ -15,6 +20,10 @@ pub struct Claims {
     pub exp: i64,
     /// issued at (Unix timestamp)
     pub iat: i64,
+    /// audience (CWE-287 대응: 크로스-서비스 토큰 재사용 방지)
+    pub aud: String,
+    /// issuer
+    pub iss: String,
 }
 
 /// 로그인/갱신 시 발급되는 토큰 쌍
@@ -33,6 +42,8 @@ pub fn encode_access_token(user_id: i64, config: &Config) -> Result<(String, u64
         sub: user_id,
         exp: now + ttl as i64,
         iat: now,
+        aud: JWT_AUDIENCE.to_string(),
+        iss: JWT_ISSUER.to_string(),
     };
     let token = encode(
         &Header::default(),
@@ -44,11 +55,16 @@ pub fn encode_access_token(user_id: i64, config: &Config) -> Result<(String, u64
 }
 
 /// JWT access token 검증 + Claims 추출.
+/// aud/iss claim을 반드시 검증하여 크로스-서비스 토큰 재사용을 차단.
 pub fn decode_access_token(token: &str, config: &Config) -> Result<Claims, AppError> {
+    let mut validation = Validation::new(jsonwebtoken::Algorithm::HS256);
+    validation.set_audience(&[JWT_AUDIENCE]);
+    validation.set_issuer(&[JWT_ISSUER]);
+
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(config.jwt_secret.as_bytes()),
-        &Validation::new(jsonwebtoken::Algorithm::HS256),
+        &validation,
     )
     .map_err(|e| match e.kind() {
         jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::TokenExpired,
@@ -98,6 +114,8 @@ mod tests {
             sub: 1,
             exp: now - 100, // 100초 전에 만료
             iat: now - 200,
+            aud: JWT_AUDIENCE.to_string(),
+            iss: JWT_ISSUER.to_string(),
         };
         let token = encode(
             &Header::default(),

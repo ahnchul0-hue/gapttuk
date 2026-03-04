@@ -59,7 +59,9 @@ pub struct AddProductByUrlRequest {
 
 // ── 라우터 ──────────────────────────────────────────────
 
-pub fn router(search_limiter_layer: crate::middleware::rate_limit::SearchLayer) -> Router<AppState> {
+pub fn router(
+    search_limiter_layer: crate::middleware::rate_limit::SearchLayer,
+) -> Router<AppState> {
     // /search에만 별도 rate limiter 적용 (10 req/min per IP)
     let search_route = Router::new()
         .route("/search", get(search))
@@ -99,7 +101,7 @@ async fn search(
             "검색어는 2자 이상 입력해주세요".to_string(),
         ));
     }
-    if q.len() > 100 {
+    if q.chars().count() > 100 {
         return Err(AppError::BadRequest(
             "검색어는 100자 이하로 입력해주세요".to_string(),
         ));
@@ -114,9 +116,7 @@ async fn search(
             f.as_str(),
             "near_stockout" | "all_time_low" | "declining" | "under_10k"
         ) {
-            return Err(AppError::BadRequest(format!(
-                "지원하지 않는 필터: {f}"
-            )));
+            return Err(AppError::BadRequest(format!("지원하지 않는 필터: {f}")));
         }
     }
 
@@ -126,9 +126,7 @@ async fn search(
             s.as_str(),
             "ranking" | "discount_rate" | "discount_amount" | "lowest_price"
         ) {
-            return Err(AppError::BadRequest(format!(
-                "지원하지 않는 정렬: {s}"
-            )));
+            return Err(AppError::BadRequest(format!("지원하지 않는 정렬: {s}")));
         }
     }
 
