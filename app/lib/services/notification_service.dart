@@ -51,11 +51,9 @@ class NotificationService {
   /// 개별 알림 읽음 처리.
   ///
   /// PATCH /api/v1/notifications/{id}/read
-  Future<AppNotification> markAsRead(int id) async {
-    final response =
-        await _api.dio.patch('/api/v1/notifications/$id/read');
-    return AppNotification.fromJson(
-        response.data['data'] as Map<String, dynamic>);
+  /// 서버는 `ApiResponse<()>` (data: null) 반환.
+  Future<void> markAsRead(int id) async {
+    await _api.dio.patch('/api/v1/notifications/$id/read');
   }
 
   /// 전체 알림 읽음 처리.

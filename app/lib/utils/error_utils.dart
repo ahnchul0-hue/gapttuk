@@ -20,9 +20,13 @@ String friendlyErrorMessage(Object error) {
           return '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
         }
         // 서버 에러 메시지가 있으면 사용
+        // 서버 응답 구조: { "ok": false, "error": { "code": "...", "message": "..." } }
         final data = error.response?.data;
-        if (data is Map && data['message'] is String) {
-          return data['message'] as String;
+        if (data is Map) {
+          final errorObj = data['error'];
+          if (errorObj is Map && errorObj['message'] is String) {
+            return errorObj['message'] as String;
+          }
         }
         return '요청을 처리할 수 없습니다.';
       default:

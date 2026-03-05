@@ -76,31 +76,29 @@ class AlertService {
   /// 가격 알림 목표가 수정.
   ///
   /// PATCH /api/v1/alerts/price/{id}
-  Future<PriceAlert> updatePriceAlert({
+  /// 서버는 `"수정되었습니다"` (String) 반환.
+  Future<void> updatePriceAlert({
     required int id,
     required int targetPrice,
   }) async {
-    final response = await _api.dio.patch(
+    await _api.dio.patch(
       '/api/v1/alerts/price/$id',
       data: {'target_price': targetPrice},
     );
-    return PriceAlert.fromJson(
-        response.data['data'] as Map<String, dynamic>);
   }
 
   /// 키워드 알림 키워드 수정.
   ///
   /// PATCH /api/v1/alerts/keyword/{id}
-  Future<KeywordAlert> updateKeywordAlert({
+  /// 서버는 `"수정되었습니다"` (String) 반환.
+  Future<void> updateKeywordAlert({
     required int id,
     required String keyword,
   }) async {
-    final response = await _api.dio.patch(
+    await _api.dio.patch(
       '/api/v1/alerts/keyword/$id',
       data: {'keyword': keyword},
     );
-    return KeywordAlert.fromJson(
-        response.data['data'] as Map<String, dynamic>);
   }
 
   // ─── 토글 ─────────────────────────────────────────────────────────────────

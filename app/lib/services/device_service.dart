@@ -18,7 +18,7 @@ class DeviceService {
     String? deviceName,
   }) async {
     final response = await _api.dio.post(
-      '/api/v1/devices/register',
+      '/api/v1/devices/',
       data: {
         'device_token': deviceToken,
         'platform': platform,

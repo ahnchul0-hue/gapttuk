@@ -89,12 +89,14 @@ class _NotificationListScreenState
     if (notification.isRead) return;
     try {
       final service = ref.read(notificationServiceProvider);
-      final updated = await service.markAsRead(notification.id);
+      await service.markAsRead(notification.id);
       if (mounted) {
         setState(() {
           final idx =
               _notifications.indexWhere((n) => n.id == notification.id);
-          if (idx != -1) _notifications[idx] = updated;
+          if (idx != -1) {
+            _notifications[idx] = notification.copyWith(isRead: true);
+          }
         });
       }
     } catch (_) {
