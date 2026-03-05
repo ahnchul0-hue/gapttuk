@@ -9,6 +9,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/my/my_page_screen.dart';
 import '../screens/my/settings_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/notification/notification_list_screen.dart';
 import '../screens/product/product_detail_screen.dart';
 import '../services/token_storage.dart';
 
@@ -77,6 +78,13 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/alerts',
               builder: (context, state) => const AlertScreen(),
+              routes: [
+                GoRoute(
+                  path: 'history',
+                  builder: (context, state) =>
+                      const NotificationListScreen(),
+                ),
+              ],
             ),
           ],
         ),
