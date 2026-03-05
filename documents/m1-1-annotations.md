@@ -294,23 +294,33 @@ FK 참조가 없는 테이블부터 생성 → 참조하는 테이블 순으로:
 - total_spent: INTEGER NOT NULL DEFAULT 0
 - updated_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
 
-#### ⑨ referrals
+#### ⑨ referrals (v0.8 개정: 단계별 구매 기반 보상)
 - id: BIGINT PK GENERATED ALWAYS AS IDENTITY
 - referrer_id: BIGINT FK → users(id) NOT NULL
 - referred_id: BIGINT FK → users(id) UNIQUE NOT NULL — 한 사용자는 한 번만 추천받음
 - referral_code: TEXT NOT NULL
-- referrer_rewarded: BOOLEAN NOT NULL DEFAULT FALSE
-- referred_rewarded: BOOLEAN NOT NULL DEFAULT FALSE
+- reward_stage: SMALLINT NOT NULL DEFAULT 0 — 0=가입, 1=첫구매 보상완료, 2=두번째구매 보상완료
 - created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
+- CHECK(reward_stage BETWEEN 0 AND 2)
 
-#### ⑩ daily_checkins
+#### ⑩ daily_checkins (v0.8 개정: 일일 출석 룰렛)
 - id: BIGINT PK GENERATED ALWAYS AS IDENTITY
 - user_id: BIGINT FK → users(id) NOT NULL
 - checkin_date: DATE NOT NULL
-- streak_count: INTEGER NOT NULL DEFAULT 1
-- roulette_earned: BOOLEAN NOT NULL DEFAULT FALSE
+- reward_amount: SMALLINT NOT NULL DEFAULT 0 — 0¢ 또는 1¢
 - created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - UNIQUE(user_id, checkin_date) — 하루 1회
+
+#### ⑩a user_monthly_checkin_caps (v0.8 신규: 숨겨진 월별 한도)
+- id: BIGINT PK GENERATED ALWAYS AS IDENTITY
+- user_id: BIGINT FK → users(id) NOT NULL
+- year_month: TEXT NOT NULL — 예: '2026-03'
+- monthly_cap: SMALLINT NOT NULL — 1~4
+- earned_so_far: SMALLINT NOT NULL DEFAULT 0
+- created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
+- UNIQUE(user_id, year_month)
+- CHECK(monthly_cap BETWEEN 1 AND 4)
+- CHECK(earned_so_far BETWEEN 0 AND monthly_cap)
 
 #### ⑪ roulette_results
 - id: BIGINT PK GENERATED ALWAYS AS IDENTITY

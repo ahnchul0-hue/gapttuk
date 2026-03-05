@@ -1,7 +1,7 @@
 # 값뚝 구현 계획 (plan.md)
 
-> **상태: DRAFT v0.7**
-> 작성일: 2026-03-01 | 갱신: 2026-03-02
+> **상태: DRAFT v0.8**
+> 작성일: 2026-03-01 | 갱신: 2026-03-05
 > 근거 문서: prd.md v0.7 | schema-design.md v0.7 | ui-architecture.md v0.3 | tech-stack-research.md v0.2
 > **이 문서는 STEP 9까지 완료되었습니다. M1-2 에러 처리 + 공통 모듈 구현 완료. M1-3 모델 파일 생성 완료.**
 
@@ -214,7 +214,7 @@ gapttuk/                             # 값뚝 프로젝트 루트
 | R6 | **로컬 서버 장애** (정전/네트워크) | 중간 | 높음 | pg_dump 일일 백업 + UPS 검토. 치명적이면 VPS 이전 |
 | R7 | **쿠팡 이용약관/robots.txt 크롤링 위반** | 중간 | 높음 | robots.txt 준수 + 요청 간격 3~10초 + 파트너스 API 우선 사용. 법적 검토 필요 시 변호사 자문 |
 | R8 | **센트(¢) → 전자금융거래법 선불전자지급수단 등록 의무** | 낮음 | 높음 | 연간 발행액 기준 등록 의무 모니터링. 초기에는 소규모로 법적 임계치 미달 예상. 성장 시 법률 자문 필수 |
-| R9 | **확률형 룰렛 → App Store 3.1.1 확률 공개 의무** | 중간 | 중간 | 앱 내 룰렛 확률 분포 명시 공개 (예: 1¢ 당첨 30%, 미당첨 70%). Apple/Google 심사 가이드라인 사전 준수 |
+| R9 | **확률형 룰렛 → App Store 3.1.1 확률 공개 의무** | 중간 | 중간 | 앱 내 일일 룰렛 확률 공개 (예: 1¢ 당첨 또는 미당첨). 숨겨진 월한도는 내부 운영 로직으로 공개 의무 대상 아님 |
 
 ---
 
@@ -360,7 +360,7 @@ M1-2 (에러+공통) ─────→ M1-4 (인증) ──┘                 
 - [x] reward.rs — referrals, daily_checkins, roulette_results
 - [x] event.rs — events, event_participations
 - [x] card_discount.rs, ai_prediction.rs, popular_search.rs
-> **참고:** point_transactions 모델에 신규 transaction_type 반영: `roulette_checkin`, `roulette_event`, `gifticon_exchange`, `referral_welcome`
+> **참고:** point_transactions 모델에 신규 transaction_type 반영: `daily_checkin`, `roulette_event`, `gifticon_exchange`, `referral_welcome`, `referral_purchase_referred`, `referral_purchase_referrer`
 - [x] security.rs — api_access_logs, blocked_ips (ipnetwork::IpNetwork 사용)
 
 **DoD:** 모든 모델 `cargo build` 통과 + SQLx 컴파일타임 검증 성공
@@ -532,16 +532,23 @@ Flutter 앱 + P0(3개) + P1(8개) = **11개 기능 모두 구현**.
 - [ ] 기프티콘 시세 수집 또는 수동 관리 운영 도구
 - [ ] REWARDS 화면 (센트 잔액 + 기프티콘 교환 + 거래 이력)
 
-#### M5-2. 출석체크 룰렛 (~1주)
-- [ ] 출석체크 API (`POST /api/v1/checkin`, `GET /api/v1/checkin/status`)
-- [ ] 10일 연속 출석 → 룰렛 기회 부여 로직
-- [ ] 룰렛 API (`POST /api/v1/roulette/spin`) — 확률형, 당첨 시 1¢
-- [ ] 월 최대 3회 룰렛 제한
-- [ ] DAILY_CHECKIN 화면 (캘린더 + 룰렛 UI)
+#### M5-2. 일일 출석 룰렛 (~1주)
+- [ ] 출석 + 룰렛 통합 API (`POST /api/v1/checkin`, `GET /api/v1/checkin/status`)
+  - 매일 1회 룰렛 실행, 결과 0¢ 또는 1¢
+- [ ] 숨겨진 월별 한도 시스템 (user_monthly_checkin_caps 테이블)
+  - 매월 초 유저별 월한도(1~4¢) 랜덤 배정 (전체: 1¢=90%, 2¢=6%, 3¢=3%, 4¢=1%)
+  - 신규 유저: 1~2¢ 범위만 배정
+  - 월한도 도달 시 남은 기간 룰렛 결과 항상 0¢ (유저에게 비공개)
+- [ ] 룰렛 결과 기록 (roulette_results) + 센트 자동 적립
+- [ ] DAILY_CHECKIN 화면 (캘린더 + 일일 룰렛 UI)
 
-#### M5-3. 친구 초대 (~1주)
-- [ ] 추천 코드 공유 API + 가입 시 보상 처리 (초대자 3¢ 확정, 피초대자 1¢)
-- [ ] REFERRAL 화면 (코드 공유 + 초대 현황)
+#### M5-3. 친구 초대 (~1.5주)
+- [ ] 추천 보상 단계별 처리 API:
+  - Stage 0 (가입): 피초대자 1¢ 웰컴 보상
+  - Stage 1 (1만원 이상 첫 구매): 피초대자 +1¢, 초대자 2¢
+  - Stage 2 (1만원 이상 두번째 구매): 피초대자 +1¢, 초대자 3¢
+- [ ] 구매 이벤트 훅 — 쿠팡파트너스 구매 확인 시 referrals.reward_stage 갱신 + 보상 지급
+- [ ] REFERRAL 화면 (코드 공유 + 단계별 보상 진행 상황 + 초대 현황)
 
 #### M5-4. 이벤트/퀴즈 룰렛 (~1주)
 - [ ] 이벤트 CRUD API
@@ -756,7 +763,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 ### 수익성 검증 (M5 전 필수)
 
-- **현재 문제:** DAU 1,000 기준 월 수익 ~30만원 vs 센트(¢) 보상 비용 ~224만원 = **적자**
+- **현재 문제:** DAU 1,000 기준 월 수익 ~30만원 vs 센트(¢) 보상 비용 (출석 평균 ~1.2¢/유저/월 + 추천 구매기반) = 재검토 필요
 - **breakeven:** DAU ~8,000명 이상 필요
 - **조치:** M5-1 진입 전 `documents/reward-economics-model.md` 작성 필수
 
@@ -771,7 +778,7 @@ M2 주석 → 구현 → M3 → M4 → M5
 
 | 항목 | 조치 |
 |------|------|
-| 확률형 룰렛 | 앱 내 확률 공개 UI + 이용약관 명시 |
+| 확률형 일일 룰렛 | 앱 내 룰렛 확률 공개 UI + 이용약관 명시. 숨겨진 월한도는 내부 로직 |
 | 센트(¢) = 선불전자지급수단 | 연간 발행액 모니터링, 1억원 초과 시 금융감독원 등록 |
 | 개인정보보호법 | 탈퇴 후 데이터 보존기간 재검토 (현재 1년 → 법정 기준 확인) |
 | 쿠팡 크롤링 | 파트너스 API 우선, scraper 보조. robots.txt 준수 명시 |

@@ -478,7 +478,7 @@ class _TermsPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '추천 코드 입력 시 가입 보너스 센트를 드립니다.',
+            '추천 코드 입력 시 1¢ 웰컴 보너스를 드립니다.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey.shade600,
                 ),
