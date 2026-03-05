@@ -19,6 +19,7 @@ class ProductService {
   Future<({List<Product> products, String? cursor, bool hasMore})> search({
     required String query,
     String? sort,
+    String? filter,
     String? cursor,
     int limit = AppConstants.defaultPageSize,
   }) async {
@@ -28,6 +29,7 @@ class ProductService {
         'q': query,
         'limit': limit,
         if (sort != null) 'sort': sort,
+        if (filter != null) 'filter': filter,
         if (cursor != null) 'cursor': cursor,
       },
     );
@@ -43,40 +45,61 @@ class ProductService {
   }
 
   /// URL로 상품 추가/조회.
-  Future<Product> addByUrl(String url) async {
+  Future<AddProductResponse> addByUrl(String url) async {
     final response = await _api.dio.post(
       '/api/v1/products/url',
       data: {'url': url},
     );
-    return Product.fromJson(response.data['data'] as Map<String, dynamic>);
+    return AddProductResponse.fromJson(
+        response.data['data'] as Map<String, dynamic>);
   }
 
-  /// 가격 히스토리 조회.
-  Future<List<PriceHistory>> getPriceHistory(int productId) async {
-    final response =
-        await _api.dio.get('/api/v1/products/$productId/prices');
-    return (response.data['data'] as List)
-        .map((e) => PriceHistory.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  /// 일별 가격 집계 조회.
-  Future<List<DailyPriceAggregate>> getDailyPrices(
+  /// 가격 히스토리 조회 (커서 페이지네이션).
+  Future<({List<PriceHistory> prices, String? cursor, bool hasMore})>
+      getPriceHistory(
     int productId, {
-    int days = 30,
+    String? from,
+    String? to,
+    String? cursor,
+    int limit = AppConstants.defaultPageSize,
   }) async {
     final response = await _api.dio.get(
-      '/api/v1/products/$productId/prices/daily',
-      queryParameters: {'days': days},
+      '/api/v1/products/$productId/prices',
+      queryParameters: {
+        'limit': limit,
+        if (from != null) 'from': from,
+        if (to != null) 'to': to,
+        if (cursor != null) 'cursor': cursor,
+      },
     );
+    final data = response.data;
+    final prices = (data['data'] as List)
+        .map((e) => PriceHistory.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (
+      prices: prices,
+      cursor: data['cursor'] as String?,
+      hasMore: data['has_more'] as bool? ?? false,
+    );
+  }
+
+  /// 요일별 가격 집계 조회.
+  Future<List<DailyPriceAggregate>> getDailyPrices(int productId) async {
+    final response =
+        await _api.dio.get('/api/v1/products/$productId/prices/daily');
     return (response.data['data'] as List)
         .map((e) => DailyPriceAggregate.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   /// 인기 검색어 조회.
-  Future<List<Map<String, dynamic>>> getPopularSearches() async {
-    final response = await _api.dio.get('/api/v1/products/popular');
-    return (response.data['data'] as List).cast<Map<String, dynamic>>();
+  Future<List<PopularSearch>> getPopularSearches({int limit = 10}) async {
+    final response = await _api.dio.get(
+      '/api/v1/products/popular',
+      queryParameters: {'limit': limit},
+    );
+    return (response.data['data'] as List)
+        .map((e) => PopularSearch.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

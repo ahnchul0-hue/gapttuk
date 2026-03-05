@@ -11,7 +11,6 @@ _User _$UserFromJson(Map<String, dynamic> json) => _User(
   email: json['email'] as String?,
   nickname: json['nickname'] as String?,
   profileImageUrl: json['profile_image_url'] as String?,
-  authProvider: json['auth_provider'] as String,
   referralCode: json['referral_code'] as String?,
 );
 
@@ -20,26 +19,32 @@ Map<String, dynamic> _$UserToJson(_User instance) => <String, dynamic>{
   'email': instance.email,
   'nickname': instance.nickname,
   'profile_image_url': instance.profileImageUrl,
-  'auth_provider': instance.authProvider,
   'referral_code': instance.referralCode,
 };
 
 _AuthTokens _$AuthTokensFromJson(Map<String, dynamic> json) => _AuthTokens(
   accessToken: json['access_token'] as String,
   refreshToken: json['refresh_token'] as String,
+  expiresIn: (json['expires_in'] as num?)?.toInt() ?? 300,
 );
 
 Map<String, dynamic> _$AuthTokensToJson(_AuthTokens instance) =>
     <String, dynamic>{
       'access_token': instance.accessToken,
       'refresh_token': instance.refreshToken,
+      'expires_in': instance.expiresIn,
     };
 
 _AuthResponse _$AuthResponseFromJson(Map<String, dynamic> json) =>
     _AuthResponse(
       user: User.fromJson(json['user'] as Map<String, dynamic>),
       tokens: AuthTokens.fromJson(json['tokens'] as Map<String, dynamic>),
+      isNewUser: json['is_new_user'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$AuthResponseToJson(_AuthResponse instance) =>
-    <String, dynamic>{'user': instance.user, 'tokens': instance.tokens};
+    <String, dynamic>{
+      'user': instance.user,
+      'tokens': instance.tokens,
+      'is_new_user': instance.isNewUser,
+    };

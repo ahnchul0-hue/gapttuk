@@ -191,3 +191,102 @@ final class ProductServiceProvider
 }
 
 String _$productServiceHash() => r'2a0c35f00e641aa3b689753752e8ecba5d0131b5';
+
+/// 알림(Alert) 서비스.
+
+@ProviderFor(alertService)
+const alertServiceProvider = AlertServiceProvider._();
+
+/// 알림(Alert) 서비스.
+
+final class AlertServiceProvider
+    extends $FunctionalProvider<AlertService, AlertService, AlertService>
+    with $Provider<AlertService> {
+  /// 알림(Alert) 서비스.
+  const AlertServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'alertServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$alertServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<AlertService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AlertService create(Ref ref) {
+    return alertService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AlertService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AlertService>(value),
+    );
+  }
+}
+
+String _$alertServiceHash() => r'4ce1b2f8588f1dab644395acbac7c3196b156a9c';
+
+/// 알림(Notification) 서비스.
+
+@ProviderFor(notificationService)
+const notificationServiceProvider = NotificationServiceProvider._();
+
+/// 알림(Notification) 서비스.
+
+final class NotificationServiceProvider
+    extends
+        $FunctionalProvider<
+          NotificationService,
+          NotificationService,
+          NotificationService
+        >
+    with $Provider<NotificationService> {
+  /// 알림(Notification) 서비스.
+  const NotificationServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'notificationServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$notificationServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<NotificationService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  NotificationService create(Ref ref) {
+    return notificationService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(NotificationService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<NotificationService>(value),
+    );
+  }
+}
+
+String _$notificationServiceHash() =>
+    r'a159a1c413079b813281d43470b8a63c0ac13663';

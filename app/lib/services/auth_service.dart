@@ -12,13 +12,29 @@ class AuthService {
         _tokenStorage = tokenStorage;
 
   /// 소셜 로그인 (kakao/google/apple/naver).
+  ///
+  /// Google은 [token]이 id_token(OIDC JWT),
+  /// 나머지 provider는 access_token으로 전달.
   Future<AuthResponse> socialLogin({
     required String provider,
-    required String accessToken,
+    required String token,
+    String? referralCode,
+    bool termsAgreed = false,
+    bool privacyAgreed = false,
+    bool marketingAgreed = false,
   }) async {
+    // Google은 id_token, 나머지는 access_token
+    final tokenKey = provider == 'google' ? 'id_token' : 'access_token';
+
     final response = await _api.dio.post(
       '/api/v1/auth/$provider',
-      data: {'access_token': accessToken},
+      data: {
+        tokenKey: token,
+        if (referralCode != null) 'referral_code': referralCode,
+        'terms_agreed': termsAgreed,
+        'privacy_agreed': privacyAgreed,
+        'marketing_agreed': marketingAgreed,
+      },
     );
     final authResponse =
         AuthResponse.fromJson(response.data['data'] as Map<String, dynamic>);

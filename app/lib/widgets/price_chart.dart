@@ -6,11 +6,13 @@ import 'package:intl/intl.dart';
 import '../config/theme.dart';
 import '../providers/product_provider.dart';
 
-/// 30일 가격 추이 라인 차트.
+/// 요일별 가격 바 차트 — day_of_week 0(일)~6(토).
 class PriceChart extends ConsumerWidget {
   final int productId;
 
   const PriceChart({super.key, required this.productId});
+
+  static const _dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,9 +24,20 @@ class PriceChart extends ConsumerWidget {
           return const Center(child: Text('가격 데이터가 없습니다'));
         }
 
-        final spots = prices.asMap().entries.map((e) {
-          return FlSpot(e.key.toDouble(), e.value.avgPrice.toDouble());
+        // dayOfWeek 기준 정렬 (0=일 ~ 6=토)
+        final sorted = List.of(prices)
+          ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+
+        final spots = sorted.asMap().entries
+            .where((e) => e.value.avgPrice != null)
+            .map((e) {
+          return FlSpot(
+              e.key.toDouble(), e.value.avgPrice!.toDouble());
         }).toList();
+
+        if (spots.isEmpty) {
+          return const Center(child: Text('평균 가격 데이터가 없습니다'));
+        }
 
         final priceFormat = NumberFormat('#,###', 'ko_KR');
 
@@ -45,22 +58,17 @@ class PriceChart extends ConsumerWidget {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: (prices.length / 5).ceilToDouble().clamp(1, 30),
+                  interval: 1,
                   getTitlesWidget: (value, meta) {
                     final idx = value.toInt();
-                    if (idx < 0 || idx >= prices.length) {
+                    if (idx < 0 || idx >= sorted.length) {
                       return const SizedBox.shrink();
                     }
-                    final date = prices[idx].date;
-                    // date 형식: "2026-03-01" → "3/1"
-                    final parts = date.split('-');
-                    if (parts.length >= 3) {
-                      return Text(
-                        '${int.parse(parts[1])}/${int.parse(parts[2])}',
-                        style: const TextStyle(fontSize: 10),
-                      );
-                    }
-                    return Text(date, style: const TextStyle(fontSize: 10));
+                    final dow = sorted[idx].dayOfWeek;
+                    return Text(
+                      _dayLabels[dow.clamp(0, 6)],
+                      style: const TextStyle(fontSize: 10),
+                    );
                   },
                 ),
               ),
@@ -102,7 +110,7 @@ class PriceChart extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('차트 로드 실패: $e')),
+      error: (e, st) => Center(child: Text('차트 로드 실패: $e')),
     );
   }
 }

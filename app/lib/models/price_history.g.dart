@@ -26,17 +26,19 @@ Map<String, dynamic> _$PriceHistoryToJson(_PriceHistory instance) =>
 
 _DailyPriceAggregate _$DailyPriceAggregateFromJson(Map<String, dynamic> json) =>
     _DailyPriceAggregate(
-      date: json['date'] as String,
-      minPrice: (json['min_price'] as num).toInt(),
-      maxPrice: (json['max_price'] as num).toInt(),
-      avgPrice: (json['avg_price'] as num).toInt(),
+      dayOfWeek: (json['day_of_week'] as num).toInt(),
+      avgPrice: (json['avg_price'] as num?)?.toInt(),
+      minPrice: (json['min_price'] as num?)?.toInt(),
+      maxPrice: (json['max_price'] as num?)?.toInt(),
+      sampleCount: (json['sample_count'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$DailyPriceAggregateToJson(
   _DailyPriceAggregate instance,
 ) => <String, dynamic>{
-  'date': instance.date,
+  'day_of_week': instance.dayOfWeek,
+  'avg_price': instance.avgPrice,
   'min_price': instance.minPrice,
   'max_price': instance.maxPrice,
-  'avg_price': instance.avgPrice,
+  'sample_count': instance.sampleCount,
 };

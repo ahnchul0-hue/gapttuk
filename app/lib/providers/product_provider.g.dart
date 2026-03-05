@@ -86,12 +86,12 @@ final class ProductDetailFamily extends $Family
   String toString() => r'productDetailProvider';
 }
 
-/// 일별 가격 집계 — 가격 차트용.
+/// 요일별 가격 집계 — 가격 차트용.
 
 @ProviderFor(dailyPrices)
 const dailyPricesProvider = DailyPricesFamily._();
 
-/// 일별 가격 집계 — 가격 차트용.
+/// 요일별 가격 집계 — 가격 차트용.
 
 final class DailyPricesProvider
     extends
@@ -103,10 +103,10 @@ final class DailyPricesProvider
     with
         $FutureModifier<List<DailyPriceAggregate>>,
         $FutureProvider<List<DailyPriceAggregate>> {
-  /// 일별 가격 집계 — 가격 차트용.
+  /// 요일별 가격 집계 — 가격 차트용.
   const DailyPricesProvider._({
     required DailyPricesFamily super.from,
-    required (int, {int days}) super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'dailyPricesProvider',
@@ -122,7 +122,7 @@ final class DailyPricesProvider
   String toString() {
     return r'dailyPricesProvider'
         ''
-        '$argument';
+        '($argument)';
   }
 
   @$internal
@@ -133,8 +133,8 @@ final class DailyPricesProvider
 
   @override
   FutureOr<List<DailyPriceAggregate>> create(Ref ref) {
-    final argument = this.argument as (int, {int days});
-    return dailyPrices(ref, argument.$1, days: argument.days);
+    final argument = this.argument as int;
+    return dailyPrices(ref, argument);
   }
 
   @override
@@ -148,16 +148,12 @@ final class DailyPricesProvider
   }
 }
 
-String _$dailyPricesHash() => r'3dff02a036969407c26fe94e362679da7f746241';
+String _$dailyPricesHash() => r'021c5aa5cfec0b36123a283dba3887287dbb2793';
 
-/// 일별 가격 집계 — 가격 차트용.
+/// 요일별 가격 집계 — 가격 차트용.
 
 final class DailyPricesFamily extends $Family
-    with
-        $FunctionalFamilyOverride<
-          FutureOr<List<DailyPriceAggregate>>,
-          (int, {int days})
-        > {
+    with $FunctionalFamilyOverride<FutureOr<List<DailyPriceAggregate>>, int> {
   const DailyPricesFamily._()
     : super(
         retry: null,
@@ -167,10 +163,10 @@ final class DailyPricesFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 일별 가격 집계 — 가격 차트용.
+  /// 요일별 가격 집계 — 가격 차트용.
 
-  DailyPricesProvider call(int productId, {int days = 30}) =>
-      DailyPricesProvider._(argument: (productId, days: days), from: this);
+  DailyPricesProvider call(int productId) =>
+      DailyPricesProvider._(argument: productId, from: this);
 
   @override
   String toString() => r'dailyPricesProvider';
@@ -186,13 +182,13 @@ const popularSearchesProvider = PopularSearchesProvider._();
 final class PopularSearchesProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<Map<String, dynamic>>>,
-          List<Map<String, dynamic>>,
-          FutureOr<List<Map<String, dynamic>>>
+          AsyncValue<List<PopularSearch>>,
+          List<PopularSearch>,
+          FutureOr<List<PopularSearch>>
         >
     with
-        $FutureModifier<List<Map<String, dynamic>>>,
-        $FutureProvider<List<Map<String, dynamic>>> {
+        $FutureModifier<List<PopularSearch>>,
+        $FutureProvider<List<PopularSearch>> {
   /// 인기 검색어.
   const PopularSearchesProvider._()
     : super(
@@ -210,14 +206,14 @@ final class PopularSearchesProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<Map<String, dynamic>>> $createElement(
+  $FutureProviderElement<List<PopularSearch>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<Map<String, dynamic>>> create(Ref ref) {
+  FutureOr<List<PopularSearch>> create(Ref ref) {
     return popularSearches(ref);
   }
 }
 
-String _$popularSearchesHash() => r'e61445a51e57dcee51a1952550bae9f9ba068adb';
+String _$popularSearchesHash() => r'267d2db7a534a410b7c211da8d27f26370c9f581';

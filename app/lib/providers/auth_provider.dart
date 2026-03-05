@@ -12,16 +12,25 @@ class AuthState extends _$AuthState {
   User? build() => null;
 
   /// 소셜 로그인 실행.
-  Future<void> login({
+  Future<AuthResponse> login({
     required String provider,
-    required String accessToken,
+    required String token,
+    String? referralCode,
+    bool termsAgreed = false,
+    bool privacyAgreed = false,
+    bool marketingAgreed = false,
   }) async {
     final authService = ref.read(authServiceProvider);
     final response = await authService.socialLogin(
       provider: provider,
-      accessToken: accessToken,
+      token: token,
+      referralCode: referralCode,
+      termsAgreed: termsAgreed,
+      privacyAgreed: privacyAgreed,
+      marketingAgreed: marketingAgreed,
     );
     state = response.user;
+    return response;
   }
 
   /// 현재 사용자 정보 새로고침.

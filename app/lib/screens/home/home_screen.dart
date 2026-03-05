@@ -59,19 +59,36 @@ class HomeScreen extends ConsumerWidget {
                           .take(10)
                           .map((s) => ListTile(
                                 leading: CircleAvatar(
-                                  child: Text('${s['rank'] ?? ''}'),
+                                  child: Text('${s.rank}'),
                                 ),
-                                title: Text(s['keyword'] as String? ?? ''),
+                                title: Text(s.keyword),
+                                trailing: s.trend != null
+                                    ? _trendIcon(s.trend!)
+                                    : null,
                                 dense: true,
                               ))
                           .toList(),
                     ),
               loading: () => const LoadingSkeleton(itemCount: 5),
-              error: (e, _) => Center(child: Text('오류: $e')),
+              error: (e, st) => Center(child: Text('오류: $e')),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _trendIcon(String trend) {
+    switch (trend) {
+      case 'up':
+        return const Icon(Icons.trending_up, color: Colors.red, size: 18);
+      case 'down':
+        return const Icon(Icons.trending_down, color: Colors.blue, size: 18);
+      case 'new':
+        return const Text('NEW',
+            style: TextStyle(color: Colors.orange, fontSize: 12));
+      default:
+        return const Icon(Icons.trending_flat, color: Colors.grey, size: 18);
+    }
   }
 }

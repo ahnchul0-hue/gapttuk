@@ -3,13 +3,41 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/home/home_screen.dart';
 import '../screens/search/search_screen.dart';
-import '../screens/product/product_detail_screen.dart';
+import '../screens/favorites/favorites_screen.dart';
 import '../screens/alert/alert_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/my/my_page_screen.dart';
+import '../screens/my/settings_screen.dart';
+import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/product/product_detail_screen.dart';
+import '../services/token_storage.dart';
+
+/// 인증이 필요한 경로 목록.
+const _authRequiredPaths = {'/alerts', '/favorites', '/my'};
 
 /// 앱 라우트 정의.
 final appRouter = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) async {
+    final path = state.matchedLocation;
+
+    // 인증 필요 경로인지 확인 (정확 일치 또는 하위 경로)
+    final needsAuth = _authRequiredPaths.any(
+      (p) => path == p || path.startsWith('$p/'),
+    );
+
+    if (!needsAuth) return null;
+
+    final storage = TokenStorage();
+    final token = await storage.getAccessToken();
+    if (token == null || token.isEmpty) {
+      // from 파라미터로 로그인 후 원래 경로로 복귀 가능하게 저장
+      final from = Uri.encodeComponent(path);
+      return '/login?from=$from';
+    }
+
+    return null;
+  },
   routes: [
     // 하단 탭 네비게이션 셸
     StatefulShellRoute.indexedStack(
@@ -34,12 +62,36 @@ final appRouter = GoRouter(
             ),
           ],
         ),
-        // 탭 3: 알림
+        // 탭 3: 즐겨찾기 (인증 필요)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/favorites',
+              builder: (context, state) => const FavoritesScreen(),
+            ),
+          ],
+        ),
+        // 탭 4: 알림 (인증 필요)
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/alerts',
               builder: (context, state) => const AlertScreen(),
+            ),
+          ],
+        ),
+        // 탭 5: 마이페이지 (인증 필요)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/my',
+              builder: (context, state) => const MyPageScreen(),
+              routes: [
+                GoRoute(
+                  path: 'settings',
+                  builder: (context, state) => const SettingsScreen(),
+                ),
+              ],
             ),
           ],
         ),
@@ -56,6 +108,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    // 온보딩
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
     ),
   ],
 );
@@ -88,9 +145,19 @@ class _ScaffoldWithNav extends StatelessWidget {
             label: '검색',
           ),
           NavigationDestination(
+            icon: Icon(Icons.favorite_outline),
+            selectedIcon: Icon(Icons.favorite),
+            label: '즐겨찾기',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.notifications_outlined),
             selectedIcon: Icon(Icons.notifications),
             label: '알림',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: '마이페이지',
           ),
         ],
       ),

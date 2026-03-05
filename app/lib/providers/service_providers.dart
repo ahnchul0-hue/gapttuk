@@ -1,7 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../services/alert_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/product_service.dart';
 import '../services/token_storage.dart';
 
@@ -31,4 +33,18 @@ AuthService authService(Ref ref) {
 ProductService productService(Ref ref) {
   final api = ref.watch(apiClientProvider);
   return ProductService(api: api);
+}
+
+/// 알림(Alert) 서비스.
+@Riverpod(keepAlive: true)
+AlertService alertService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return AlertService(api: api);
+}
+
+/// 알림(Notification) 서비스.
+@Riverpod(keepAlive: true)
+NotificationService notificationService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return NotificationService(api: api);
 }

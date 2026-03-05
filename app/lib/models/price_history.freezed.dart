@@ -290,7 +290,7 @@ as DateTime,
 /// @nodoc
 mixin _$DailyPriceAggregate {
 
- String get date;@JsonKey(name: 'min_price') int get minPrice;@JsonKey(name: 'max_price') int get maxPrice;@JsonKey(name: 'avg_price') int get avgPrice;
+@JsonKey(name: 'day_of_week') int get dayOfWeek;@JsonKey(name: 'avg_price') int? get avgPrice;@JsonKey(name: 'min_price') int? get minPrice;@JsonKey(name: 'max_price') int? get maxPrice;@JsonKey(name: 'sample_count') int get sampleCount;
 /// Create a copy of DailyPriceAggregate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,16 +303,16 @@ $DailyPriceAggregateCopyWith<DailyPriceAggregate> get copyWith => _$DailyPriceAg
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyPriceAggregate&&(identical(other.date, date) || other.date == date)&&(identical(other.minPrice, minPrice) || other.minPrice == minPrice)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.avgPrice, avgPrice) || other.avgPrice == avgPrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyPriceAggregate&&(identical(other.dayOfWeek, dayOfWeek) || other.dayOfWeek == dayOfWeek)&&(identical(other.avgPrice, avgPrice) || other.avgPrice == avgPrice)&&(identical(other.minPrice, minPrice) || other.minPrice == minPrice)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.sampleCount, sampleCount) || other.sampleCount == sampleCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,date,minPrice,maxPrice,avgPrice);
+int get hashCode => Object.hash(runtimeType,dayOfWeek,avgPrice,minPrice,maxPrice,sampleCount);
 
 @override
 String toString() {
-  return 'DailyPriceAggregate(date: $date, minPrice: $minPrice, maxPrice: $maxPrice, avgPrice: $avgPrice)';
+  return 'DailyPriceAggregate(dayOfWeek: $dayOfWeek, avgPrice: $avgPrice, minPrice: $minPrice, maxPrice: $maxPrice, sampleCount: $sampleCount)';
 }
 
 
@@ -323,7 +323,7 @@ abstract mixin class $DailyPriceAggregateCopyWith<$Res>  {
   factory $DailyPriceAggregateCopyWith(DailyPriceAggregate value, $Res Function(DailyPriceAggregate) _then) = _$DailyPriceAggregateCopyWithImpl;
 @useResult
 $Res call({
- String date,@JsonKey(name: 'min_price') int minPrice,@JsonKey(name: 'max_price') int maxPrice,@JsonKey(name: 'avg_price') int avgPrice
+@JsonKey(name: 'day_of_week') int dayOfWeek,@JsonKey(name: 'avg_price') int? avgPrice,@JsonKey(name: 'min_price') int? minPrice,@JsonKey(name: 'max_price') int? maxPrice,@JsonKey(name: 'sample_count') int sampleCount
 });
 
 
@@ -340,12 +340,13 @@ class _$DailyPriceAggregateCopyWithImpl<$Res>
 
 /// Create a copy of DailyPriceAggregate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? minPrice = null,Object? maxPrice = null,Object? avgPrice = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dayOfWeek = null,Object? avgPrice = freezed,Object? minPrice = freezed,Object? maxPrice = freezed,Object? sampleCount = null,}) {
   return _then(_self.copyWith(
-date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as String,minPrice: null == minPrice ? _self.minPrice : minPrice // ignore: cast_nullable_to_non_nullable
-as int,maxPrice: null == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
-as int,avgPrice: null == avgPrice ? _self.avgPrice : avgPrice // ignore: cast_nullable_to_non_nullable
+dayOfWeek: null == dayOfWeek ? _self.dayOfWeek : dayOfWeek // ignore: cast_nullable_to_non_nullable
+as int,avgPrice: freezed == avgPrice ? _self.avgPrice : avgPrice // ignore: cast_nullable_to_non_nullable
+as int?,minPrice: freezed == minPrice ? _self.minPrice : minPrice // ignore: cast_nullable_to_non_nullable
+as int?,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
+as int?,sampleCount: null == sampleCount ? _self.sampleCount : sampleCount // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }
@@ -431,10 +432,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String date, @JsonKey(name: 'min_price')  int minPrice, @JsonKey(name: 'max_price')  int maxPrice, @JsonKey(name: 'avg_price')  int avgPrice)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'day_of_week')  int dayOfWeek, @JsonKey(name: 'avg_price')  int? avgPrice, @JsonKey(name: 'min_price')  int? minPrice, @JsonKey(name: 'max_price')  int? maxPrice, @JsonKey(name: 'sample_count')  int sampleCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DailyPriceAggregate() when $default != null:
-return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
+return $default(_that.dayOfWeek,_that.avgPrice,_that.minPrice,_that.maxPrice,_that.sampleCount);case _:
   return orElse();
 
 }
@@ -452,10 +453,10 @@ return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String date, @JsonKey(name: 'min_price')  int minPrice, @JsonKey(name: 'max_price')  int maxPrice, @JsonKey(name: 'avg_price')  int avgPrice)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'day_of_week')  int dayOfWeek, @JsonKey(name: 'avg_price')  int? avgPrice, @JsonKey(name: 'min_price')  int? minPrice, @JsonKey(name: 'max_price')  int? maxPrice, @JsonKey(name: 'sample_count')  int sampleCount)  $default,) {final _that = this;
 switch (_that) {
 case _DailyPriceAggregate():
-return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
+return $default(_that.dayOfWeek,_that.avgPrice,_that.minPrice,_that.maxPrice,_that.sampleCount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -472,10 +473,10 @@ return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String date, @JsonKey(name: 'min_price')  int minPrice, @JsonKey(name: 'max_price')  int maxPrice, @JsonKey(name: 'avg_price')  int avgPrice)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'day_of_week')  int dayOfWeek, @JsonKey(name: 'avg_price')  int? avgPrice, @JsonKey(name: 'min_price')  int? minPrice, @JsonKey(name: 'max_price')  int? maxPrice, @JsonKey(name: 'sample_count')  int sampleCount)?  $default,) {final _that = this;
 switch (_that) {
 case _DailyPriceAggregate() when $default != null:
-return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
+return $default(_that.dayOfWeek,_that.avgPrice,_that.minPrice,_that.maxPrice,_that.sampleCount);case _:
   return null;
 
 }
@@ -487,13 +488,14 @@ return $default(_that.date,_that.minPrice,_that.maxPrice,_that.avgPrice);case _:
 @JsonSerializable()
 
 class _DailyPriceAggregate implements DailyPriceAggregate {
-  const _DailyPriceAggregate({required this.date, @JsonKey(name: 'min_price') required this.minPrice, @JsonKey(name: 'max_price') required this.maxPrice, @JsonKey(name: 'avg_price') required this.avgPrice});
+  const _DailyPriceAggregate({@JsonKey(name: 'day_of_week') required this.dayOfWeek, @JsonKey(name: 'avg_price') this.avgPrice, @JsonKey(name: 'min_price') this.minPrice, @JsonKey(name: 'max_price') this.maxPrice, @JsonKey(name: 'sample_count') this.sampleCount = 0});
   factory _DailyPriceAggregate.fromJson(Map<String, dynamic> json) => _$DailyPriceAggregateFromJson(json);
 
-@override final  String date;
-@override@JsonKey(name: 'min_price') final  int minPrice;
-@override@JsonKey(name: 'max_price') final  int maxPrice;
-@override@JsonKey(name: 'avg_price') final  int avgPrice;
+@override@JsonKey(name: 'day_of_week') final  int dayOfWeek;
+@override@JsonKey(name: 'avg_price') final  int? avgPrice;
+@override@JsonKey(name: 'min_price') final  int? minPrice;
+@override@JsonKey(name: 'max_price') final  int? maxPrice;
+@override@JsonKey(name: 'sample_count') final  int sampleCount;
 
 /// Create a copy of DailyPriceAggregate
 /// with the given fields replaced by the non-null parameter values.
@@ -508,16 +510,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyPriceAggregate&&(identical(other.date, date) || other.date == date)&&(identical(other.minPrice, minPrice) || other.minPrice == minPrice)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.avgPrice, avgPrice) || other.avgPrice == avgPrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyPriceAggregate&&(identical(other.dayOfWeek, dayOfWeek) || other.dayOfWeek == dayOfWeek)&&(identical(other.avgPrice, avgPrice) || other.avgPrice == avgPrice)&&(identical(other.minPrice, minPrice) || other.minPrice == minPrice)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.sampleCount, sampleCount) || other.sampleCount == sampleCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,date,minPrice,maxPrice,avgPrice);
+int get hashCode => Object.hash(runtimeType,dayOfWeek,avgPrice,minPrice,maxPrice,sampleCount);
 
 @override
 String toString() {
-  return 'DailyPriceAggregate(date: $date, minPrice: $minPrice, maxPrice: $maxPrice, avgPrice: $avgPrice)';
+  return 'DailyPriceAggregate(dayOfWeek: $dayOfWeek, avgPrice: $avgPrice, minPrice: $minPrice, maxPrice: $maxPrice, sampleCount: $sampleCount)';
 }
 
 
@@ -528,7 +530,7 @@ abstract mixin class _$DailyPriceAggregateCopyWith<$Res> implements $DailyPriceA
   factory _$DailyPriceAggregateCopyWith(_DailyPriceAggregate value, $Res Function(_DailyPriceAggregate) _then) = __$DailyPriceAggregateCopyWithImpl;
 @override @useResult
 $Res call({
- String date,@JsonKey(name: 'min_price') int minPrice,@JsonKey(name: 'max_price') int maxPrice,@JsonKey(name: 'avg_price') int avgPrice
+@JsonKey(name: 'day_of_week') int dayOfWeek,@JsonKey(name: 'avg_price') int? avgPrice,@JsonKey(name: 'min_price') int? minPrice,@JsonKey(name: 'max_price') int? maxPrice,@JsonKey(name: 'sample_count') int sampleCount
 });
 
 
@@ -545,12 +547,13 @@ class __$DailyPriceAggregateCopyWithImpl<$Res>
 
 /// Create a copy of DailyPriceAggregate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? minPrice = null,Object? maxPrice = null,Object? avgPrice = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dayOfWeek = null,Object? avgPrice = freezed,Object? minPrice = freezed,Object? maxPrice = freezed,Object? sampleCount = null,}) {
   return _then(_DailyPriceAggregate(
-date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as String,minPrice: null == minPrice ? _self.minPrice : minPrice // ignore: cast_nullable_to_non_nullable
-as int,maxPrice: null == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
-as int,avgPrice: null == avgPrice ? _self.avgPrice : avgPrice // ignore: cast_nullable_to_non_nullable
+dayOfWeek: null == dayOfWeek ? _self.dayOfWeek : dayOfWeek // ignore: cast_nullable_to_non_nullable
+as int,avgPrice: freezed == avgPrice ? _self.avgPrice : avgPrice // ignore: cast_nullable_to_non_nullable
+as int?,minPrice: freezed == minPrice ? _self.minPrice : minPrice // ignore: cast_nullable_to_non_nullable
+as int?,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
+as int?,sampleCount: null == sampleCount ? _self.sampleCount : sampleCount // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

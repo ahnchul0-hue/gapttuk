@@ -17,13 +17,15 @@ abstract class PriceHistory with _$PriceHistory {
       _$PriceHistoryFromJson(json);
 }
 
+/// 요일별 가격 집계 — day_of_week: 0(일)~6(토), PostgreSQL EXTRACT(DOW)
 @freezed
 abstract class DailyPriceAggregate with _$DailyPriceAggregate {
   const factory DailyPriceAggregate({
-    required String date,
-    @JsonKey(name: 'min_price') required int minPrice,
-    @JsonKey(name: 'max_price') required int maxPrice,
-    @JsonKey(name: 'avg_price') required int avgPrice,
+    @JsonKey(name: 'day_of_week') required int dayOfWeek,
+    @JsonKey(name: 'avg_price') int? avgPrice,
+    @JsonKey(name: 'min_price') int? minPrice,
+    @JsonKey(name: 'max_price') int? maxPrice,
+    @JsonKey(name: 'sample_count') @Default(0) int sampleCount,
   }) = _DailyPriceAggregate;
 
   factory DailyPriceAggregate.fromJson(Map<String, dynamic> json) =>

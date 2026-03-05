@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ApiResponse<T> {
 
- String get status; T get data;
+ bool get ok; T get data;
 /// Create a copy of ApiResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ApiResponseCopyWith<T, ApiResponse<T>> get copyWith => _$ApiResponseCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiResponse<T>&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.data, data));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiResponse<T>&&(identical(other.ok, ok) || other.ok == ok)&&const DeepCollectionEquality().equals(other.data, data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(data));
+int get hashCode => Object.hash(runtimeType,ok,const DeepCollectionEquality().hash(data));
 
 @override
 String toString() {
-  return 'ApiResponse<$T>(status: $status, data: $data)';
+  return 'ApiResponse<$T>(ok: $ok, data: $data)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ApiResponseCopyWith<T,$Res>  {
   factory $ApiResponseCopyWith(ApiResponse<T> value, $Res Function(ApiResponse<T>) _then) = _$ApiResponseCopyWithImpl;
 @useResult
 $Res call({
- String status, T data
+ bool ok, T data
 });
 
 
@@ -65,10 +65,10 @@ class _$ApiResponseCopyWithImpl<T,$Res>
 
 /// Create a copy of ApiResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? data = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? ok = null,Object? data = freezed,}) {
   return _then(_self.copyWith(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+ok: null == ok ? _self.ok : ok // ignore: cast_nullable_to_non_nullable
+as bool,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as T,
   ));
 }
@@ -154,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status,  T data)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool ok,  T data)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ApiResponse() when $default != null:
-return $default(_that.status,_that.data);case _:
+return $default(_that.ok,_that.data);case _:
   return orElse();
 
 }
@@ -175,10 +175,10 @@ return $default(_that.status,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status,  T data)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool ok,  T data)  $default,) {final _that = this;
 switch (_that) {
 case _ApiResponse():
-return $default(_that.status,_that.data);case _:
+return $default(_that.ok,_that.data);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +195,10 @@ return $default(_that.status,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status,  T data)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool ok,  T data)?  $default,) {final _that = this;
 switch (_that) {
 case _ApiResponse() when $default != null:
-return $default(_that.status,_that.data);case _:
+return $default(_that.ok,_that.data);case _:
   return null;
 
 }
@@ -210,10 +210,10 @@ return $default(_that.status,_that.data);case _:
 @JsonSerializable(genericArgumentFactories: true)
 
 class _ApiResponse<T> implements ApiResponse<T> {
-  const _ApiResponse({required this.status, required this.data});
+  const _ApiResponse({required this.ok, required this.data});
   factory _ApiResponse.fromJson(Map<String, dynamic> json,T Function(Object?) fromJsonT) => _$ApiResponseFromJson(json,fromJsonT);
 
-@override final  String status;
+@override final  bool ok;
 @override final  T data;
 
 /// Create a copy of ApiResponse
@@ -229,16 +229,16 @@ Map<String, dynamic> toJson(Object? Function(T) toJsonT) {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiResponse<T>&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.data, data));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiResponse<T>&&(identical(other.ok, ok) || other.ok == ok)&&const DeepCollectionEquality().equals(other.data, data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(data));
+int get hashCode => Object.hash(runtimeType,ok,const DeepCollectionEquality().hash(data));
 
 @override
 String toString() {
-  return 'ApiResponse<$T>(status: $status, data: $data)';
+  return 'ApiResponse<$T>(ok: $ok, data: $data)';
 }
 
 
@@ -249,7 +249,7 @@ abstract mixin class _$ApiResponseCopyWith<T,$Res> implements $ApiResponseCopyWi
   factory _$ApiResponseCopyWith(_ApiResponse<T> value, $Res Function(_ApiResponse<T>) _then) = __$ApiResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String status, T data
+ bool ok, T data
 });
 
 
@@ -266,10 +266,10 @@ class __$ApiResponseCopyWithImpl<T,$Res>
 
 /// Create a copy of ApiResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? data = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? ok = null,Object? data = freezed,}) {
   return _then(_ApiResponse<T>(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+ok: null == ok ? _self.ok : ok // ignore: cast_nullable_to_non_nullable
+as bool,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as T,
   ));
 }
@@ -281,7 +281,7 @@ as T,
 /// @nodoc
 mixin _$PaginatedResponse<T> {
 
- String get status; List<T> get data; String? get cursor;@JsonKey(name: 'has_more') bool get hasMore;
+ bool get ok; List<T> get data; String? get cursor;@JsonKey(name: 'has_more') bool get hasMore;
 /// Create a copy of PaginatedResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -294,16 +294,16 @@ $PaginatedResponseCopyWith<T, PaginatedResponse<T>> get copyWith => _$PaginatedR
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaginatedResponse<T>&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.data, data)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaginatedResponse<T>&&(identical(other.ok, ok) || other.ok == ok)&&const DeepCollectionEquality().equals(other.data, data)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(data),cursor,hasMore);
+int get hashCode => Object.hash(runtimeType,ok,const DeepCollectionEquality().hash(data),cursor,hasMore);
 
 @override
 String toString() {
-  return 'PaginatedResponse<$T>(status: $status, data: $data, cursor: $cursor, hasMore: $hasMore)';
+  return 'PaginatedResponse<$T>(ok: $ok, data: $data, cursor: $cursor, hasMore: $hasMore)';
 }
 
 
@@ -314,7 +314,7 @@ abstract mixin class $PaginatedResponseCopyWith<T,$Res>  {
   factory $PaginatedResponseCopyWith(PaginatedResponse<T> value, $Res Function(PaginatedResponse<T>) _then) = _$PaginatedResponseCopyWithImpl;
 @useResult
 $Res call({
- String status, List<T> data, String? cursor,@JsonKey(name: 'has_more') bool hasMore
+ bool ok, List<T> data, String? cursor,@JsonKey(name: 'has_more') bool hasMore
 });
 
 
@@ -331,10 +331,10 @@ class _$PaginatedResponseCopyWithImpl<T,$Res>
 
 /// Create a copy of PaginatedResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? data = null,Object? cursor = freezed,Object? hasMore = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? ok = null,Object? data = null,Object? cursor = freezed,Object? hasMore = null,}) {
   return _then(_self.copyWith(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+ok: null == ok ? _self.ok : ok // ignore: cast_nullable_to_non_nullable
+as bool,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as List<T>,cursor: freezed == cursor ? _self.cursor : cursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -422,10 +422,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool ok,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PaginatedResponse() when $default != null:
-return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
+return $default(_that.ok,_that.data,_that.cursor,_that.hasMore);case _:
   return orElse();
 
 }
@@ -443,10 +443,10 @@ return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool ok,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)  $default,) {final _that = this;
 switch (_that) {
 case _PaginatedResponse():
-return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
+return $default(_that.ok,_that.data,_that.cursor,_that.hasMore);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -463,10 +463,10 @@ return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool ok,  List<T> data,  String? cursor, @JsonKey(name: 'has_more')  bool hasMore)?  $default,) {final _that = this;
 switch (_that) {
 case _PaginatedResponse() when $default != null:
-return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
+return $default(_that.ok,_that.data,_that.cursor,_that.hasMore);case _:
   return null;
 
 }
@@ -478,10 +478,10 @@ return $default(_that.status,_that.data,_that.cursor,_that.hasMore);case _:
 @JsonSerializable(genericArgumentFactories: true)
 
 class _PaginatedResponse<T> implements PaginatedResponse<T> {
-  const _PaginatedResponse({required this.status, required final  List<T> data, this.cursor, @JsonKey(name: 'has_more') this.hasMore = false}): _data = data;
+  const _PaginatedResponse({required this.ok, required final  List<T> data, this.cursor, @JsonKey(name: 'has_more') this.hasMore = false}): _data = data;
   factory _PaginatedResponse.fromJson(Map<String, dynamic> json,T Function(Object?) fromJsonT) => _$PaginatedResponseFromJson(json,fromJsonT);
 
-@override final  String status;
+@override final  bool ok;
  final  List<T> _data;
 @override List<T> get data {
   if (_data is EqualUnmodifiableListView) return _data;
@@ -505,16 +505,16 @@ Map<String, dynamic> toJson(Object? Function(T) toJsonT) {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaginatedResponse<T>&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._data, _data)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaginatedResponse<T>&&(identical(other.ok, ok) || other.ok == ok)&&const DeepCollectionEquality().equals(other._data, _data)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(_data),cursor,hasMore);
+int get hashCode => Object.hash(runtimeType,ok,const DeepCollectionEquality().hash(_data),cursor,hasMore);
 
 @override
 String toString() {
-  return 'PaginatedResponse<$T>(status: $status, data: $data, cursor: $cursor, hasMore: $hasMore)';
+  return 'PaginatedResponse<$T>(ok: $ok, data: $data, cursor: $cursor, hasMore: $hasMore)';
 }
 
 
@@ -525,7 +525,7 @@ abstract mixin class _$PaginatedResponseCopyWith<T,$Res> implements $PaginatedRe
   factory _$PaginatedResponseCopyWith(_PaginatedResponse<T> value, $Res Function(_PaginatedResponse<T>) _then) = __$PaginatedResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String status, List<T> data, String? cursor,@JsonKey(name: 'has_more') bool hasMore
+ bool ok, List<T> data, String? cursor,@JsonKey(name: 'has_more') bool hasMore
 });
 
 
@@ -542,10 +542,10 @@ class __$PaginatedResponseCopyWithImpl<T,$Res>
 
 /// Create a copy of PaginatedResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? data = null,Object? cursor = freezed,Object? hasMore = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? ok = null,Object? data = null,Object? cursor = freezed,Object? hasMore = null,}) {
   return _then(_PaginatedResponse<T>(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,data: null == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
+ok: null == ok ? _self.ok : ok // ignore: cast_nullable_to_non_nullable
+as bool,data: null == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
 as List<T>,cursor: freezed == cursor ? _self.cursor : cursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,

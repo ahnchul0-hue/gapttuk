@@ -13,22 +13,19 @@ Future<Product> productDetail(Ref ref, int productId) async {
   return service.getProduct(productId);
 }
 
-/// 일별 가격 집계 — 가격 차트용.
+/// 요일별 가격 집계 — 가격 차트용.
 @riverpod
 Future<List<DailyPriceAggregate>> dailyPrices(
   Ref ref,
-  int productId, {
-  int days = 30,
-}) async {
+  int productId,
+) async {
   final service = ref.watch(productServiceProvider);
-  return service.getDailyPrices(productId, days: days);
+  return service.getDailyPrices(productId);
 }
 
 /// 인기 검색어.
 @riverpod
-Future<List<Map<String, dynamic>>> popularSearches(
-  Ref ref,
-) async {
+Future<List<PopularSearch>> popularSearches(Ref ref) async {
   final service = ref.watch(productServiceProvider);
   return service.getPopularSearches();
 }
