@@ -137,6 +137,10 @@ class ProductDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // AI 가격 예측
+            _PredictionCard(productId: productId),
             const SizedBox(height: 24),
 
             // 가격 차트
@@ -152,7 +156,7 @@ class ProductDetailScreen extends ConsumerWidget {
           ],
         ),
         loading: () => const LoadingSkeleton(itemCount: 6),
-        error: (e, _) => Center(child: Text('오류: $e')),
+        error: (e, _) => Center(child: Text(friendlyErrorMessage(e))),
       ),
     );
   }
@@ -315,6 +319,67 @@ class _StatColumn extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// AI 가격 예측 카드 — Riverpod provider로 캐싱.
+class _PredictionCard extends ConsumerWidget {
+  final int productId;
+  const _PredictionCard({required this.productId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final predictionAsync = ref.watch(productPredictionProvider(productId));
+
+    return predictionAsync.when(
+      data: (data) {
+        if (data.isEmpty) return const SizedBox.shrink();
+        final direction =
+            (data['predicted_direction'] as String?) ?? 'stable';
+        final confidence =
+            (data['confidence'] as num?)?.toDouble() ?? 0.0;
+        final confidencePct = (confidence * 100).round();
+
+        final (icon, iconColor, directionText) = switch (direction) {
+          'up' => (Icons.trending_up, AppTheme.priceUp, '상승'),
+          'down' => (Icons.trending_down, AppTheme.priceDown, '하락'),
+          _ => (Icons.trending_flat, Colors.grey, '보합'),
+        };
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(icon, color: iconColor, size: 32),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'AI 가격 예측',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '향후 가격이 $directionText할 것으로 예측됩니다 (신뢰도 $confidencePct%)',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

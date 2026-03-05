@@ -62,7 +62,7 @@ class MyPageScreen extends ConsumerWidget {
             leading: const Icon(Icons.settings_outlined),
             title: const Text('설정'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/my/settings'),
+            onTap: () => context.push('/my/settings'),
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

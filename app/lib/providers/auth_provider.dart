@@ -30,6 +30,8 @@ class AuthState extends _$AuthState {
       marketingAgreed: marketingAgreed,
     );
     state = response.user;
+    // 로그인 성공 후 FCM 토큰 등록 시도
+    ref.read(pushServiceProvider).registerDeviceIfNeeded();
     return response;
   }
 
@@ -38,6 +40,8 @@ class AuthState extends _$AuthState {
     final authService = ref.read(authServiceProvider);
     try {
       state = await authService.me();
+      // 세션 복원 후 FCM 토큰 등록 시도
+      ref.read(pushServiceProvider).registerDeviceIfNeeded();
     } catch (_) {
       state = null;
     }
@@ -47,6 +51,13 @@ class AuthState extends _$AuthState {
   Future<void> logout() async {
     final authService = ref.read(authServiceProvider);
     await authService.logout();
+    state = null;
+  }
+
+  /// 회원 탈퇴.
+  Future<void> withdraw() async {
+    final authService = ref.read(authServiceProvider);
+    await authService.withdraw();
     state = null;
   }
 }

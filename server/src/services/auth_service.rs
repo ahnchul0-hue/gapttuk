@@ -274,6 +274,68 @@ pub async fn generate_referral_code(pool: &PgPool) -> Result<String, AppError> {
     ))
 }
 
+/// 동의 정보 업데이트 (기존 사용자 — 온보딩 후 호출).
+/// 이미 동의한 항목은 취소 불가(단방향).
+pub async fn update_consent(
+    pool: &PgPool,
+    user_id: i64,
+    consent: &ConsentInfo,
+) -> Result<(), AppError> {
+    let now = Utc::now();
+    sqlx::query(
+        r#"UPDATE users SET
+            terms_agreed_at   = CASE WHEN $1 AND terms_agreed_at   IS NULL THEN $4 ELSE terms_agreed_at   END,
+            privacy_agreed_at = CASE WHEN $2 AND privacy_agreed_at IS NULL THEN $4 ELSE privacy_agreed_at END,
+            marketing_agreed_at = CASE WHEN $3 THEN COALESCE(marketing_agreed_at, $4) ELSE marketing_agreed_at END,
+            updated_at = NOW()
+        WHERE id = $5 AND deleted_at IS NULL"#,
+    )
+    .bind(consent.terms_agreed)
+    .bind(consent.privacy_agreed)
+    .bind(consent.marketing_agreed)
+    .bind(now)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// 회원 탈퇴 (소프트 딜리트 + 모든 refresh token revoke).
+pub async fn withdraw(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
+    let mut tx = pool.begin().await?;
+
+    // 1. 소프트 딜리트
+    let result = sqlx::query(
+        "UPDATE users SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("사용자".to_string()));
+    }
+
+    // 2. 모든 refresh token revoke
+    sqlx::query(
+        "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await?;
+
+    // 3. 디바이스 토큰 비활성화
+    sqlx::query(
+        "UPDATE user_devices SET push_enabled = false, updated_at = NOW() WHERE user_id = $1",
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(())
+}
+
 /// 추천 코드로 추천인 user_id 조회.
 pub async fn find_referrer_by_code(
     pool: &PgPool,

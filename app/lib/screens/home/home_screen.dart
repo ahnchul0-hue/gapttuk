@@ -84,7 +84,8 @@ class HomeScreen extends ConsumerWidget {
                           .toList(),
                     ),
               loading: () => const LoadingSkeleton(itemCount: 5),
-              error: (e, st) => Center(child: Text('오류: $e')),
+              error: (e, st) =>
+                  Center(child: Text(friendlyErrorMessage(e))),
             ),
           ],
         ),

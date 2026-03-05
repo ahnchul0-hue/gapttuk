@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/error_utils.dart';
 
 /// 설정 화면.
 class SettingsScreen extends ConsumerWidget {
@@ -51,7 +52,7 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _showDeleteAccountDialog(BuildContext context) async {
+  Future<void> _showDeleteAccountDialog(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -73,9 +74,18 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('준비 중입니다.')),
-      );
+      try {
+        await ref.read(authStateProvider.notifier).withdraw();
+        if (context.mounted) {
+          context.go('/login');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(friendlyErrorMessage(e))),
+          );
+        }
+      }
     }
   }
 
@@ -143,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
               '회원 탈퇴',
               style: TextStyle(color: Colors.red),
             ),
-            onTap: () => _showDeleteAccountDialog(context),
+            onTap: () => _showDeleteAccountDialog(context, ref),
           ),
           const SizedBox(height: 32),
         ],

@@ -51,10 +51,38 @@ class AuthService {
     return User.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
+  /// 약관 동의 정보 업데이트 (온보딩 완료 시).
+  Future<void> updateConsent({
+    required bool termsAgreed,
+    required bool privacyAgreed,
+    required bool marketingAgreed,
+    String? referralCode,
+  }) async {
+    await _api.dio.patch(
+      '/api/v1/auth/consent',
+      data: {
+        'terms_agreed': termsAgreed,
+        'privacy_agreed': privacyAgreed,
+        'marketing_agreed': marketingAgreed,
+        if (referralCode != null && referralCode.isNotEmpty)
+          'referral_code': referralCode,
+      },
+    );
+  }
+
   /// 로그아웃.
   Future<void> logout() async {
     try {
       await _api.dio.post('/api/v1/auth/logout');
+    } finally {
+      await _tokenStorage.clearTokens();
+    }
+  }
+
+  /// 회원 탈퇴.
+  Future<void> withdraw() async {
+    try {
+      await _api.dio.delete('/api/v1/auth/me');
     } finally {
       await _tokenStorage.clearTokens();
     }

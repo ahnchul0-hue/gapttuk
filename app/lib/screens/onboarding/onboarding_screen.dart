@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/theme.dart';
+import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 
 /// 온보딩 화면 — 3페이지 PageView 기반.
 ///
@@ -93,17 +95,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  void _finish() {
-    // TODO: PATCH /api/v1/auth/consent API 구현 시 아래 값으로 호출
-    // provider: 로그인 provider, referralCode: _referralCode,
-    // termsAgreed: _termsAgreed, privacyAgreed: _privacyAgreed,
-    // marketingAgreed: _marketingAgreed
-    //
-    // 추천 코드 저장 (향후 API 전달용)
+  Future<void> _finish() async {
     final referralCode = _referralCode.trim();
-    assert(referralCode.length <= 20, '추천 코드는 20자 이하여야 합니다.');
-    // 현재는 토큰이 이미 저장된 상태이므로 바로 홈으로 이동
-    context.go('/');
+    try {
+      await ref.read(authServiceProvider).updateConsent(
+            termsAgreed: _termsAgreed,
+            privacyAgreed: _privacyAgreed,
+            marketingAgreed: _marketingAgreed,
+            referralCode: referralCode.isNotEmpty ? referralCode : null,
+          );
+    } catch (e) {
+      // 동의 전송 실패해도 앱 사용은 가능 (다음 로그인 시 재시도)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyErrorMessage(e))),
+        );
+      }
+    }
+    if (mounted) context.go('/');
   }
 
   @override

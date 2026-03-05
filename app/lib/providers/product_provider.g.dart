@@ -217,3 +217,89 @@ final class PopularSearchesProvider
 }
 
 String _$popularSearchesHash() => r'267d2db7a534a410b7c211da8d27f26370c9f581';
+
+/// AI 가격 예측 — productId별로 캐싱.
+
+@ProviderFor(productPrediction)
+const productPredictionProvider = ProductPredictionFamily._();
+
+/// AI 가격 예측 — productId별로 캐싱.
+
+final class ProductPredictionProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, dynamic>>,
+          Map<String, dynamic>,
+          FutureOr<Map<String, dynamic>>
+        >
+    with
+        $FutureModifier<Map<String, dynamic>>,
+        $FutureProvider<Map<String, dynamic>> {
+  /// AI 가격 예측 — productId별로 캐싱.
+  const ProductPredictionProvider._({
+    required ProductPredictionFamily super.from,
+    required int super.argument,
+  }) : super(
+         retry: null,
+         name: r'productPredictionProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$productPredictionHash();
+
+  @override
+  String toString() {
+    return r'productPredictionProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Map<String, dynamic>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Map<String, dynamic>> create(Ref ref) {
+    final argument = this.argument as int;
+    return productPrediction(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProductPredictionProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$productPredictionHash() => r'9e186a2a363ff505a134efbab994f3fc171cbb92';
+
+/// AI 가격 예측 — productId별로 캐싱.
+
+final class ProductPredictionFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Map<String, dynamic>>, int> {
+  const ProductPredictionFamily._()
+    : super(
+        retry: null,
+        name: r'productPredictionProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// AI 가격 예측 — productId별로 캐싱.
+
+  ProductPredictionProvider call(int productId) =>
+      ProductPredictionProvider._(argument: productId, from: this);
+
+  @override
+  String toString() => r'productPredictionProvider';
+}

@@ -388,3 +388,49 @@ final class PredictionServiceProvider
 }
 
 String _$predictionServiceHash() => r'f24f4e69f0a25c221bb8b7df9e698da572f984f1';
+
+/// 푸시 서비스.
+
+@ProviderFor(pushService)
+const pushServiceProvider = PushServiceProvider._();
+
+/// 푸시 서비스.
+
+final class PushServiceProvider
+    extends $FunctionalProvider<PushService, PushService, PushService>
+    with $Provider<PushService> {
+  /// 푸시 서비스.
+  const PushServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pushServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pushServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<PushService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PushService create(Ref ref) {
+    return pushService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PushService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PushService>(value),
+    );
+  }
+}
+
+String _$pushServiceHash() => r'c9c951575b065e59d4d08bb4d0d88e6141ee65ef';

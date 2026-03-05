@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../config/theme.dart';
 import '../providers/product_provider.dart';
+import '../utils/error_utils.dart';
 
 /// 요일별 가격 바 차트 — day_of_week 0(일)~6(토).
 class PriceChart extends ConsumerWidget {
@@ -110,7 +111,7 @@ class PriceChart extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('차트 로드 실패: $e')),
+      error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
     );
   }
 }

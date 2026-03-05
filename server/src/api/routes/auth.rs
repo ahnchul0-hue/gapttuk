@@ -1,12 +1,12 @@
 use axum::{
     extract::State,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, patch, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::api::{ApiResponse, Created};
+use crate::api::{ApiResponse, Created, Deleted};
 use crate::auth::extractor::Auth;
 use crate::auth::providers::verify_social_token;
 use crate::error::AppError;
@@ -78,7 +78,8 @@ pub fn router() -> Router<AppState> {
         .route("/naver", post(login_naver))
         .route("/refresh", post(refresh))
         .route("/logout", post(logout))
-        .route("/me", get(me))
+        .route("/me", get(me).delete(withdraw))
+        .route("/consent", patch(update_consent))
 }
 
 // ── 핸들러 ─────────────────────────────────────────────
@@ -271,6 +272,67 @@ async fn logout(
 ) -> Result<ApiResponse<()>, AppError> {
     auth_service::logout(&state.pool, claims.sub).await?;
     Ok(ApiResponse::ok(()))
+}
+
+/// PATCH /api/v1/auth/consent — 동의 정보 업데이트
+#[derive(Deserialize)]
+struct UpdateConsentRequest {
+    #[serde(default)]
+    terms_agreed: bool,
+    #[serde(default)]
+    privacy_agreed: bool,
+    #[serde(default)]
+    marketing_agreed: bool,
+    referral_code: Option<String>,
+}
+
+async fn update_consent(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+    Json(body): Json<UpdateConsentRequest>,
+) -> Result<ApiResponse<()>, AppError> {
+    let consent = ConsentInfo {
+        terms_agreed: body.terms_agreed,
+        privacy_agreed: body.privacy_agreed,
+        marketing_agreed: body.marketing_agreed,
+    };
+    auth_service::update_consent(&state.pool, claims.sub, &consent).await?;
+
+    // 추천 코드가 있으면 추천인 보상 처리 (아직 referred_by가 없는 경우만)
+    if let Some(ref code) = body.referral_code {
+        let code = code.trim();
+        if !code.is_empty() {
+            if let Some(referrer_id) = auth_service::find_referrer_by_code(&state.pool, code).await? {
+                // 자기 자신의 추천 코드는 무시
+                if referrer_id != claims.sub {
+                    // 이미 추천인이 있는지 확인 — 없으면 설정
+                    let has_referrer: Option<Option<i64>> =
+                        sqlx::query_scalar("SELECT referred_by FROM users WHERE id = $1 AND deleted_at IS NULL")
+                            .bind(claims.sub)
+                            .fetch_optional(&state.pool)
+                            .await?;
+                    if let Some(None) = has_referrer {
+                        sqlx::query("UPDATE users SET referred_by = $1, updated_at = NOW() WHERE id = $2")
+                            .bind(referrer_id)
+                            .bind(claims.sub)
+                            .execute(&state.pool)
+                            .await?;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(ApiResponse::ok(()))
+}
+
+/// DELETE /api/v1/auth/me — 회원 탈퇴 (소프트 딜리트)
+async fn withdraw(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+) -> Result<Deleted, AppError> {
+    auth_service::withdraw(&state.pool, claims.sub).await?;
+    Ok(Deleted)
 }
 
 /// GET /api/v1/auth/me — 내 정보

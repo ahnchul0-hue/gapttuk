@@ -29,3 +29,13 @@ Future<List<PopularSearch>> popularSearches(Ref ref) async {
   final service = ref.watch(productServiceProvider);
   return service.getPopularSearches();
 }
+
+/// AI 가격 예측 — productId별로 캐싱.
+@riverpod
+Future<Map<String, dynamic>> productPrediction(
+  Ref ref,
+  int productId,
+) async {
+  final service = ref.watch(predictionServiceProvider);
+  return service.getPrediction(productId);
+}

@@ -43,7 +43,7 @@ final class AuthStateProvider extends $NotifierProvider<AuthState, User?> {
   }
 }
 
-String _$authStateHash() => r'01f6d5d5da69a2178915f87235e0ab385acf7e71';
+String _$authStateHash() => r'e83a846f0d7759d61a011bd2722bd28319986e75';
 
 /// 인증 상태 — null이면 미인증.
 

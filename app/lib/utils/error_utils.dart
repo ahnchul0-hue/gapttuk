@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// DioException을 사용자 친화적 메시지로 변환.
 String friendlyErrorMessage(Object error) {
@@ -29,3 +31,16 @@ String friendlyErrorMessage(Object error) {
   }
   return '오류가 발생했습니다: $error';
 }
+
+/// SnackBar로 에러 메시지를 표시하는 헬퍼.
+void showErrorSnackBar(BuildContext context, Object error) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(friendlyErrorMessage(error))),
+  );
+}
+
+/// 한국 원화 가격 포맷 (₩1,234).
+final _priceFormatter = NumberFormat('#,###', 'ko_KR');
+
+/// 정수 가격을 ₩1,234 형식으로 포맷.
+String formatPrice(int price) => '₩${_priceFormatter.format(price)}';

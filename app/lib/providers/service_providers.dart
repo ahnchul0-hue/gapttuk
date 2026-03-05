@@ -4,6 +4,7 @@ import '../services/alert_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/device_service.dart';
+import '../services/push_service.dart';
 import '../services/notification_service.dart';
 import '../services/prediction_service.dart';
 import '../services/product_service.dart';
@@ -63,4 +64,11 @@ DeviceService deviceService(Ref ref) {
 PredictionService predictionService(Ref ref) {
   final api = ref.watch(apiClientProvider);
   return PredictionService(api: api);
+}
+
+/// 푸시 서비스.
+@Riverpod(keepAlive: true)
+PushService pushService(Ref ref) {
+  final deviceService = ref.watch(deviceServiceProvider);
+  return PushService(deviceService: deviceService);
 }
