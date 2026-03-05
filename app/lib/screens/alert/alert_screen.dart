@@ -49,7 +49,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = friendlyErrorMessage(e);
           _isLoading = false;
         });
       }
@@ -329,7 +329,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                   Text(_alertTypeLabel(alert.alertType)),
                   if (alert.targetPrice != null)
                     Text(
-                      '목표가: ${_formatPrice(alert.targetPrice!)}원',
+                      '목표가: ${formatPrice(alert.targetPrice!)}',
                       style: TextStyle(
                         color: Colors.blue.shade700,
                         fontSize: 12,
@@ -399,7 +399,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                     ),
                   if (alert.maxPrice != null)
                     Text(
-                      '최대 ${_formatPrice(alert.maxPrice!)}원',
+                      '최대 ${formatPrice(alert.maxPrice!)}',
                       style:
                           TextStyle(color: Colors.grey.shade600, fontSize: 12),
                     ),
@@ -461,7 +461,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                     Text('카테고리 #${alert.categoryId}'),
                   if (alert.maxPrice != null)
                     Text(
-                      '최대 ${_formatPrice(alert.maxPrice!)}원',
+                      '최대 ${formatPrice(alert.maxPrice!)}',
                       style:
                           TextStyle(color: Colors.grey.shade600, fontSize: 12),
                     ),
@@ -481,13 +481,6 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   }
 
   // ─── 헬퍼 ─────────────────────────────────────────────────────────────────
-
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        );
-  }
 
   String _categoryConditionLabel(String condition) {
     switch (condition) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/alert.dart';
 import '../../models/product.dart';
@@ -107,12 +106,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     }
   }
 
-  // ─── 가격 포맷 ─────────────────────────────────────────────────────────────
-
-  String _formatPrice(int price) {
-    return NumberFormat('#,###').format(price);
-  }
-
   // ─── 상품 카드 ─────────────────────────────────────────────────────────────
 
   Widget _buildProductCard(PriceAlert alert, Product? product) {
@@ -195,7 +188,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   const SizedBox(height: 4),
                   if (currentPrice != null)
                     Text(
-                      '${_formatPrice(currentPrice)}원',
+                      formatPrice(currentPrice),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

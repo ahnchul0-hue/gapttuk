@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String? _cursor;
   bool _hasMore = false;
   bool _loading = false;
+  bool _hasSearched = false;
+  CancelToken? _cancelToken;
 
   @override
   void initState() {
@@ -30,6 +33,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -50,8 +54,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     setState(() => _loading = true);
     if (!loadMore) {
+      _cancelToken?.cancel();
+      _cancelToken = CancelToken();
       _results.clear();
       _cursor = null;
+      _hasSearched = true;
     }
 
     try {
@@ -99,7 +106,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ],
       ),
       body: _results.isEmpty && !_loading
-          ? const Center(child: Text('검색어를 입력하세요'))
+          ? Center(
+              child: Text(_hasSearched ? '검색 결과가 없습니다' : '검색어를 입력하세요'),
+            )
           : ListView.builder(
               controller: _scrollController,
               itemCount: _results.length + (_loading ? 1 : 0),

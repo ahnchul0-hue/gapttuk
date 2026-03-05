@@ -18,6 +18,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _googleSignIn = GoogleSignIn();
   bool _isLoading = false;
 
   Future<void> _login(String provider) async {
@@ -98,8 +99,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// 구글 소셜 토큰 획득 (id_token).
   Future<String> _getGoogleToken() async {
-    final googleSignIn = GoogleSignIn();
-    final account = await googleSignIn.signIn();
+    final account = await _googleSignIn.signIn();
     if (account == null) throw Exception('구글 로그인이 취소되었습니다.');
     final auth = await account.authentication;
     final idToken = auth.idToken;

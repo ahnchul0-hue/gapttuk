@@ -165,7 +165,7 @@ class ProductDetailScreen extends ConsumerWidget {
     String selectedType = 'target_price';
     final priceController = TextEditingController();
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) => StatefulBuilder(
@@ -223,6 +223,17 @@ class ProductDetailScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () async {
+                    if (selectedType == 'target_price') {
+                      final parsed = int.tryParse(
+                          priceController.text.replaceAll(',', ''));
+                      if (parsed == null || parsed <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('유효한 목표 가격을 입력해 주세요.')),
+                        );
+                        return;
+                      }
+                    }
                     final alertService = ref.read(alertServiceProvider);
                     try {
                       await alertService.createPriceAlert(
@@ -254,7 +265,7 @@ class ProductDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ).whenComplete(() => priceController.dispose());
   }
 }
 

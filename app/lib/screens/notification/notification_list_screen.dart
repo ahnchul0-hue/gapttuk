@@ -41,7 +41,7 @@ class _NotificationListScreenState
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      if (_hasMore && !_isLoadingMore) {
+      if (_hasMore && !_isLoadingMore && !_isLoading) {
         _loadNotifications();
       }
     }
