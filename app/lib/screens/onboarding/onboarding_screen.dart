@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -34,10 +35,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String _referralCode = '';
 
   static const int _totalPages = 3;
-
-  // 임시 약관 URL (향후 실제 URL로 교체)
-  static const String _termsUrl = 'https://gapttuk.com/terms';
-  static const String _privacyUrl = 'https://gapttuk.com/privacy';
 
   @override
   void dispose() {
@@ -151,8 +148,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       _updateAllAgreedState();
                     },
                     onReferralChanged: (v) => _referralCode = v,
-                    onOpenTerms: () => _openUrl(_termsUrl),
-                    onOpenPrivacy: () => _openUrl(_privacyUrl),
+                    onOpenTerms: () => _openUrl(AppConstants.termsUrl),
+                    onOpenPrivacy: () => _openUrl(AppConstants.privacyUrl),
                   ),
                   _CompletePage(),
                 ],

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
 
 /// 마이페이지 화면.
@@ -216,7 +217,7 @@ class _AppVersionFooter extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 24),
       child: Center(
         child: Text(
-          'v0.1.0',
+          'v${AppConstants.appVersion}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.grey[500],
               ),

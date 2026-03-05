@@ -2,17 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/error_utils.dart';
 
 /// 설정 화면.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
-
-  static const _termsUrl =
-      'https://gapttuk.com/terms';
-  static const _privacyUrl =
-      'https://gapttuk.com/privacy';
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -105,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('버전'),
             trailing: Text(
-              '0.1.0',
+              AppConstants.appVersion,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -115,13 +111,13 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('이용약관'),
             trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _launchUrl(context, _termsUrl),
+            onTap: () => _launchUrl(context, AppConstants.termsUrl),
           ),
           const Divider(height: 1),
           ListTile(
             title: const Text('개인정보처리방침'),
             trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _launchUrl(context, _privacyUrl),
+            onTap: () => _launchUrl(context, AppConstants.privacyUrl),
           ),
           const Divider(height: 1),
           ListTile(
@@ -130,7 +126,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => showLicensePage(
               context: context,
               applicationName: '값뚝',
-              applicationVersion: '0.1.0',
+              applicationVersion: AppConstants.appVersion,
             ),
           ),
           const Divider(height: 1),

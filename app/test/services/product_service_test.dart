@@ -119,6 +119,68 @@ void main() {
     });
   });
 
+  group('getPriceHistory', () {
+    test('가격 히스토리 + 페이지네이션', () async {
+      when(() => mockDio.get(
+            '/api/v1/products/1/prices',
+            queryParameters: any(named: 'queryParameters'),
+          )).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(),
+          data: {
+            'data': [
+              {
+                'id': 101,
+                'product_id': 1,
+                'price': 329000,
+                'is_out_of_stock': false,
+                'recorded_at': '2026-03-01T00:00:00Z',
+              },
+              {
+                'id': 102,
+                'product_id': 1,
+                'price': 319000,
+                'is_out_of_stock': false,
+                'recorded_at': '2026-03-02T00:00:00Z',
+              },
+            ],
+            'cursor': 'next_page',
+            'has_more': true,
+          },
+        ),
+      );
+
+      final result = await service.getPriceHistory(1);
+
+      expect(result.prices.length, 2);
+      expect(result.prices.first.price, 329000);
+      expect(result.prices.last.price, 319000);
+      expect(result.cursor, 'next_page');
+      expect(result.hasMore, true);
+    });
+
+    test('빈 히스토리', () async {
+      when(() => mockDio.get(
+            '/api/v1/products/999/prices',
+            queryParameters: any(named: 'queryParameters'),
+          )).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(),
+          data: {
+            'data': [],
+            'cursor': null,
+            'has_more': false,
+          },
+        ),
+      );
+
+      final result = await service.getPriceHistory(999);
+
+      expect(result.prices, isEmpty);
+      expect(result.hasMore, false);
+    });
+  });
+
   group('getDailyPrices', () {
     test('7일 집계 데이터', () async {
       when(() => mockDio.get('/api/v1/products/1/prices/daily')).thenAnswer(
