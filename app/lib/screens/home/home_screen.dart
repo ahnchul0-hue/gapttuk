@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/product_provider.dart';
+import '../../providers/service_providers.dart';
 import '../../widgets/loading_skeleton.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -45,6 +46,18 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
+            const SizedBox(height: 12),
+
+            // URL로 상품 추가 카드
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.add_link),
+                title: const Text('URL로 상품 추가'),
+                subtitle: const Text('쇼핑몰 URL을 붙여넣어 상품을 추적하세요'),
+                onTap: () => _showAddByUrlDialog(context, ref),
+              ),
+            ),
+
             const SizedBox(height: 24),
 
             // 인기 검색어
@@ -71,6 +84,65 @@ class HomeScreen extends ConsumerWidget {
                     ),
               loading: () => const LoadingSkeleton(itemCount: 5),
               error: (e, st) => Center(child: Text('오류: $e')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddByUrlDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('URL로 상품 추가'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'https://www.coupang.com/...',
+              labelText: '상품 URL',
+            ),
+            keyboardType: TextInputType.url,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final url = controller.text.trim();
+                      if (url.isEmpty) return;
+                      setState(() => isLoading = true);
+                      try {
+                        final service = ref.read(productServiceProvider);
+                        final result = await service.addByUrl(url);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          context.push('/product/${result.id}');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('상품 추가 실패: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('추가'),
             ),
           ],
         ),
