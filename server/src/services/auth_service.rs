@@ -110,6 +110,20 @@ pub async fn upsert_user(
             .bind(&referral_code)
             .execute(&mut *tx)
             .await?;
+
+            // Stage 0 웰컴 보상: 피초대자 1¢
+            sqlx::query(
+                "UPDATE user_points SET balance = balance + 1, total_earned = total_earned + 1, updated_at = NOW() WHERE user_id = $1",
+            )
+            .bind(user.id)
+            .execute(&mut *tx)
+            .await?;
+            sqlx::query(
+                "INSERT INTO point_transactions (user_id, amount, transaction_type, description) VALUES ($1, 1, 'referral_welcome', '추천 코드 가입 웰컴 보상')",
+            )
+            .bind(user.id)
+            .execute(&mut *tx)
+            .await?;
         }
 
         tx.commit().await?;
