@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/service_providers.dart';
+import '../../services/reward_service.dart';
 
 /// 마이페이지 화면.
 class MyPageScreen extends ConsumerWidget {
@@ -47,6 +49,9 @@ class MyPageScreen extends ConsumerWidget {
             nickname: nickname,
             email: user.email,
           ),
+          const Divider(),
+          // 센트 잔액 + 일일 체크인 섹션
+          const _CentsBalanceTile(),
           const Divider(),
           // 추천 코드 섹션
           if (user.referralCode != null)
@@ -223,6 +228,101 @@ class _AppVersionFooter extends StatelessWidget {
               ),
         ),
       ),
+    );
+  }
+}
+
+/// 센트 잔액 + 일일 출석 룰렛 타일.
+class _CentsBalanceTile extends ConsumerStatefulWidget {
+  const _CentsBalanceTile();
+
+  @override
+  ConsumerState<_CentsBalanceTile> createState() => _CentsBalanceTileState();
+}
+
+class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
+  PointsInfo? _points;
+  bool _loading = false;
+  bool _checkinDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPoints();
+  }
+
+  Future<void> _loadPoints() async {
+    try {
+      final info = await ref.read(rewardServiceProvider).getPoints();
+      if (mounted) setState(() => _points = info);
+    } catch (_) {
+      // 잔액 조회 실패 시 무시 (비핵심 UI)
+    }
+  }
+
+  Future<void> _doCheckin() async {
+    if (_loading || _checkinDone) return;
+    setState(() => _loading = true);
+    try {
+      final result = await ref.read(rewardServiceProvider).checkin();
+      if (!mounted) return;
+      if (result.alreadyCheckedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('오늘은 이미 출석했습니다.')),
+        );
+      } else if (result.rewardAmount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${result.rewardAmount}${AppConstants.rewardUnit} 획득! 내일 또 도전하세요.',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('아쉽게도 오늘은 0¢. 내일 또 도전하세요!')),
+        );
+      }
+      setState(() => _checkinDone = true);
+      await _loadPoints();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('출석 체크 중 오류가 발생했습니다.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = _points?.balance ?? 0;
+
+    return ListTile(
+      leading: const Icon(Icons.monetization_on_outlined, color: Colors.amber),
+      title: Text(
+        '센트(¢) 잔액',
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+      subtitle: Text(
+        '$balance${AppConstants.rewardUnit}',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.amber[700],
+            ),
+      ),
+      trailing: _loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : TextButton(
+              onPressed: _checkinDone ? null : _doCheckin,
+              child: Text(_checkinDone ? '출석 완료' : '오늘 출석'),
+            ),
     );
   }
 }

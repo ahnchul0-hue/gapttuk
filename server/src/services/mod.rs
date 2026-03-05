@@ -4,3 +4,4 @@ pub mod auth_service;
 pub mod device_service;
 pub mod notification_service;
 pub mod product_service;
+pub mod reward_service;

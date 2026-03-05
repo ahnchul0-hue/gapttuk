@@ -434,3 +434,48 @@ final class PushServiceProvider
 }
 
 String _$pushServiceHash() => r'c9c951575b065e59d4d08bb4d0d88e6141ee65ef';
+/// 보상 서비스.
+
+@ProviderFor(rewardService)
+const rewardServiceProvider = RewardServiceProvider._();
+
+/// 보상 서비스.
+
+final class RewardServiceProvider
+    extends $FunctionalProvider<RewardService, RewardService, RewardService>
+    with $Provider<RewardService> {
+  /// 보상 서비스.
+  const RewardServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rewardServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rewardServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<RewardService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RewardService create(Ref ref) {
+    return rewardService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RewardService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RewardService>(value),
+    );
+  }
+}
+
+String _$rewardServiceHash() => r'reward_service_placeholder_hash_v1_2026';

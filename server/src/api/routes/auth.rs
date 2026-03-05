@@ -302,21 +302,26 @@ async fn update_consent(
     if let Some(ref code) = body.referral_code {
         let code = code.trim();
         if !code.is_empty() {
-            if let Some(referrer_id) = auth_service::find_referrer_by_code(&state.pool, code).await? {
+            if let Some(referrer_id) =
+                auth_service::find_referrer_by_code(&state.pool, code).await?
+            {
                 // 자기 자신의 추천 코드는 무시
                 if referrer_id != claims.sub {
                     // 이미 추천인이 있는지 확인 — 없으면 설정
-                    let has_referrer: Option<Option<i64>> =
-                        sqlx::query_scalar("SELECT referred_by FROM users WHERE id = $1 AND deleted_at IS NULL")
-                            .bind(claims.sub)
-                            .fetch_optional(&state.pool)
-                            .await?;
+                    let has_referrer: Option<Option<i64>> = sqlx::query_scalar(
+                        "SELECT referred_by FROM users WHERE id = $1 AND deleted_at IS NULL",
+                    )
+                    .bind(claims.sub)
+                    .fetch_optional(&state.pool)
+                    .await?;
                     if let Some(None) = has_referrer {
-                        sqlx::query("UPDATE users SET referred_by = $1, updated_at = NOW() WHERE id = $2")
-                            .bind(referrer_id)
-                            .bind(claims.sub)
-                            .execute(&state.pool)
-                            .await?;
+                        sqlx::query(
+                            "UPDATE users SET referred_by = $1, updated_at = NOW() WHERE id = $2",
+                        )
+                        .bind(referrer_id)
+                        .bind(claims.sub)
+                        .execute(&state.pool)
+                        .await?;
                     }
                 }
             }
@@ -327,10 +332,7 @@ async fn update_consent(
 }
 
 /// DELETE /api/v1/auth/me — 회원 탈퇴 (소프트 딜리트)
-async fn withdraw(
-    State(state): State<AppState>,
-    Auth(claims): Auth,
-) -> Result<Deleted, AppError> {
+async fn withdraw(State(state): State<AppState>, Auth(claims): Auth) -> Result<Deleted, AppError> {
     auth_service::withdraw(&state.pool, claims.sub).await?;
     Ok(Deleted)
 }
