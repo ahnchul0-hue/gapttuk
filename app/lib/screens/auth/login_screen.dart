@@ -1,15 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../config/theme.dart';
+import '../../providers/auth_provider.dart';
 
 /// 소셜 로그인 화면.
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  bool _isLoading = false;
+
+  Future<void> _login(String provider) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      String token;
+
+      switch (provider) {
+        case 'kakao':
+          token = await _getKakaoToken();
+        case 'google':
+          token = await _getGoogleToken();
+        case 'apple':
+          token = await _getAppleToken();
+        case 'naver':
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('네이버 로그인 준비 중입니다.')),
+            );
+          }
+          return;
+        default:
+          throw Exception('지원하지 않는 프로바이더: $provider');
+      }
+
+      // 서버 로그인 (termsAgreed: false — 신규 사용자는 온보딩에서 처리)
+      final response = await ref.read(authStateProvider.notifier).login(
+            provider: provider,
+            token: token,
+            termsAgreed: false,
+            privacyAgreed: false,
+            marketingAgreed: false,
+          );
+
+      if (!mounted) return;
+
+      if (response.isNewUser) {
+        // 신규 사용자 → 온보딩으로 이동
+        context.go('/onboarding');
+      } else {
+        // 기존 사용자 → from 파라미터 경로 또는 홈으로
+        final from = GoRouterState.of(context).uri.queryParameters['from'];
+        if (from != null && from.isNotEmpty) {
+          context.go(Uri.decodeComponent(from));
+        } else {
+          context.go('/');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 실패: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// 카카오 소셜 토큰 획득.
+  Future<String> _getKakaoToken() async {
+    OAuthToken oAuthToken;
+    if (await isKakaoTalkInstalled()) {
+      try {
+        oAuthToken = await UserApi.instance.loginWithKakaoTalk();
+      } catch (_) {
+        // 카카오톡 미설치 또는 취소 시 계정으로 폴백
+        oAuthToken = await UserApi.instance.loginWithKakaoAccount();
+      }
+    } else {
+      oAuthToken = await UserApi.instance.loginWithKakaoAccount();
+    }
+    return oAuthToken.accessToken;
+  }
+
+  /// 구글 소셜 토큰 획득 (id_token).
+  Future<String> _getGoogleToken() async {
+    final googleSignIn = GoogleSignIn();
+    final account = await googleSignIn.signIn();
+    if (account == null) throw Exception('구글 로그인이 취소되었습니다.');
+    final auth = await account.authentication;
+    final idToken = auth.idToken;
+    if (idToken == null) throw Exception('구글 ID 토큰을 가져올 수 없습니다.');
+    return idToken;
+  }
+
+  /// 애플 소셜 토큰 획득 (identity_token).
+  Future<String> _getAppleToken() async {
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+    final identityToken = credential.identityToken;
+    if (identityToken == null) throw Exception('Apple ID 토큰을 가져올 수 없습니다.');
+    return identityToken;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -45,7 +155,8 @@ class LoginScreen extends ConsumerWidget {
                 color: const Color(0xFFFEE500),
                 textColor: Colors.black87,
                 icon: Icons.chat_bubble,
-                onPressed: () => _login(context, ref, 'kakao'),
+                isLoading: _isLoading,
+                onPressed: () => _login('kakao'),
               ),
               const SizedBox(height: 12),
 
@@ -55,7 +166,8 @@ class LoginScreen extends ConsumerWidget {
                 color: Colors.white,
                 textColor: Colors.black87,
                 icon: Icons.g_mobiledata,
-                onPressed: () => _login(context, ref, 'google'),
+                isLoading: _isLoading,
+                onPressed: () => _login('google'),
               ),
               const SizedBox(height: 12),
 
@@ -65,7 +177,8 @@ class LoginScreen extends ConsumerWidget {
                 color: Colors.black,
                 textColor: Colors.white,
                 icon: Icons.apple,
-                onPressed: () => _login(context, ref, 'apple'),
+                isLoading: _isLoading,
+                onPressed: () => _login('apple'),
               ),
               const SizedBox(height: 12),
 
@@ -75,29 +188,24 @@ class LoginScreen extends ConsumerWidget {
                 color: const Color(0xFF03C75A),
                 textColor: Colors.white,
                 icon: Icons.north_east,
-                onPressed: () => _login(context, ref, 'naver'),
+                isLoading: _isLoading,
+                onPressed: () => _login('naver'),
               ),
 
               const SizedBox(height: 24),
               TextButton(
-                onPressed: () => context.go('/'),
+                onPressed: _isLoading ? null : () => context.go('/'),
                 child: const Text('둘러보기'),
               ),
+
+              if (_isLoading) ...[
+                const SizedBox(height: 16),
+                const CircularProgressIndicator(),
+              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  void _login(BuildContext context, WidgetRef ref, String provider) {
-    // TODO: 각 소셜 SDK에서 access_token 획득 후 호출
-    // ref.read(authStateProvider.notifier).login(
-    //   provider: provider,
-    //   accessToken: socialAccessToken,
-    // );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$provider 로그인 — SDK 연동 필요')),
     );
   }
 }
@@ -108,6 +216,7 @@ class _SocialLoginButton extends StatelessWidget {
   final Color textColor;
   final IconData icon;
   final VoidCallback onPressed;
+  final bool isLoading;
 
   const _SocialLoginButton({
     required this.label,
@@ -115,6 +224,7 @@ class _SocialLoginButton extends StatelessWidget {
     required this.textColor,
     required this.icon,
     required this.onPressed,
+    required this.isLoading,
   });
 
   @override
@@ -123,7 +233,7 @@ class _SocialLoginButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         icon: Icon(icon, color: textColor),
         label: Text(label, style: TextStyle(color: textColor)),
         style: ElevatedButton.styleFrom(

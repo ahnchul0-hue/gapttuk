@@ -18,4 +18,12 @@ abstract final class AppConstants {
   // --- 저장소 키 ---
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
+
+  // --- 소셜 로그인 ---
+  static const String kakaoNativeAppKey =
+      String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
+  static const String kakaoAppId =
+      String.fromEnvironment('KAKAO_APP_ID');
+  static const String googleClientId =
+      String.fromEnvironment('GOOGLE_CLIENT_ID');
 }
