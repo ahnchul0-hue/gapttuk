@@ -191,6 +191,50 @@ pub async fn get_points(pool: &PgPool, user_id: i64) -> Result<PointsInfo, AppEr
     })
 }
 
+/// 포인트 내역 항목
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct PointHistoryItem {
+    pub id: i64,
+    pub amount: i32,
+    pub transaction_type: String,
+    pub description: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// 포인트 내역 조회 (커서 페이지네이션)
+pub async fn get_history(
+    pool: &PgPool,
+    user_id: i64,
+    cursor: Option<i64>,
+    limit: i64,
+) -> Result<(Vec<PointHistoryItem>, bool), AppError> {
+    let effective_limit = limit.clamp(1, 50);
+    let fetch_limit = effective_limit + 1;
+
+    let items: Vec<PointHistoryItem> = if let Some(cursor_id) = cursor {
+        sqlx::query_as(
+            "SELECT id, amount, transaction_type, description, created_at FROM point_transactions WHERE user_id = $1 AND id < $2 ORDER BY id DESC LIMIT $3",
+        )
+        .bind(user_id)
+        .bind(cursor_id)
+        .bind(fetch_limit)
+        .fetch_all(pool)
+        .await?
+    } else {
+        sqlx::query_as(
+            "SELECT id, amount, transaction_type, description, created_at FROM point_transactions WHERE user_id = $1 ORDER BY id DESC LIMIT $2",
+        )
+        .bind(user_id)
+        .bind(fetch_limit)
+        .fetch_all(pool)
+        .await?
+    };
+
+    let has_more = items.len() as i64 > effective_limit;
+    let result: Vec<PointHistoryItem> = items.into_iter().take(effective_limit as usize).collect();
+    Ok((result, has_more))
+}
+
 /// 추천 보상 단계 처리 — 구매 확인 이벤트 발생 시 호출
 ///
 /// - Stage 0 → 1 (1만원 이상 첫 구매): 피초대자 +1¢, 초대자 2¢
