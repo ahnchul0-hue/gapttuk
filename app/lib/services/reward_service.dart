@@ -56,4 +56,48 @@ class RewardService {
     final data = response.data['data'] as Map<String, dynamic>;
     return PointsInfo.fromJson(data);
   }
+
+  /// GET /api/v1/rewards/history — 포인트 내역 조회 (커서 페이지네이션).
+  Future<({List<PointHistoryItem> items, bool hasMore})> getHistory({
+    int? cursor,
+    int limit = 20,
+  }) async {
+    final params = <String, dynamic>{'limit': limit};
+    if (cursor != null) params['cursor'] = cursor;
+    final response = await _api.dio.get(
+      '/api/v1/rewards/history',
+      queryParameters: params,
+    );
+    final data = response.data['data'] as Map<String, dynamic>;
+    final items = (data['items'] as List)
+        .map((e) => PointHistoryItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (items: items, hasMore: data['has_more'] as bool);
+  }
+}
+
+/// 포인트 내역 항목.
+class PointHistoryItem {
+  final int id;
+  final int amount;
+  final String transactionType;
+  final String? description;
+  final String createdAt;
+
+  const PointHistoryItem({
+    required this.id,
+    required this.amount,
+    required this.transactionType,
+    this.description,
+    required this.createdAt,
+  });
+
+  factory PointHistoryItem.fromJson(Map<String, dynamic> json) =>
+      PointHistoryItem(
+        id: json['id'] as int,
+        amount: json['amount'] as int,
+        transactionType: json['transaction_type'] as String,
+        description: json['description'] as String?,
+        createdAt: json['created_at'] as String,
+      );
 }

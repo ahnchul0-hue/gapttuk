@@ -301,6 +301,7 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
     final balance = _points?.balance ?? 0;
 
     return ListTile(
+      onTap: () => context.push('/my/points'),
       leading: const Icon(Icons.monetization_on_outlined, color: Colors.amber),
       title: Text(
         '센트(¢) 잔액',
