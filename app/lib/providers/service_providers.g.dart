@@ -290,3 +290,101 @@ final class NotificationServiceProvider
 
 String _$notificationServiceHash() =>
     r'a159a1c413079b813281d43470b8a63c0ac13663';
+
+/// 디바이스 서비스.
+
+@ProviderFor(deviceService)
+const deviceServiceProvider = DeviceServiceProvider._();
+
+/// 디바이스 서비스.
+
+final class DeviceServiceProvider
+    extends $FunctionalProvider<DeviceService, DeviceService, DeviceService>
+    with $Provider<DeviceService> {
+  /// 디바이스 서비스.
+  const DeviceServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'deviceServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$deviceServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DeviceService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DeviceService create(Ref ref) {
+    return deviceService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DeviceService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DeviceService>(value),
+    );
+  }
+}
+
+String _$deviceServiceHash() => r'1a36cd05cd58d601e5adc9fd7380ca3d2ee21c00';
+
+/// AI 예측 서비스.
+
+@ProviderFor(predictionService)
+const predictionServiceProvider = PredictionServiceProvider._();
+
+/// AI 예측 서비스.
+
+final class PredictionServiceProvider
+    extends
+        $FunctionalProvider<
+          PredictionService,
+          PredictionService,
+          PredictionService
+        >
+    with $Provider<PredictionService> {
+  /// AI 예측 서비스.
+  const PredictionServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'predictionServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$predictionServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<PredictionService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  PredictionService create(Ref ref) {
+    return predictionService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PredictionService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PredictionService>(value),
+    );
+  }
+}
+
+String _$predictionServiceHash() => r'f24f4e69f0a25c221bb8b7df9e698da572f984f1';

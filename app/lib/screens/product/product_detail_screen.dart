@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/loading_skeleton.dart';
 
@@ -139,7 +140,7 @@ class ProductDetailScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // 가격 차트
-            Text('30일 가격 추이',
+            Text('요일별 평균 가격',
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             SizedBox(
@@ -233,7 +234,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('알림 설정 실패: $e')),
+                          SnackBar(content: Text(friendlyErrorMessage(e))),
                         );
                       }
                     }

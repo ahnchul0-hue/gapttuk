@@ -7,6 +7,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/error_utils.dart';
 
 /// 소셜 로그인 화면.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SnackBar(content: Text('네이버 로그인 준비 중입니다.')),
             );
           }
+          if (mounted) setState(() => _isLoading = false);
           return;
         default:
           throw Exception('지원하지 않는 프로바이더: $provider');
@@ -70,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     } finally {

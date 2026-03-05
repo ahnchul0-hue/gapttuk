@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 
 /// 알림 센터 화면 — 가격 알림 / 카테고리 알림 / 키워드 알림 3탭.
 class AlertScreen extends ConsumerStatefulWidget {
@@ -89,7 +90,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('토글 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -112,7 +113,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('토글 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -135,7 +136,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('토글 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -159,7 +160,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -183,7 +184,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -207,7 +208,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -262,7 +263,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('키워드 알림 추가 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }

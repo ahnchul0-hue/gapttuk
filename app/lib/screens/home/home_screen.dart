@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 import '../../widgets/loading_skeleton.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -131,7 +132,7 @@ class HomeScreen extends ConsumerWidget {
                         if (context.mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('상품 추가 실패: $e')),
+                            SnackBar(content: Text(friendlyErrorMessage(e))),
                           );
                         }
                       }

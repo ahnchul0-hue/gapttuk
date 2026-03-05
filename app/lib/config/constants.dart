@@ -1,7 +1,10 @@
 /// 앱 전역 상수.
 abstract final class AppConstants {
   // --- API ---
-  static const String apiBaseUrl = 'http://localhost:8080';
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8080',
+  );
 
   // --- 캐시 ---
   static const Duration httpTimeout = Duration(seconds: 15);

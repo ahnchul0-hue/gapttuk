@@ -58,6 +58,9 @@ class ApiClient {
 class _AuthInterceptor extends Interceptor {
   final ApiClient _client;
 
+  /// 토큰 갱신 중복 방지 — 동시에 여러 요청이 401을 받아도 한 번만 갱신.
+  Future<bool>? _refreshFuture;
+
   _AuthInterceptor(this._client);
 
   @override
@@ -75,17 +78,26 @@ class _AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      final refreshed = await _client.refreshTokens();
-      if (refreshed) {
-        // 갱신 성공 → 원래 요청 재시도
-        final token = await _client._tokenStorage.getAccessToken();
-        err.requestOptions.headers['Authorization'] = 'Bearer $token';
-        try {
-          final response = await _client.dio.fetch(err.requestOptions);
-          return handler.resolve(response);
-        } on DioException catch (e) {
-          return handler.next(e);
+      try {
+        // 이미 갱신 중이면 기존 Future를 재사용 (race condition 방지)
+        _refreshFuture ??= _client.refreshTokens();
+        final refreshed = await _refreshFuture;
+        _refreshFuture = null;
+
+        if (refreshed == true) {
+          // 갱신 성공 → 원래 요청 재시도
+          final token = await _client._tokenStorage.getAccessToken();
+          err.requestOptions.headers['Authorization'] = 'Bearer $token';
+          try {
+            final response = await _client.dio.fetch(err.requestOptions);
+            return handler.resolve(response);
+          } on DioException catch (e) {
+            return handler.next(e);
+          }
         }
+      } catch (_) {
+        _refreshFuture = null;
+        await _client._tokenStorage.clearTokens();
       }
     }
     handler.next(err);

@@ -109,7 +109,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/product/:id',
       builder: (context, state) => ProductDetailScreen(
-        productId: int.parse(state.pathParameters['id']!),
+        productId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
       ),
     ),
     // 로그인

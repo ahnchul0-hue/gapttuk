@@ -7,6 +7,7 @@ import '../../models/alert.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 
 /// 즐겨찾기 화면 — 가격 알림이 설정된 상품 그리드.
 class FavoritesScreen extends ConsumerStatefulWidget {
@@ -67,7 +68,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = friendlyErrorMessage(e);
           _isLoading = false;
         });
       }

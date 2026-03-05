@@ -3,7 +3,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../services/alert_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/device_service.dart';
 import '../services/notification_service.dart';
+import '../services/prediction_service.dart';
 import '../services/product_service.dart';
 import '../services/token_storage.dart';
 
@@ -47,4 +49,18 @@ AlertService alertService(Ref ref) {
 NotificationService notificationService(Ref ref) {
   final api = ref.watch(apiClientProvider);
   return NotificationService(api: api);
+}
+
+/// 디바이스 서비스.
+@Riverpod(keepAlive: true)
+DeviceService deviceService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return DeviceService(api: api);
+}
+
+/// AI 예측 서비스.
+@Riverpod(keepAlive: true)
+PredictionService predictionService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return PredictionService(api: api);
 }

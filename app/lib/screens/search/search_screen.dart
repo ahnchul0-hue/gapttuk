@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/product.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 import '../../widgets/product_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -59,13 +60,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         query: query,
         cursor: _cursor,
       );
-      setState(() {
-        _results.addAll(result.products);
-        _cursor = result.cursor;
-        _hasMore = result.hasMore;
-      });
+      if (mounted) {
+        setState(() {
+          _results.addAll(result.products);
+          _cursor = result.cursor;
+          _hasMore = result.hasMore;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyErrorMessage(e))),
+        );
+      }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 

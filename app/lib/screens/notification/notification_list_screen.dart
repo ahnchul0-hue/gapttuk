@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/notification.dart';
 import '../../providers/service_providers.dart';
+import '../../utils/error_utils.dart';
 
 /// 알림 내역 화면 — 커서 페이지네이션 + 무한 스크롤.
 class NotificationListScreen extends ConsumerStatefulWidget {
@@ -76,7 +77,7 @@ class _NotificationListScreenState
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = friendlyErrorMessage(e);
           _isLoading = false;
           _isLoadingMore = false;
         });
@@ -121,7 +122,7 @@ class _NotificationListScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('읽음 처리 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     }
@@ -139,7 +140,7 @@ class _NotificationListScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제 실패: $e')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
         // 스와이프 복원을 위해 다시 로드
         _loadNotifications(refresh: true);
