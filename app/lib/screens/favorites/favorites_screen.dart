@@ -140,13 +140,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
+                      placeholder: (_, _) => Container(
                         color: Colors.grey.shade100,
                         child: const Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => _buildImagePlaceholder(),
+                      errorWidget: (_, _, _) => _buildImagePlaceholder(),
                     )
                   else
                     _buildImagePlaceholder(),

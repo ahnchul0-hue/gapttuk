@@ -22,7 +22,7 @@ class NotificationService {
       '/api/v1/notifications/',
       queryParameters: {
         'limit': limit,
-        if (cursor != null) 'cursor': cursor,
+        'cursor': ?cursor,
       },
     );
     final data = response.data;

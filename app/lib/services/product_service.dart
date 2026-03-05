@@ -28,9 +28,9 @@ class ProductService {
       queryParameters: {
         'q': query,
         'limit': limit,
-        if (sort != null) 'sort': sort,
-        if (filter != null) 'filter': filter,
-        if (cursor != null) 'cursor': cursor,
+        'sort': ?sort,
+        'filter': ?filter,
+        'cursor': ?cursor,
       },
     );
     final data = response.data;
@@ -67,9 +67,9 @@ class ProductService {
       '/api/v1/products/$productId/prices',
       queryParameters: {
         'limit': limit,
-        if (from != null) 'from': from,
-        if (to != null) 'to': to,
-        if (cursor != null) 'cursor': cursor,
+        'from': ?from,
+        'to': ?to,
+        'cursor': ?cursor,
       },
     );
     final data = response.data;

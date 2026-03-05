@@ -30,7 +30,7 @@ class AuthService {
       '/api/v1/auth/$provider',
       data: {
         tokenKey: token,
-        if (referralCode != null) 'referral_code': referralCode,
+        'referral_code': ?referralCode,
         'terms_agreed': termsAgreed,
         'privacy_agreed': privacyAgreed,
         'marketing_agreed': marketingAgreed,

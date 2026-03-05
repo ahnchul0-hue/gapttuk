@@ -22,7 +22,7 @@ class DeviceService {
       data: {
         'device_token': deviceToken,
         'platform': platform,
-        if (deviceName != null) 'device_name': deviceName,
+        'device_name': ?deviceName,
       },
     );
     return response.data['data'] as Map<String, dynamic>;

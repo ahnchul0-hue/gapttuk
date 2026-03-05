@@ -301,7 +301,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
       onRefresh: _loadAlerts,
       child: ListView.separated(
         itemCount: alerts.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (ctx, i) {
           final alert = alerts[i];
           return Dismissible(
@@ -362,7 +362,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
       onRefresh: _loadAlerts,
       child: ListView.separated(
         itemCount: alerts.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (ctx, i) {
           final alert = alerts[i];
           return Dismissible(
@@ -431,7 +431,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
       onRefresh: _loadAlerts,
       child: ListView.separated(
         itemCount: alerts.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (ctx, i) {
           final alert = alerts[i];
           return Dismissible(

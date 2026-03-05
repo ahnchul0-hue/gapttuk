@@ -36,7 +36,7 @@ class AlertService {
       data: {
         'product_id': productId,
         'alert_type': alertType,
-        if (targetPrice != null) 'target_price': targetPrice,
+        'target_price': ?targetPrice,
       },
     );
     return PriceAlert.fromJson(

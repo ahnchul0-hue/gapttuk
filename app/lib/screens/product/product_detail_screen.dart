@@ -183,26 +183,30 @@ class ProductDetailScreen extends ConsumerWidget {
               Text('가격 알림 설정',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
-              ...[
-                'target_price',
-                'below_average',
-                'near_lowest',
-                'all_time_low',
-              ].map((type) {
-                final label = switch (type) {
-                  'target_price' => '목표 가격 도달',
-                  'below_average' => '평균 이하로 하락',
-                  'near_lowest' => '역대 최저가 근접',
-                  'all_time_low' => '역대 최저가 갱신',
-                  _ => type,
-                };
-                return RadioListTile<String>(
-                  title: Text(label),
-                  value: type,
-                  groupValue: selectedType,
-                  onChanged: (v) => setState(() => selectedType = v!),
-                );
-              }),
+              RadioGroup<String>(
+                groupValue: selectedType,
+                onChanged: (v) => setState(() => selectedType = v!),
+                child: Column(
+                  children: [
+                    'target_price',
+                    'below_average',
+                    'near_lowest',
+                    'all_time_low',
+                  ].map((type) {
+                    final label = switch (type) {
+                      'target_price' => '목표 가격 도달',
+                      'below_average' => '평균 이하로 하락',
+                      'near_lowest' => '역대 최저가 근접',
+                      'all_time_low' => '역대 최저가 갱신',
+                      _ => type,
+                    };
+                    return RadioListTile<String>(
+                      title: Text(label),
+                      value: type,
+                    );
+                  }).toList(),
+                ),
+              ),
               if (selectedType == 'target_price') ...[
                 const SizedBox(height: 8),
                 TextField(
