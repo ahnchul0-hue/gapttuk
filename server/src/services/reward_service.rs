@@ -25,7 +25,7 @@ pub struct PointsInfo {
 /// 월한도 배분 확률 — 1¢=90%, 2¢=6%, 3¢=3%, 4¢=1%
 /// 신규 유저(첫 달)는 1~2¢ 범위만 배정
 fn assign_monthly_cap(is_new_user_first_month: bool) -> i16 {
-    let r = rand::thread_rng().gen_range(0u32..100);
+    let r = rand::rngs::OsRng.gen_range(0u32..100);
     if is_new_user_first_month {
         // 신규 유저: 1¢(94%) 또는 2¢(6%)
         if r < 94 {
@@ -49,7 +49,7 @@ fn assign_monthly_cap(is_new_user_first_month: bool) -> i16 {
 
 /// 룰렛 결과 판정 — 월한도 미달이면 90% 확률로 1¢ 당첨
 fn spin_roulette() -> i16 {
-    let r = rand::thread_rng().gen_range(0u32..100);
+    let r = rand::rngs::OsRng.gen_range(0u32..100);
     if r < 90 {
         1
     } else {
