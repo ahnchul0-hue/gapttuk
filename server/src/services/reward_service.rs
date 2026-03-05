@@ -367,4 +367,56 @@ mod tests {
         assert!(r.already_checked_in);
         assert_eq!(r.reward_amount, 0);
     }
+
+    #[test]
+    fn assign_monthly_cap_distribution_bias() {
+        // 1000회 반복 시 대부분 1¢ 배정 확인 (90%)
+        let ones = (0..1000)
+            .map(|_| assign_monthly_cap(false))
+            .filter(|&c| c == 1)
+            .count();
+        assert!(ones > 800, "expected >80% ones, got {ones}/1000");
+    }
+
+    #[test]
+    fn assign_monthly_cap_new_user_never_above_2() {
+        for _ in 0..500 {
+            let cap = assign_monthly_cap(true);
+            assert!(cap <= 2, "new user got cap {cap} > 2");
+        }
+    }
+
+    #[test]
+    fn spin_roulette_mostly_wins() {
+        // 90% 확률로 1¢ — 1000회 시 800+ 확인
+        let wins = (0..1000)
+            .map(|_| spin_roulette())
+            .filter(|&r| r == 1)
+            .count();
+        assert!(wins > 800, "expected >80% wins, got {wins}/1000");
+    }
+
+    #[test]
+    fn points_info_zero_defaults() {
+        let info = PointsInfo {
+            balance: 0,
+            total_earned: 0,
+            total_spent: 0,
+        };
+        assert_eq!(info.balance, 0);
+        assert_eq!(info.total_earned, 0);
+        assert_eq!(info.total_spent, 0);
+    }
+
+    #[test]
+    fn checkin_result_reward_values() {
+        for amount in [0i16, 1] {
+            let r = CheckinResult {
+                reward_amount: amount,
+                already_checked_in: false,
+            };
+            assert!((0..=1).contains(&r.reward_amount));
+            assert!(!r.already_checked_in);
+        }
+    }
 }
