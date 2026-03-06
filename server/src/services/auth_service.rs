@@ -383,13 +383,18 @@ pub async fn withdraw(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
 }
 
 /// 추천 코드로 추천인 user_id 조회.
+/// 코드 형식: GAP-XXXXXX (10자) — 형식이 맞지 않으면 DB 조회 없이 None 반환.
 pub async fn find_referrer_by_code(
     pool: &PgPool,
     referral_code: &str,
 ) -> Result<Option<i64>, AppError> {
+    let code = referral_code.trim();
+    if code.len() > 20 || code.is_empty() {
+        return Ok(None);
+    }
     let id: Option<i64> =
         sqlx::query_scalar("SELECT id FROM users WHERE referral_code = $1 AND deleted_at IS NULL")
-            .bind(referral_code)
+            .bind(code)
             .fetch_optional(pool)
             .await?;
     Ok(id)

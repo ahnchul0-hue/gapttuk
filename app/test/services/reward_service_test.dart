@@ -26,7 +26,11 @@ void main() {
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {
-            'data': {'reward_amount': 1, 'already_checked_in': false}
+            'data': {
+              'reward_amount': 1,
+              'already_checked_in': false,
+              'new_balance': 6,
+            }
           },
         ),
       );
@@ -35,6 +39,7 @@ void main() {
 
       expect(result.rewardAmount, 1);
       expect(result.alreadyCheckedIn, false);
+      expect(result.newBalance, 6);
     });
 
     test('이미 출석 시 alreadyCheckedIn true', () async {
@@ -42,7 +47,11 @@ void main() {
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {
-            'data': {'reward_amount': 0, 'already_checked_in': true}
+            'data': {
+              'reward_amount': 0,
+              'already_checked_in': true,
+              'new_balance': 5,
+            }
           },
         ),
       );
@@ -51,6 +60,7 @@ void main() {
 
       expect(result.alreadyCheckedIn, true);
       expect(result.rewardAmount, 0);
+      expect(result.newBalance, 5);
     });
 
     test('미당첨 시 rewardAmount 0', () async {
@@ -58,7 +68,11 @@ void main() {
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {
-            'data': {'reward_amount': 0, 'already_checked_in': false}
+            'data': {
+              'reward_amount': 0,
+              'already_checked_in': false,
+              'new_balance': 5,
+            }
           },
         ),
       );
@@ -67,6 +81,7 @@ void main() {
 
       expect(result.rewardAmount, 0);
       expect(result.alreadyCheckedIn, false);
+      expect(result.newBalance, 5);
     });
   });
 

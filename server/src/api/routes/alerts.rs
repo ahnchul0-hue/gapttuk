@@ -26,7 +26,7 @@ pub struct CreateKeywordAlertRequest {
 
 #[derive(Deserialize)]
 pub struct UpdatePriceAlertRequest {
-    pub target_price: rust_decimal::Decimal,
+    pub target_price: i32,
 }
 
 #[derive(Deserialize)]

@@ -283,8 +283,17 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           const SnackBar(content: Text('아쉽게도 오늘은 0¢. 내일 또 도전하세요!')),
         );
       }
-      setState(() => _checkinDone = true);
-      await _loadPoints();
+      setState(() {
+        _checkinDone = true;
+        // checkin 응답에서 직접 잔액 갱신 (추가 API 호출 불필요)
+        if (_points != null) {
+          _points = PointsInfo(
+            balance: result.newBalance,
+            totalEarned: _points!.totalEarned + result.rewardAmount,
+            totalSpent: _points!.totalSpent,
+          );
+        }
+      });
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

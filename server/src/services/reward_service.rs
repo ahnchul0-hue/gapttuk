@@ -50,6 +50,8 @@ pub struct CheckinResult {
     pub reward_amount: i16,
     /// 이미 오늘 출석했는지
     pub already_checked_in: bool,
+    /// 체크인 후 현재 잔액 (추가 API 호출 없이 클라이언트 갱신용)
+    pub new_balance: i32,
 }
 
 /// 센트 잔액 응답
@@ -118,11 +120,19 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
             .await?;
 
     if existing.is_some() {
+        // 이미 출석 — 현재 잔액만 조회 후 반환
+        let balance: i32 =
+            sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
+                .bind(user_id)
+                .fetch_optional(&mut *tx)
+                .await?
+                .unwrap_or(0);
         tx.rollback().await?;
         metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
             reward_amount: 0,
             already_checked_in: true,
+            new_balance: balance,
         });
     }
 
@@ -199,6 +209,14 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
 
     tx.commit().await?;
 
+    // commit 후 최신 잔액 조회
+    let new_balance: i32 =
+        sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await?
+            .unwrap_or(0);
+
     // 비즈니스 메트릭: 출석 체크인 결과
     let result_label = if reward > 0 { "reward" } else { "miss" };
     metrics::counter!("checkins_total", "result" => result_label).increment(1);
@@ -206,6 +224,7 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
     Ok(CheckinResult {
         reward_amount: reward,
         already_checked_in: false,
+        new_balance,
     })
 }
 
@@ -387,9 +406,11 @@ mod tests {
         let r = CheckinResult {
             reward_amount: 0,
             already_checked_in: true,
+            new_balance: 10,
         };
         assert!(r.already_checked_in);
         assert_eq!(r.reward_amount, 0);
+        assert_eq!(r.new_balance, 10);
     }
 
     #[test]
@@ -438,9 +459,11 @@ mod tests {
             let r = CheckinResult {
                 reward_amount: amount,
                 already_checked_in: false,
+                new_balance: 5,
             };
             assert!((0..=1).contains(&r.reward_amount));
             assert!(!r.already_checked_in);
+            assert_eq!(r.new_balance, 5);
         }
     }
 }

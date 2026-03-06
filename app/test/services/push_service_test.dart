@@ -21,7 +21,6 @@ void main() {
       verifyNever(() => mockDeviceService.registerDevice(
             deviceToken: any(named: 'deviceToken'),
             platform: any(named: 'platform'),
-            deviceName: any(named: 'deviceName'),
           ));
     });
 

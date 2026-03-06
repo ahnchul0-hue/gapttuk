@@ -5,15 +5,18 @@ import 'api_client.dart';
 class CheckinResult {
   final int rewardAmount;
   final bool alreadyCheckedIn;
+  final int newBalance;
 
   const CheckinResult({
     required this.rewardAmount,
     required this.alreadyCheckedIn,
+    required this.newBalance,
   });
 
   factory CheckinResult.fromJson(Map<String, dynamic> json) => CheckinResult(
         rewardAmount: json['reward_amount'] as int? ?? 0,
         alreadyCheckedIn: json['already_checked_in'] as bool? ?? false,
+        newBalance: json['new_balance'] as int? ?? 0,
       );
 }
 

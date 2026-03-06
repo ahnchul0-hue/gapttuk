@@ -320,7 +320,7 @@ class _NotificationTile extends StatelessWidget {
             ),
           ),
           subtitle: Text(
-            notification.body,
+            notification.body ?? '',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(

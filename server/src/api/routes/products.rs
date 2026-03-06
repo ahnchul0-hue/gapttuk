@@ -116,7 +116,7 @@ async fn search(
             f.as_str(),
             "near_stockout" | "all_time_low" | "declining" | "under_10k"
         ) {
-            return Err(AppError::BadRequest(format!("지원하지 않는 필터: {f}")));
+            return Err(AppError::BadRequest("지원하지 않는 필터입니다".to_string()));
         }
     }
 
@@ -126,7 +126,7 @@ async fn search(
             s.as_str(),
             "ranking" | "discount_rate" | "discount_amount" | "lowest_price"
         ) {
-            return Err(AppError::BadRequest(format!("지원하지 않는 정렬: {s}")));
+            return Err(AppError::BadRequest("지원하지 않는 정렬입니다".to_string()));
         }
     }
 

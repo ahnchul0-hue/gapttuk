@@ -385,9 +385,9 @@ pub async fn update_price_alert(
     pool: &PgPool,
     user_id: i64,
     alert_id: i64,
-    target_price: rust_decimal::Decimal,
+    target_price: i32,
 ) -> Result<(), AppError> {
-    if target_price <= rust_decimal::Decimal::ZERO {
+    if target_price <= 0 {
         return Err(AppError::BadRequest(
             "목표가는 0보다 커야 합니다".to_string(),
         ));
@@ -890,12 +890,11 @@ mod tests {
     #[test]
     fn test_price_alert_target_zero_is_invalid() {
         // target_price <= 0은 BadRequest
-        assert!(rust_decimal::Decimal::ZERO <= rust_decimal::Decimal::ZERO);
+        assert!(0i32 <= 0);
     }
 
     #[test]
     fn test_price_alert_target_negative_is_invalid() {
-        let neg = rust_decimal::Decimal::new(-1, 0);
-        assert!(neg <= rust_decimal::Decimal::ZERO);
+        assert!(-1i32 <= 0);
     }
 }

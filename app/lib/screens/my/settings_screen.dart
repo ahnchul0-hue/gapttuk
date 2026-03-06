@@ -189,6 +189,7 @@ class _PushNotificationTile extends StatefulWidget {
 
 class _PushNotificationTileState extends State<_PushNotificationTile> {
   bool _pushEnabled = true;
+  // TODO: Firebase 통합 후 — 디바이스 ID 기반 서버 push toggle 동기화 필요
 
   @override
   Widget build(BuildContext context) {

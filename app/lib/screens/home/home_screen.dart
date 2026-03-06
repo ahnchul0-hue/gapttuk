@@ -97,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
     final controller = TextEditingController();
     bool isLoading = false;
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -149,7 +149,7 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   Widget _trendIcon(String trend) {

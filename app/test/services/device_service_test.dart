@@ -90,12 +90,10 @@ void main() {
       final device = await service.registerDevice(
         deviceToken: 'fcm_token_abc',
         platform: 'android',
-        deviceName: 'Pixel 9',
       );
 
       expect(device['id'], 1);
       expect(device['platform'], 'android');
-      expect(device['device_name'], 'Pixel 9');
     });
 
     test('deviceName 없이 등록', () async {

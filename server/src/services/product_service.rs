@@ -100,23 +100,24 @@ pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
 
 // ── 서비스 함수 ─────────────────────────────────────────
 
-/// 상품 상세 조회 (캐시 적용)
+/// 상품 상세 조회 — moka try_get_with로 thundering herd 방지.
 pub async fn get_product(pool: &PgPool, cache: &AppCache, id: i64) -> Result<Product, AppError> {
-    // 캐시 히트 확인
-    if let Some(product) = cache.products.get(&id).await {
-        return Ok(product);
-    }
-
-    let product: Product = sqlx::query_as("SELECT * FROM products WHERE id = $1")
-        .bind(id)
-        .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
-
-    // 캐시 저장
-    cache.products.insert(id, product.clone()).await;
-
-    Ok(product)
+    let pool = pool.clone();
+    cache
+        .products
+        .try_get_with(id, async move {
+            let product: Product = sqlx::query_as("SELECT * FROM products WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&pool)
+                .await?
+                .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
+            Ok(product) as Result<Product, AppError>
+        })
+        .await
+        .map_err(|e| match e.as_ref() {
+            AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
+            other => AppError::Internal(other.to_string()),
+        })
 }
 
 /// 키워드 검색 (ILIKE, 커서 기반 페이지네이션, 선택적 필터/정렬)

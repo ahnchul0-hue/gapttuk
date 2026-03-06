@@ -40,6 +40,17 @@ void main() {
       expect(AppNotification.fromJson(json).isRead, false);
     });
 
+    test('body null 허용', () {
+      final json = {
+        'id': 4,
+        'user_id': 1,
+        'notification_type': 'system',
+        'title': '공지',
+      };
+      final notif = AppNotification.fromJson(json);
+      expect(notif.body, isNull);
+    });
+
     test('읽음 처리 후 — is_read: true + read_at 설정', () {
       final json = {
         'id': 3,

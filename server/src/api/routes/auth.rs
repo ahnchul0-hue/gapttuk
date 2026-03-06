@@ -307,22 +307,15 @@ async fn update_consent(
             {
                 // 자기 자신의 추천 코드는 무시
                 if referrer_id != claims.sub {
-                    // 이미 추천인이 있는지 확인 — 없으면 설정
-                    let has_referrer: Option<Option<i64>> = sqlx::query_scalar(
-                        "SELECT referred_by FROM users WHERE id = $1 AND deleted_at IS NULL",
+                    // 원자적 UPDATE: referred_by IS NULL일 때만 설정 (race condition 방지)
+                    sqlx::query(
+                        "UPDATE users SET referred_by = $1, updated_at = NOW() \
+                         WHERE id = $2 AND referred_by IS NULL AND deleted_at IS NULL",
                     )
+                    .bind(referrer_id)
                     .bind(claims.sub)
-                    .fetch_optional(&state.pool)
+                    .execute(&state.pool)
                     .await?;
-                    if let Some(None) = has_referrer {
-                        sqlx::query(
-                            "UPDATE users SET referred_by = $1, updated_at = NOW() WHERE id = $2",
-                        )
-                        .bind(referrer_id)
-                        .bind(claims.sub)
-                        .execute(&state.pool)
-                        .await?;
-                    }
                 }
             }
         }

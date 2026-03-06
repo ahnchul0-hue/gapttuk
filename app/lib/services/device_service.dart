@@ -16,14 +16,12 @@ class DeviceService {
   Future<Map<String, dynamic>> registerDevice({
     required String deviceToken,
     required String platform, // 'android' | 'ios'
-    String? deviceName,
   }) async {
     final response = await _api.dio.post(
       ApiEndpoints.devices,
       data: {
         'device_token': deviceToken,
         'platform': platform,
-        'device_name': ?deviceName,
       },
     );
     return response.data['data'] as Map<String, dynamic>;

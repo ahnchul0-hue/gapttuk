@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppNotification {
 
- int get id;@JsonKey(name: 'user_id') int get userId;@JsonKey(name: 'notification_type') String get notificationType;@JsonKey(name: 'reference_id') int? get referenceId;@JsonKey(name: 'reference_type') String? get referenceType; String get title; String get body;@JsonKey(name: 'deep_link') String? get deepLink;@JsonKey(name: 'is_read') bool get isRead;@JsonKey(name: 'sent_at') DateTime? get sentAt;@JsonKey(name: 'read_at') DateTime? get readAt;
+ int get id;@JsonKey(name: 'user_id') int get userId;@JsonKey(name: 'notification_type') String get notificationType;@JsonKey(name: 'reference_id') int? get referenceId;@JsonKey(name: 'reference_type') String? get referenceType; String get title; String? get body;@JsonKey(name: 'deep_link') String? get deepLink;@JsonKey(name: 'is_read') bool get isRead;@JsonKey(name: 'sent_at') DateTime? get sentAt;@JsonKey(name: 'read_at') DateTime? get readAt;
 /// Create a copy of AppNotification
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $AppNotificationCopyWith<$Res>  {
   factory $AppNotificationCopyWith(AppNotification value, $Res Function(AppNotification) _then) = _$AppNotificationCopyWithImpl;
 @useResult
 $Res call({
- int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'notification_type') String notificationType,@JsonKey(name: 'reference_id') int? referenceId,@JsonKey(name: 'reference_type') String? referenceType, String title, String body,@JsonKey(name: 'deep_link') String? deepLink,@JsonKey(name: 'is_read') bool isRead,@JsonKey(name: 'sent_at') DateTime? sentAt,@JsonKey(name: 'read_at') DateTime? readAt
+ int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'notification_type') String notificationType,@JsonKey(name: 'reference_id') int? referenceId,@JsonKey(name: 'reference_type') String? referenceType, String title, String? body,@JsonKey(name: 'deep_link') String? deepLink,@JsonKey(name: 'is_read') bool isRead,@JsonKey(name: 'sent_at') DateTime? sentAt,@JsonKey(name: 'read_at') DateTime? readAt
 });
 
 
@@ -65,7 +65,7 @@ class _$AppNotificationCopyWithImpl<$Res>
 
 /// Create a copy of AppNotification
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? notificationType = null,Object? referenceId = freezed,Object? referenceType = freezed,Object? title = null,Object? body = null,Object? deepLink = freezed,Object? isRead = null,Object? sentAt = freezed,Object? readAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? notificationType = null,Object? referenceId = freezed,Object? referenceType = freezed,Object? title = null,Object? body = freezed,Object? deepLink = freezed,Object? isRead = null,Object? sentAt = freezed,Object? readAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -73,8 +73,8 @@ as int,notificationType: null == notificationType ? _self.notificationType : not
 as String,referenceId: freezed == referenceId ? _self.referenceId : referenceId // ignore: cast_nullable_to_non_nullable
 as int?,referenceType: freezed == referenceType ? _self.referenceType : referenceType // ignore: cast_nullable_to_non_nullable
 as String?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
-as String,deepLink: freezed == deepLink ? _self.deepLink : deepLink // ignore: cast_nullable_to_non_nullable
+as String,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
+as String?,deepLink: freezed == deepLink ? _self.deepLink : deepLink // ignore: cast_nullable_to_non_nullable
 as String?,isRead: null == isRead ? _self.isRead : isRead // ignore: cast_nullable_to_non_nullable
 as bool,sentAt: freezed == sentAt ? _self.sentAt : sentAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,readAt: freezed == readAt ? _self.readAt : readAt // ignore: cast_nullable_to_non_nullable
@@ -163,7 +163,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String? body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppNotification() when $default != null:
 return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_that.referenceType,_that.title,_that.body,_that.deepLink,_that.isRead,_that.sentAt,_that.readAt);case _:
@@ -184,7 +184,7 @@ return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String? body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)  $default,) {final _that = this;
 switch (_that) {
 case _AppNotification():
 return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_that.referenceType,_that.title,_that.body,_that.deepLink,_that.isRead,_that.sentAt,_that.readAt);case _:
@@ -204,7 +204,7 @@ return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'notification_type')  String notificationType, @JsonKey(name: 'reference_id')  int? referenceId, @JsonKey(name: 'reference_type')  String? referenceType,  String title,  String? body, @JsonKey(name: 'deep_link')  String? deepLink, @JsonKey(name: 'is_read')  bool isRead, @JsonKey(name: 'sent_at')  DateTime? sentAt, @JsonKey(name: 'read_at')  DateTime? readAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AppNotification() when $default != null:
 return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_that.referenceType,_that.title,_that.body,_that.deepLink,_that.isRead,_that.sentAt,_that.readAt);case _:
@@ -219,7 +219,7 @@ return $default(_that.id,_that.userId,_that.notificationType,_that.referenceId,_
 @JsonSerializable()
 
 class _AppNotification implements AppNotification {
-  const _AppNotification({required this.id, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'notification_type') required this.notificationType, @JsonKey(name: 'reference_id') this.referenceId, @JsonKey(name: 'reference_type') this.referenceType, required this.title, required this.body, @JsonKey(name: 'deep_link') this.deepLink, @JsonKey(name: 'is_read') this.isRead = false, @JsonKey(name: 'sent_at') this.sentAt, @JsonKey(name: 'read_at') this.readAt});
+  const _AppNotification({required this.id, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'notification_type') required this.notificationType, @JsonKey(name: 'reference_id') this.referenceId, @JsonKey(name: 'reference_type') this.referenceType, required this.title, this.body, @JsonKey(name: 'deep_link') this.deepLink, @JsonKey(name: 'is_read') this.isRead = false, @JsonKey(name: 'sent_at') this.sentAt, @JsonKey(name: 'read_at') this.readAt});
   factory _AppNotification.fromJson(Map<String, dynamic> json) => _$AppNotificationFromJson(json);
 
 @override final  int id;
@@ -228,7 +228,7 @@ class _AppNotification implements AppNotification {
 @override@JsonKey(name: 'reference_id') final  int? referenceId;
 @override@JsonKey(name: 'reference_type') final  String? referenceType;
 @override final  String title;
-@override final  String body;
+@override final  String? body;
 @override@JsonKey(name: 'deep_link') final  String? deepLink;
 @override@JsonKey(name: 'is_read') final  bool isRead;
 @override@JsonKey(name: 'sent_at') final  DateTime? sentAt;
@@ -267,7 +267,7 @@ abstract mixin class _$AppNotificationCopyWith<$Res> implements $AppNotification
   factory _$AppNotificationCopyWith(_AppNotification value, $Res Function(_AppNotification) _then) = __$AppNotificationCopyWithImpl;
 @override @useResult
 $Res call({
- int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'notification_type') String notificationType,@JsonKey(name: 'reference_id') int? referenceId,@JsonKey(name: 'reference_type') String? referenceType, String title, String body,@JsonKey(name: 'deep_link') String? deepLink,@JsonKey(name: 'is_read') bool isRead,@JsonKey(name: 'sent_at') DateTime? sentAt,@JsonKey(name: 'read_at') DateTime? readAt
+ int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'notification_type') String notificationType,@JsonKey(name: 'reference_id') int? referenceId,@JsonKey(name: 'reference_type') String? referenceType, String title, String? body,@JsonKey(name: 'deep_link') String? deepLink,@JsonKey(name: 'is_read') bool isRead,@JsonKey(name: 'sent_at') DateTime? sentAt,@JsonKey(name: 'read_at') DateTime? readAt
 });
 
 
@@ -284,7 +284,7 @@ class __$AppNotificationCopyWithImpl<$Res>
 
 /// Create a copy of AppNotification
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? notificationType = null,Object? referenceId = freezed,Object? referenceType = freezed,Object? title = null,Object? body = null,Object? deepLink = freezed,Object? isRead = null,Object? sentAt = freezed,Object? readAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? notificationType = null,Object? referenceId = freezed,Object? referenceType = freezed,Object? title = null,Object? body = freezed,Object? deepLink = freezed,Object? isRead = null,Object? sentAt = freezed,Object? readAt = freezed,}) {
   return _then(_AppNotification(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -292,8 +292,8 @@ as int,notificationType: null == notificationType ? _self.notificationType : not
 as String,referenceId: freezed == referenceId ? _self.referenceId : referenceId // ignore: cast_nullable_to_non_nullable
 as int?,referenceType: freezed == referenceType ? _self.referenceType : referenceType // ignore: cast_nullable_to_non_nullable
 as String?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
-as String,deepLink: freezed == deepLink ? _self.deepLink : deepLink // ignore: cast_nullable_to_non_nullable
+as String,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
+as String?,deepLink: freezed == deepLink ? _self.deepLink : deepLink // ignore: cast_nullable_to_non_nullable
 as String?,isRead: null == isRead ? _self.isRead : isRead // ignore: cast_nullable_to_non_nullable
 as bool,sentAt: freezed == sentAt ? _self.sentAt : sentAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,readAt: freezed == readAt ? _self.readAt : readAt // ignore: cast_nullable_to_non_nullable

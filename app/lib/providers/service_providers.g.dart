@@ -434,6 +434,7 @@ final class PushServiceProvider
 }
 
 String _$pushServiceHash() => r'c9c951575b065e59d4d08bb4d0d88e6141ee65ef';
+
 /// 보상 서비스.
 
 @ProviderFor(rewardService)
@@ -478,4 +479,4 @@ final class RewardServiceProvider
   }
 }
 
-String _$rewardServiceHash() => r'reward_service_placeholder_hash_v1_2026';
+String _$rewardServiceHash() => r'fd993cc8b3505340a96e2419f9520d7b71d2d579';
