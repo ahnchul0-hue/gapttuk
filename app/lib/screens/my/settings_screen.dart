@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/constants.dart';
+import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/error_utils.dart';
 
@@ -87,6 +88,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
@@ -103,7 +105,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Text(
               AppConstants.appVersion,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: appColors.neutral,
                   ),
             ),
           ),
@@ -134,20 +136,19 @@ class SettingsScreen extends ConsumerWidget {
           // ─── 섹션 3: 계정 ─────────────────────────────────────────────────
           _SectionHeader(title: '계정'),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
+            leading: Icon(Icons.logout, color: appColors.error),
+            title: Text(
               '로그아웃',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.error),
             ),
             onTap: () => _logout(context, ref),
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.person_remove_outlined,
-                color: Colors.red),
-            title: const Text(
+            leading: Icon(Icons.person_remove_outlined, color: appColors.error),
+            title: Text(
               '회원 탈퇴',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.error),
             ),
             onTap: () => _showDeleteAccountDialog(context, ref),
           ),

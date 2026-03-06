@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/constants.dart';
+import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../services/reward_service.dart';
@@ -71,8 +72,11 @@ class MyPageScreen extends ConsumerWidget {
             onTap: () => context.push('/my/settings'),
           ),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.logout,
+                color: Theme.of(context).extension<AppColors>()!.error),
+            title: Text('로그아웃',
+                style: TextStyle(
+                    color: Theme.of(context).extension<AppColors>()!.error)),
             onTap: () => _showLogoutDialog(context, ref),
           ),
           const SizedBox(height: 32),
@@ -144,7 +148,7 @@ class _ProfileHeader extends StatelessWidget {
                 Text(
                   email!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).extension<AppColors>()!.neutral,
                       ),
                 ),
               ],
@@ -160,7 +164,7 @@ class _ProfileHeader extends StatelessWidget {
       return CircleAvatar(
         radius: 36,
         backgroundImage: CachedNetworkImageProvider(profileImageUrl!),
-        backgroundColor: Colors.grey[200],
+        backgroundColor: Theme.of(context).extension<AppColors>()!.neutralLight,
       );
     }
     return CircleAvatar(
@@ -224,7 +228,7 @@ class _AppVersionFooter extends StatelessWidget {
         child: Text(
           'v${AppConstants.appVersion}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
+                color: Theme.of(context).extension<AppColors>()!.neutral,
               ),
         ),
       ),

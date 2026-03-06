@@ -345,7 +345,7 @@ class _FeatureItem extends StatelessWidget {
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey.shade600,
+                      color: Theme.of(context).extension<AppColors>()!.neutral,
                     ),
               ),
             ],
@@ -408,7 +408,7 @@ class _TermsPage extends StatelessWidget {
           // 전체 동의
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Theme.of(context).extension<AppColors>()!.neutralLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: CheckboxListTile(
@@ -480,7 +480,7 @@ class _TermsPage extends StatelessWidget {
           Text(
             '추천 코드 입력 시 1¢ 웰컴 보너스를 드립니다.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).extension<AppColors>()!.neutral,
                 ),
           ),
         ],
@@ -567,7 +567,7 @@ class _CompletePage extends StatelessWidget {
           Text(
             '이제 값뚝과 함께\n최저가 쇼핑을 시작해 보세요.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).extension<AppColors>()!.neutral,
                   height: 1.6,
                 ),
             textAlign: TextAlign.center,
@@ -576,7 +576,7 @@ class _CompletePage extends StatelessWidget {
           Text(
             '가격이 내려가면 알림을 보내드릴게요.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade500,
+                  color: Theme.of(context).extension<AppColors>()!.neutral,
                 ),
           ),
         ],
@@ -610,7 +610,9 @@ class _PageIndicator extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppTheme.primary : Colors.grey.shade300,
+            color: isActive
+                ? AppTheme.primary
+                : Theme.of(context).extension<AppColors>()!.neutralBorder,
             borderRadius: BorderRadius.circular(4),
           ),
         );
