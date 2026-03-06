@@ -122,6 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -150,7 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 '최저가 추적의 시작',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
+                      color: appColors.neutral,
                     ),
               ),
               const SizedBox(height: 48),
@@ -158,7 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // 카카오 로그인
               _SocialLoginButton(
                 label: '카카오로 시작하기',
-                color: const Color(0xFFFEE500),
+                color: AppColors.kakao,
                 textColor: Colors.black87,
                 icon: Icons.chat_bubble,
                 isLoading: _isLoading,
@@ -191,7 +192,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // 네이버 로그인
               _SocialLoginButton(
                 label: '네이버로 시작하기',
-                color: const Color(0xFF03C75A),
+                color: AppColors.naver,
                 textColor: Colors.white,
                 icon: Icons.north_east,
                 isLoading: _isLoading,

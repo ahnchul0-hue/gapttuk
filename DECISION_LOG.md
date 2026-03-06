@@ -230,3 +230,20 @@ PLAN_01.md was not found in the repository; decisions are inferred from the unco
 **Rationale**: BOOLEAN 2개로는 "초대자 보상 완료 but 피초대자 미완료" 같은 불일치 상태가 가능. SMALLINT 단일 상태머신으로 정확한 진행 단계를 표현하고 `CHECK(0~2)` 제약으로 무결성 보장.
 
 **Status**: IMPLEMENTED (migration 013)
+
+---
+
+# Night-07 Session (2026-03-07) — STEP 53
+
+## D-19: Merge auto/night-01-20260306_0100 (STEP 49-52) into current branch
+
+**Decision**: Merge STEP 49-52 commits from previous night branch before implementing STEP 53.
+
+**Rationale**: Current branch (auto/night-01-20260307_0100) was branched from main at STEP 48a.
+STEP 53 (theme centralization) depends on RewardService/PointHistoryScreen (STEP 50),
+Phase A/B/C fixes (STEP 51), and accessibility labels (STEP 52) which are on the previous night branch.
+PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/2026-03-06-step53-implementation.md`.
+
+**Status**: IMPLEMENTED — fast-forward merge, 15 commits ahead of main incorporated.
+
+---
