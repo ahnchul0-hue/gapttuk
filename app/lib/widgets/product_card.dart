@@ -15,6 +15,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final priceFormat = NumberFormat('#,###', 'ko_KR');
+    final appColors = Theme.of(context).extension<AppColors>()!;
 
     final trendLabel = switch (product.priceTrend) {
       'falling' => '가격 하락 중',
@@ -29,7 +30,7 @@ class ProductCard extends StatelessWidget {
         product.productName,
         if (product.currentPrice != null)
           '${priceFormat.format(product.currentPrice)}원',
-        if (trendLabel != null) trendLabel,
+        ?trendLabel,
       ].join(', '),
       child: Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -54,11 +55,11 @@ class ProductCard extends StatelessWidget {
                           placeholder: (_, _) => Container(
                             width: 72,
                             height: 72,
-                            color: Colors.grey.shade200,
+                            color: appColors.neutralLight,
                           ),
-                          errorWidget: (_, _, _) => _placeholderImage(),
+                          errorWidget: (_, _, _) => _placeholderImage(appColors),
                         )
-                      : _placeholderImage(),
+                      : _placeholderImage(appColors),
                 ),
               ),
               const SizedBox(width: 12),
@@ -98,7 +99,7 @@ class ProductCard extends StatelessWidget {
                       ? AppTheme.priceDown
                       : product.priceTrend == 'rising'
                           ? AppTheme.priceUp
-                          : Colors.grey,
+                          : appColors.neutral,
                 )),
             ],
           ),
@@ -108,12 +109,12 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _placeholderImage() {
+  Widget _placeholderImage(AppColors appColors) {
     return Container(
       width: 72,
       height: 72,
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.image, color: Colors.grey),
+      color: appColors.neutralLight,
+      child: Icon(Icons.image, color: appColors.neutral),
     );
   }
 }

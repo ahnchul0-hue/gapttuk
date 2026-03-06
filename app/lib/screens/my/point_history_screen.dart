@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/constants.dart';
+import '../../config/theme.dart';
 import '../../providers/service_providers.dart';
 import '../../services/reward_service.dart';
 import '../../utils/error_utils.dart';
@@ -65,6 +66,7 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(title: const Text('포인트 내역')),
       body: _error != null && _items.isEmpty
@@ -98,7 +100,7 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
                           isPositive
                               ? Icons.add_circle_outline
                               : Icons.remove_circle_outline,
-                          color: isPositive ? Colors.green : Colors.red,
+                          color: isPositive ? appColors.success : appColors.error,
                         ),
                         title: Text(_transactionLabel(item.transactionType)),
                         subtitle: item.description != null
@@ -108,7 +110,7 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
                           '${isPositive ? '+' : ''}${item.amount}${AppConstants.rewardUnit}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isPositive ? Colors.green : Colors.red,
+                            color: isPositive ? appColors.success : appColors.error,
                           ),
                         ),
                       );

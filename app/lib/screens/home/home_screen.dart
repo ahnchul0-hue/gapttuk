@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../config/theme.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -12,6 +13,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final popularAsync = ref.watch(popularSearchesProvider);
 
     return Scaffold(
@@ -77,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                                 title: Text(s.keyword),
                                 trailing: s.trend != null
-                                    ? _trendIcon(s.trend!)
+                                    ? _trendIcon(s.trend!, appColors)
                                     : null,
                                 dense: true,
                               ))
@@ -152,17 +154,17 @@ class HomeScreen extends ConsumerWidget {
     ).then((_) => controller.dispose());
   }
 
-  Widget _trendIcon(String trend) {
+  Widget _trendIcon(String trend, AppColors appColors) {
     switch (trend) {
       case 'up':
-        return const Icon(Icons.trending_up, color: Colors.red, size: 18);
+        return Icon(Icons.trending_up, color: appColors.error, size: 18);
       case 'down':
-        return const Icon(Icons.trending_down, color: Colors.blue, size: 18);
+        return Icon(Icons.trending_down, color: appColors.info, size: 18);
       case 'new':
-        return const Text('NEW',
-            style: TextStyle(color: Colors.orange, fontSize: 12));
+        return Text('NEW',
+            style: TextStyle(color: appColors.warning, fontSize: 12));
       default:
-        return const Icon(Icons.trending_flat, color: Colors.grey, size: 18);
+        return Icon(Icons.trending_flat, color: appColors.neutral, size: 18);
     }
   }
 }
