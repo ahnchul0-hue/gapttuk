@@ -214,6 +214,9 @@ pub async fn search_products(
             .await?
     };
 
+    let result_label = if items.is_empty() { "empty" } else { "hit" };
+    metrics::counter!("search_queries_total", "result" => result_label).increment(1);
+
     Ok(items)
 }
 

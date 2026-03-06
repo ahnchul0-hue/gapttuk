@@ -62,6 +62,8 @@ impl AppCache {
             .set(self.popular_searches.entry_count() as f64);
         metrics::gauge!("cache_entries", "name" => "products")
             .set(self.products.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "predictions")
+            .set(self.predictions.entry_count() as f64);
     }
 }
 

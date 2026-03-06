@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import '../config/constants.dart';
 import '../models/price_history.dart';
 import '../models/product.dart';
@@ -11,7 +12,7 @@ class ProductService {
 
   /// 상품 상세 조회.
   Future<Product> getProduct(int productId) async {
-    final response = await _api.dio.get('/api/v1/products/$productId');
+    final response = await _api.dio.get(ApiEndpoints.product(productId));
     return Product.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -24,7 +25,7 @@ class ProductService {
     int limit = AppConstants.defaultPageSize,
   }) async {
     final response = await _api.dio.get(
-      '/api/v1/products/search',
+      ApiEndpoints.productSearch,
       queryParameters: {
         'q': query,
         'limit': limit,
@@ -47,7 +48,7 @@ class ProductService {
   /// URL로 상품 추가/조회.
   Future<AddProductResponse> addByUrl(String url) async {
     final response = await _api.dio.post(
-      '/api/v1/products/url',
+      ApiEndpoints.productUrl,
       data: {'url': url},
     );
     return AddProductResponse.fromJson(
@@ -64,7 +65,7 @@ class ProductService {
     int limit = AppConstants.defaultPageSize,
   }) async {
     final response = await _api.dio.get(
-      '/api/v1/products/$productId/prices',
+      ApiEndpoints.productPrices(productId),
       queryParameters: {
         'limit': limit,
         'from': ?from,
@@ -86,7 +87,7 @@ class ProductService {
   /// 요일별 가격 집계 조회.
   Future<List<DailyPriceAggregate>> getDailyPrices(int productId) async {
     final response =
-        await _api.dio.get('/api/v1/products/$productId/prices/daily');
+        await _api.dio.get(ApiEndpoints.productDailyPrices(productId));
     return (response.data['data'] as List)
         .map((e) => DailyPriceAggregate.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -95,7 +96,7 @@ class ProductService {
   /// 인기 검색어 조회.
   Future<List<PopularSearch>> getPopularSearches({int limit = 10}) async {
     final response = await _api.dio.get(
-      '/api/v1/products/popular',
+      ApiEndpoints.productPopular,
       queryParameters: {'limit': limit},
     );
     return (response.data['data'] as List)

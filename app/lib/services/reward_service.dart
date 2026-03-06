@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import 'api_client.dart';
 
 /// 일일 룰렛 결과.
@@ -45,14 +46,14 @@ class RewardService {
   ///
   /// 하루 1회 제한. 이미 출석한 경우 [CheckinResult.alreadyCheckedIn] = true.
   Future<CheckinResult> checkin() async {
-    final response = await _api.dio.post('/api/v1/rewards/checkin');
+    final response = await _api.dio.post(ApiEndpoints.rewardsCheckin);
     final data = response.data['data'] as Map<String, dynamic>;
     return CheckinResult.fromJson(data);
   }
 
   /// GET /api/v1/rewards/points — 센트 잔액 조회.
   Future<PointsInfo> getPoints() async {
-    final response = await _api.dio.get('/api/v1/rewards/points');
+    final response = await _api.dio.get(ApiEndpoints.rewardsPoints);
     final data = response.data['data'] as Map<String, dynamic>;
     return PointsInfo.fromJson(data);
   }
@@ -65,7 +66,7 @@ class RewardService {
     final params = <String, dynamic>{'limit': limit};
     if (cursor != null) params['cursor'] = cursor;
     final response = await _api.dio.get(
-      '/api/v1/rewards/history',
+      ApiEndpoints.rewardsHistory,
       queryParameters: params,
     );
     final data = response.data['data'] as Map<String, dynamic>;

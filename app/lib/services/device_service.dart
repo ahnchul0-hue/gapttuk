@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import 'api_client.dart';
 
 class DeviceService {
@@ -7,7 +8,7 @@ class DeviceService {
 
   /// 기기 목록 조회.
   Future<List<Map<String, dynamic>>> getDevices() async {
-    final response = await _api.dio.get('/api/v1/devices/');
+    final response = await _api.dio.get(ApiEndpoints.devices);
     return (response.data['data'] as List).cast<Map<String, dynamic>>();
   }
 
@@ -18,7 +19,7 @@ class DeviceService {
     String? deviceName,
   }) async {
     final response = await _api.dio.post(
-      '/api/v1/devices/',
+      ApiEndpoints.devices,
       data: {
         'device_token': deviceToken,
         'platform': platform,
@@ -30,7 +31,7 @@ class DeviceService {
 
   /// 기기 삭제 (204).
   Future<void> unregisterDevice(int id) async {
-    await _api.dio.delete('/api/v1/devices/$id');
+    await _api.dio.delete(ApiEndpoints.deviceDelete(id));
   }
 
   /// 푸시 토글.
@@ -39,7 +40,7 @@ class DeviceService {
     required bool pushEnabled,
   }) async {
     final response = await _api.dio.patch(
-      '/api/v1/devices/$id/push',
+      ApiEndpoints.devicePushToggle(id),
       data: {'push_enabled': pushEnabled},
     );
     return response.data['data'] as Map<String, dynamic>;

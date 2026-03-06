@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import '../models/user.dart';
 import 'api_client.dart';
 import 'token_storage.dart';
@@ -27,7 +28,7 @@ class AuthService {
     final tokenKey = provider == 'google' ? 'id_token' : 'access_token';
 
     final response = await _api.dio.post(
-      '/api/v1/auth/$provider',
+      ApiEndpoints.authProvider(provider),
       data: {
         tokenKey: token,
         'referral_code': ?referralCode,
@@ -47,7 +48,7 @@ class AuthService {
 
   /// 현재 사용자 정보 조회.
   Future<User> me() async {
-    final response = await _api.dio.get('/api/v1/auth/me');
+    final response = await _api.dio.get(ApiEndpoints.authMe);
     return User.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -59,7 +60,7 @@ class AuthService {
     String? referralCode,
   }) async {
     await _api.dio.patch(
-      '/api/v1/auth/consent',
+      ApiEndpoints.authConsent,
       data: {
         'terms_agreed': termsAgreed,
         'privacy_agreed': privacyAgreed,
@@ -73,7 +74,7 @@ class AuthService {
   /// 로그아웃.
   Future<void> logout() async {
     try {
-      await _api.dio.post('/api/v1/auth/logout');
+      await _api.dio.post(ApiEndpoints.authLogout);
     } finally {
       await _tokenStorage.clearTokens();
     }
@@ -82,7 +83,7 @@ class AuthService {
   /// 회원 탈퇴.
   Future<void> withdraw() async {
     try {
-      await _api.dio.delete('/api/v1/auth/me');
+      await _api.dio.delete(ApiEndpoints.authMe);
     } finally {
       await _tokenStorage.clearTokens();
     }

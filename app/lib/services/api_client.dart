@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../config/api_endpoints.dart';
 import '../config/constants.dart';
 import 'token_storage.dart';
 
@@ -38,7 +39,7 @@ class ApiClient {
         connectTimeout: AppConstants.httpTimeout,
         receiveTimeout: AppConstants.httpTimeout,
       )).post(
-        '/api/v1/auth/refresh',
+        ApiEndpoints.authRefresh,
         data: {'refresh_token': refreshToken},
       );
 
@@ -80,12 +81,14 @@ class _AuthInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
       try {
-        // 이미 갱신 중이면 기존 Future를 재사용 (race condition 방지)
-        _refreshFuture ??= _client.refreshTokens();
-        final refreshed = await _refreshFuture;
-        _refreshFuture = null;
+        // 이미 갱신 중이면 기존 Future를 재사용 (race condition 방지).
+        // whenComplete로 Future 완료 후 정확히 한 번만 정리.
+        final refresh = _refreshFuture ??= _client
+            .refreshTokens()
+            .whenComplete(() => _refreshFuture = null);
+        final refreshed = await refresh;
 
-        if (refreshed == true) {
+        if (refreshed) {
           // 갱신 성공 → 원래 요청 재시도
           final token = await _client._tokenStorage.getAccessToken();
           err.requestOptions.headers['Authorization'] = 'Bearer $token';
@@ -97,7 +100,6 @@ class _AuthInterceptor extends Interceptor {
           }
         }
       } catch (_) {
-        _refreshFuture = null;
         await _client._tokenStorage.clearTokens();
       }
     }

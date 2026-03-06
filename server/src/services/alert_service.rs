@@ -452,6 +452,7 @@ struct ProductStats {
 /// 가격 변동 시 해당 상품의 활성 알림 평가.
 /// 조건 충족 시 알림 생성 + 푸시 전송.
 /// 반환: 트리거된 알림 수.
+#[tracing::instrument(skip(pool, push))]
 pub async fn evaluate_price_alerts(
     pool: &PgPool,
     push: std::sync::Arc<PushClient>,
@@ -565,6 +566,7 @@ pub async fn evaluate_price_alerts(
     let triggered = claimed_ids.len();
     if triggered > 0 {
         tracing::info!(product_id, triggered, "Price alerts evaluated");
+        metrics::counter!("alerts_triggered_total").increment(triggered as u64);
     }
 
     Ok(triggered)

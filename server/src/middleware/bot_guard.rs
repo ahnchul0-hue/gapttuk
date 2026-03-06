@@ -57,11 +57,13 @@ pub async fn bot_guard(
         .and_then(|v| v.to_str().ok())
         .ok_or_else(|| {
             tracing::info!(ip = %ip, "Missing User-Agent header — blocked");
+            metrics::counter!("bot_guard_blocks_total", "reason" => "no_ua").increment(1);
             AppError::Forbidden
         })?;
 
     if is_bot_ua(ua) {
         tracing::info!(ip = %ip, user_agent = %ua, "Bot UA blocked");
+        metrics::counter!("bot_guard_blocks_total", "reason" => "ua").increment(1);
         return Err(AppError::Forbidden);
     }
 
@@ -98,6 +100,7 @@ pub async fn bot_guard(
         .await;
 
     if is_blocked {
+        metrics::counter!("bot_guard_blocks_total", "reason" => "ip").increment(1);
         return Err(AppError::Forbidden);
     }
 

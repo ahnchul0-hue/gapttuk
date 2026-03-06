@@ -1,9 +1,47 @@
 use chrono::{Datelike, NaiveDate, Utc};
 use rand::Rng;
 use serde::Serialize;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::error::AppError;
+
+/// 트랜잭션 내에서 포인트 적립 + 거래 기록을 원자적으로 수행하는 공통 함수.
+/// reward_service, auth_service 등 포인트를 조작하는 모든 코드에서 이 함수를 사용.
+pub async fn add_points_and_record(
+    tx: &mut Transaction<'_, Postgres>,
+    user_id: i64,
+    amount: i32,
+    transaction_type: &str,
+    description: &str,
+    reference_id: Option<i64>,
+) -> Result<(), AppError> {
+    // user_points 잔액 증가
+    sqlx::query(
+        "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+    )
+    .bind(amount)
+    .bind(user_id)
+    .execute(&mut **tx)
+    .await?;
+
+    // point_transactions 기록
+    sqlx::query(
+        "INSERT INTO point_transactions (user_id, amount, transaction_type, reference_id, description) VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(user_id)
+    .bind(amount)
+    .bind(transaction_type)
+    .bind(reference_id)
+    .bind(description)
+    .execute(&mut **tx)
+    .await?;
+
+    // 비즈니스 메트릭: 포인트 발행 추적
+    metrics::counter!("points_issued_total", "reason" => transaction_type.to_string())
+        .increment(amount as u64);
+
+    Ok(())
+}
 
 /// 일일 룰렛 결과 응답
 #[derive(Debug, Serialize)]
@@ -64,6 +102,7 @@ fn spin_roulette() -> i16 {
 /// - earned_so_far >= monthly_cap이면 0¢ (한도 초과)
 /// - 한도 미달이면 spin_roulette()으로 0 또는 1¢ 지급
 /// - 모든 DB 변경은 단일 트랜잭션
+#[tracing::instrument(skip(pool))]
 pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult, AppError> {
     let today: NaiveDate = Utc::now().naive_utc().date();
     let year_month = format!("{}-{:02}", today.year(), today.month());
@@ -80,6 +119,7 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
 
     if existing.is_some() {
         tx.rollback().await?;
+        metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
             reward_amount: 0,
             already_checked_in: true,
@@ -137,24 +177,14 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
 
     // 5. 보상이 있을 때만 잔액 + 월한도 업데이트
     if reward > 0 {
-        let reward_i32 = reward as i32;
-
-        // user_points 잔액 증가
-        sqlx::query(
-            "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+        add_points_and_record(
+            &mut tx,
+            user_id,
+            reward as i32,
+            "daily_checkin",
+            "일일 출석 룰렛 보상",
+            None,
         )
-        .bind(reward_i32)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-
-        // point_transactions 기록
-        sqlx::query(
-            "INSERT INTO point_transactions (user_id, amount, transaction_type, description) VALUES ($1, $2, 'daily_checkin', '일일 출석 룰렛 보상')",
-        )
-        .bind(user_id)
-        .bind(reward_i32)
-        .execute(&mut *tx)
         .await?;
 
         // 월한도 earned_so_far 증가
@@ -168,6 +198,11 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
     }
 
     tx.commit().await?;
+
+    // 비즈니스 메트릭: 출석 체크인 결과
+    let result_label = if reward > 0 { "reward" } else { "miss" };
+    metrics::counter!("checkins_total", "result" => result_label).increment(1);
+
     Ok(CheckinResult {
         reward_amount: reward,
         already_checked_in: false,
@@ -240,6 +275,7 @@ pub async fn get_history(
 /// - Stage 0 → 1 (1만원 이상 첫 구매): 피초대자 +1¢, 초대자 2¢
 /// - Stage 1 → 2 (1만원 이상 두번째 구매): 피초대자 +1¢, 초대자 3¢
 /// - Stage 2 이미 완료면 no-op
+#[tracing::instrument(skip(pool))]
 pub async fn process_referral_purchase(
     pool: &PgPool,
     referred_user_id: i64,
@@ -285,37 +321,25 @@ pub async fn process_referral_purchase(
         .await?;
 
     // 초대자 보상
-    sqlx::query(
-        "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+    add_points_and_record(
+        &mut tx,
+        referrer_id,
+        referrer_reward,
+        "referral_purchase_referrer",
+        "추천 보상 — 피초대자 구매",
+        Some(referral_id),
     )
-    .bind(referrer_reward)
-    .bind(referrer_id)
-    .execute(&mut *tx)
-    .await?;
-    sqlx::query(
-        "INSERT INTO point_transactions (user_id, amount, transaction_type, reference_id, description) VALUES ($1, $2, 'referral_purchase_referrer', $3, '추천 보상 — 피초대자 구매')",
-    )
-    .bind(referrer_id)
-    .bind(referrer_reward)
-    .bind(referral_id)
-    .execute(&mut *tx)
     .await?;
 
     // 피초대자 보상
-    sqlx::query(
-        "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+    add_points_and_record(
+        &mut tx,
+        referred_user_id,
+        referred_reward,
+        "referral_purchase_referred",
+        "추천 보상 — 구매 달성",
+        Some(referral_id),
     )
-    .bind(referred_reward)
-    .bind(referred_user_id)
-    .execute(&mut *tx)
-    .await?;
-    sqlx::query(
-        "INSERT INTO point_transactions (user_id, amount, transaction_type, reference_id, description) VALUES ($1, $2, 'referral_purchase_referred', $3, '추천 보상 — 구매 달성')",
-    )
-    .bind(referred_user_id)
-    .bind(referred_reward)
-    .bind(referral_id)
-    .execute(&mut *tx)
     .await?;
 
     tx.commit().await?;
