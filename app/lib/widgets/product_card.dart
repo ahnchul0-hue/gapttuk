@@ -16,32 +16,50 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final priceFormat = NumberFormat('#,###', 'ko_KR');
 
-    return Card(
+    final trendLabel = switch (product.priceTrend) {
+      'falling' => '가격 하락 중',
+      'rising' => '가격 상승 중',
+      'stable' => '가격 보합',
+      _ => null,
+    };
+
+    return Semantics(
+      button: onTap != null,
+      label: [
+        product.productName,
+        if (product.currentPrice != null)
+          '${priceFormat.format(product.currentPrice)}원',
+        if (trendLabel != null) trendLabel,
+      ].join(', '),
+      child: Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
         onTap: onTap,
+        excludeFromSemantics: true,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               // 상품 이미지
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: product.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: product.imageUrl!,
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(
+              ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: product.imageUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: product.imageUrl!,
                           width: 72,
                           height: 72,
-                          color: Colors.grey.shade200,
-                        ),
-                        errorWidget: (_, _, _) => _placeholderImage(),
-                      )
-                    : _placeholderImage(),
+                          fit: BoxFit.cover,
+                          placeholder: (_, _) => Container(
+                            width: 72,
+                            height: 72,
+                            color: Colors.grey.shade200,
+                          ),
+                          errorWidget: (_, _, _) => _placeholderImage(),
+                        )
+                      : _placeholderImage(),
+                ),
               ),
               const SizedBox(width: 12),
 
@@ -70,7 +88,7 @@ class ProductCard extends StatelessWidget {
 
               // 가격 트렌드 아이콘
               if (product.priceTrend != null)
-                Icon(
+                ExcludeSemantics(child: Icon(
                   product.priceTrend == 'falling'
                       ? Icons.trending_down
                       : product.priceTrend == 'rising'
@@ -81,11 +99,12 @@ class ProductCard extends StatelessWidget {
                       : product.priceTrend == 'rising'
                           ? AppTheme.priceUp
                           : Colors.grey,
-                ),
+                )),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -244,13 +244,18 @@ async fn main() {
         tracing::info!("Skipping crawler scheduler in Test environment");
     }
 
-    // 7. AppState 조합
+    // 7. Access log bounded channel + worker
+    let (log_tx, log_rx) = tokio::sync::mpsc::channel(10_000);
+    middleware::access_log::spawn_writer(pool.clone(), log_rx);
+
+    // 8. AppState 조합
     let state = AppState {
         pool: pool.clone(),
         cache,
         config: config.clone(),
         http_client,
         push_client,
+        log_tx,
     };
 
     // 8. Router — 레이어 순서: 마지막 .layer()가 outermost

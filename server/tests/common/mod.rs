@@ -40,12 +40,14 @@ pub fn build_test_app(pool: PgPool) -> Router {
     let push_client = Arc::new(PushClient::new(&config, http_client.clone()));
     let cache = AppCache::new();
 
+    let (log_tx, _log_rx) = tokio::sync::mpsc::channel(100);
     let state = AppState {
         pool,
         cache,
         config: Arc::new(config),
         http_client,
         push_client,
+        log_tx,
     };
 
     Router::new()

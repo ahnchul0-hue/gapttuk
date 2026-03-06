@@ -130,10 +130,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 로고
-              Icon(
-                Icons.trending_down,
-                size: 80,
-                color: AppTheme.primary,
+              Semantics(
+                image: true,
+                label: '값뚝 로고',
+                child: Icon(
+                  Icons.trending_down,
+                  size: 80,
+                  color: AppTheme.primary,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -202,7 +206,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               if (_isLoading) ...[
                 const SizedBox(height: 16),
-                const CircularProgressIndicator(),
+                const CircularProgressIndicator(
+                  semanticsLabel: '로그인 중',
+                ),
               ],
             ],
           ),
@@ -236,7 +242,7 @@ class _SocialLoginButton extends StatelessWidget {
       height: 52,
       child: ElevatedButton.icon(
         onPressed: isLoading ? null : onPressed,
-        icon: Icon(icon, color: textColor),
+        icon: ExcludeSemantics(child: Icon(icon, color: textColor)),
         label: Text(label, style: TextStyle(color: textColor)),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,

@@ -21,6 +21,25 @@ pub async fn create_and_push(
     push: &PushClient,
     notif: &PushNotification<'_>,
 ) -> Result<(), AppError> {
+    // 디바이스를 직접 조회하여 전송
+    let devices = sqlx::query_as::<_, UserDevice>(
+        "SELECT * FROM user_devices WHERE user_id = $1 AND push_enabled = TRUE",
+    )
+    .bind(notif.user_id)
+    .fetch_all(pool)
+    .await?;
+
+    create_notification_and_push(pool, push, notif, &devices).await
+}
+
+/// 알림 생성 + 사전 조회된 디바이스에 푸시 전송.
+/// 배치 처리 시 N+1 방지를 위해 디바이스를 미리 조회하여 전달한다.
+pub async fn create_notification_and_push(
+    pool: &PgPool,
+    push: &PushClient,
+    notif: &PushNotification<'_>,
+    devices: &[UserDevice],
+) -> Result<(), AppError> {
     let PushNotification {
         user_id,
         ref ntype,
@@ -46,17 +65,9 @@ pub async fn create_and_push(
     .execute(pool)
     .await?;
 
-    // 2. 활성 디바이스 조회
-    let devices = sqlx::query_as::<_, UserDevice>(
-        "SELECT * FROM user_devices WHERE user_id = $1 AND push_enabled = TRUE",
-    )
-    .bind(user_id)
-    .fetch_all(pool)
-    .await?;
-
-    // 3. 각 디바이스에 푸시 전송 — 무효 토큰은 수집 후 배치 비활성화
+    // 2. 각 디바이스에 푸시 전송 — 무효 토큰은 수집 후 배치 비활성화
     let mut invalid_device_ids: Vec<i64> = Vec::new();
-    for device in &devices {
+    for device in devices {
         if let Err(e) = push
             .send(
                 &device.platform,
@@ -86,7 +97,7 @@ pub async fn create_and_push(
         }
     }
 
-    // 4. 무효 디바이스 배치 비활성화 (N회 UPDATE → 1회)
+    // 3. 무효 디바이스 배치 비활성화 (N회 UPDATE → 1회)
     if !invalid_device_ids.is_empty() {
         if let Err(e) = sqlx::query(
             "UPDATE user_devices SET push_enabled = FALSE, updated_at = NOW() WHERE id = ANY($1)",
@@ -104,6 +115,27 @@ pub async fn create_and_push(
     }
 
     Ok(())
+}
+
+/// 여러 사용자의 활성 디바이스를 batch 조회 → user_id별 HashMap 반환.
+/// N+1 방지: N회 SELECT → 1회 SELECT로 축소.
+pub async fn batch_fetch_devices(
+    pool: &PgPool,
+    user_ids: &[i64],
+) -> Result<std::collections::HashMap<i64, Vec<UserDevice>>, AppError> {
+    let devices = sqlx::query_as::<_, UserDevice>(
+        "SELECT * FROM user_devices WHERE user_id = ANY($1) AND push_enabled = TRUE",
+    )
+    .bind(user_ids)
+    .fetch_all(pool)
+    .await?;
+
+    let mut map: std::collections::HashMap<i64, Vec<UserDevice>> =
+        std::collections::HashMap::new();
+    for device in devices {
+        map.entry(device.user_id).or_default().push(device);
+    }
+    Ok(map)
 }
 
 /// 사용자의 알림 목록 조회 (최신순, 페이지네이션).

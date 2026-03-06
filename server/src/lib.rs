@@ -28,6 +28,7 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub http_client: reqwest::Client,
     pub push_client: Arc<push::PushClient>,
+    pub log_tx: tokio::sync::mpsc::Sender<middleware::access_log::AccessLogEntry>,
 }
 
 /// DB 헬스 상세 페이로드
