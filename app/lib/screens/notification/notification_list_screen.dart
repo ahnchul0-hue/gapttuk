@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/theme.dart';
 import '../../models/notification.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -181,6 +182,7 @@ class _NotificationListScreenState
   }
 
   Widget _buildBody() {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -190,7 +192,7 @@ class _NotificationListScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(Icons.error_outline, size: 48, color: appColors.error),
             const SizedBox(height: 12),
             const Text(
               '알림 내역을 불러오지 못했습니다.',
@@ -199,8 +201,7 @@ class _NotificationListScreenState
             const SizedBox(height: 8),
             Text(
               _error!,
-              style:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: appColors.neutral, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -218,21 +219,21 @@ class _NotificationListScreenState
       return RefreshIndicator(
         onRefresh: () => _loadNotifications(refresh: true),
         child: ListView(
-          children: const [
-            SizedBox(height: 120),
+          children: [
+            const SizedBox(height: 120),
             Center(
               child: Column(
                 children: [
                   Icon(
                     Icons.notifications_none_outlined,
                     size: 64,
-                    color: Colors.grey,
+                    color: appColors.neutral,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     '새로운 알림이 없습니다.',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: appColors.neutral,
                       fontSize: 15,
                     ),
                   ),
@@ -294,6 +295,7 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final isUnread = !notification.isRead;
     final unreadBg = Theme.of(context).colorScheme.primaryContainer.withAlpha(40);
 
@@ -303,7 +305,7 @@ class _NotificationTile extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
+        color: appColors.error,
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) => onDismissed(),
@@ -311,7 +313,7 @@ class _NotificationTile extends StatelessWidget {
         color: isUnread ? unreadBg : null,
         child: ListTile(
           onTap: onTap,
-          leading: _buildTypeIcon(notification.notificationType),
+          leading: _buildTypeIcon(notification.notificationType, appColors),
           title: Text(
             notification.title,
             style: TextStyle(
@@ -324,14 +326,14 @@ class _NotificationTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: appColors.neutral,
               fontSize: 13,
             ),
           ),
           trailing: Text(
             _formatTime(notification.sentAt),
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: appColors.neutral,
               fontSize: 11,
             ),
           ),
@@ -341,29 +343,29 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  Widget _buildTypeIcon(String type) {
+  Widget _buildTypeIcon(String type, AppColors appColors) {
     IconData icon;
     Color color;
     switch (type) {
       case 'price_alert':
         icon = Icons.price_change;
-        color = Colors.blue;
+        color = appColors.info;
         break;
       case 'keyword_alert':
         icon = Icons.search;
-        color = Colors.orange;
+        color = appColors.warning;
         break;
       case 'category_alert':
         icon = Icons.category;
-        color = Colors.purple;
+        color = appColors.warning;
         break;
       case 'system':
         icon = Icons.info_outline;
-        color = Colors.grey;
+        color = appColors.neutral;
         break;
       default:
         icon = Icons.notifications_outlined;
-        color = Colors.teal;
+        color = appColors.info;
     }
     return CircleAvatar(
       radius: 20,

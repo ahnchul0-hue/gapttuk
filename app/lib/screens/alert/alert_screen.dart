@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
 import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -218,17 +219,18 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     required int Function(T) getId,
     required void Function(T) onDismissed,
     required Widget Function(T) tileBuilder,
+    required AppColors appColors,
   }) {
     if (alerts.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(emptyIcon, size: 64, color: Colors.grey.shade400),
+            Icon(emptyIcon, size: 64, color: appColors.neutral),
             const SizedBox(height: 16),
             Text(
               emptyMessage,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              style: TextStyle(color: appColors.neutral, fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],
@@ -248,7 +250,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
+              color: appColors.error,
               child: const Icon(Icons.delete_outline, color: Colors.white),
             ),
             onDismissed: (_) => onDismissed(alert),
@@ -329,6 +331,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   }
 
   Widget _buildBody() {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -337,7 +340,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(Icons.error_outline, size: 48, color: appColors.error),
             const SizedBox(height: 12),
             const Text(
               '알림 목록을 불러오지 못했습니다',
@@ -346,7 +349,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: appColors.neutral, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -376,10 +379,11 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
           keyPrefix: 'price',
           getId: (a) => a.id,
           onDismissed: _deletePriceAlert,
+          appColors: appColors,
           tileBuilder: (alert) => ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade50,
-              child: const Icon(Icons.price_change, color: Colors.blue),
+              backgroundColor: appColors.info.withAlpha(30),
+              child: Icon(Icons.price_change, color: appColors.info),
             ),
             title: Text(
               '상품 #${alert.productId}',
@@ -392,7 +396,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                 if (alert.targetPrice != null)
                   Text(
                     '목표가: ${formatPrice(alert.targetPrice!)}',
-                    style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
+                    style: TextStyle(color: appColors.info, fontSize: 12),
                   ),
               ],
             ),
@@ -411,10 +415,11 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
           keyPrefix: 'category',
           getId: (a) => a.id,
           onDismissed: _deleteCategoryAlert,
+          appColors: appColors,
           tileBuilder: (alert) => ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.purple.shade50,
-              child: const Icon(Icons.category, color: Colors.purple),
+              backgroundColor: appColors.warning.withAlpha(30),
+              child: Icon(Icons.category, color: appColors.warning),
             ),
             title: Text(
               '카테고리 #${alert.categoryId}',
@@ -427,14 +432,12 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                 if (alert.thresholdPercent != null)
                   Text(
                     '${alert.thresholdPercent}% 이상 할인',
-                    style:
-                        TextStyle(color: Colors.purple.shade700, fontSize: 12),
+                    style: TextStyle(color: appColors.warning, fontSize: 12),
                   ),
                 if (alert.maxPrice != null)
                   Text(
                     '최대 ${formatPrice(alert.maxPrice!)}',
-                    style:
-                        TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(color: appColors.neutral, fontSize: 12),
                   ),
               ],
             ),
@@ -454,10 +457,11 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
           keyPrefix: 'keyword',
           getId: (a) => a.id,
           onDismissed: _deleteKeywordAlert,
+          appColors: appColors,
           tileBuilder: (alert) => ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.orange.shade50,
-              child: const Icon(Icons.key, color: Colors.orange),
+              backgroundColor: appColors.warning.withAlpha(30),
+              child: Icon(Icons.key, color: appColors.warning),
             ),
             title: Text(
               alert.keyword,
@@ -471,8 +475,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
                 if (alert.maxPrice != null)
                   Text(
                     '최대 ${formatPrice(alert.maxPrice!)}',
-                    style:
-                        TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(color: appColors.neutral, fontSize: 12),
                   ),
               ],
             ),
