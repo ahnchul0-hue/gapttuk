@@ -229,6 +229,11 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
         tracing::info!(partition = %partition_name, "Archiving old price_history partition");
 
         // 단일 트랜잭션으로 집계→검증→DROP 원자적 실행 (CR-3, H-5)
+        // NOTE: READ COMMITTED 격리 수준 사용. 2년 전 파티션에 신규 데이터 유입은
+        // 사실상 불가하므로 REPEATABLE READ 불필요. 만약 크롤러가 오래된 파티션에
+        // 쓰는 경우 count mismatch → safe failure (파티션 보존).
+        // NOTE: ON CONFLICT DO NOTHING은 이전 실행의 기존 집계를 덮어쓰지 않음.
+        // 검증 쿼리가 기존 record_count를 읽을 수 있으나, 이 역시 safe failure mode.
         let mut tx = pool
             .begin()
             .await
