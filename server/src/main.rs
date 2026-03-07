@@ -176,14 +176,23 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
     }
 }
 
+/// 파티션 bound 표현식에서 TO 날짜를 추출.
+/// 예: "FOR VALUES FROM ('2024-01-01') TO ('2024-02-01')" → Some(2024-02-01)
+fn extract_partition_to_date(bound_expr: &str) -> Option<chrono::NaiveDate> {
+    let to_idx = bound_expr.find("TO ('")?;
+    let start = to_idx + 5; // "TO ('" 길이
+    let end = bound_expr[start..].find('\'')? + start;
+    chrono::NaiveDate::parse_from_str(&bound_expr[start..end], "%Y-%m-%d").ok()
+}
+
 /// 2년 이전 price_history 파티션을 price_history_monthly로 집계 후 DROP.
 /// 한 번에 1개 파티션만 처리하여 부하 분산.
 async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     let cutoff = chrono::Utc::now().date_naive() - chrono::Months::new(24);
-    let cutoff_suffix = cutoff.format("%Y_%m").to_string();
 
-    let rows = sqlx::query_as::<_, (String,)>(
-        "SELECT c.relname \
+    // pg_get_expr로 파티션 경계 날짜를 직접 조회 — 이름 형식에 의존하지 않음 (CR-1)
+    let rows = sqlx::query_as::<_, (String, String)>(
+        "SELECT c.relname, pg_get_expr(c.relpartbound, c.oid) \
          FROM pg_inherits i \
          JOIN pg_class c ON c.oid = i.inhrelid \
          JOIN pg_class p ON p.oid = i.inhparent \
@@ -194,22 +203,32 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to query price_history partitions: {e}"))?;
 
-    for (partition_name,) in rows {
-        let Some(suffix) = partition_name.strip_prefix("price_history_") else {
-            continue;
+    for (partition_name, bound_expr) in rows {
+        // 파티션 경계의 TO 날짜 파싱
+        let Some(to_date) = extract_partition_to_date(&bound_expr) else {
+            continue; // DEFAULT 파티션 또는 파싱 불가
         };
-        if !suffix
+
+        if to_date > cutoff {
+            continue; // 2년 미만 — 보존
+        }
+
+        // 파티션 이름 안전성 검사 (SQL injection 방지)
+        if !partition_name
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '_')
         {
             tracing::warn!(partition = %partition_name, "Unexpected partition name format");
             continue;
         }
-        if suffix >= cutoff_suffix.as_str() {
-            continue; // 2년 미만 — 보존
-        }
 
         tracing::info!(partition = %partition_name, "Archiving old price_history partition");
+
+        // 단일 트랜잭션으로 집계→검증→DROP 원자적 실행 (CR-3, H-5)
+        let mut tx = pool
+            .begin()
+            .await
+            .map_err(|e| format!("BEGIN failed: {e}"))?;
 
         // 1. price_history_monthly로 집계 (멱등: ON CONFLICT DO NOTHING)
         let aggregate_sql = format!(
@@ -226,34 +245,39 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
                  (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
                  COUNT(*)::INTEGER, \
                  BOOL_OR(is_out_of_stock) \
-             FROM {partition_name} \
+             FROM \"{}\" \
              GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
-             ON CONFLICT (product_id, year_month) DO NOTHING"
+             ON CONFLICT (product_id, year_month) DO NOTHING",
+            partition_name
         );
-        if let Err(e) = sqlx::query(&aggregate_sql).execute(pool).await {
+        if let Err(e) = sqlx::query(&aggregate_sql).execute(&mut *tx).await {
+            let _ = tx.rollback().await;
             tracing::warn!(partition = %partition_name, error = %e, "Aggregation failed, skipping DROP");
             return Err(format!("Aggregation of {partition_name} failed: {e}"));
         }
 
-        // 2. 행 수 검증 — 집계 후 source 카운트 ≤ aggregated 카운트 확인
-        let count_sql = format!("SELECT COUNT(*)::BIGINT FROM {partition_name}");
+        // 2. 행 수 검증 — 해당 파티션의 product만 대상 (CR-2)
+        let count_sql = format!("SELECT COUNT(*)::BIGINT FROM \"{}\"", partition_name);
         let (source_count,): (i64,) = sqlx::query_as(&count_sql)
-            .fetch_one(pool)
+            .fetch_one(&mut *tx)
             .await
             .map_err(|e| format!("Count query failed: {e}"))?;
 
         let verify_sql = format!(
             "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
              FROM price_history_monthly \
-             WHERE year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM {partition_name}) \
-               AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM {partition_name})"
+             WHERE product_id IN (SELECT DISTINCT product_id FROM \"{}\") \
+               AND year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\") \
+               AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
+            partition_name, partition_name, partition_name
         );
         let (aggregated_count,): (i64,) = sqlx::query_as(&verify_sql)
-            .fetch_one(pool)
+            .fetch_one(&mut *tx)
             .await
             .map_err(|e| format!("Verify query failed: {e}"))?;
 
         if aggregated_count < source_count {
+            let _ = tx.rollback().await;
             tracing::warn!(
                 partition = %partition_name,
                 source = source_count,
@@ -265,10 +289,14 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
             ));
         }
 
-        // 3. 파티션 DROP
-        let drop_sql = format!("DROP TABLE IF EXISTS {partition_name}");
-        match sqlx::query(&drop_sql).execute(pool).await {
+        // 3. 파티션 DROP (quoted identifier — H-1)
+        let drop_sql = format!("DROP TABLE IF EXISTS \"{}\"", partition_name);
+        match sqlx::query(&drop_sql).execute(&mut *tx).await {
             Ok(_) => {
+                // 트랜잭션 커밋 — 집계+DROP 원자적 완료
+                tx.commit()
+                    .await
+                    .map_err(|e| format!("COMMIT failed: {e}"))?;
                 tracing::info!(
                     partition = %partition_name,
                     rows_archived = source_count,
@@ -276,6 +304,7 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
                 );
             }
             Err(e) => {
+                let _ = tx.rollback().await;
                 tracing::warn!(partition = %partition_name, error = %e, "Failed to drop archived partition");
                 return Err(format!("DROP {partition_name} failed: {e}"));
             }
@@ -597,4 +626,29 @@ async fn main() {
     // 11. 정리 — 타임아웃 시에도 반드시 실행되어 DB 커넥션 정리
     pool.close().await;
     tracing::info!("Cleanup complete, exiting");
+}
+
+#[cfg(test)]
+mod archive_tests {
+    use super::*;
+
+    #[test]
+    fn parse_partition_bound_extracts_to_date() {
+        let expr = "FOR VALUES FROM ('2024-01-01') TO ('2024-02-01')";
+        let to_date = extract_partition_to_date(expr);
+        assert_eq!(
+            to_date,
+            Some(chrono::NaiveDate::from_ymd_opt(2024, 2, 1).unwrap())
+        );
+    }
+
+    #[test]
+    fn parse_partition_bound_default_returns_none() {
+        assert_eq!(extract_partition_to_date("DEFAULT"), None);
+    }
+
+    #[test]
+    fn parse_partition_bound_malformed_returns_none() {
+        assert_eq!(extract_partition_to_date("garbage"), None);
+    }
 }
