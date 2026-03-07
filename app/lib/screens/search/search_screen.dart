@@ -66,6 +66,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final result = await service.search(
         query: query,
         cursor: _cursor,
+        cancelToken: _cancelToken,
       );
       if (mounted) {
         setState(() {
@@ -73,6 +74,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _cursor = result.cursor;
           _hasMore = result.hasMore;
         });
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyErrorMessage(e))),
+        );
       }
     } catch (e) {
       if (mounted) {
