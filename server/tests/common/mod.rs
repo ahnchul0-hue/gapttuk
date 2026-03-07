@@ -30,6 +30,7 @@ pub fn test_config() -> Config {
         allowed_origins: vec![],
         sentry_dsn: None,
         crawl_on_start: false,
+        trusted_proxies: vec![],
     }
 }
 

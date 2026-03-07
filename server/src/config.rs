@@ -1,5 +1,7 @@
 use std::env;
 
+use ipnetwork::IpNetwork;
+
 /// 앱 환경 구분
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppEnv {
@@ -64,6 +66,10 @@ pub struct Config {
 
     // --- 크롤러 ---
     pub crawl_on_start: bool,
+
+    // --- 보안 ---
+    /// 신뢰할 수 있는 리버스 프록시 IP/CIDR. 비어있으면 XFF 무조건 신뢰 (개발 호환).
+    pub trusted_proxies: Vec<IpNetwork>,
 }
 
 impl Config {
@@ -145,6 +151,23 @@ impl Config {
             crawl_on_start: env::var("CRAWL_ON_START")
                 .unwrap_or_default()
                 .eq_ignore_ascii_case("true"),
+            trusted_proxies: env::var("TRUSTED_PROXIES")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .map(|v| {
+                    v.split(',')
+                        .filter_map(|s| {
+                            let s = s.trim();
+                            s.parse::<IpNetwork>()
+                                .map_err(|e| {
+                                    tracing::warn!(value = %s, error = %e, "Invalid TRUSTED_PROXIES entry — skipping");
+                                    e
+                                })
+                                .ok()
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
         }
     }
 }
@@ -230,6 +253,7 @@ pub fn test_config() -> Config {
         allowed_origins: vec![],
         sentry_dsn: None,
         crawl_on_start: false,
+        trusted_proxies: vec![],
     }
 }
 
@@ -287,6 +311,7 @@ mod tests {
             allowed_origins: vec![],
             sentry_dsn: None,
             crawl_on_start: false,
+            trusted_proxies: vec![],
         };
 
         let debug_str = format!("{config:?}");

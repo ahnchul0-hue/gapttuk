@@ -12,23 +12,35 @@ use crate::AppState;
 
 /// 프록시 환경에서 실제 클라이언트 IP를 추출.
 /// SmartIpKeyExtractor와 동일한 로직: X-Forwarded-For → X-Real-Ip → ConnectInfo 폴백.
-fn extract_client_ip(req: &Request, fallback: std::net::IpAddr) -> std::net::IpAddr {
-    // X-Forwarded-For: 첫 번째 IP (클라이언트 원본)
-    if let Some(xff) = req
-        .headers()
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
-    {
-        if let Some(first) = xff.split(',').next() {
-            if let Ok(ip) = first.trim().parse::<std::net::IpAddr>() {
-                return ip;
+/// `trusted_proxies`가 비어 있으면 XFF를 무조건 신뢰 (개발 호환).
+/// 설정되어 있으면 직접 연결 IP가 신뢰 프록시에 해당할 때만 XFF를 신뢰.
+pub(crate) fn extract_client_ip(
+    req: &Request,
+    fallback: std::net::IpAddr,
+    trusted_proxies: &[IpNetwork],
+) -> std::net::IpAddr {
+    // Empty trusted_proxies = trust all (dev compat)
+    let trust_xff =
+        trusted_proxies.is_empty() || trusted_proxies.iter().any(|net| net.contains(fallback));
+
+    if trust_xff {
+        // X-Forwarded-For: 첫 번째 IP (클라이언트 원본)
+        if let Some(xff) = req
+            .headers()
+            .get("x-forwarded-for")
+            .and_then(|v| v.to_str().ok())
+        {
+            if let Some(first) = xff.split(',').next() {
+                if let Ok(ip) = first.trim().parse::<std::net::IpAddr>() {
+                    return ip;
+                }
             }
         }
-    }
-    // X-Real-Ip 폴백
-    if let Some(xri) = req.headers().get("x-real-ip").and_then(|v| v.to_str().ok()) {
-        if let Ok(ip) = xri.trim().parse::<std::net::IpAddr>() {
-            return ip;
+        // X-Real-Ip 폴백
+        if let Some(xri) = req.headers().get("x-real-ip").and_then(|v| v.to_str().ok()) {
+            if let Ok(ip) = xri.trim().parse::<std::net::IpAddr>() {
+                return ip;
+            }
         }
     }
     fallback
@@ -47,7 +59,7 @@ pub async fn bot_guard(
         return Ok(next.run(req).await);
     }
 
-    let client_ip = extract_client_ip(&req, addr.ip());
+    let client_ip = extract_client_ip(&req, addr.ip(), &state.config.trusted_proxies);
     let ip = client_ip.to_string();
 
     // 1. UA 필수 확인 + 블랙리스트
@@ -172,7 +184,7 @@ mod tests {
             .insert("x-forwarded-for", "1.2.3.4, 10.0.0.1".parse().unwrap());
         let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
         assert_eq!(
-            extract_client_ip(&req, fallback),
+            extract_client_ip(&req, fallback, &[]),
             "1.2.3.4".parse::<std::net::IpAddr>().unwrap()
         );
     }
@@ -187,7 +199,7 @@ mod tests {
             .insert("x-real-ip", "5.6.7.8".parse().unwrap());
         let fallback: std::net::IpAddr = "127.0.0.1".parse().unwrap();
         assert_eq!(
-            extract_client_ip(&req, fallback),
+            extract_client_ip(&req, fallback, &[]),
             "5.6.7.8".parse::<std::net::IpAddr>().unwrap()
         );
     }
@@ -199,6 +211,35 @@ mod tests {
             .body(axum::body::Body::empty())
             .unwrap();
         let fallback: std::net::IpAddr = "192.168.1.1".parse().unwrap();
-        assert_eq!(extract_client_ip(&req, fallback), fallback);
+        assert_eq!(extract_client_ip(&req, fallback, &[]), fallback);
+    }
+
+    #[test]
+    fn extract_client_ip_untrusted_proxy_ignores_xff() {
+        let mut req = Request::builder()
+            .uri("/test")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        req.headers_mut()
+            .insert("x-forwarded-for", "1.2.3.4".parse().unwrap());
+        let fallback: std::net::IpAddr = "192.168.1.1".parse().unwrap();
+        let trusted = vec!["10.0.0.0/8".parse::<IpNetwork>().unwrap()];
+        assert_eq!(extract_client_ip(&req, fallback, &trusted), fallback);
+    }
+
+    #[test]
+    fn extract_client_ip_trusted_proxy_uses_xff() {
+        let mut req = Request::builder()
+            .uri("/test")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        req.headers_mut()
+            .insert("x-forwarded-for", "1.2.3.4".parse().unwrap());
+        let fallback: std::net::IpAddr = "10.0.0.1".parse().unwrap();
+        let trusted = vec!["10.0.0.0/8".parse::<IpNetwork>().unwrap()];
+        assert_eq!(
+            extract_client_ip(&req, fallback, &trusted),
+            "1.2.3.4".parse::<std::net::IpAddr>().unwrap()
+        );
     }
 }
