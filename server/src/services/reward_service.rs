@@ -5,6 +5,16 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::error::AppError;
 
+/// 포인트 금액 유효성 검증. 0 이하는 거부.
+fn validate_point_amount(amount: i32) -> Result<(), AppError> {
+    if amount <= 0 {
+        return Err(AppError::BadRequest(format!(
+            "포인트 금액은 양수여야 합니다: {amount}"
+        )));
+    }
+    Ok(())
+}
+
 /// 트랜잭션 내에서 포인트 적립 + 거래 기록을 원자적으로 수행하는 공통 함수.
 /// reward_service, auth_service 등 포인트를 조작하는 모든 코드에서 이 함수를 사용.
 pub async fn add_points_and_record(
@@ -15,6 +25,8 @@ pub async fn add_points_and_record(
     description: &str,
     reference_id: Option<i64>,
 ) -> Result<(), AppError> {
+    validate_point_amount(amount)?;
+
     // user_points 잔액 증가
     sqlx::query(
         "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
@@ -463,5 +475,13 @@ mod tests {
             assert!(!r.already_checked_in);
             assert_eq!(r.new_balance, 5);
         }
+    }
+
+    #[test]
+    fn add_points_negative_amount_is_invalid() {
+        assert!(validate_point_amount(-1).is_err());
+        assert!(validate_point_amount(0).is_err());
+        assert!(validate_point_amount(1).is_ok());
+        assert!(validate_point_amount(100).is_ok());
     }
 }
