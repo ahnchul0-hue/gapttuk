@@ -70,6 +70,12 @@ jobs:
       - name: Run tests
         run: cargo test
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Security audit
+        run: cargo audit
+
   # ── Flutter 분석 + 테스트 ────────────────────────────
   flutter:
     name: Flutter Analyze & Test
