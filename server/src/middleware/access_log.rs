@@ -22,10 +22,7 @@ pub struct AccessLogEntry {
 
 /// 백그라운드 access log 워커 시작.
 /// channel이 닫히면 (shutdown) 자동 종료.
-pub fn spawn_writer(
-    pool: sqlx::PgPool,
-    mut rx: tokio::sync::mpsc::Receiver<AccessLogEntry>,
-) {
+pub fn spawn_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiver<AccessLogEntry>) {
     tokio::spawn(async move {
         while let Some(entry) = rx.recv().await {
             if let Err(e) = sqlx::query(

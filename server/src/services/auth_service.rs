@@ -233,7 +233,10 @@ pub async fn rotate_refresh_token(
 
         if !revoke_succeeded {
             // tx drop → 자동 롤백, 그러나 탈취 시도 자체는 차단
-            tracing::error!(user_id, "Token revocation could not be committed — manual intervention needed");
+            tracing::error!(
+                user_id,
+                "Token revocation could not be committed — manual intervention needed"
+            );
         }
 
         return Err(AppError::TokenInvalid);

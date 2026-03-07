@@ -531,8 +531,7 @@ pub async fn evaluate_price_alerts(
 
     // 5a. Batch device fetch — N회 SELECT → 1회 SELECT (N+1 방지)
     let user_ids: Vec<i64> = claimed_alerts.iter().map(|a| a.user_id).collect();
-    let devices_by_user =
-        notification_service::batch_fetch_devices(pool, &user_ids).await?;
+    let devices_by_user = notification_service::batch_fetch_devices(pool, &user_ids).await?;
 
     let mut push_tasks = tokio::task::JoinSet::new();
 
@@ -544,10 +543,7 @@ pub async fn evaluate_price_alerts(
         let pool = pool.clone();
         let push = std::sync::Arc::clone(&push);
         let deep_link = deep_link.clone();
-        let devices = devices_by_user
-            .get(&user_id)
-            .cloned()
-            .unwrap_or_default();
+        let devices = devices_by_user.get(&user_id).cloned().unwrap_or_default();
 
         push_tasks.spawn(async move {
             if let Err(e) = notification_service::create_notification_and_push(
