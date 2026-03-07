@@ -49,13 +49,9 @@ async fn get_history(
     Auth(claims): Auth,
     Query(params): Query<HistoryParams>,
 ) -> Result<ApiResponse<HistoryResponse>, AppError> {
-    let (items, has_more) = reward_service::get_history(
-        &state.pool,
-        claims.sub,
-        params.cursor,
-        params.limit.unwrap_or(20),
-    )
-    .await?;
+    let limit = params.limit.unwrap_or(20).clamp(1, 50);
+    let (items, has_more) =
+        reward_service::get_history(&state.pool, claims.sub, params.cursor, limit).await?;
     Ok(ApiResponse::ok(HistoryResponse { items, has_more }))
 }
 
