@@ -182,7 +182,11 @@ fn extract_partition_to_date(bound_expr: &str) -> Option<chrono::NaiveDate> {
     let to_idx = bound_expr.find("TO ('")?;
     let start = to_idx + 5; // "TO ('" 길이
     let end = bound_expr[start..].find('\'')? + start;
-    chrono::NaiveDate::parse_from_str(&bound_expr[start..end], "%Y-%m-%d").ok()
+    let date_str = &bound_expr[start..end];
+    // pg_get_expr는 TIMESTAMPTZ 컬럼에 대해 "2024-02-01 00:00:00+00" 형식 반환
+    // — 앞 10자(YYYY-MM-DD)만 사용
+    let date_part = date_str.get(..10).unwrap_or(date_str);
+    chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d").ok()
 }
 
 /// 2년 이전 price_history 파티션을 price_history_monthly로 집계 후 DROP.
@@ -650,5 +654,15 @@ mod archive_tests {
     #[test]
     fn parse_partition_bound_malformed_returns_none() {
         assert_eq!(extract_partition_to_date("garbage"), None);
+    }
+
+    #[test]
+    fn parse_partition_bound_timestamptz_format() {
+        let expr = "FOR VALUES FROM ('2024-01-01 00:00:00+00') TO ('2024-02-01 00:00:00+00')";
+        let to_date = extract_partition_to_date(expr);
+        assert_eq!(
+            to_date,
+            Some(chrono::NaiveDate::from_ymd_opt(2024, 2, 1).unwrap())
+        );
     }
 }
