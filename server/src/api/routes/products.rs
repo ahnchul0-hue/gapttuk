@@ -53,6 +53,16 @@ fn default_popular_limit() -> i32 {
 }
 
 #[derive(Deserialize)]
+pub struct MonthlyPricesQuery {
+    #[serde(default = "default_monthly_months")]
+    pub months: i64,
+}
+
+fn default_monthly_months() -> i64 {
+    24
+}
+
+#[derive(Deserialize)]
 pub struct AddProductByUrlRequest {
     pub url: String,
 }
@@ -74,6 +84,7 @@ pub fn router(
         .route("/{id}", get(get_product))
         .route("/{id}/prices", get(prices))
         .route("/{id}/prices/daily", get(prices_daily))
+        .route("/{id}/prices/monthly", get(prices_monthly))
 }
 
 // ── 핸들러 ──────────────────────────────────────────────
@@ -200,6 +211,16 @@ async fn prices_daily(
 ) -> Result<ApiResponse<Vec<product_service::DailyPriceAggregate>>, AppError> {
     let aggregates = product_service::get_daily_price_aggregates(&state.pool, id).await?;
     Ok(ApiResponse::ok(aggregates))
+}
+
+/// GET /api/v1/products/{id}/prices/monthly — 월별 평균 가격 (장기 추이)
+async fn prices_monthly(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Query(params): Query<MonthlyPricesQuery>,
+) -> Result<ApiResponse<Vec<product_service::MonthlyPriceItem>>, AppError> {
+    let items = product_service::get_monthly_prices(&state.pool, id, params.months).await?;
+    Ok(ApiResponse::ok(items))
 }
 
 /// GET /api/v1/products/popular — 인기 검색어
