@@ -202,15 +202,16 @@ pub async fn rotate_refresh_token(
 
     // 2. 탈취 감지 — 이미 revoke된 토큰 재사용
     if revoked_at.is_some() {
-        // 해당 user의 모든 활성 토큰 revoke (최대 2회 시도)
-        // DB 에러 시에도 반드시 TokenInvalid를 반환하되, 가능한 한 토큰 revoke를 보장
-        let mut revoke_succeeded = false;
+        // tx를 먼저 롤백 (aborted state 방지)
+        let _ = tx.rollback().await;
+
+        // pool에서 직접 실행 — 멱등 UPDATE이므로 트랜잭션 불필요
         for attempt in 1..=2 {
             match sqlx::query(
-                "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL"
+                "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
             )
             .bind(user_id)
-            .execute(&mut *tx)
+            .execute(pool)
             .await
             {
                 Ok(result) => {
@@ -219,11 +220,6 @@ pub async fn rotate_refresh_token(
                         revoked_count = result.rows_affected(),
                         "Refresh token reuse detected — all tokens revoked (attempt {attempt})"
                     );
-                    if let Err(commit_err) = tx.commit().await {
-                        tracing::error!(user_id, error = %commit_err, "Failed to commit token revocation");
-                    } else {
-                        revoke_succeeded = true;
-                    }
                     break;
                 }
                 Err(e) => {
@@ -234,7 +230,6 @@ pub async fn rotate_refresh_token(
                         "Failed to revoke tokens during theft detection"
                     );
                     if attempt == 2 {
-                        // 최종 실패 — Sentry 수준 경고
                         tracing::error!(
                             user_id,
                             "SECURITY: Token theft detected but revocation failed after 2 attempts"
@@ -242,14 +237,6 @@ pub async fn rotate_refresh_token(
                     }
                 }
             }
-        }
-
-        if !revoke_succeeded {
-            // tx drop → 자동 롤백, 그러나 탈취 시도 자체는 차단
-            tracing::error!(
-                user_id,
-                "Token revocation could not be committed — manual intervention needed"
-            );
         }
 
         return Err(AppError::TokenInvalid);
