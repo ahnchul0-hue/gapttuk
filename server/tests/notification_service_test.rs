@@ -65,18 +65,16 @@ async fn get_user_notifications_with_cursor(pool: PgPool) {
     assert_eq!(all.len(), 3);
 
     // 커서로 id3 이전 것만 조회
-    let before_3 =
-        notification_service::get_user_notifications(&pool, user_id, Some(id3), 20)
-            .await
-            .unwrap();
+    let before_3 = notification_service::get_user_notifications(&pool, user_id, Some(id3), 20)
+        .await
+        .unwrap();
     assert_eq!(before_3.len(), 2);
     assert!(before_3.iter().all(|n| n.id < id3));
 
     // 커서로 id1 이전 → 빈 결과
-    let before_1 =
-        notification_service::get_user_notifications(&pool, user_id, Some(id1), 20)
-            .await
-            .unwrap();
+    let before_1 = notification_service::get_user_notifications(&pool, user_id, Some(id1), 20)
+        .await
+        .unwrap();
     assert!(before_1.is_empty());
 }
 
@@ -92,12 +90,11 @@ async fn mark_as_read_success(pool: PgPool) {
         .expect("should mark as read");
 
     // 읽음 확인
-    let is_read: bool =
-        sqlx::query_scalar("SELECT is_read FROM notifications WHERE id = $1")
-            .bind(notif_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let is_read: bool = sqlx::query_scalar("SELECT is_read FROM notifications WHERE id = $1")
+        .bind(notif_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(is_read);
 }
 

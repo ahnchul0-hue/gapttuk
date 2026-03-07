@@ -130,8 +130,7 @@ pub async fn batch_fetch_devices(
     .fetch_all(pool)
     .await?;
 
-    let mut map: std::collections::HashMap<i64, Vec<UserDevice>> =
-        std::collections::HashMap::new();
+    let mut map: std::collections::HashMap<i64, Vec<UserDevice>> = std::collections::HashMap::new();
     for device in devices {
         map.entry(device.user_id).or_default().push(device);
     }

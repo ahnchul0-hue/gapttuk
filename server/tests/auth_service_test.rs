@@ -4,9 +4,7 @@
 //! 서비스 함수를 직접 호출하여 비즈니스 로직을 검증합니다.
 
 use chrono::{Duration, Utc};
-use gapttuk_server::auth::jwt::{
-    decode_access_token, generate_refresh_token, hash_refresh_token,
-};
+use gapttuk_server::auth::jwt::{decode_access_token, generate_refresh_token, hash_refresh_token};
 use gapttuk_server::auth::providers::SocialUserInfo;
 use gapttuk_server::error::AppError;
 use gapttuk_server::models::AuthProvider;
@@ -115,26 +113,28 @@ async fn upsert_user_with_referral_gets_welcome_bonus(pool: PgPool) {
             .fetch_optional(&pool)
             .await
             .unwrap();
-    assert_eq!(balance, Some(1), "referred user should have 1¢ welcome bonus");
+    assert_eq!(
+        balance,
+        Some(1),
+        "referred user should have 1¢ welcome bonus"
+    );
 
     // 4. point_transactions 기록 확인
-    let tx_type: Option<String> = sqlx::query_scalar(
-        "SELECT transaction_type FROM point_transactions WHERE user_id = $1",
-    )
-    .bind(referred.id)
-    .fetch_optional(&pool)
-    .await
-    .unwrap();
+    let tx_type: Option<String> =
+        sqlx::query_scalar("SELECT transaction_type FROM point_transactions WHERE user_id = $1")
+            .bind(referred.id)
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
     assert_eq!(tx_type.as_deref(), Some("referral_welcome"));
 
     // 5. referrals 테이블 확인
-    let referral_stage: Option<i16> = sqlx::query_scalar(
-        "SELECT reward_stage FROM referrals WHERE referred_id = $1",
-    )
-    .bind(referred.id)
-    .fetch_optional(&pool)
-    .await
-    .unwrap();
+    let referral_stage: Option<i16> =
+        sqlx::query_scalar("SELECT reward_stage FROM referrals WHERE referred_id = $1")
+            .bind(referred.id)
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
     assert_eq!(referral_stage, Some(0), "initial reward_stage should be 0");
 }
 
@@ -153,8 +153,8 @@ async fn create_token_pair_returns_valid_tokens(pool: PgPool) {
         .expect("create_token_pair should succeed");
 
     // access_token 디코드 가능
-    let claims = decode_access_token(&pair.access_token, &config)
-        .expect("access token should be decodable");
+    let claims =
+        decode_access_token(&pair.access_token, &config).expect("access token should be decodable");
     assert_eq!(claims.sub, user.id);
 
     // refresh_token은 비어있지 않은 hex 문자열
@@ -193,9 +193,15 @@ async fn rotate_refresh_token_normal(pool: PgPool) {
             .expect("rotate should succeed");
 
     assert_eq!(returned_user_id, user.id);
-    assert_ne!(pair2.refresh_token, pair1.refresh_token, "new refresh token");
+    assert_ne!(
+        pair2.refresh_token, pair1.refresh_token,
+        "new refresh token"
+    );
     // access_token은 결정적(같은 user_id + 같은 초 = 동일 JWT)이므로 유효성만 검증
-    assert!(!pair2.access_token.is_empty(), "access token should be non-empty");
+    assert!(
+        !pair2.access_token.is_empty(),
+        "access token should be non-empty"
+    );
 
     // 기존 토큰은 revoke 상태
     let old_hash = hash_refresh_token(&pair1.refresh_token);
@@ -271,7 +277,10 @@ async fn rotate_refresh_token_theft_detection(pool: PgPool) {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(active_count, 0, "all tokens should be revoked after theft detection");
+    assert_eq!(
+        active_count, 0,
+        "all tokens should be revoked after theft detection"
+    );
 }
 
 // ─── logout ────────────────────────────────────────────────
@@ -309,7 +318,10 @@ async fn logout_revokes_all_tokens(pool: PgPool) {
 #[sqlx::test]
 async fn generate_referral_code_format(pool: PgPool) {
     let code = auth_service::generate_referral_code(&pool).await.unwrap();
-    assert!(code.starts_with("GAP-"), "code should start with GAP-: {code}");
+    assert!(
+        code.starts_with("GAP-"),
+        "code should start with GAP-: {code}"
+    );
     assert_eq!(code.len(), 10, "GAP- + 6 chars = 10: {code}");
 
     let suffix = &code[4..];

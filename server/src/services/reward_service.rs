@@ -121,12 +121,11 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
 
     if existing.is_some() {
         // 이미 출석 — 현재 잔액만 조회 후 반환
-        let balance: i32 =
-            sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
-                .bind(user_id)
-                .fetch_optional(&mut *tx)
-                .await?
-                .unwrap_or(0);
+        let balance: i32 = sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_optional(&mut *tx)
+            .await?
+            .unwrap_or(0);
         tx.rollback().await?;
         metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
@@ -210,12 +209,11 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
     tx.commit().await?;
 
     // commit 후 최신 잔액 조회
-    let new_balance: i32 =
-        sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
-            .bind(user_id)
-            .fetch_optional(pool)
-            .await?
-            .unwrap_or(0);
+    let new_balance: i32 = sqlx::query_scalar("SELECT balance FROM user_points WHERE user_id = $1")
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?
+        .unwrap_or(0);
 
     // 비즈니스 메트릭: 출석 체크인 결과
     let result_label = if reward > 0 { "reward" } else { "miss" };

@@ -198,7 +198,10 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
         let Some(suffix) = partition_name.strip_prefix("price_history_") else {
             continue;
         };
-        if !suffix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        if !suffix
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+        {
             tracing::warn!(partition = %partition_name, "Unexpected partition name format");
             continue;
         }

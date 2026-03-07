@@ -213,10 +213,9 @@ async fn create_category_alert_nonexistent(pool: PgPool) {
 async fn create_keyword_alert_success(pool: PgPool) {
     let (user_id, _) = seed_user_and_product(&pool).await;
 
-    let alert =
-        alert_service::create_keyword_alert(&pool, user_id, "맥북 프로".to_string())
-            .await
-            .expect("should create keyword alert");
+    let alert = alert_service::create_keyword_alert(&pool, user_id, "맥북 프로".to_string())
+        .await
+        .expect("should create keyword alert");
 
     assert_eq!(alert.user_id, user_id);
     assert_eq!(alert.keyword, "맥북 프로");
@@ -226,8 +225,7 @@ async fn create_keyword_alert_success(pool: PgPool) {
 async fn create_keyword_alert_empty_rejected(pool: PgPool) {
     let (user_id, _) = seed_user_and_product(&pool).await;
 
-    let result =
-        alert_service::create_keyword_alert(&pool, user_id, "   ".to_string()).await;
+    let result = alert_service::create_keyword_alert(&pool, user_id, "   ".to_string()).await;
     assert!(
         matches!(result, Err(AppError::BadRequest(_))),
         "should reject empty keyword: {result:?}"
@@ -239,8 +237,7 @@ async fn create_keyword_alert_too_long_rejected(pool: PgPool) {
     let (user_id, _) = seed_user_and_product(&pool).await;
 
     let long_keyword: String = "가".repeat(101);
-    let result =
-        alert_service::create_keyword_alert(&pool, user_id, long_keyword).await;
+    let result = alert_service::create_keyword_alert(&pool, user_id, long_keyword).await;
     assert!(
         matches!(result, Err(AppError::BadRequest(_))),
         "should reject keyword > 100 chars: {result:?}"
@@ -253,10 +250,9 @@ async fn create_keyword_alert_too_long_rejected(pool: PgPool) {
 async fn update_keyword_alert_success(pool: PgPool) {
     let (user_id, _) = seed_user_and_product(&pool).await;
 
-    let alert =
-        alert_service::create_keyword_alert(&pool, user_id, "아이패드".to_string())
-            .await
-            .unwrap();
+    let alert = alert_service::create_keyword_alert(&pool, user_id, "아이패드".to_string())
+        .await
+        .unwrap();
 
     alert_service::update_keyword_alert(&pool, user_id, alert.id, "아이패드 프로")
         .await
@@ -273,10 +269,9 @@ async fn update_keyword_alert_success(pool: PgPool) {
 async fn update_keyword_alert_empty_rejected(pool: PgPool) {
     let (user_id, _) = seed_user_and_product(&pool).await;
 
-    let alert =
-        alert_service::create_keyword_alert(&pool, user_id, "테스트".to_string())
-            .await
-            .unwrap();
+    let alert = alert_service::create_keyword_alert(&pool, user_id, "테스트".to_string())
+        .await
+        .unwrap();
 
     let result = alert_service::update_keyword_alert(&pool, user_id, alert.id, "  ").await;
     assert!(matches!(result, Err(AppError::BadRequest(_))));
