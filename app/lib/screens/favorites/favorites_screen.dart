@@ -44,17 +44,22 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           priceAlerts.map((a) => a.productId).toSet();
 
       final Map<int, Product> products = {};
-      await Future.wait(
-        productIds.map((id) async {
-          try {
-            final product =
-                await ref.read(productDetailProvider(id).future);
-            products[id] = product;
-          } catch (_) {
-            // 개별 상품 로드 실패 시 건너뜀
-          }
-        }),
-      );
+      // 최대 5개씩 병렬 요청 (서버 과부하 방지)
+      final productIdList = productIds.toList();
+      for (var i = 0; i < productIdList.length; i += 5) {
+        final chunk = productIdList.skip(i).take(5);
+        await Future.wait(
+          chunk.map((id) async {
+            try {
+              final product =
+                  await ref.read(productDetailProvider(id).future);
+              products[id] = product;
+            } catch (_) {
+              // 개별 상품 로드 실패 시 건너뜀
+            }
+          }),
+        );
+      }
 
       if (mounted) {
         setState(() {
