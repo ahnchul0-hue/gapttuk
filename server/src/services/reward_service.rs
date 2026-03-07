@@ -5,6 +5,16 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::error::AppError;
 
+/// 포인트 금액 유효성 검증. 0 이하는 거부.
+fn validate_point_amount(amount: i32) -> Result<(), AppError> {
+    if amount <= 0 {
+        return Err(AppError::BadRequest(format!(
+            "포인트 금액은 양수여야 합니다: {amount}"
+        )));
+    }
+    Ok(())
+}
+
 /// 트랜잭션 내에서 포인트 적립 + 거래 기록을 원자적으로 수행하는 공통 함수.
 /// reward_service, auth_service 등 포인트를 조작하는 모든 코드에서 이 함수를 사용.
 pub async fn add_points_and_record(
@@ -15,9 +25,16 @@ pub async fn add_points_and_record(
     description: &str,
     reference_id: Option<i64>,
 ) -> Result<(), AppError> {
-    // user_points 잔액 증가
+    validate_point_amount(amount)?;
+
+    // user_points 잔액 증가 (upsert — 레코드 미존재 시 자동 생성)
     sqlx::query(
-        "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+        "INSERT INTO user_points (user_id, balance, total_earned) \
+         VALUES ($2, $1, $1) \
+         ON CONFLICT (user_id) DO UPDATE \
+         SET balance = user_points.balance + $1, \
+             total_earned = user_points.total_earned + $1, \
+             updated_at = NOW()",
     )
     .bind(amount)
     .bind(user_id)
@@ -147,13 +164,14 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
     let (cap_id, monthly_cap, earned_so_far) = if let Some(row) = cap_row {
         row
     } else {
-        // 신규 유저 첫 달 여부 확인 (가입월 == 현재월)
-        let created_year_month: Option<String> =
-            sqlx::query_scalar("SELECT to_char(created_at, 'YYYY-MM') FROM users WHERE id = $1")
-                .bind(user_id)
-                .fetch_optional(&mut *tx)
-                .await?;
-        let is_new_user = created_year_month.as_deref() == Some(&year_month);
+        // 신규 유저 여부 확인 (가입 7일 이내)
+        let is_new_user: bool = sqlx::query_scalar(
+            "SELECT created_at > NOW() - INTERVAL '7 days' FROM users WHERE id = $1",
+        )
+        .bind(user_id)
+        .fetch_optional(&mut *tx)
+        .await?
+        .unwrap_or(false);
         let cap = assign_monthly_cap(is_new_user);
 
         let new_id: i64 = sqlx::query_scalar(
@@ -463,5 +481,13 @@ mod tests {
             assert!(!r.already_checked_in);
             assert_eq!(r.new_balance, 5);
         }
+    }
+
+    #[test]
+    fn add_points_negative_amount_is_invalid() {
+        assert!(validate_point_amount(-1).is_err());
+        assert!(validate_point_amount(0).is_err());
+        assert!(validate_point_amount(1).is_ok());
+        assert!(validate_point_amount(100).is_ok());
     }
 }
