@@ -21,6 +21,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _googleSignIn = GoogleSignIn();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _googleSignIn.disconnect();
+    super.dispose();
+  }
+
   Future<void> _login(String provider) async {
     if (_isLoading) return;
     setState(() => _isLoading = true);

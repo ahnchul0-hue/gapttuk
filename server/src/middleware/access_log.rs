@@ -61,6 +61,8 @@ pub async fn access_log(
     }
 
     let start = std::time::Instant::now();
+    let client_ip =
+        super::bot_guard::extract_client_ip(&req, addr.ip(), &state.config.trusted_proxies);
     let method = req.method().to_string();
     let raw_path = req.uri().path().to_string();
     // 메트릭용: MatchedPath로 정규화 (카디널리티 폭발 방지)
@@ -103,7 +105,7 @@ pub async fn access_log(
     )
     .record(elapsed.as_secs_f64());
 
-    let ip_net: IpNetwork = addr.ip().into();
+    let ip_net: IpNetwork = client_ip.into();
 
     // Bounded channel — 가득 차면 로그 드랍 (요청 차단 방지)
     if state

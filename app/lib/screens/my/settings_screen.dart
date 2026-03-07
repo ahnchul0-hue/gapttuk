@@ -180,30 +180,19 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// 푸시 알림 스위치 타일 (로컬 상태 관리).
-class _PushNotificationTile extends StatefulWidget {
+/// 푸시 알림 타일 (미구현 — 비활성 상태로 안내).
+class _PushNotificationTile extends StatelessWidget {
   const _PushNotificationTile();
-
-  @override
-  State<_PushNotificationTile> createState() => _PushNotificationTileState();
-}
-
-class _PushNotificationTileState extends State<_PushNotificationTile> {
-  bool _pushEnabled = true;
-  // TODO: Firebase 통합 후 — 디바이스 ID 기반 서버 push toggle 동기화 필요
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.notifications_outlined),
       title: const Text('푸시 알림'),
-      trailing: Switch(
-        value: _pushEnabled,
-        onChanged: (value) {
-          setState(() {
-            _pushEnabled = value;
-          });
-        },
+      subtitle: const Text('준비 중'),
+      trailing: const Switch(
+        value: false,
+        onChanged: null,
       ),
     );
   }

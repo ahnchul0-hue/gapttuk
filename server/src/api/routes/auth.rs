@@ -305,17 +305,56 @@ async fn update_consent(
             if let Some(referrer_id) =
                 auth_service::find_referrer_by_code(&state.pool, code).await?
             {
-                // 자기 자신의 추천 코드는 무시
                 if referrer_id != claims.sub {
-                    // 원자적 UPDATE: referred_by IS NULL일 때만 설정 (race condition 방지)
-                    sqlx::query(
+                    let mut tx = state.pool.begin().await?;
+
+                    // 원자적 UPDATE: referred_by IS NULL일 때만 설정
+                    let result = sqlx::query(
                         "UPDATE users SET referred_by = $1, updated_at = NOW() \
                          WHERE id = $2 AND referred_by IS NULL AND deleted_at IS NULL",
                     )
                     .bind(referrer_id)
                     .bind(claims.sub)
-                    .execute(&state.pool)
+                    .execute(&mut *tx)
                     .await?;
+
+                    // 실제로 referred_by가 설정된 경우에만 referrals + 보상 처리
+                    if result.rows_affected() > 0 {
+                        // referrals 레코드 생성
+                        sqlx::query(
+                            "INSERT INTO referrals (referrer_id, referred_id, referral_code) \
+                             VALUES ($1, $2, $3)",
+                        )
+                        .bind(referrer_id)
+                        .bind(claims.sub)
+                        .bind(code)
+                        .execute(&mut *tx)
+                        .await?;
+
+                        // Stage 0 웰컴 보상: 피초대자 1¢
+                        crate::services::reward_service::add_points_and_record(
+                            &mut tx,
+                            claims.sub,
+                            1,
+                            "referral_welcome",
+                            "추천 코드 가입 웰컴 보상",
+                            None,
+                        )
+                        .await?;
+
+                        // Stage 0 웰컴 보상: 초대자 1¢
+                        crate::services::reward_service::add_points_and_record(
+                            &mut tx,
+                            referrer_id,
+                            1,
+                            "referral_welcome_referrer",
+                            "추천인 웰컴 보상",
+                            None,
+                        )
+                        .await?;
+                    }
+
+                    tx.commit().await?;
                 }
             }
         }

@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../config/api_endpoints.dart';
 import '../config/constants.dart';
 import '../models/price_history.dart';
@@ -23,6 +25,7 @@ class ProductService {
     String? filter,
     String? cursor,
     int limit = AppConstants.defaultPageSize,
+    CancelToken? cancelToken,
   }) async {
     final response = await _api.dio.get(
       ApiEndpoints.productSearch,
@@ -33,6 +36,7 @@ class ProductService {
         'filter': ?filter,
         'cursor': ?cursor,
       },
+      cancelToken: cancelToken,
     );
     final data = response.data;
     final products = (data['data'] as List)

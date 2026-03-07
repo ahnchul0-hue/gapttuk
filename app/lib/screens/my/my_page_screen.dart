@@ -248,6 +248,7 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   PointsInfo? _points;
   bool _loading = false;
   bool _checkinDone = false;
+  bool _error = false;
 
   @override
   void initState() {
@@ -258,9 +259,14 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   Future<void> _loadPoints() async {
     try {
       final info = await ref.read(rewardServiceProvider).getPoints();
-      if (mounted) setState(() => _points = info);
+      if (mounted) {
+        setState(() {
+          _points = info;
+          _error = false;
+        });
+      }
     } catch (_) {
-      // 잔액 조회 실패 시 무시 (비핵심 UI)
+      if (mounted) setState(() => _error = true);
     }
   }
 
@@ -320,13 +326,24 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
         '센트(¢) 잔액',
         style: Theme.of(context).textTheme.bodyLarge,
       ),
-      subtitle: Text(
-        '$balance${AppConstants.rewardUnit}',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.amber[700],
+      subtitle: _error
+          ? GestureDetector(
+              onTap: _loadPoints,
+              child: Text(
+                '로드 실패 (탭하여 재시도)',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color:
+                          Theme.of(context).extension<AppColors>()!.error,
+                    ),
+              ),
+            )
+          : Text(
+              '$balance${AppConstants.rewardUnit}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber[700],
+                  ),
             ),
-      ),
       trailing: _loading
           ? const SizedBox(
               width: 20,
