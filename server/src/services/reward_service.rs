@@ -27,9 +27,14 @@ pub async fn add_points_and_record(
 ) -> Result<(), AppError> {
     validate_point_amount(amount)?;
 
-    // user_points 잔액 증가
+    // user_points 잔액 증가 (upsert — 레코드 미존재 시 자동 생성)
     sqlx::query(
-        "UPDATE user_points SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2",
+        "INSERT INTO user_points (user_id, balance, total_earned) \
+         VALUES ($2, $1, $1) \
+         ON CONFLICT (user_id) DO UPDATE \
+         SET balance = user_points.balance + $1, \
+             total_earned = user_points.total_earned + $1, \
+             updated_at = NOW()",
     )
     .bind(amount)
     .bind(user_id)
