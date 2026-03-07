@@ -7,6 +7,7 @@ import '../screens/favorites/favorites_screen.dart';
 import '../screens/alert/alert_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/my/my_page_screen.dart';
+import '../screens/my/point_history_screen.dart';
 import '../screens/my/settings_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/notification/notification_list_screen.dart';
@@ -98,6 +99,11 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'settings',
                   builder: (context, state) => const SettingsScreen(),
+                ),
+                GoRoute(
+                  path: 'points',
+                  builder: (context, state) =>
+                      const PointHistoryScreen(),
                 ),
               ],
             ),

@@ -13,7 +13,7 @@ abstract class AppNotification with _$AppNotification {
     @JsonKey(name: 'reference_id') int? referenceId,
     @JsonKey(name: 'reference_type') String? referenceType,
     required String title,
-    required String body,
+    String? body,
     @JsonKey(name: 'deep_link') String? deepLink,
     @JsonKey(name: 'is_read') @Default(false) bool isRead,
     @JsonKey(name: 'sent_at') DateTime? sentAt,

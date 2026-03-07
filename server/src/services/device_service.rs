@@ -69,22 +69,24 @@ pub async fn unregister_device(
     Ok(())
 }
 
-/// push_enabled 토글.
-pub async fn toggle_push(
+/// push_enabled 명시적 설정.
+pub async fn set_push(
     pool: &PgPool,
     user_id: i64,
     device_id: i64,
+    push_enabled: bool,
 ) -> Result<UserDevice, AppError> {
     let device = sqlx::query_as::<_, UserDevice>(
         r#"
         UPDATE user_devices
-        SET push_enabled = NOT push_enabled, updated_at = NOW()
+        SET push_enabled = $3, updated_at = NOW()
         WHERE id = $1 AND user_id = $2
         RETURNING *
         "#,
     )
     .bind(device_id)
     .bind(user_id)
+    .bind(push_enabled)
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| AppError::NotFound("디바이스".to_string()))?;

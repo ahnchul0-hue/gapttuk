@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../config/theme.dart';
 import '../../models/alert.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
@@ -91,24 +92,24 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     }
   }
 
-  Color _alertTypeBadgeColor(String type) {
+  Color _alertTypeBadgeColor(String type, AppColors appColors) {
     switch (type) {
       case 'target_price':
-        return Colors.blue;
+        return appColors.info;
       case 'below_average':
-        return Colors.green;
+        return appColors.success;
       case 'near_lowest':
-        return Colors.orange;
+        return appColors.warning;
       case 'all_time_low':
-        return Colors.red;
+        return appColors.error;
       default:
-        return Colors.grey;
+        return appColors.neutral;
     }
   }
 
   // ─── 상품 카드 ─────────────────────────────────────────────────────────────
 
-  Widget _buildProductCard(PriceAlert alert, Product? product) {
+  Widget _buildProductCard(PriceAlert alert, Product? product, AppColors appColors) {
     final imageUrl = product?.imageUrl;
     final productName = product?.productName ?? '상품 #${alert.productId}';
     final currentPrice = product?.currentPrice;
@@ -134,15 +135,15 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (_, _) => Container(
-                        color: Colors.grey.shade100,
+                        color: appColors.neutralLight,
                         child: const Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      errorWidget: (_, _, _) => _buildImagePlaceholder(),
+                      errorWidget: (_, _, _) => _buildImagePlaceholder(appColors),
                     )
                   else
-                    _buildImagePlaceholder(),
+                    _buildImagePlaceholder(appColors),
                   // 활성 상태 표시
                   if (!alert.isActive)
                     Container(
@@ -163,7 +164,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     left: 8,
                     child: _buildBadge(
                       _alertTypeBadge(alert.alertType),
-                      _alertTypeBadgeColor(alert.alertType),
+                      _alertTypeBadgeColor(alert.alertType, appColors),
                     ),
                   ),
                 ],
@@ -200,7 +201,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                       '가격 정보 없음',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: appColors.neutral,
                       ),
                     ),
                 ],
@@ -212,13 +213,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(AppColors appColors) {
     return Container(
-      color: Colors.grey.shade100,
+      color: appColors.neutralLight,
       child: Icon(
         Icons.shopping_bag_outlined,
         size: 48,
-        color: Colors.grey.shade400,
+        color: appColors.neutral,
       ),
     );
   }
@@ -244,6 +245,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   // ─── 빈 상태 ──────────────────────────────────────────────────────────────
 
   Widget _buildEmptyState() {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -251,13 +253,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           Icon(
             Icons.favorite_border,
             size: 72,
-            color: Colors.grey.shade400,
+            color: appColors.neutral,
           ),
           const SizedBox(height: 16),
           Text(
             '가격 알림을 설정하면 여기에 표시됩니다',
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: appColors.neutral,
               fontSize: 15,
             ),
             textAlign: TextAlign.center,
@@ -301,6 +303,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   Widget _buildBody() {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -310,7 +313,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(Icons.error_outline, size: 48, color: appColors.error),
             const SizedBox(height: 12),
             const Text(
               '즐겨찾기를 불러오지 못했습니다',
@@ -319,7 +322,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: appColors.neutral, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -351,7 +354,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         itemBuilder: (ctx, i) {
           final alert = _priceAlerts[i];
           final product = _products[alert.productId];
-          return _buildProductCard(alert, product);
+          return _buildProductCard(alert, product, appColors);
         },
       ),
     );

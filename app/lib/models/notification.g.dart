@@ -14,7 +14,7 @@ _AppNotification _$AppNotificationFromJson(Map<String, dynamic> json) =>
       referenceId: (json['reference_id'] as num?)?.toInt(),
       referenceType: json['reference_type'] as String?,
       title: json['title'] as String,
-      body: json['body'] as String,
+      body: json['body'] as String?,
       deepLink: json['deep_link'] as String?,
       isRead: json['is_read'] as bool? ?? false,
       sentAt: json['sent_at'] == null

@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import '../config/constants.dart';
 import '../models/notification.dart';
 import 'api_client.dart';
@@ -19,7 +20,7 @@ class NotificationService {
     int limit = AppConstants.defaultPageSize,
   }) async {
     final response = await _api.dio.get(
-      '/api/v1/notifications/',
+      ApiEndpoints.notifications,
       queryParameters: {
         'limit': limit,
         'cursor': ?cursor,
@@ -42,7 +43,7 @@ class NotificationService {
   /// 응답: { count: int }
   Future<int> getUnreadCount() async {
     final response =
-        await _api.dio.get('/api/v1/notifications/unread-count');
+        await _api.dio.get(ApiEndpoints.notificationUnreadCount);
     return response.data['data']['count'] as int;
   }
 
@@ -51,11 +52,9 @@ class NotificationService {
   /// 개별 알림 읽음 처리.
   ///
   /// PATCH /api/v1/notifications/{id}/read
-  Future<AppNotification> markAsRead(int id) async {
-    final response =
-        await _api.dio.patch('/api/v1/notifications/$id/read');
-    return AppNotification.fromJson(
-        response.data['data'] as Map<String, dynamic>);
+  /// 서버는 `ApiResponse<()>` (data: null) 반환.
+  Future<void> markAsRead(int id) async {
+    await _api.dio.patch(ApiEndpoints.notificationRead(id));
   }
 
   /// 전체 알림 읽음 처리.
@@ -64,7 +63,7 @@ class NotificationService {
   /// 응답: { updated: int } — 실제로 읽음 처리된 건수.
   Future<int> markAllAsRead() async {
     final response =
-        await _api.dio.patch('/api/v1/notifications/read-all');
+        await _api.dio.patch(ApiEndpoints.notificationReadAll);
     return response.data['data']['updated'] as int;
   }
 
@@ -74,6 +73,6 @@ class NotificationService {
   ///
   /// DELETE /api/v1/notifications/{id}
   Future<void> deleteNotification(int id) async {
-    await _api.dio.delete('/api/v1/notifications/$id');
+    await _api.dio.delete(ApiEndpoints.notificationDelete(id));
   }
 }

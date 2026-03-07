@@ -9,8 +9,45 @@ use ipnetwork::IpNetwork;
 
 use crate::AppState;
 
-/// Access Log 미들웨어 — 요청/응답 정보를 `api_access_logs`에 비동기 INSERT.
-/// `tokio::spawn`으로 fire-and-forget하여 요청 흐름을 차단하지 않는다.
+/// Bounded channel을 통해 백그라운드 워커에 전달되는 access log 엔트리.
+pub struct AccessLogEntry {
+    pub ip: IpNetwork,
+    pub user_id: Option<i64>,
+    pub endpoint: String,
+    pub method: String,
+    pub status_code: i16,
+    pub user_agent: Option<String>,
+    pub response_time_ms: i32,
+}
+
+/// 백그라운드 access log 워커 시작.
+/// channel이 닫히면 (shutdown) 자동 종료.
+pub fn spawn_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiver<AccessLogEntry>) {
+    tokio::spawn(async move {
+        while let Some(entry) = rx.recv().await {
+            if let Err(e) = sqlx::query(
+                "INSERT INTO api_access_logs (ip_address, user_id, endpoint, method, status_code, user_agent, response_time_ms, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            )
+            .bind(entry.ip)
+            .bind(entry.user_id)
+            .bind(&entry.endpoint)
+            .bind(&entry.method)
+            .bind(entry.status_code)
+            .bind(&entry.user_agent)
+            .bind(entry.response_time_ms)
+            .execute(&pool)
+            .await
+            {
+                tracing::warn!(error = %e, endpoint = %entry.endpoint, "Failed to insert access log");
+            }
+        }
+        tracing::info!("Access log writer shut down");
+    });
+}
+
+/// Access Log 미들웨어 — bounded channel로 백그라운드 워커에 전달.
+/// 채널이 가득 차면 로그를 드랍하여 요청 흐름을 절대 차단하지 않는다.
 pub async fn access_log(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -67,26 +104,23 @@ pub async fn access_log(
     .record(elapsed.as_secs_f64());
 
     let ip_net: IpNetwork = addr.ip().into();
-    let pool = state.pool.clone();
 
-    tokio::spawn(async move {
-        if let Err(e) = sqlx::query(
-            "INSERT INTO api_access_logs (ip_address, user_id, endpoint, method, status_code, user_agent, response_time_ms, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-        )
-        .bind(ip_net)
-        .bind(user_id)
-        .bind(&matched_endpoint)
-        .bind(&method)
-        .bind(status_code)
-        .bind(&user_agent)
-        .bind(elapsed_ms)
-        .execute(&pool)
-        .await
-        {
-            tracing::warn!(error = %e, endpoint = %matched_endpoint, "Failed to insert access log");
-        }
-    });
+    // Bounded channel — 가득 차면 로그 드랍 (요청 차단 방지)
+    if state
+        .log_tx
+        .try_send(AccessLogEntry {
+            ip: ip_net,
+            user_id,
+            endpoint: matched_endpoint,
+            method,
+            status_code,
+            user_agent,
+            response_time_ms: elapsed_ms,
+        })
+        .is_err()
+    {
+        metrics::counter!("access_log_dropped_total").increment(1);
+    }
 
     response
 }

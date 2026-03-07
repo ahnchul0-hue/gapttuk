@@ -198,3 +198,52 @@ PLAN_01.md was not found in the repository; decisions are inferred from the unco
 **Rationale**: Shorter access token TTL reduces the window for token misuse. Refresh tokens (7 days) handle session continuity. 5 minutes is industry standard for high-security APIs.
 
 **Status**: IMPLEMENTED (example only — production value set via environment)
+
+# Night-06 Session (2026-03-06) — STEP 49
+
+## D-19: reward_service.rs 신규 설계
+
+**Decision**: `reward_service.rs`를 신규 서비스 모듈로 생성, 일일 룰렛 + 잔액 조회 + 추천 보상 처리 포함.
+
+**Rationale**: v0.8 보상 체계 문서가 STEP 48a에서 완성됐으나 서버/앱 구현이 누락. 단일 트랜잭션으로 원자성 보장(잔액+출석기록+월한도 동시 변경). 순수 함수 `assign_monthly_cap`/`spin_roulette` 추출로 단위 테스트 가능.
+
+**Status**: IMPLEMENTED — 테스트 4건 추가 (총 151건)
+
+---
+
+## D-20: user_monthly_checkin_caps Lazy 생성 전략
+
+**Decision**: 월 첫 출석 시 `user_monthly_checkin_caps` 레코드를 lazy INSERT.
+
+**Rationale**: 모든 사용자의 매월 레코드를 사전에 생성하면 batch job이 필요. Lazy 생성은 단순하고 에러 없이 동작. `UNIQUE(user_id, year_month)` 제약으로 race condition 방지.
+
+**Trade-off**: 첫 출석 시 쿼리 1건 추가되지만, 이후 모든 출석은 레코드가 존재해 분기 없음.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-21: reward_stage SMALLINT 단일 상태
+
+**Decision**: `referrals` 테이블의 `referrer_rewarded/referred_rewarded` BOOLEAN 2개 → `reward_stage SMALLINT(0~2)` 단일 컬럼으로 교체.
+
+**Rationale**: BOOLEAN 2개로는 "초대자 보상 완료 but 피초대자 미완료" 같은 불일치 상태가 가능. SMALLINT 단일 상태머신으로 정확한 진행 단계를 표현하고 `CHECK(0~2)` 제약으로 무결성 보장.
+
+**Status**: IMPLEMENTED (migration 013)
+
+---
+
+# Night-07 Session (2026-03-07) — STEP 53
+
+## D-19: Merge auto/night-01-20260306_0100 (STEP 49-52) into current branch
+
+**Decision**: Merge STEP 49-52 commits from previous night branch before implementing STEP 53.
+
+**Rationale**: Current branch (auto/night-01-20260307_0100) was branched from main at STEP 48a.
+STEP 53 (theme centralization) depends on RewardService/PointHistoryScreen (STEP 50),
+Phase A/B/C fixes (STEP 51), and accessibility labels (STEP 52) which are on the previous night branch.
+PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/2026-03-06-step53-implementation.md`.
+
+**Status**: IMPLEMENTED — fast-forward merge, 15 commits ahead of main incorporated.
+
+---

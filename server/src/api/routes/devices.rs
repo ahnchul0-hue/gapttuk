@@ -38,6 +38,11 @@ impl PlatformInput {
     }
 }
 
+#[derive(Deserialize)]
+pub struct SetPushRequest {
+    pub push_enabled: bool,
+}
+
 #[derive(Serialize)]
 pub struct DeviceResponse {
     pub id: i64,
@@ -104,12 +109,14 @@ async fn unregister_device(
     Ok(Deleted)
 }
 
-/// PATCH /api/v1/devices/:device_id/push — push_enabled 토글
+/// PATCH /api/v1/devices/:device_id/push — push_enabled 명시적 설정
 async fn toggle_push(
     State(state): State<AppState>,
     Auth(claims): Auth,
     Path(device_id): Path<i64>,
+    Json(body): Json<SetPushRequest>,
 ) -> Result<ApiResponse<DeviceResponse>, AppError> {
-    let device = device_service::toggle_push(&state.pool, claims.sub, device_id).await?;
+    let device =
+        device_service::set_push(&state.pool, claims.sub, device_id, body.push_enabled).await?;
     Ok(ApiResponse::ok(DeviceResponse::from(device)))
 }

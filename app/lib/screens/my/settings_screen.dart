@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/constants.dart';
+import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/error_utils.dart';
 
 /// 설정 화면.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
-
-  static const _termsUrl =
-      'https://gapttuk.com/terms';
-  static const _privacyUrl =
-      'https://gapttuk.com/privacy';
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -91,6 +88,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
@@ -105,9 +103,9 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('버전'),
             trailing: Text(
-              '0.1.0',
+              AppConstants.appVersion,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: appColors.neutral,
                   ),
             ),
           ),
@@ -115,13 +113,13 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('이용약관'),
             trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _launchUrl(context, _termsUrl),
+            onTap: () => _launchUrl(context, AppConstants.termsUrl),
           ),
           const Divider(height: 1),
           ListTile(
             title: const Text('개인정보처리방침'),
             trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _launchUrl(context, _privacyUrl),
+            onTap: () => _launchUrl(context, AppConstants.privacyUrl),
           ),
           const Divider(height: 1),
           ListTile(
@@ -130,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => showLicensePage(
               context: context,
               applicationName: '값뚝',
-              applicationVersion: '0.1.0',
+              applicationVersion: AppConstants.appVersion,
             ),
           ),
           const Divider(height: 1),
@@ -138,20 +136,19 @@ class SettingsScreen extends ConsumerWidget {
           // ─── 섹션 3: 계정 ─────────────────────────────────────────────────
           _SectionHeader(title: '계정'),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
+            leading: Icon(Icons.logout, color: appColors.error),
+            title: Text(
               '로그아웃',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.error),
             ),
             onTap: () => _logout(context, ref),
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.person_remove_outlined,
-                color: Colors.red),
-            title: const Text(
+            leading: Icon(Icons.person_remove_outlined, color: appColors.error),
+            title: Text(
               '회원 탈퇴',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.error),
             ),
             onTap: () => _showDeleteAccountDialog(context, ref),
           ),
@@ -193,6 +190,7 @@ class _PushNotificationTile extends StatefulWidget {
 
 class _PushNotificationTileState extends State<_PushNotificationTile> {
   bool _pushEnabled = true;
+  // TODO: Firebase 통합 후 — 디바이스 ID 기반 서버 push toggle 동기화 필요
 
   @override
   Widget build(BuildContext context) {

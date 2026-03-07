@@ -22,6 +22,11 @@ abstract final class AppConstants {
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
 
+  // --- 앱 정보 ---
+  static const String appVersion = '0.1.0';
+  static const String termsUrl = 'https://gapttuk.com/terms';
+  static const String privacyUrl = 'https://gapttuk.com/privacy';
+
   // --- 소셜 로그인 ---
   static const String kakaoNativeAppKey =
       String.fromEnvironment('KAKAO_NATIVE_APP_KEY');

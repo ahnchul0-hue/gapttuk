@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gapttuk_app/config/theme.dart';
 import 'package:gapttuk_app/models/product.dart';
 import 'package:gapttuk_app/widgets/product_card.dart';
 import 'package:network_image_mock/network_image_mock.dart';
@@ -7,6 +8,7 @@ import 'package:network_image_mock/network_image_mock.dart';
 void main() {
   Widget buildCard(Product product, {VoidCallback? onTap}) {
     return MaterialApp(
+      theme: AppTheme.light,
       home: Scaffold(
         body: ProductCard(product: product, onTap: onTap),
       ),

@@ -9,6 +9,7 @@ use crate::auth::providers::SocialUserInfo;
 use crate::config::Config;
 use crate::error::AppError;
 use crate::models::User;
+use crate::services::reward_service::add_points_and_record;
 
 /// 개인정보 동의 파라미터 — 소셜 로그인 요청에서 전달.
 pub struct ConsentInfo {
@@ -21,6 +22,7 @@ pub struct ConsentInfo {
 /// referral_code는 신규 사용자에게만 내부 생성 — 기존 사용자 로그인 시 불필요한 DB 조회 방지.
 /// 신규 사용자는 terms_agreed + privacy_agreed가 필수.
 /// 반환: (User, is_new_user)
+#[tracing::instrument(skip(pool, info, consent), fields(provider = ?info.provider))]
 pub async fn upsert_user(
     pool: &PgPool,
     info: &SocialUserInfo,
@@ -53,6 +55,7 @@ pub async fn upsert_user(
         .bind(user.id)
         .fetch_one(pool)
         .await?;
+        metrics::counter!("auth_logins_total", "provider" => provider_str).increment(1);
         Ok((updated, false))
     } else {
         // 신규 사용자 — 동의 검증 필수
@@ -110,9 +113,21 @@ pub async fn upsert_user(
             .bind(&referral_code)
             .execute(&mut *tx)
             .await?;
+
+            // Stage 0 웰컴 보상: 피초대자 1¢
+            add_points_and_record(
+                &mut tx,
+                user.id,
+                1,
+                "referral_welcome",
+                "추천 코드 가입 웰컴 보상",
+                None,
+            )
+            .await?;
         }
 
         tx.commit().await?;
+        metrics::counter!("auth_signups_total", "provider" => provider_str).increment(1);
         Ok((user, true))
     }
 }
@@ -145,6 +160,7 @@ pub async fn create_token_pair(
 
 /// Refresh token 순환: 기존 토큰 revoke → 새 토큰 쌍 발급.
 /// 탈취 감지: 이미 revoke된 토큰이 재사용되면 해당 user의 모든 토큰 revoke.
+#[tracing::instrument(skip(pool, config, raw_refresh_token))]
 pub async fn rotate_refresh_token(
     pool: &PgPool,
     config: &Config,
@@ -173,25 +189,56 @@ pub async fn rotate_refresh_token(
 
     // 2. 탈취 감지 — 이미 revoke된 토큰 재사용
     if revoked_at.is_some() {
-        // 해당 user의 모든 활성 토큰 revoke
-        // DB 에러 시에도 반드시 TokenInvalid를 반환 (탈취된 토큰이 재사용 가능해지는 것을 방지)
-        match sqlx::query(
-            "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL"
-        )
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await
-        {
-            Ok(_) => {
-                let _ = tx.commit().await;
-            }
-            Err(e) => {
-                tracing::error!(user_id, error = %e, "Failed to revoke all tokens during theft detection");
-                // tx는 drop 시 자동 롤백되지만, 탈취 시도는 여전히 차단
+        // 해당 user의 모든 활성 토큰 revoke (최대 2회 시도)
+        // DB 에러 시에도 반드시 TokenInvalid를 반환하되, 가능한 한 토큰 revoke를 보장
+        let mut revoke_succeeded = false;
+        for attempt in 1..=2 {
+            match sqlx::query(
+                "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL"
+            )
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await
+            {
+                Ok(result) => {
+                    tracing::warn!(
+                        user_id,
+                        revoked_count = result.rows_affected(),
+                        "Refresh token reuse detected — all tokens revoked (attempt {attempt})"
+                    );
+                    if let Err(commit_err) = tx.commit().await {
+                        tracing::error!(user_id, error = %commit_err, "Failed to commit token revocation");
+                    } else {
+                        revoke_succeeded = true;
+                    }
+                    break;
+                }
+                Err(e) => {
+                    tracing::error!(
+                        user_id,
+                        attempt,
+                        error = %e,
+                        "Failed to revoke tokens during theft detection"
+                    );
+                    if attempt == 2 {
+                        // 최종 실패 — Sentry 수준 경고
+                        tracing::error!(
+                            user_id,
+                            "SECURITY: Token theft detected but revocation failed after 2 attempts"
+                        );
+                    }
+                }
             }
         }
 
-        tracing::warn!(user_id, "Refresh token reuse detected — all tokens revoked");
+        if !revoke_succeeded {
+            // tx drop → 자동 롤백, 그러나 탈취 시도 자체는 차단
+            tracing::error!(
+                user_id,
+                "Token revocation could not be committed — manual intervention needed"
+            );
+        }
+
         return Err(AppError::TokenInvalid);
     }
 
@@ -301,6 +348,7 @@ pub async fn update_consent(
 }
 
 /// 회원 탈퇴 (소프트 딜리트 + 모든 refresh token revoke).
+#[tracing::instrument(skip(pool))]
 pub async fn withdraw(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     let mut tx = pool.begin().await?;
 
@@ -333,17 +381,23 @@ pub async fn withdraw(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     .await?;
 
     tx.commit().await?;
+    metrics::counter!("auth_withdrawals_total").increment(1);
     Ok(())
 }
 
 /// 추천 코드로 추천인 user_id 조회.
+/// 코드 형식: GAP-XXXXXX (10자) — 형식이 맞지 않으면 DB 조회 없이 None 반환.
 pub async fn find_referrer_by_code(
     pool: &PgPool,
     referral_code: &str,
 ) -> Result<Option<i64>, AppError> {
+    let code = referral_code.trim();
+    if code.len() > 20 || code.is_empty() {
+        return Ok(None);
+    }
     let id: Option<i64> =
         sqlx::query_scalar("SELECT id FROM users WHERE referral_code = $1 AND deleted_at IS NULL")
-            .bind(referral_code)
+            .bind(code)
             .fetch_optional(pool)
             .await?;
     Ok(id)

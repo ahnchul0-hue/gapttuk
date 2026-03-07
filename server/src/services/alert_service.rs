@@ -385,9 +385,9 @@ pub async fn update_price_alert(
     pool: &PgPool,
     user_id: i64,
     alert_id: i64,
-    target_price: rust_decimal::Decimal,
+    target_price: i32,
 ) -> Result<(), AppError> {
-    if target_price <= rust_decimal::Decimal::ZERO {
+    if target_price <= 0 {
         return Err(AppError::BadRequest(
             "목표가는 0보다 커야 합니다".to_string(),
         ));
@@ -452,6 +452,7 @@ struct ProductStats {
 /// 가격 변동 시 해당 상품의 활성 알림 평가.
 /// 조건 충족 시 알림 생성 + 푸시 전송.
 /// 반환: 트리거된 알림 수.
+#[tracing::instrument(skip(pool, push))]
 pub async fn evaluate_price_alerts(
     pool: &PgPool,
     push: std::sync::Arc<PushClient>,
@@ -523,9 +524,18 @@ pub async fn evaluate_price_alerts(
 
     // 5. claim 성공한 알림만 푸시 전송 (병렬 — JoinSet으로 동시 발송)
     let claimed_set: std::collections::HashSet<i64> = claimed_ids.iter().copied().collect();
+    let claimed_alerts: Vec<_> = alerts
+        .iter()
+        .filter(|a| claimed_set.contains(&a.id))
+        .collect();
+
+    // 5a. Batch device fetch — N회 SELECT → 1회 SELECT (N+1 방지)
+    let user_ids: Vec<i64> = claimed_alerts.iter().map(|a| a.user_id).collect();
+    let devices_by_user = notification_service::batch_fetch_devices(pool, &user_ids).await?;
+
     let mut push_tasks = tokio::task::JoinSet::new();
 
-    for alert in alerts.iter().filter(|a| claimed_set.contains(&a.id)) {
+    for alert in &claimed_alerts {
         let title = format_alert_title(&alert.alert_type, product_name);
         let body = format_alert_body(&alert.alert_type, new_price, alert.target_price);
         let alert_id = alert.id;
@@ -533,9 +543,10 @@ pub async fn evaluate_price_alerts(
         let pool = pool.clone();
         let push = std::sync::Arc::clone(&push);
         let deep_link = deep_link.clone();
+        let devices = devices_by_user.get(&user_id).cloned().unwrap_or_default();
 
         push_tasks.spawn(async move {
-            if let Err(e) = notification_service::create_and_push(
+            if let Err(e) = notification_service::create_notification_and_push(
                 &pool,
                 &push,
                 &notification_service::PushNotification {
@@ -546,6 +557,7 @@ pub async fn evaluate_price_alerts(
                     body: &body,
                     deep_link: Some(&deep_link),
                 },
+                &devices,
             )
             .await
             {
@@ -565,6 +577,7 @@ pub async fn evaluate_price_alerts(
     let triggered = claimed_ids.len();
     if triggered > 0 {
         tracing::info!(product_id, triggered, "Price alerts evaluated");
+        metrics::counter!("alerts_triggered_total").increment(triggered as u64);
     }
 
     Ok(triggered)
@@ -888,12 +901,11 @@ mod tests {
     #[test]
     fn test_price_alert_target_zero_is_invalid() {
         // target_price <= 0은 BadRequest
-        assert!(rust_decimal::Decimal::ZERO <= rust_decimal::Decimal::ZERO);
+        assert!(0i32 <= 0);
     }
 
     #[test]
     fn test_price_alert_target_negative_is_invalid() {
-        let neg = rust_decimal::Decimal::new(-1, 0);
-        assert!(neg <= rust_decimal::Decimal::ZERO);
+        assert!(-1i32 <= 0);
     }
 }

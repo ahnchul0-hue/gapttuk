@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,7 @@ class ProductDetailScreen extends ConsumerWidget {
     final productAsync = ref.watch(productDetailProvider(productId));
     final priceFormat = NumberFormat('#,###', 'ko_KR');
 
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(title: const Text('상품 상세')),
       floatingActionButton: FloatingActionButton.extended(
@@ -34,12 +36,12 @@ class ProductDetailScreen extends ConsumerWidget {
             if (product.imageUrl != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  product.imageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: product.imageUrl!,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+                  errorWidget: (_, _, _) => Container(
                     height: 200,
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: const Icon(Icons.image_not_supported, size: 48),
@@ -60,20 +62,20 @@ class ProductDetailScreen extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade100,
+                  color: appColors.error.withAlpha(40),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade300),
+                  border: Border.all(color: appColors.error.withAlpha(130)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.remove_shopping_cart,
-                        color: Colors.red.shade700, size: 16),
+                        color: appColors.error, size: 16),
                     const SizedBox(width: 6),
                     Text(
                       '품절',
                       style: TextStyle(
-                        color: Colors.red.shade700,
+                        color: appColors.error,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -88,7 +90,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 '₩${priceFormat.format(product.currentPrice)}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: product.isOutOfStock ? Colors.grey : null,
+                      color: product.isOutOfStock ? appColors.neutral : null,
                     ),
               ),
               const SizedBox(height: 4),
@@ -275,10 +277,11 @@ class _TrendChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final (icon, color, label) = switch (trend) {
       'rising' => (Icons.trending_up, AppTheme.priceUp, '상승'),
       'falling' => (Icons.trending_down, AppTheme.priceDown, '하락'),
-      _ => (Icons.trending_flat, Colors.grey, '안정'),
+      _ => (Icons.trending_flat, appColors.neutral, '안정'),
     };
     return Chip(
       avatar: Icon(icon, color: color, size: 18),
@@ -294,10 +297,11 @@ class _TimingBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final color = score >= 70
         ? AppTheme.secondary
         : score >= 40
-            ? Colors.orange
+            ? appColors.warning
             : AppTheme.priceUp;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -350,16 +354,17 @@ class _PredictionCard extends ConsumerWidget {
     return predictionAsync.when(
       data: (data) {
         if (data.isEmpty) return const SizedBox.shrink();
-        final direction =
-            (data['predicted_direction'] as String?) ?? 'stable';
+        final action =
+            (data['predicted_action'] as String?) ?? 'neutral';
         final confidence =
             (data['confidence'] as num?)?.toDouble() ?? 0.0;
         final confidencePct = (confidence * 100).round();
 
-        final (icon, iconColor, directionText) = switch (direction) {
-          'up' => (Icons.trending_up, AppTheme.priceUp, '상승'),
-          'down' => (Icons.trending_down, AppTheme.priceDown, '하락'),
-          _ => (Icons.trending_flat, Colors.grey, '보합'),
+        final appColors = Theme.of(context).extension<AppColors>()!;
+        final (icon, iconColor, actionText) = switch (action) {
+          'buy_now' => (Icons.shopping_cart, AppTheme.priceDown, '지금 구매'),
+          'wait' => (Icons.hourglass_top, AppTheme.priceUp, '대기'),
+          _ => (Icons.trending_flat, appColors.neutral, '보합'),
         };
 
         return Card(
@@ -382,7 +387,7 @@ class _PredictionCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '향후 가격이 $directionText할 것으로 예측됩니다 (신뢰도 $confidencePct%)',
+                        'AI 추천: $actionText (신뢰도 $confidencePct%)',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],

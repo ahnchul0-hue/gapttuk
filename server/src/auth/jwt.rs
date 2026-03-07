@@ -1,4 +1,5 @@
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use rand::rngs::OsRng;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -74,9 +75,9 @@ pub fn decode_access_token(token: &str, config: &Config) -> Result<Claims, AppEr
 }
 
 /// 불투명 refresh token 생성 (32바이트 = 64자 hex).
+/// OS 엔트로피 소스(OsRng)를 직접 사용하여 보안 토큰 생성.
 pub fn generate_refresh_token() -> String {
-    let mut rng = rand::thread_rng();
-    let bytes: [u8; 32] = rng.gen();
+    let bytes: [u8; 32] = OsRng.gen();
     hex::encode(bytes)
 }
 

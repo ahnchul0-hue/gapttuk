@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
 import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -56,37 +57,11 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     }
   }
 
-  // ─── 알림 타입 라벨 ────────────────────────────────────────────────────────
+  // ─── 공통 에러 처리 래퍼 ─────────────────────────────────────────────────────
 
-  String _alertTypeLabel(String type) {
-    switch (type) {
-      case 'target_price':
-        return '목표 가격';
-      case 'below_average':
-        return '평균 이하';
-      case 'near_lowest':
-        return '최저가 근접';
-      case 'all_time_low':
-        return '최저가 갱신';
-      default:
-        return type;
-    }
-  }
-
-  // ─── 가격 알림 토글 ────────────────────────────────────────────────────────
-
-  Future<void> _togglePriceAlert(PriceAlert alert) async {
+  Future<void> _handleAlertAction(Future<void> Function() action) async {
     try {
-      final service = ref.read(alertServiceProvider);
-      final updated = await service.togglePriceAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          final list = List<PriceAlert>.from(_alertData!.priceAlerts);
-          final idx = list.indexWhere((a) => a.id == alert.id);
-          if (idx != -1) list[idx] = updated;
-          _alertData = _alertData!.copyWith(priceAlerts: list);
-        });
-      }
+      await action();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,123 +71,94 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     }
   }
 
-  // ─── 카테고리 알림 토글 ────────────────────────────────────────────────────
+  // ─── 토글 ──────────────────────────────────────────────────────────────────
 
-  Future<void> _toggleCategoryAlert(CategoryAlert alert) async {
-    try {
-      final service = ref.read(alertServiceProvider);
-      final updated = await service.toggleCategoryAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          final list = List<CategoryAlert>.from(_alertData!.categoryAlerts);
-          final idx = list.indexWhere((a) => a.id == alert.id);
-          if (idx != -1) list[idx] = updated;
-          _alertData = _alertData!.copyWith(categoryAlerts: list);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
-  }
+  Future<void> _togglePriceAlert(PriceAlert alert) =>
+      _handleAlertAction(() async {
+        final updated =
+            await ref.read(alertServiceProvider).togglePriceAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            final list = List<PriceAlert>.from(_alertData!.priceAlerts);
+            final idx = list.indexWhere((a) => a.id == alert.id);
+            if (idx != -1) list[idx] = updated;
+            _alertData = _alertData!.copyWith(priceAlerts: list);
+          });
+        }
+      });
 
-  // ─── 키워드 알림 토글 ─────────────────────────────────────────────────────
+  Future<void> _toggleCategoryAlert(CategoryAlert alert) =>
+      _handleAlertAction(() async {
+        final updated =
+            await ref.read(alertServiceProvider).toggleCategoryAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            final list =
+                List<CategoryAlert>.from(_alertData!.categoryAlerts);
+            final idx = list.indexWhere((a) => a.id == alert.id);
+            if (idx != -1) list[idx] = updated;
+            _alertData = _alertData!.copyWith(categoryAlerts: list);
+          });
+        }
+      });
 
-  Future<void> _toggleKeywordAlert(KeywordAlert alert) async {
-    try {
-      final service = ref.read(alertServiceProvider);
-      final updated = await service.toggleKeywordAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          final list = List<KeywordAlert>.from(_alertData!.keywordAlerts);
-          final idx = list.indexWhere((a) => a.id == alert.id);
-          if (idx != -1) list[idx] = updated;
-          _alertData = _alertData!.copyWith(keywordAlerts: list);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
-  }
+  Future<void> _toggleKeywordAlert(KeywordAlert alert) =>
+      _handleAlertAction(() async {
+        final updated =
+            await ref.read(alertServiceProvider).toggleKeywordAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            final list =
+                List<KeywordAlert>.from(_alertData!.keywordAlerts);
+            final idx = list.indexWhere((a) => a.id == alert.id);
+            if (idx != -1) list[idx] = updated;
+            _alertData = _alertData!.copyWith(keywordAlerts: list);
+          });
+        }
+      });
 
-  // ─── 가격 알림 삭제 ────────────────────────────────────────────────────────
+  // ─── 삭제 ──────────────────────────────────────────────────────────────────
 
-  Future<void> _deletePriceAlert(PriceAlert alert) async {
-    try {
-      final service = ref.read(alertServiceProvider);
-      await service.deletePriceAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          _alertData = _alertData!.copyWith(
-            priceAlerts: _alertData!.priceAlerts
-                .where((a) => a.id != alert.id)
-                .toList(),
-          );
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
-  }
+  Future<void> _deletePriceAlert(PriceAlert alert) =>
+      _handleAlertAction(() async {
+        await ref.read(alertServiceProvider).deletePriceAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            _alertData = _alertData!.copyWith(
+              priceAlerts:
+                  _alertData!.priceAlerts.where((a) => a.id != alert.id).toList(),
+            );
+          });
+        }
+      });
 
-  // ─── 카테고리 알림 삭제 ────────────────────────────────────────────────────
+  Future<void> _deleteCategoryAlert(CategoryAlert alert) =>
+      _handleAlertAction(() async {
+        await ref.read(alertServiceProvider).deleteCategoryAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            _alertData = _alertData!.copyWith(
+              categoryAlerts: _alertData!.categoryAlerts
+                  .where((a) => a.id != alert.id)
+                  .toList(),
+            );
+          });
+        }
+      });
 
-  Future<void> _deleteCategoryAlert(CategoryAlert alert) async {
-    try {
-      final service = ref.read(alertServiceProvider);
-      await service.deleteCategoryAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          _alertData = _alertData!.copyWith(
-            categoryAlerts: _alertData!.categoryAlerts
-                .where((a) => a.id != alert.id)
-                .toList(),
-          );
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
-  }
-
-  // ─── 키워드 알림 삭제 ─────────────────────────────────────────────────────
-
-  Future<void> _deleteKeywordAlert(KeywordAlert alert) async {
-    try {
-      final service = ref.read(alertServiceProvider);
-      await service.deleteKeywordAlert(alert.id);
-      if (mounted) {
-        setState(() {
-          _alertData = _alertData!.copyWith(
-            keywordAlerts: _alertData!.keywordAlerts
-                .where((a) => a.id != alert.id)
-                .toList(),
-          );
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
-  }
+  Future<void> _deleteKeywordAlert(KeywordAlert alert) =>
+      _handleAlertAction(() async {
+        await ref.read(alertServiceProvider).deleteKeywordAlert(alert.id);
+        if (mounted) {
+          setState(() {
+            _alertData = _alertData!.copyWith(
+              keywordAlerts: _alertData!.keywordAlerts
+                  .where((a) => a.id != alert.id)
+                  .toList(),
+            );
+          });
+        }
+      });
 
   // ─── 키워드 알림 추가 다이얼로그 ──────────────────────────────────────────
 
@@ -247,54 +193,48 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     controller.dispose();
 
     if (result == null || result.isEmpty) return;
-    try {
-      final service = ref.read(alertServiceProvider);
-      final created = await service.createKeywordAlert(keyword: result);
+    await _handleAlertAction(() async {
+      final created =
+          await ref.read(alertServiceProvider).createKeywordAlert(keyword: result);
       if (mounted) {
         setState(() {
-          final list = List<KeywordAlert>.from(_alertData?.keywordAlerts ?? []);
+          final list =
+              List<KeywordAlert>.from(_alertData?.keywordAlerts ?? []);
           list.add(created);
           _alertData = (_alertData ?? const AlertListResponse())
               .copyWith(keywordAlerts: list);
         });
-        // 키워드 탭으로 이동
         _tabController.animateTo(2);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
-    }
+    });
   }
 
-  // ─── 빈 상태 위젯 ─────────────────────────────────────────────────────────
+  // ─── 제네릭 알림 리스트 빌더 ────────────────────────────────────────────────
 
-  Widget _buildEmpty(String message, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── 가격 알림 탭 ─────────────────────────────────────────────────────────
-
-  Widget _buildPriceAlertTab(List<PriceAlert> alerts) {
+  Widget _buildAlertList<T>({
+    required List<T> alerts,
+    required String emptyMessage,
+    required IconData emptyIcon,
+    required String keyPrefix,
+    required int Function(T) getId,
+    required void Function(T) onDismissed,
+    required Widget Function(T) tileBuilder,
+    required AppColors appColors,
+  }) {
     if (alerts.isEmpty) {
-      return _buildEmpty(
-        '가격 알림이 없습니다\n상품 상세에서 알림을 설정하세요',
-        Icons.price_change_outlined,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(emptyIcon, size: 64, color: appColors.neutral),
+            const SizedBox(height: 16),
+            Text(
+              emptyMessage,
+              style: TextStyle(color: appColors.neutral, fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
     return RefreshIndicator(
@@ -305,175 +245,16 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
         itemBuilder: (ctx, i) {
           final alert = alerts[i];
           return Dismissible(
-            key: ValueKey('price_${alert.id}'),
+            key: ValueKey('${keyPrefix}_${getId(alert)}'),
             direction: DismissDirection.endToStart,
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
+              color: appColors.error,
               child: const Icon(Icons.delete_outline, color: Colors.white),
             ),
-            onDismissed: (_) => _deletePriceAlert(alert),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.blue.shade50,
-                child: const Icon(Icons.price_change, color: Colors.blue),
-              ),
-              title: Text(
-                '상품 #${alert.productId}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_alertTypeLabel(alert.alertType)),
-                  if (alert.targetPrice != null)
-                    Text(
-                      '목표가: ${formatPrice(alert.targetPrice!)}',
-                      style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
-              ),
-              trailing: Switch(
-                value: alert.isActive,
-                onChanged: (_) => _togglePriceAlert(alert),
-              ),
-              isThreeLine: alert.targetPrice != null,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ─── 카테고리 알림 탭 ─────────────────────────────────────────────────────
-
-  Widget _buildCategoryAlertTab(List<CategoryAlert> alerts) {
-    if (alerts.isEmpty) {
-      return _buildEmpty(
-        '카테고리 알림이 없습니다\n관심 카테고리 알림을 추가하세요',
-        Icons.category_outlined,
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadAlerts,
-      child: ListView.separated(
-        itemCount: alerts.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (ctx, i) {
-          final alert = alerts[i];
-          return Dismissible(
-            key: ValueKey('category_${alert.id}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete_outline, color: Colors.white),
-            ),
-            onDismissed: (_) => _deleteCategoryAlert(alert),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.purple.shade50,
-                child:
-                    const Icon(Icons.category, color: Colors.purple),
-              ),
-              title: Text(
-                '카테고리 #${alert.categoryId}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_categoryConditionLabel(alert.alertCondition)),
-                  if (alert.thresholdPercent != null)
-                    Text(
-                      '${alert.thresholdPercent}% 이상 할인',
-                      style: TextStyle(
-                        color: Colors.purple.shade700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (alert.maxPrice != null)
-                    Text(
-                      '최대 ${formatPrice(alert.maxPrice!)}',
-                      style:
-                          TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                    ),
-                ],
-              ),
-              trailing: Switch(
-                value: alert.isActive,
-                onChanged: (_) => _toggleCategoryAlert(alert),
-              ),
-              isThreeLine: alert.thresholdPercent != null ||
-                  alert.maxPrice != null,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ─── 키워드 알림 탭 ───────────────────────────────────────────────────────
-
-  Widget _buildKeywordAlertTab(List<KeywordAlert> alerts) {
-    if (alerts.isEmpty) {
-      return _buildEmpty(
-        '키워드 알림이 없습니다\n우측 상단 + 버튼으로 추가하세요',
-        Icons.search_outlined,
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadAlerts,
-      child: ListView.separated(
-        itemCount: alerts.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (ctx, i) {
-          final alert = alerts[i];
-          return Dismissible(
-            key: ValueKey('keyword_${alert.id}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete_outline, color: Colors.white),
-            ),
-            onDismissed: (_) => _deleteKeywordAlert(alert),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.orange.shade50,
-                child:
-                    const Icon(Icons.key, color: Colors.orange),
-              ),
-              title: Text(
-                alert.keyword,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (alert.categoryId != null)
-                    Text('카테고리 #${alert.categoryId}'),
-                  if (alert.maxPrice != null)
-                    Text(
-                      '최대 ${formatPrice(alert.maxPrice!)}',
-                      style:
-                          TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                    ),
-                ],
-              ),
-              trailing: Switch(
-                value: alert.isActive,
-                onChanged: (_) => _toggleKeywordAlert(alert),
-              ),
-              isThreeLine:
-                  alert.categoryId != null || alert.maxPrice != null,
-            ),
+            onDismissed: (_) => onDismissed(alert),
+            child: tileBuilder(alert),
           );
         },
       ),
@@ -481,6 +262,21 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   }
 
   // ─── 헬퍼 ─────────────────────────────────────────────────────────────────
+
+  String _alertTypeLabel(String type) {
+    switch (type) {
+      case 'target_price':
+        return '목표 가격';
+      case 'below_average':
+        return '평균 이하';
+      case 'near_lowest':
+        return '최저가 근접';
+      case 'all_time_low':
+        return '최저가 갱신';
+      default:
+        return type;
+    }
+  }
 
   String _categoryConditionLabel(String condition) {
     switch (condition) {
@@ -512,39 +308,12 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(
-              text: '가격 알림',
-              icon: _alertData != null &&
-                      _alertData!.priceAlerts.isNotEmpty
-                  ? Badge(
-                      label:
-                          Text('${_alertData!.priceAlerts.length}'),
-                      child: const Icon(Icons.price_change_outlined),
-                    )
-                  : const Icon(Icons.price_change_outlined),
-            ),
-            Tab(
-              text: '카테고리',
-              icon: _alertData != null &&
-                      _alertData!.categoryAlerts.isNotEmpty
-                  ? Badge(
-                      label:
-                          Text('${_alertData!.categoryAlerts.length}'),
-                      child: const Icon(Icons.category_outlined),
-                    )
-                  : const Icon(Icons.category_outlined),
-            ),
-            Tab(
-              text: '키워드',
-              icon: _alertData != null &&
-                      _alertData!.keywordAlerts.isNotEmpty
-                  ? Badge(
-                      label:
-                          Text('${_alertData!.keywordAlerts.length}'),
-                      child: const Icon(Icons.search_outlined),
-                    )
-                  : const Icon(Icons.search_outlined),
-            ),
+            _buildTab('가격 알림', Icons.price_change_outlined,
+                _alertData?.priceAlerts.length ?? 0),
+            _buildTab('카테고리', Icons.category_outlined,
+                _alertData?.categoryAlerts.length ?? 0),
+            _buildTab('키워드', Icons.search_outlined,
+                _alertData?.keywordAlerts.length ?? 0),
           ],
         ),
       ),
@@ -552,7 +321,17 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     );
   }
 
+  Tab _buildTab(String label, IconData icon, int count) {
+    return Tab(
+      text: label,
+      icon: count > 0
+          ? Badge(label: Text('$count'), child: Icon(icon))
+          : Icon(icon),
+    );
+  }
+
   Widget _buildBody() {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -561,16 +340,16 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(Icons.error_outline, size: 48, color: appColors.error),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               '알림 목록을 불러오지 못했습니다',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: appColors.neutral, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -592,9 +371,122 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
     return TabBarView(
       controller: _tabController,
       children: [
-        _buildPriceAlertTab(data.priceAlerts),
-        _buildCategoryAlertTab(data.categoryAlerts),
-        _buildKeywordAlertTab(data.keywordAlerts),
+        // 가격 알림 탭
+        _buildAlertList<PriceAlert>(
+          alerts: data.priceAlerts,
+          emptyMessage: '가격 알림이 없습니다\n상품 상세에서 알림을 설정하세요',
+          emptyIcon: Icons.price_change_outlined,
+          keyPrefix: 'price',
+          getId: (a) => a.id,
+          onDismissed: _deletePriceAlert,
+          appColors: appColors,
+          tileBuilder: (alert) => ListTile(
+            leading: CircleAvatar(
+              backgroundColor: appColors.info.withAlpha(30),
+              child: Icon(Icons.price_change, color: appColors.info),
+            ),
+            title: Text(
+              '상품 #${alert.productId}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_alertTypeLabel(alert.alertType)),
+                if (alert.targetPrice != null)
+                  Text(
+                    '목표가: ${formatPrice(alert.targetPrice!)}',
+                    style: TextStyle(color: appColors.info, fontSize: 12),
+                  ),
+              ],
+            ),
+            trailing: Switch(
+              value: alert.isActive,
+              onChanged: (_) => _togglePriceAlert(alert),
+            ),
+            isThreeLine: alert.targetPrice != null,
+          ),
+        ),
+        // 카테고리 알림 탭
+        _buildAlertList<CategoryAlert>(
+          alerts: data.categoryAlerts,
+          emptyMessage: '카테고리 알림이 없습니다\n관심 카테고리 알림을 추가하세요',
+          emptyIcon: Icons.category_outlined,
+          keyPrefix: 'category',
+          getId: (a) => a.id,
+          onDismissed: _deleteCategoryAlert,
+          appColors: appColors,
+          tileBuilder: (alert) => ListTile(
+            leading: CircleAvatar(
+              backgroundColor: appColors.warning.withAlpha(30),
+              child: Icon(Icons.category, color: appColors.warning),
+            ),
+            title: Text(
+              '카테고리 #${alert.categoryId}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_categoryConditionLabel(alert.alertCondition)),
+                if (alert.thresholdPercent != null)
+                  Text(
+                    '${alert.thresholdPercent}% 이상 할인',
+                    style: TextStyle(color: appColors.warning, fontSize: 12),
+                  ),
+                if (alert.maxPrice != null)
+                  Text(
+                    '최대 ${formatPrice(alert.maxPrice!)}',
+                    style: TextStyle(color: appColors.neutral, fontSize: 12),
+                  ),
+              ],
+            ),
+            trailing: Switch(
+              value: alert.isActive,
+              onChanged: (_) => _toggleCategoryAlert(alert),
+            ),
+            isThreeLine:
+                alert.thresholdPercent != null || alert.maxPrice != null,
+          ),
+        ),
+        // 키워드 알림 탭
+        _buildAlertList<KeywordAlert>(
+          alerts: data.keywordAlerts,
+          emptyMessage: '키워드 알림이 없습니다\n우측 상단 + 버튼으로 추가하세요',
+          emptyIcon: Icons.search_outlined,
+          keyPrefix: 'keyword',
+          getId: (a) => a.id,
+          onDismissed: _deleteKeywordAlert,
+          appColors: appColors,
+          tileBuilder: (alert) => ListTile(
+            leading: CircleAvatar(
+              backgroundColor: appColors.warning.withAlpha(30),
+              child: Icon(Icons.key, color: appColors.warning),
+            ),
+            title: Text(
+              alert.keyword,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (alert.categoryId != null)
+                  Text('카테고리 #${alert.categoryId}'),
+                if (alert.maxPrice != null)
+                  Text(
+                    '최대 ${formatPrice(alert.maxPrice!)}',
+                    style: TextStyle(color: appColors.neutral, fontSize: 12),
+                  ),
+              ],
+            ),
+            trailing: Switch(
+              value: alert.isActive,
+              onChanged: (_) => _toggleKeywordAlert(alert),
+            ),
+            isThreeLine:
+                alert.categoryId != null || alert.maxPrice != null,
+          ),
+        ),
       ],
     );
   }

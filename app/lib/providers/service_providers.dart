@@ -8,6 +8,7 @@ import '../services/push_service.dart';
 import '../services/notification_service.dart';
 import '../services/prediction_service.dart';
 import '../services/product_service.dart';
+import '../services/reward_service.dart';
 import '../services/token_storage.dart';
 
 part 'service_providers.g.dart';
@@ -71,4 +72,11 @@ PredictionService predictionService(Ref ref) {
 PushService pushService(Ref ref) {
   final deviceService = ref.watch(deviceServiceProvider);
   return PushService(deviceService: deviceService);
+}
+
+/// 보상 서비스.
+@Riverpod(keepAlive: true)
+RewardService rewardService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return RewardService(api: api);
 }

@@ -159,6 +159,12 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         }
     }
 
+    // price_history 2년 초과 파티션 아카이브 (1개/cycle)
+    if let Err(e) = archive_old_price_history(pool).await {
+        tracing::warn!(error = %e, "price_history archival issue");
+        errors.push(e);
+    }
+
     if errors.is_empty() {
         Ok(())
     } else {
@@ -168,6 +174,118 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
             errors.join("; ")
         ))
     }
+}
+
+/// 2년 이전 price_history 파티션을 price_history_monthly로 집계 후 DROP.
+/// 한 번에 1개 파티션만 처리하여 부하 분산.
+async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
+    let cutoff = chrono::Utc::now().date_naive() - chrono::Months::new(24);
+    let cutoff_suffix = cutoff.format("%Y_%m").to_string();
+
+    let rows = sqlx::query_as::<_, (String,)>(
+        "SELECT c.relname \
+         FROM pg_inherits i \
+         JOIN pg_class c ON c.oid = i.inhrelid \
+         JOIN pg_class p ON p.oid = i.inhparent \
+         WHERE p.relname = 'price_history' \
+         ORDER BY c.relname",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| format!("Failed to query price_history partitions: {e}"))?;
+
+    for (partition_name,) in rows {
+        let Some(suffix) = partition_name.strip_prefix("price_history_") else {
+            continue;
+        };
+        if !suffix
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+        {
+            tracing::warn!(partition = %partition_name, "Unexpected partition name format");
+            continue;
+        }
+        if suffix >= cutoff_suffix.as_str() {
+            continue; // 2년 미만 — 보존
+        }
+
+        tracing::info!(partition = %partition_name, "Archiving old price_history partition");
+
+        // 1. price_history_monthly로 집계 (멱등: ON CONFLICT DO NOTHING)
+        let aggregate_sql = format!(
+            "INSERT INTO price_history_monthly \
+                 (product_id, year_month, avg_price, min_price, max_price, \
+                  first_price, last_price, record_count, had_stockout) \
+             SELECT \
+                 product_id, \
+                 DATE_TRUNC('month', recorded_at)::DATE, \
+                 AVG(price)::INTEGER, \
+                 MIN(price), \
+                 MAX(price), \
+                 (ARRAY_AGG(price ORDER BY recorded_at ASC))[1], \
+                 (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
+                 COUNT(*)::INTEGER, \
+                 BOOL_OR(is_out_of_stock) \
+             FROM {partition_name} \
+             GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
+             ON CONFLICT (product_id, year_month) DO NOTHING"
+        );
+        if let Err(e) = sqlx::query(&aggregate_sql).execute(pool).await {
+            tracing::warn!(partition = %partition_name, error = %e, "Aggregation failed, skipping DROP");
+            return Err(format!("Aggregation of {partition_name} failed: {e}"));
+        }
+
+        // 2. 행 수 검증 — 집계 후 source 카운트 ≤ aggregated 카운트 확인
+        let count_sql = format!("SELECT COUNT(*)::BIGINT FROM {partition_name}");
+        let (source_count,): (i64,) = sqlx::query_as(&count_sql)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("Count query failed: {e}"))?;
+
+        let verify_sql = format!(
+            "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
+             FROM price_history_monthly \
+             WHERE year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM {partition_name}) \
+               AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM {partition_name})"
+        );
+        let (aggregated_count,): (i64,) = sqlx::query_as(&verify_sql)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("Verify query failed: {e}"))?;
+
+        if aggregated_count < source_count {
+            tracing::warn!(
+                partition = %partition_name,
+                source = source_count,
+                aggregated = aggregated_count,
+                "Row count mismatch — skipping DROP"
+            );
+            return Err(format!(
+                "{partition_name}: count mismatch {source_count} vs {aggregated_count}"
+            ));
+        }
+
+        // 3. 파티션 DROP
+        let drop_sql = format!("DROP TABLE IF EXISTS {partition_name}");
+        match sqlx::query(&drop_sql).execute(pool).await {
+            Ok(_) => {
+                tracing::info!(
+                    partition = %partition_name,
+                    rows_archived = source_count,
+                    "Old price_history partition archived and dropped"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(partition = %partition_name, error = %e, "Failed to drop archived partition");
+                return Err(format!("DROP {partition_name} failed: {e}"));
+            }
+        }
+
+        // 1개 파티션만 처리 후 종료 (부하 분산)
+        break;
+    }
+
+    Ok(())
 }
 
 #[tokio::main]
@@ -244,13 +362,18 @@ async fn main() {
         tracing::info!("Skipping crawler scheduler in Test environment");
     }
 
-    // 7. AppState 조합
+    // 7. Access log bounded channel + worker
+    let (log_tx, log_rx) = tokio::sync::mpsc::channel(10_000);
+    middleware::access_log::spawn_writer(pool.clone(), log_rx);
+
+    // 8. AppState 조합
     let state = AppState {
         pool: pool.clone(),
         cache,
         config: config.clone(),
         http_client,
         push_client,
+        log_tx,
     };
 
     // 8. Router — 레이어 순서: 마지막 .layer()가 outermost
@@ -307,6 +430,7 @@ async fn main() {
             api::routes::notifications::router(),
         )
         .nest("/api/v1/predictions", api::routes::predictions::router())
+        .nest("/api/v1/rewards", api::routes::rewards::router())
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)

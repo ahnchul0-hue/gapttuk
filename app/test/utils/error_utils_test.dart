@@ -90,7 +90,10 @@ void main() {
         requestOptions: RequestOptions(),
         response: Response(
           statusCode: 400,
-          data: {'message': '잘못된 URL 형식입니다.'},
+          data: {
+            'ok': false,
+            'error': {'code': 'VALIDATION_001', 'message': '잘못된 URL 형식입니다.'},
+          },
           requestOptions: RequestOptions(),
         ),
       );

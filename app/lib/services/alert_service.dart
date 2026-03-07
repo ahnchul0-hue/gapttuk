@@ -1,3 +1,4 @@
+import '../config/api_endpoints.dart';
 import '../models/alert.dart';
 import 'api_client.dart';
 
@@ -14,7 +15,7 @@ class AlertService {
   /// GET /api/v1/alerts/
   /// 응답: { price_alerts, category_alerts, keyword_alerts }
   Future<AlertListResponse> getAlerts() async {
-    final response = await _api.dio.get('/api/v1/alerts/');
+    final response = await _api.dio.get(ApiEndpoints.alerts);
     return AlertListResponse.fromJson(
         response.data['data'] as Map<String, dynamic>);
   }
@@ -32,7 +33,7 @@ class AlertService {
     int? targetPrice,
   }) async {
     final response = await _api.dio.post(
-      '/api/v1/alerts/price',
+      ApiEndpoints.alertPrice,
       data: {
         'product_id': productId,
         'alert_type': alertType,
@@ -50,7 +51,7 @@ class AlertService {
     required int categoryId,
   }) async {
     final response = await _api.dio.post(
-      '/api/v1/alerts/category',
+      ApiEndpoints.alertCategory,
       data: {'category_id': categoryId},
     );
     return CategoryAlert.fromJson(
@@ -64,7 +65,7 @@ class AlertService {
     required String keyword,
   }) async {
     final response = await _api.dio.post(
-      '/api/v1/alerts/keyword',
+      ApiEndpoints.alertKeyword,
       data: {'keyword': keyword},
     );
     return KeywordAlert.fromJson(
@@ -76,31 +77,29 @@ class AlertService {
   /// 가격 알림 목표가 수정.
   ///
   /// PATCH /api/v1/alerts/price/{id}
-  Future<PriceAlert> updatePriceAlert({
+  /// 서버는 `"수정되었습니다"` (String) 반환.
+  Future<void> updatePriceAlert({
     required int id,
     required int targetPrice,
   }) async {
-    final response = await _api.dio.patch(
-      '/api/v1/alerts/price/$id',
+    await _api.dio.patch(
+      ApiEndpoints.alertPriceUpdate(id),
       data: {'target_price': targetPrice},
     );
-    return PriceAlert.fromJson(
-        response.data['data'] as Map<String, dynamic>);
   }
 
   /// 키워드 알림 키워드 수정.
   ///
   /// PATCH /api/v1/alerts/keyword/{id}
-  Future<KeywordAlert> updateKeywordAlert({
+  /// 서버는 `"수정되었습니다"` (String) 반환.
+  Future<void> updateKeywordAlert({
     required int id,
     required String keyword,
   }) async {
-    final response = await _api.dio.patch(
-      '/api/v1/alerts/keyword/$id',
+    await _api.dio.patch(
+      ApiEndpoints.alertKeywordUpdate(id),
       data: {'keyword': keyword},
     );
-    return KeywordAlert.fromJson(
-        response.data['data'] as Map<String, dynamic>);
   }
 
   // ─── 토글 ─────────────────────────────────────────────────────────────────
@@ -110,7 +109,7 @@ class AlertService {
   /// PATCH /api/v1/alerts/price/{id}/toggle
   Future<PriceAlert> togglePriceAlert(int id) async {
     final response =
-        await _api.dio.patch('/api/v1/alerts/price/$id/toggle');
+        await _api.dio.patch(ApiEndpoints.alertPriceToggle(id));
     return PriceAlert.fromJson(
         response.data['data'] as Map<String, dynamic>);
   }
@@ -120,7 +119,7 @@ class AlertService {
   /// PATCH /api/v1/alerts/category/{id}/toggle
   Future<CategoryAlert> toggleCategoryAlert(int id) async {
     final response =
-        await _api.dio.patch('/api/v1/alerts/category/$id/toggle');
+        await _api.dio.patch(ApiEndpoints.alertCategoryToggle(id));
     return CategoryAlert.fromJson(
         response.data['data'] as Map<String, dynamic>);
   }
@@ -130,7 +129,7 @@ class AlertService {
   /// PATCH /api/v1/alerts/keyword/{id}/toggle
   Future<KeywordAlert> toggleKeywordAlert(int id) async {
     final response =
-        await _api.dio.patch('/api/v1/alerts/keyword/$id/toggle');
+        await _api.dio.patch(ApiEndpoints.alertKeywordToggle(id));
     return KeywordAlert.fromJson(
         response.data['data'] as Map<String, dynamic>);
   }
@@ -145,7 +144,7 @@ class AlertService {
     required String type,
     required int id,
   }) async {
-    await _api.dio.delete('/api/v1/alerts/$type/$id');
+    await _api.dio.delete(ApiEndpoints.alertDelete(type, id));
   }
 
   /// 가격 알림 삭제.

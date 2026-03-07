@@ -88,6 +88,9 @@ impl IntoResponse for AppError {
             }
         };
 
+        // 비즈니스 메트릭: 에러 타입별 카운터
+        metrics::counter!("http_errors_total", "code" => code).increment(1);
+
         let body = ErrorBody {
             ok: false,
             error: ErrorDetail { code, message },
