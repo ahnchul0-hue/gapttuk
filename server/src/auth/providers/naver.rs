@@ -20,8 +20,25 @@ struct NaverProfile {
 }
 
 /// 네이버 access_token으로 사용자 정보 조회.
-/// GET https://openapi.naver.com/v1/nid/me
+/// 1) NAVER_CLIENT_ID 설정 시 /v1/nid/verify 로 토큰 유효성 사전 검증
+/// 2) GET https://openapi.naver.com/v1/nid/me 로 프로필 조회
 pub async fn verify(state: &AppState, access_token: &str) -> Result<SocialUserInfo, AppError> {
+    // 1. 토큰 유효성 사전 검증 (NAVER_CLIENT_ID 설정 시)
+    if state.config.naver_client_id.is_some() {
+        let verify_resp = state
+            .http_client
+            .get("https://openapi.naver.com/v1/nid/verify")
+            .bearer_auth(access_token)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Naver verify request failed: {e}")))?;
+
+        if !verify_resp.status().is_success() {
+            return Err(AppError::Unauthorized);
+        }
+    }
+
+    // 2. 사용자 정보 조회
     let resp = state
         .http_client
         .get("https://openapi.naver.com/v1/nid/me")
