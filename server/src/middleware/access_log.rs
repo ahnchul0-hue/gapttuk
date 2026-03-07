@@ -61,7 +61,8 @@ pub async fn access_log(
     }
 
     let start = std::time::Instant::now();
-    let client_ip = super::bot_guard::extract_client_ip(&req, addr.ip(), &state.config.trusted_proxies);
+    let client_ip =
+        super::bot_guard::extract_client_ip(&req, addr.ip(), &state.config.trusted_proxies);
     let method = req.method().to_string();
     let raw_path = req.uri().path().to_string();
     // 메트릭용: MatchedPath로 정규화 (카디널리티 폭발 방지)
