@@ -164,13 +164,14 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
     let (cap_id, monthly_cap, earned_so_far) = if let Some(row) = cap_row {
         row
     } else {
-        // 신규 유저 첫 달 여부 확인 (가입월 == 현재월)
-        let created_year_month: Option<String> =
-            sqlx::query_scalar("SELECT to_char(created_at, 'YYYY-MM') FROM users WHERE id = $1")
-                .bind(user_id)
-                .fetch_optional(&mut *tx)
-                .await?;
-        let is_new_user = created_year_month.as_deref() == Some(&year_month);
+        // 신규 유저 여부 확인 (가입 7일 이내)
+        let is_new_user: bool = sqlx::query_scalar(
+            "SELECT created_at > NOW() - INTERVAL '7 days' FROM users WHERE id = $1",
+        )
+        .bind(user_id)
+        .fetch_optional(&mut *tx)
+        .await?
+        .unwrap_or(false);
         let cap = assign_monthly_cap(is_new_user);
 
         let new_id: i64 = sqlx::query_scalar(
