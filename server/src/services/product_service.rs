@@ -32,6 +32,13 @@ pub struct DailyPriceAggregate {
     pub sample_count: i64,
 }
 
+/// 월별 평균 가격 항목
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct MonthlyPriceItem {
+    pub year_month: chrono::NaiveDate,
+    pub avg_price: i32,
+}
+
 /// URL로 상품 추가 응답
 #[derive(Debug, Serialize)]
 pub struct AddProductResponse {
@@ -369,6 +376,27 @@ pub async fn get_popular_searches(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     Ok(all.into_iter().take(limit as usize).collect())
+}
+
+/// 월별 평균 가격 조회 (price_history_monthly 테이블)
+pub async fn get_monthly_prices(
+    pool: &PgPool,
+    product_id: i64,
+    months: i64,
+) -> Result<Vec<MonthlyPriceItem>, AppError> {
+    let months = months.clamp(1, 60);
+    let cutoff = chrono::Utc::now().date_naive() - chrono::Months::new(months as u32);
+    let items = sqlx::query_as::<_, MonthlyPriceItem>(
+        "SELECT year_month, avg_price \
+         FROM price_history_monthly \
+         WHERE product_id = $1 AND year_month >= $2 \
+         ORDER BY year_month ASC",
+    )
+    .bind(product_id)
+    .bind(cutoff)
+    .fetch_all(pool)
+    .await?;
+    Ok(items)
 }
 
 // ── 테스트 ──────────────────────────────────────────────

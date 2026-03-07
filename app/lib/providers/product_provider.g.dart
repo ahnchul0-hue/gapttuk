@@ -218,6 +218,92 @@ final class PopularSearchesProvider
 
 String _$popularSearchesHash() => r'267d2db7a534a410b7c211da8d27f26370c9f581';
 
+/// 월별 평균 가격 — 장기 추이 차트용.
+
+@ProviderFor(monthlyPrices)
+const monthlyPricesProvider = MonthlyPricesFamily._();
+
+/// 월별 평균 가격 — 장기 추이 차트용.
+
+final class MonthlyPricesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MonthlyPrice>>,
+          List<MonthlyPrice>,
+          FutureOr<List<MonthlyPrice>>
+        >
+    with
+        $FutureModifier<List<MonthlyPrice>>,
+        $FutureProvider<List<MonthlyPrice>> {
+  /// 월별 평균 가격 — 장기 추이 차트용.
+  const MonthlyPricesProvider._({
+    required MonthlyPricesFamily super.from,
+    required int super.argument,
+  }) : super(
+         retry: null,
+         name: r'monthlyPricesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$monthlyPricesHash();
+
+  @override
+  String toString() {
+    return r'monthlyPricesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<MonthlyPrice>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<MonthlyPrice>> create(Ref ref) {
+    final argument = this.argument as int;
+    return monthlyPrices(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MonthlyPricesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$monthlyPricesHash() => r'652f3277c5ae10b010f11d79f07cafaa71dba805';
+
+/// 월별 평균 가격 — 장기 추이 차트용.
+
+final class MonthlyPricesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<MonthlyPrice>>, int> {
+  const MonthlyPricesFamily._()
+    : super(
+        retry: null,
+        name: r'monthlyPricesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// 월별 평균 가격 — 장기 추이 차트용.
+
+  MonthlyPricesProvider call(int productId) =>
+      MonthlyPricesProvider._(argument: productId, from: this);
+
+  @override
+  String toString() => r'monthlyPricesProvider';
+}
+
 /// AI 가격 예측 — productId별로 캐싱.
 
 @ProviderFor(productPrediction)

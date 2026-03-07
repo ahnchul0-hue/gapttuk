@@ -17,6 +17,7 @@ abstract final class ApiEndpoints {
   static const String productUrl = '$_v1/products/url';
   static String productPrices(int id) => '$_v1/products/$id/prices';
   static String productDailyPrices(int id) => '$_v1/products/$id/prices/daily';
+  static String productMonthlyPrices(int id) => '$_v1/products/$id/prices/monthly';
   static const String productPopular = '$_v1/products/popular';
 
   // ── Alerts ───────────────────────────────────
