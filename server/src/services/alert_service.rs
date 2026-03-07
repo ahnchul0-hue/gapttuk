@@ -213,6 +213,7 @@ pub async fn create_category_alert(
         r#"
         INSERT INTO category_alerts (user_id, category_id, alert_condition)
         VALUES ($1, $2, 'any_drop')
+        ON CONFLICT (user_id, category_id) DO UPDATE SET updated_at = NOW()
         RETURNING *
         "#,
     )
@@ -311,6 +312,7 @@ pub async fn create_keyword_alert(
         r#"
         INSERT INTO keyword_alerts (user_id, keyword)
         VALUES ($1, $2)
+        ON CONFLICT (user_id, keyword) DO UPDATE SET updated_at = NOW()
         RETURNING *
         "#,
     )
