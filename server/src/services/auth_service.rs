@@ -115,12 +115,25 @@ pub async fn upsert_user(
             .await?;
 
             // Stage 0 웰컴 보상: 피초대자 1¢
+            // NOTE(H-3): Stage 0→1 전환 시 추가 1¢는 process_referral_purchase()에서 별도 지급.
+            //            웰컴(1¢) + 첫구매(1¢) = 총 2¢는 설계 의도.
             add_points_and_record(
                 &mut tx,
                 user.id,
                 1,
                 "referral_welcome",
                 "추천 코드 가입 웰컴 보상",
+                None,
+            )
+            .await?;
+
+            // Stage 0 웰컴 보상: 초대자 1¢
+            add_points_and_record(
+                &mut tx,
+                referrer_id,
+                1,
+                "referral_welcome_referrer",
+                "추천인 웰컴 보상",
                 None,
             )
             .await?;
