@@ -49,16 +49,12 @@ void main() {
       expect(find.text('0.1.0'), findsOneWidget);
     });
 
-    testWidgets('푸시 알림 스위치 토글 동작', (tester) async {
+    testWidgets('푸시 알림 스위치 비활성 + 안내 문구', (tester) async {
       await tester.pumpWidget(buildScreen());
       final switchWidget = tester.widget<Switch>(find.byType(Switch));
-      expect(switchWidget.value, isTrue);
-
-      await tester.tap(find.byType(Switch));
-      await tester.pump();
-
-      final updated = tester.widget<Switch>(find.byType(Switch));
-      expect(updated.value, isFalse);
+      expect(switchWidget.value, isFalse);
+      expect(switchWidget.onChanged, isNull);
+      expect(find.text('준비 중'), findsOneWidget);
     });
   });
 }
