@@ -61,6 +61,13 @@ class RewardService {
     return PointsInfo.fromJson(data);
   }
 
+  /// GET /api/v1/rewards/referrals — 리퍼럴 현황 조회.
+  Future<ReferralStats> getReferrals() async {
+    final response = await _api.dio.get(ApiEndpoints.rewardsReferrals);
+    return ReferralStats.fromJson(
+        response.data['data'] as Map<String, dynamic>);
+  }
+
   /// GET /api/v1/rewards/history — 포인트 내역 조회 (커서 페이지네이션).
   Future<({List<PointHistoryItem> items, bool hasMore})> getHistory({
     int? cursor,
@@ -78,6 +85,52 @@ class RewardService {
         .toList();
     return (items: items, hasMore: data['has_more'] as bool);
   }
+}
+
+/// 리퍼럴 현황 통계.
+class ReferralStats {
+  final String? referralCode;
+  final int totalReferred;
+  final int totalEarnedCents;
+  final List<ReferralItem> referrals;
+
+  const ReferralStats({
+    required this.referralCode,
+    required this.totalReferred,
+    required this.totalEarnedCents,
+    required this.referrals,
+  });
+
+  factory ReferralStats.fromJson(Map<String, dynamic> json) => ReferralStats(
+        referralCode: json['referral_code'] as String?,
+        totalReferred: json['total_referred'] as int,
+        totalEarnedCents: json['total_earned_cents'] as int,
+        referrals: (json['referrals'] as List)
+            .map((e) => ReferralItem.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+/// 리퍼럴 항목.
+class ReferralItem {
+  final String? referredNickname;
+  final int rewardStage;
+  final int earnedCents;
+  final String createdAt;
+
+  const ReferralItem({
+    required this.referredNickname,
+    required this.rewardStage,
+    required this.earnedCents,
+    required this.createdAt,
+  });
+
+  factory ReferralItem.fromJson(Map<String, dynamic> json) => ReferralItem(
+        referredNickname: json['referred_nickname'] as String?,
+        rewardStage: json['reward_stage'] as int,
+        earnedCents: json['earned_cents'] as int,
+        createdAt: json['created_at'] as String,
+      );
 }
 
 /// 포인트 내역 항목.

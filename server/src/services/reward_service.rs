@@ -305,6 +305,74 @@ pub async fn get_history(
     Ok((result, has_more))
 }
 
+/// 리퍼럴 현황 응답
+#[derive(Debug, Serialize)]
+pub struct ReferralStats {
+    pub referral_code: Option<String>,
+    pub total_referred: i64,
+    pub total_earned_cents: i32,
+    pub referrals: Vec<ReferralItem>,
+}
+
+/// 개별 리퍼럴 항목
+#[derive(Debug, Serialize)]
+pub struct ReferralItem {
+    pub referred_nickname: Option<String>,
+    pub reward_stage: i16,
+    pub earned_cents: i32,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// 사용자의 리퍼럴 현황을 조회.
+pub async fn get_referral_stats(pool: &PgPool, user_id: i64) -> Result<ReferralStats, AppError> {
+    // 1. 사용자 referral_code 조회
+    let referral_code: Option<String> =
+        sqlx::query_scalar("SELECT referral_code FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await?
+            .flatten();
+
+    // 2. 리퍼럴 목록 + 각 리퍼럴별 획득 센트
+    let rows: Vec<(Option<String>, i16, i32, chrono::DateTime<chrono::Utc>)> = sqlx::query_as(
+        "SELECT u.nickname, r.reward_stage, \
+             COALESCE((\
+                 SELECT SUM(pt.amount)::INT FROM point_transactions pt \
+                 WHERE pt.user_id = $1 \
+                 AND pt.reference_id = r.id \
+                 AND pt.transaction_type LIKE 'referral_%'\
+             ), 0) AS earned_cents, \
+             r.created_at \
+         FROM referrals r \
+         JOIN users u ON u.id = r.referred_id \
+         WHERE r.referrer_id = $1 \
+         ORDER BY r.created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+
+    let referrals: Vec<ReferralItem> = rows
+        .into_iter()
+        .map(|(nickname, stage, cents, created)| ReferralItem {
+            referred_nickname: nickname,
+            reward_stage: stage,
+            earned_cents: cents,
+            created_at: created,
+        })
+        .collect();
+
+    let total_referred = referrals.len() as i64;
+    let total_earned_cents: i32 = referrals.iter().map(|r| r.earned_cents).sum();
+
+    Ok(ReferralStats {
+        referral_code,
+        total_referred,
+        total_earned_cents,
+        referrals,
+    })
+}
+
 /// 추천 보상 단계 처리 — 구매 확인 이벤트 발생 시 호출
 ///
 /// - Stage 0 → 1 (1만원 이상 첫 구매): 피초대자 +1¢, 초대자 2¢

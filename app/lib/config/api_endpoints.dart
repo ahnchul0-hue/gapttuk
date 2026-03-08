@@ -47,6 +47,7 @@ abstract final class ApiEndpoints {
   static const String rewardsCheckin = '$_v1/rewards/checkin';
   static const String rewardsPoints = '$_v1/rewards/points';
   static const String rewardsHistory = '$_v1/rewards/history';
+  static const String rewardsReferrals = '$_v1/rewards/referrals';
 
   // ── Predictions ──────────────────────────────
   static String prediction(int id) => '$_v1/predictions/$id';

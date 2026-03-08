@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
@@ -182,7 +183,7 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-/// 추천 코드 타일 — 코드 표시 + 클립보드 복사 버튼.
+/// 추천 코드 타일 — 코드 표시 + 복사/공유 버튼 + 리퍼럴 화면 이동.
 class _ReferralCodeTile extends StatelessWidget {
   final String referralCode;
 
@@ -191,6 +192,7 @@ class _ReferralCodeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: () => context.push('/my/referrals'),
       leading: const Icon(Icons.card_giftcard_outlined),
       title: const Text('내 추천 코드'),
       subtitle: Text(
@@ -200,17 +202,33 @@ class _ReferralCodeTile extends StatelessWidget {
           letterSpacing: 1.2,
         ),
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.copy_outlined),
-        tooltip: '복사',
-        onPressed: () async {
-          await Clipboard.setData(ClipboardData(text: referralCode));
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('추천 코드가 복사되었습니다.')),
-            );
-          }
-        },
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.copy_outlined),
+            tooltip: '복사',
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: referralCode));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('추천 코드가 복사되었습니다.')),
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: '공유',
+            onPressed: () {
+              Share.share(
+                '값뚝에서 함께 최저가를 찾아보세요! '
+                '추천 코드: $referralCode\n'
+                'https://gapttuk.app/invite?code=$referralCode',
+              );
+            },
+          ),
+        ],
       ),
     );
   }

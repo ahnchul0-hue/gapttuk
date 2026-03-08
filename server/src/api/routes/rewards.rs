@@ -8,7 +8,9 @@ use serde::{Deserialize, Serialize};
 use crate::api::ApiResponse;
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
-use crate::services::reward_service::{self, CheckinResult, PointHistoryItem, PointsInfo};
+use crate::services::reward_service::{
+    self, CheckinResult, PointHistoryItem, PointsInfo, ReferralStats,
+};
 use crate::AppState;
 
 // ── 라우터 ─────────────────────────────────────────────
@@ -18,6 +20,7 @@ pub fn router() -> Router<AppState> {
         .route("/checkin", post(checkin))
         .route("/points", get(get_points))
         .route("/history", get(get_history))
+        .route("/referrals", get(get_referrals))
 }
 
 // ── 핸들러 ─────────────────────────────────────────────
@@ -53,6 +56,15 @@ async fn get_history(
     let (items, has_more) =
         reward_service::get_history(&state.pool, claims.sub, params.cursor, limit).await?;
     Ok(ApiResponse::ok(HistoryResponse { items, has_more }))
+}
+
+/// GET /api/v1/rewards/referrals — 내 추천 현황 조회
+async fn get_referrals(
+    State(state): State<AppState>,
+    Auth(claims): Auth,
+) -> Result<ApiResponse<ReferralStats>, AppError> {
+    let stats = reward_service::get_referral_stats(&state.pool, claims.sub).await?;
+    Ok(ApiResponse::ok(stats))
 }
 
 #[derive(Deserialize)]
