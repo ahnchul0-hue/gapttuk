@@ -1,0 +1,217 @@
+name: CD
+
+on:
+  # CI 완료 후 자동 트리거 (main 브랜치, 성공 시에만)
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+  # 수동 배포 (롤백 등)
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy (default: latest)"
+        required: false
+        default: "latest"
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/server
+
+jobs:
+  # ── 배포 가능 여부 확인 ──────────────────────────────
+  preflight:
+    name: Preflight Check
+    runs-on: ubuntu-latest
+    # workflow_run 트리거: CI 성공 시에만 실행
+    # workflow_dispatch 트리거: 항상 실행
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    outputs:
+      image_tag: ${{ steps.resolve.outputs.tag }}
+      short_sha: ${{ steps.resolve.outputs.short_sha }}
+    steps:
+      - name: Resolve image tag
+        id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.image_tag }}
+          WR_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="${INPUT_TAG}"
+            SHA="${GITHUB_SHA:0:7}"
+          else
+            # workflow_run 이벤트: CI가 빌드한 커밋 SHA 사용
+            TAG="${WR_HEAD_SHA}"
+            SHA="${WR_HEAD_SHA:0:7}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "Resolved image: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+
+      - name: Verify image exists in GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESOLVED_TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          echo "Checking image: ${REGISTRY}/${IMAGE_NAME}:${RESOLVED_TAG}"
+
+          # GHCR 이미지 존재 여부 확인
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $(echo "${GH_TOKEN}" | base64)" \
+            "https://${REGISTRY}/v2/${GITHUB_REPOSITORY}/server/manifests/${RESOLVED_TAG}")
+
+          if [ "$STATUS" != "200" ]; then
+            # latest 태그로 폴백 시도
+            if [ "${RESOLVED_TAG}" != "latest" ]; then
+              echo "::warning::Image with tag ${RESOLVED_TAG} not found (HTTP ${STATUS}), falling back to latest"
+              echo "tag=latest" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Image not found in GHCR (HTTP ${STATUS})"
+              exit 1
+            fi
+          fi
+
+  # ── Staging 배포 ─────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL || 'https://staging.gapttuk.com' }}
+    # workflow_dispatch에서 production 직접 지정해도 staging은 항상 먼저 실행
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.environment == 'staging' ||
+      inputs.environment == 'production'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.preflight.outputs.image_tag }}
+          DEPLOY_SHA: ${{ needs.preflight.outputs.short_sha }}
+        run: |
+          echo "========================================="
+          echo "  Deploying to STAGING"
+          echo "  Image:  ${IMAGE}"
+          echo "  Commit: ${DEPLOY_SHA}"
+          echo "========================================="
+
+          # TODO: 호스팅 환경에 맞는 배포 커맨드로 교체
+          #
+          # ── Option A: SSH + docker compose ──
+          # ssh ${STAGING_SSH_USER}@${STAGING_SSH_HOST} << 'DEPLOY'
+          #   cd /opt/gapttuk
+          #   docker compose pull server
+          #   docker compose up -d server
+          #   docker compose exec server curl -sf http://localhost:8080/health || exit 1
+          # DEPLOY
+          #
+          # ── Option B: Kubernetes (kubectl) ──
+          # kubectl set image deployment/gapttuk-server \
+          #   server=${IMAGE} \
+          #   --namespace=staging
+          # kubectl rollout status deployment/gapttuk-server \
+          #   --namespace=staging --timeout=300s
+          #
+          # ── Option C: Cloud Run ──
+          # gcloud run deploy gapttuk-server \
+          #   --image=${IMAGE} \
+          #   --region=asia-northeast3 \
+          #   --platform=managed
+          #
+          echo "Staging deployment placeholder — configure actual deployment above"
+
+      - name: Health check (staging)
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL || 'https://staging.gapttuk.com' }}
+        run: |
+          echo "Checking health at ${STAGING_URL}/health"
+          # TODO: 실제 URL로 교체 후 주석 해제
+          # for i in $(seq 1 12); do
+          #   STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${STAGING_URL}/health" || true)
+          #   if [ "$STATUS" = "200" ]; then
+          #     echo "Health check passed!"
+          #     exit 0
+          #   fi
+          #   echo "Attempt $i/12: HTTP ${STATUS:-timeout} — retrying in 10s..."
+          #   sleep 10
+          # done
+          # echo "::error::Health check failed after 2 minutes"
+          # exit 1
+          echo "Health check placeholder — uncomment after staging URL is configured"
+
+  # ── Production 배포 (수동 승인 필요) ──────────────────
+  deploy-production:
+    name: Deploy to Production
+    needs: [preflight, deploy-staging]
+    runs-on: ubuntu-latest
+    # workflow_dispatch로 production 선택 시에만
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL || 'https://api.gapttuk.com' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.preflight.outputs.image_tag }}
+          DEPLOY_SHA: ${{ needs.preflight.outputs.short_sha }}
+        run: |
+          echo "========================================="
+          echo "  Deploying to PRODUCTION"
+          echo "  Image:  ${IMAGE}"
+          echo "  Commit: ${DEPLOY_SHA}"
+          echo "========================================="
+
+          # TODO: 호스팅 환경에 맞는 배포 커맨드로 교체
+          # (staging과 동일한 패턴, 다른 호스트/네임스페이스)
+          echo "Production deployment placeholder — configure actual deployment"
+
+      - name: Health check (production)
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://api.gapttuk.com' }}
+        run: |
+          echo "Checking health at ${PRODUCTION_URL}/health"
+          # TODO: 실제 URL로 교체 후 주석 해제
+          # for i in $(seq 1 12); do
+          #   STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/health" || true)
+          #   if [ "$STATUS" = "200" ]; then
+          #     echo "Health check passed!"
+          #     exit 0
+          #   fi
+          #   echo "Attempt $i/12: HTTP ${STATUS:-timeout} — retrying in 10s..."
+          #   sleep 10
+          # done
+          # echo "::error::Health check failed after 2 minutes"
+          # exit 1
+          echo "Health check placeholder — uncomment after production URL is configured"
+
+      - name: Create deployment record
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_SHA: ${{ needs.preflight.outputs.short_sha }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/deployments" \
+            -f ref="${GITHUB_SHA}" \
+            -f environment="production" \
+            -f description="Deployed ${DEPLOY_SHA} to production" \
+            -f auto_merge=false \
+            --silent || echo "::warning::Failed to create deployment record"
