@@ -326,6 +326,31 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     Ok(())
 }
 
+/// TTL 클린업 — notifications(90일), roulette_results(180일), point_transactions(365일) 삭제.
+async fn cleanup_old_records(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
+    let n = sqlx::query("DELETE FROM notifications WHERE sent_at < NOW() - INTERVAL '90 days'")
+        .execute(pool)
+        .await?
+        .rows_affected();
+    tracing::info!(table = "notifications", deleted = n, "TTL cleanup");
+
+    let r = sqlx::query("DELETE FROM roulette_results WHERE created_at < NOW() - INTERVAL '180 days'")
+        .execute(pool)
+        .await?
+        .rows_affected();
+    tracing::info!(table = "roulette_results", deleted = r, "TTL cleanup");
+
+    let p = sqlx::query(
+        "DELETE FROM point_transactions WHERE created_at < NOW() - INTERVAL '365 days'",
+    )
+    .execute(pool)
+    .await?
+    .rows_affected();
+    tracing::info!(table = "point_transactions", deleted = p, "TTL cleanup");
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // 1. tracing 초기화
@@ -510,6 +535,10 @@ async fn main() {
             HeaderName::from_static("content-security-policy"),
             HeaderValue::from_static("default-src 'none'"),
         ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("no-store, no-cache, must-revalidate"),
+        ))
         .layer(CompressionLayer::new())
         .layer(TimeoutLayer::with_status_code(
             axum::http::StatusCode::REQUEST_TIMEOUT,
@@ -581,13 +610,27 @@ async fn main() {
             }
         });
 
-        // 9d. 백그라운드 태스크 패닉 감시 + Sentry 보고
+        // 9d. TTL 클린업 (일일) — notifications/roulette_results/point_transactions
+        let cleanup_pool = pool.clone();
+        let h_cleanup = tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(86_400));
+            interval.tick().await; // skip immediate tick
+            loop {
+                interval.tick().await;
+                if let Err(e) = cleanup_old_records(&cleanup_pool).await {
+                    tracing::error!(error = %e, "TTL cleanup failed");
+                }
+            }
+        });
+
+        // 9e. 백그라운드 태스크 패닉 감시 + Sentry 보고
         // 각 태스크는 내부 loop에서 에러를 개별 처리하므로 정상적으로는 종료되지 않음.
         // 패닉 발생 시 로그 + Sentry 보고 + 메트릭 기록.
         for (name, handle) in [
             ("Partition maintenance", h_partition),
             ("Governor GC", h_gc),
             ("Token purge", h_purge),
+            ("TTL cleanup", h_cleanup),
         ] {
             tokio::spawn(async move {
                 match handle.await {

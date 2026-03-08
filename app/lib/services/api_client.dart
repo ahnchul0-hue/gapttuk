@@ -9,6 +9,9 @@ class ApiClient {
   late final Dio dio;
   final TokenStorage _tokenStorage;
 
+  /// 세션 만료 시 호출되는 콜백 (로그인 화면으로 리다이렉트 등).
+  static void Function()? onSessionExpired;
+
   ApiClient({required TokenStorage tokenStorage})
       : _tokenStorage = tokenStorage {
     dio = Dio(
@@ -99,8 +102,13 @@ class _AuthInterceptor extends Interceptor {
             return handler.next(e);
           }
         }
+
+        // 갱신 실패 → 세션 만료 처리
+        await _client._tokenStorage.clearTokens();
+        ApiClient.onSessionExpired?.call();
       } catch (_) {
         await _client._tokenStorage.clearTokens();
+        ApiClient.onSessionExpired?.call();
       }
     }
     handler.next(err);

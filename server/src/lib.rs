@@ -55,11 +55,12 @@ pub async fn health_check(State(state): State<AppState>) -> axum::response::Resp
     let db_ok = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
     let latency_ms = start.elapsed().as_millis() as u64;
 
+    let is_prod = state.config.app_env == config::AppEnv::Prod;
     let db = DbHealth {
         status: if db_ok { "connected" } else { "disconnected" },
         latency_ms,
-        pool_size: state.pool.size(),
-        pool_idle: state.pool.num_idle() as u32,
+        pool_size: if is_prod { 0 } else { state.pool.size() },
+        pool_idle: if is_prod { 0 } else { state.pool.num_idle() as u32 },
     };
 
     let cache_status = if state.cache.is_healthy() {

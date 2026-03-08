@@ -6,6 +6,7 @@ import 'config/constants.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'services/api_client.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,11 @@ class _GapttukAppState extends ConsumerState<GapttukApp> {
     super.initState();
     // 앱 시작 시 저장된 토큰으로 사용자 정보 복원 시도.
     Future.microtask(() => ref.read(authStateProvider.notifier).refresh());
+
+    // 세션 만료 시 로그인 화면으로 이동
+    ApiClient.onSessionExpired = () {
+      ref.read(authStateProvider.notifier).logout();
+    };
   }
 
   @override

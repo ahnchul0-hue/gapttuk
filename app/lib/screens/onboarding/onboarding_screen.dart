@@ -101,15 +101,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             marketingAgreed: _marketingAgreed,
             referralCode: referralCode.isNotEmpty ? referralCode : null,
           );
+      if (mounted) context.go('/');
     } catch (e) {
-      // 동의 전송 실패해도 앱 사용은 가능 (다음 로그인 시 재시도)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
+          SnackBar(
+            content: Text(
+                '동의 정보 저장에 실패했습니다. 다시 시도해 주세요.\n${friendlyErrorMessage(e)}'),
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     }
-    if (mounted) context.go('/');
   }
 
   @override
