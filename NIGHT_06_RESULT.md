@@ -1,3 +1,60 @@
+# NIGHT_06_RESULT — 2026-03-12 (Night-13)
+
+## Branch
+`auto/night-01-20260312_0100`
+
+---
+
+## 완료된 작업
+
+### Night-13: PLAN_01.md 도입 + auth_service 테스트 보강
+
+#### PLAN_01.md 신규 생성
+- 야간 세션 자율 결정 문제 해결 (MORNING_BRIEFING U-4)
+- 다음 세션(Night-14) 작업 항목 명시: reward_service 통합 테스트(1-A), notification_service(1-B), product_service(1-C)
+- 미머지 브랜치 처리 계획 문서화 (사용자 결정 필요 항목)
+- 마이그레이션 번호 현황 표: 019/020 충돌 방지 규칙 명시
+
+#### auth_service.rs 순수 함수 추출 (M-3 재구현 포함)
+- `validate_consent(terms_agreed, privacy_agreed) -> Result<(), AppError>` 신규
+  - `upsert_user`에서 중복 검증 코드 추출 → 단일 진실 원천
+- `is_valid_referral_code_format(code: &str) -> bool` 신규
+  - 형식: "GAP-[A-Z0-9]{6}" (10자 고정)
+  - Night-08 M-3 수정 재구현 (해당 auto 브랜치 미머지 상태)
+- `find_referrer_by_code`: 형식 검증 강화 — 이전 `len > 20 || is_empty` → `is_valid_referral_code_format` 사용
+
+#### 단위 테스트 17건 추가 (auth_service::tests)
+- `validate_consent`: 5건 (양쪽 동의/terms 미동의/privacy 미동의/둘 다 미동의/에러 메시지 한국어)
+- `is_valid_referral_code_format`: 12건 (유효 3건 + 무효 9건 — 빈 문자열/소문자/접두사 없음/짧음/긺/특수문자/유니코드/공백)
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **176/176 passed** (+17 대비 이전 159) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약
+
+| 파일 | 변경 유형 | 핵심 내용 |
+|------|-----------|-----------|
+| `PLAN_01.md` | NEW | 야간 세션 작업 계획 (Night-13 완료 + Night-14 계획) |
+| `server/src/services/auth_service.rs` | MOD | `validate_consent` + `is_valid_referral_code_format` 추출 + 테스트 17건 |
+| `DECISION_LOG.md` | MOD | D-25, D-26 추가 |
+| `NIGHT_06_RESULT.md` | MOD | Night-13 결과 기록 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-25, D-26 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-07 (STEP 53)
 
 ## Branch

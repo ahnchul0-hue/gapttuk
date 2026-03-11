@@ -247,3 +247,36 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 **Status**: IMPLEMENTED — fast-forward merge, 15 commits ahead of main incorporated.
 
 ---
+
+# Night-13 Session (2026-03-12) — auth_service 테스트 보강 + PLAN_01.md
+
+## D-25: PLAN_01.md 도입
+
+**Decision**: `PLAN_01.md`를 저장소 루트에 생성하여 야간 세션의 작업 범위를 명시.
+
+**Rationale**: MORNING_BRIEFING.md(U-4)에서 지적한 대로, 야간 세션이 PLAN_01.md 부재 시 자율 추론하여 중복/불필요 작업이 발생함. 이 파일 도입으로 세션이 명시된 항목만 수행하도록 제약.
+
+**규칙**: 마이그레이션 019/020이 `fix/phase0-security-stability`에만 존재하므로, 야간 세션은 그 브랜치 머지 전까지 DB 마이그레이션 추가 금지.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-26: auth_service 순수 함수 추출 + 단위 테스트 17건
+
+**Decision**: `auth_service.rs`에서 두 가지 validation 로직을 순수 함수로 추출하고 단위 테스트 17건 추가.
+
+**추출 함수**:
+- `validate_consent(terms_agreed, privacy_agreed) -> Result<(), AppError>`: 동의 검증 — `upsert_user`에서 중복 코드 제거
+- `is_valid_referral_code_format(code: &str) -> bool`: GAP-XXXXXX 형식 검증 — `find_referrer_by_code`에서 사용
+
+**Rationale**:
+1. 로드맵 Phase 2 P0 항목(auth_service 테스트) 이행
+2. Night-08 M-3(GAP- 형식 검증)이 main에 미머지 상태 → 이번에 재구현
+3. `device_service.rs`의 `validate_device_token` 패턴 일관 적용
+
+**Trade-off**: DB 의존 함수(upsert_user, rotate_refresh_token 등)는 통합 테스트 범주 — 이번 세션에서는 순수 함수만 추출
+
+**Status**: IMPLEMENTED — Rust lib 159 → 176건 (+17), clippy 0경고, Flutter 164건 유지
+
+---

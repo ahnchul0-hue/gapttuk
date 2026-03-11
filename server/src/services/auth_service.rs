@@ -18,6 +18,33 @@ pub struct ConsentInfo {
     pub marketing_agreed: bool,
 }
 
+/// 동의 검증 순수 함수 — DB 없이 단위 테스트 가능.
+/// terms/privacy 모두 동의 필수. marketing은 선택.
+pub fn validate_consent(terms_agreed: bool, privacy_agreed: bool) -> Result<(), AppError> {
+    if !terms_agreed || !privacy_agreed {
+        return Err(AppError::BadRequest(
+            "이용약관 및 개인정보 처리방침 동의가 필요합니다".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+/// 추천 코드 형식 검증 순수 함수 — DB 없이 단위 테스트 가능.
+/// 유효 형식: "GAP-XXXXXX" (접두사 4자 + 영대문자/숫자 6자 = 총 10자).
+/// trim을 수행하지 않음 — 호출자(find_referrer_by_code)가 책임.
+pub fn is_valid_referral_code_format(code: &str) -> bool {
+    if code.len() != 10 {
+        return false;
+    }
+    if !code.starts_with("GAP-") {
+        return false;
+    }
+    let suffix = &code[4..];
+    suffix
+        .chars()
+        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+}
+
 /// 소셜 로그인 사용자 upsert → 신규면 INSERT, 기존이면 UPDATE.
 /// referral_code는 신규 사용자에게만 내부 생성 — 기존 사용자 로그인 시 불필요한 DB 조회 방지.
 /// 신규 사용자는 terms_agreed + privacy_agreed가 필수.
@@ -59,11 +86,7 @@ pub async fn upsert_user(
         Ok((updated, false))
     } else {
         // 신규 사용자 — 동의 검증 필수
-        if !consent.terms_agreed || !consent.privacy_agreed {
-            return Err(AppError::BadRequest(
-                "이용약관 및 개인정보 처리방침 동의가 필요합니다".to_string(),
-            ));
-        }
+        validate_consent(consent.terms_agreed, consent.privacy_agreed)?;
 
         let now = Utc::now();
         let terms_at = Some(now);
@@ -392,7 +415,7 @@ pub async fn find_referrer_by_code(
     referral_code: &str,
 ) -> Result<Option<i64>, AppError> {
     let code = referral_code.trim();
-    if code.len() > 20 || code.is_empty() {
+    if !is_valid_referral_code_format(code) {
         return Ok(None);
     }
     let id: Option<i64> =
@@ -401,4 +424,107 @@ pub async fn find_referrer_by_code(
             .fetch_optional(pool)
             .await?;
     Ok(id)
+}
+
+// ─── 단위 테스트 ──────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- validate_consent ---
+
+    #[test]
+    fn consent_both_agreed_ok() {
+        assert!(validate_consent(true, true).is_ok());
+    }
+
+    #[test]
+    fn consent_terms_not_agreed_err() {
+        let result = validate_consent(false, true);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_privacy_not_agreed_err() {
+        let result = validate_consent(true, false);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_neither_agreed_err() {
+        let result = validate_consent(false, false);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_error_message_korean() {
+        let Err(AppError::BadRequest(msg)) = validate_consent(false, false) else {
+            panic!("expected BadRequest");
+        };
+        assert!(msg.contains("동의"), "에러 메시지에 '동의' 포함 필요: {msg}");
+    }
+
+    // --- is_valid_referral_code_format ---
+
+    #[test]
+    fn referral_code_valid_uppercase_alphanumeric() {
+        assert!(is_valid_referral_code_format("GAP-ABC123"));
+    }
+
+    #[test]
+    fn referral_code_valid_all_digits() {
+        assert!(is_valid_referral_code_format("GAP-123456"));
+    }
+
+    #[test]
+    fn referral_code_valid_all_letters() {
+        assert!(is_valid_referral_code_format("GAP-ABCDEF"));
+    }
+
+    #[test]
+    fn referral_code_invalid_lowercase_prefix() {
+        assert!(!is_valid_referral_code_format("gap-ABC123"));
+    }
+
+    #[test]
+    fn referral_code_invalid_lowercase_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-abc123"));
+    }
+
+    #[test]
+    fn referral_code_invalid_empty() {
+        assert!(!is_valid_referral_code_format(""));
+    }
+
+    #[test]
+    fn referral_code_invalid_no_prefix() {
+        assert!(!is_valid_referral_code_format("ABC12345678"));
+    }
+
+    #[test]
+    fn referral_code_invalid_short_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-AB"));
+    }
+
+    #[test]
+    fn referral_code_invalid_long_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-ABCDEFG"));
+    }
+
+    #[test]
+    fn referral_code_invalid_special_chars() {
+        assert!(!is_valid_referral_code_format("GAP-!@#$%^"));
+    }
+
+    #[test]
+    fn referral_code_invalid_unicode() {
+        assert!(!is_valid_referral_code_format("GAP-한글한글"));
+    }
+
+    #[test]
+    fn referral_code_trims_whitespace_then_validates() {
+        // 공백 포함 시 trim 후 정확히 10자여야 유효
+        assert!(!is_valid_referral_code_format(" GAP-ABC123 "));
+    }
 }
