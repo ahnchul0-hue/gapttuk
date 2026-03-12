@@ -260,6 +260,20 @@ impl NotificationType {
     }
 }
 
+/// NotificationType별 딥링크 URL 생성.
+/// 상품/카테고리/키워드 관련 알림은 id를 경로에 포함하고,
+/// 추천·시스템 알림은 고정 경로를 반환한다.
+pub fn build_deep_link(ntype: &NotificationType, id: i64) -> String {
+    match ntype {
+        NotificationType::PriceAlert => format!("gapttuk://product/{id}"),
+        NotificationType::CategoryAlert => format!("gapttuk://category/{id}"),
+        NotificationType::KeywordAlert => format!("gapttuk://search/{id}"),
+        NotificationType::Referral => "gapttuk://my/referral".to_string(),
+        NotificationType::Event => format!("gapttuk://event/{id}"),
+        NotificationType::System => "gapttuk://my".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,5 +315,38 @@ mod tests {
         };
         assert!(notif.deep_link.is_none());
         assert_eq!(notif.ntype.as_str(), "system");
+    }
+
+    #[test]
+    fn build_deep_link_price_alert_contains_product_id() {
+        let link = build_deep_link(&NotificationType::PriceAlert, 42);
+        assert_eq!(link, "gapttuk://product/42");
+    }
+
+    #[test]
+    fn build_deep_link_category_alert_contains_id() {
+        let link = build_deep_link(&NotificationType::CategoryAlert, 7);
+        assert_eq!(link, "gapttuk://category/7");
+    }
+
+    #[test]
+    fn build_deep_link_keyword_alert_contains_id() {
+        let link = build_deep_link(&NotificationType::KeywordAlert, 99);
+        assert_eq!(link, "gapttuk://search/99");
+    }
+
+    #[test]
+    fn build_deep_link_referral_is_fixed_path() {
+        // id 무관 — 추천은 고정 경로
+        let link1 = build_deep_link(&NotificationType::Referral, 1);
+        let link2 = build_deep_link(&NotificationType::Referral, 999);
+        assert_eq!(link1, "gapttuk://my/referral");
+        assert_eq!(link2, "gapttuk://my/referral");
+    }
+
+    #[test]
+    fn build_deep_link_system_is_fixed_path() {
+        let link = build_deep_link(&NotificationType::System, 0);
+        assert_eq!(link, "gapttuk://my");
     }
 }

@@ -305,6 +305,22 @@ pub async fn get_history(
     Ok((result, has_more))
 }
 
+/// 추천 보상 단계에 따른 보상 금액을 계산한다.
+///
+/// 반환: `Some((next_stage, referrer_reward, referred_reward))` 또는
+/// - `None` — 이미 Stage 2 완료(no-op)
+///
+/// # 보상 규칙
+/// - Stage 0 → 1 (첫 구매): 초대자 +2¢, 피초대자 +1¢
+/// - Stage 1 → 2 (두번째 구매): 초대자 +3¢, 피초대자 +1¢
+pub fn compute_referral_rewards(reward_stage: i16) -> Option<(i16, i32, i32)> {
+    match reward_stage {
+        0 => Some((1i16, 2i32, 1i32)),
+        1 => Some((2i16, 3i32, 1i32)),
+        _ => None,
+    }
+}
+
 /// 추천 보상 단계 처리 — 구매 확인 이벤트 발생 시 호출
 ///
 /// - Stage 0 → 1 (1만원 이상 첫 구매): 피초대자 +1¢, 초대자 2¢
@@ -339,14 +355,14 @@ pub async fn process_referral_purchase(
         }
     };
 
-    let (next_stage, referrer_reward, referred_reward) = match reward_stage {
-        0 => (1i16, 2i32, 1i32), // Stage 0→1: 초대자 2¢, 피초대자 1¢
-        1 => (2i16, 3i32, 1i32), // Stage 1→2: 초대자 3¢, 피초대자 1¢
-        _ => {
-            tx.rollback().await?;
-            return Ok(()); // 이미 Stage 2 완료
-        }
-    };
+    let (next_stage, referrer_reward, referred_reward) =
+        match compute_referral_rewards(reward_stage) {
+            Some(r) => r,
+            None => {
+                tx.rollback().await?;
+                return Ok(()); // 이미 Stage 2 완료
+            }
+        };
 
     // reward_stage 업데이트
     sqlx::query("UPDATE referrals SET reward_stage = $1 WHERE id = $2")
@@ -489,5 +505,34 @@ mod tests {
         assert!(validate_point_amount(0).is_err());
         assert!(validate_point_amount(1).is_ok());
         assert!(validate_point_amount(100).is_ok());
+    }
+
+    // ── compute_referral_rewards 테스트 ───────────────────────
+
+    #[test]
+    fn compute_referral_rewards_stage0_gives_correct_amounts() {
+        // Stage 0 → 1: 초대자 2¢, 피초대자 1¢
+        let result = compute_referral_rewards(0);
+        assert_eq!(result, Some((1i16, 2i32, 1i32)));
+    }
+
+    #[test]
+    fn compute_referral_rewards_stage1_gives_correct_amounts() {
+        // Stage 1 → 2: 초대자 3¢, 피초대자 1¢
+        let result = compute_referral_rewards(1);
+        assert_eq!(result, Some((2i16, 3i32, 1i32)));
+    }
+
+    #[test]
+    fn compute_referral_rewards_stage2_returns_none() {
+        // Stage 2 완료 — no-op
+        assert!(compute_referral_rewards(2).is_none());
+    }
+
+    #[test]
+    fn compute_referral_rewards_invalid_stage_returns_none() {
+        // 예상치 못한 값 → None (안전한 no-op)
+        assert!(compute_referral_rewards(-1).is_none());
+        assert!(compute_referral_rewards(99).is_none());
     }
 }

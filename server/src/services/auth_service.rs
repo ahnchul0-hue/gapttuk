@@ -462,7 +462,10 @@ mod tests {
         let Err(AppError::BadRequest(msg)) = validate_consent(false, false) else {
             panic!("expected BadRequest");
         };
-        assert!(msg.contains("동의"), "에러 메시지에 '동의' 포함 필요: {msg}");
+        assert!(
+            msg.contains("동의"),
+            "에러 메시지에 '동의' 포함 필요: {msg}"
+        );
     }
 
     // --- is_valid_referral_code_format ---

@@ -262,6 +262,25 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 
 ---
 
+## D-27: notification/product/reward_service 순수 함수 추출 + 단위 테스트 15건 (Night-14)
+
+**Decision**: 3개 서비스에서 비즈니스 로직을 순수 함수로 추출하고 단위 테스트 15건 추가.
+
+**추출 함수**:
+- `build_deep_link(ntype, id) -> String` (notification_service): NotificationType × id → 딥링크 URL
+- `build_search_pattern(query) -> String` (product_service): ILIKE 와일드카드 이스케이프 + 패턴 래핑
+- `compute_referral_rewards(stage) -> Option<(i16, i32, i32)>` (reward_service): stage 분기 → 보상금액 순수 변환
+
+**Rationale**:
+1. PLAN_01.md Phase 1-B 이행: notification(3→8), product(6→12), reward(10→14)
+2. `build_search_pattern`: ILIKE 이스케이프 누락 시 SQL injection-like 결과 발생 가능 — 분리로 독립 검증
+3. `compute_referral_rewards`: 보상 규칙(Stage 0→1: 초대자 2¢/피초대자 1¢)을 DB 없이 테스트 가능
+4. `process_referral_purchase` 내부 match를 `compute_referral_rewards` 호출로 교체 — 단일 진실 원천
+
+**Status**: IMPLEMENTED — Rust lib 176 → 191건 (+15), clippy 0경고, fmt 통과
+
+---
+
 ## D-26: auth_service 순수 함수 추출 + 단위 테스트 17건
 
 **Decision**: `auth_service.rs`에서 두 가지 validation 로직을 순수 함수로 추출하고 단위 테스트 17건 추가.

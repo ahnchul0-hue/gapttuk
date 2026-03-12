@@ -1,3 +1,63 @@
+# NIGHT_06_RESULT — 2026-03-13 (Night-14)
+
+## Branch
+`auto/night-01-20260313_0100`
+
+---
+
+## 완료된 작업
+
+### Night-14: PLAN_01.md Phase 1-B — 순수 함수 추출 + 단위 테스트 15건
+
+#### notification_service.rs — `build_deep_link` 추출 (3→8 테스트)
+- `pub fn build_deep_link(ntype: &NotificationType, id: i64) -> String` 신규
+  - NotificationType × id → 딥링크 URL 생성 (gapttuk:// scheme)
+  - PriceAlert/CategoryAlert/KeywordAlert: id 포함 경로
+  - Referral/System: 고정 경로 (id 무관)
+- 테스트 5건 추가: 각 variant별 URL 형식 + 고정 경로 멱등성 검증
+
+#### product_service.rs — `build_search_pattern` 추출 (6→12 테스트)
+- `pub fn build_search_pattern(query: &str) -> String` 신규
+  - ILIKE 와일드카드 이스케이프(`%`, `_`, `\`) + `%...%` 패턴 래핑
+  - `search_products` 내 인라인 escape 로직 → 공용 함수로 교체
+- 테스트 6건 추가: `%` 이스케이프, `_` 이스케이프, `\` 이스케이프, 한국어 정상 처리, 빈 문자열, m.coupang.com 서브도메인
+
+#### reward_service.rs — `compute_referral_rewards` 추출 (10→14 테스트)
+- `pub fn compute_referral_rewards(stage: i16) -> Option<(i16, i32, i32)>` 신규
+  - Stage 분기 로직 순수 함수화 (process_referral_purchase에서 호출)
+  - Stage 0→Some((1,2,1)), Stage 1→Some((2,3,1)), Stage 2+→None
+- 테스트 4건 추가: stage 0/1 보상금액, stage 2 None, 잘못된 stage None
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **191/191 passed** (+15 대비 이전 176) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+
+---
+
+## 코드 변화 요약
+
+| 파일 | 변경 유형 | 핵심 내용 |
+|------|-----------|-----------|
+| `server/src/services/notification_service.rs` | MOD | `build_deep_link` 추출 + 테스트 5건 |
+| `server/src/services/product_service.rs` | MOD | `build_search_pattern` 추출 + 테스트 6건 |
+| `server/src/services/reward_service.rs` | MOD | `compute_referral_rewards` 추출 + 테스트 4건 |
+| `DECISION_LOG.md` | MOD | D-27 추가 |
+| `NIGHT_06_RESULT.md` | MOD | Night-14 결과 기록 |
+| `PLAN_01.md` | MOD | Phase 1-B 진행 상황 업데이트 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-27 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-12 (Night-13)
 
 ## Branch
