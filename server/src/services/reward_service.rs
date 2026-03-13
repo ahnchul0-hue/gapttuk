@@ -142,7 +142,13 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
             .bind(user_id)
             .fetch_optional(&mut *tx)
             .await?
-            .unwrap_or(0);
+            .unwrap_or_else(|| {
+                tracing::warn!(
+                    user_id,
+                    "user_points 행 없음 (출석 중복 확인) — 잔액 0으로 처리"
+                );
+                0
+            });
         tx.rollback().await?;
         metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
@@ -171,7 +177,13 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         .bind(user_id)
         .fetch_optional(&mut *tx)
         .await?
-        .unwrap_or(false);
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                user_id,
+                "users 행 없음 — 신규 유저 여부 확인 불가, 일반 유저로 처리"
+            );
+            false
+        });
         let cap = assign_monthly_cap(is_new_user);
 
         let new_id: i64 = sqlx::query_scalar(
@@ -231,7 +243,13 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         .bind(user_id)
         .fetch_optional(pool)
         .await?
-        .unwrap_or(0);
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                user_id,
+                "user_points 행 없음 (커밋 후 잔액 조회) — 잔액 0으로 처리"
+            );
+            0
+        });
 
     // 비즈니스 메트릭: 출석 체크인 결과
     let result_label = if reward > 0 { "reward" } else { "miss" };
@@ -253,7 +271,13 @@ pub async fn get_points(pool: &PgPool, user_id: i64) -> Result<PointsInfo, AppEr
     .fetch_optional(pool)
     .await?;
 
-    let (balance, total_earned, total_spent) = row.unwrap_or((0, 0, 0));
+    let (balance, total_earned, total_spent) = row.unwrap_or_else(|| {
+        tracing::warn!(
+            user_id,
+            "user_points 행 없음 (get_points) — 데이터 무결성 문제 가능성"
+        );
+        (0, 0, 0)
+    });
     Ok(PointsInfo {
         balance,
         total_earned,

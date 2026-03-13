@@ -95,63 +95,67 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddByUrlDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showAddByUrlDialog(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
-    bool isLoading = false;
+    try {
+      bool isLoading = false;
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('URL로 상품 추가'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'https://www.coupang.com/...',
-              labelText: '상품 URL',
+      await showDialog<void>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('URL로 상품 추가'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'https://www.coupang.com/...',
+                labelText: '상품 URL',
+              ),
+              keyboardType: TextInputType.url,
             ),
-            keyboardType: TextInputType.url,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final url = controller.text.trim();
+                        if (url.isEmpty) return;
+                        setState(() => isLoading = true);
+                        try {
+                          final service = ref.read(productServiceProvider);
+                          final result = await service.addByUrl(url);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            context.push('/product/${result.id}');
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(friendlyErrorMessage(e))),
+                            );
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('추가'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      final url = controller.text.trim();
-                      if (url.isEmpty) return;
-                      setState(() => isLoading = true);
-                      try {
-                        final service = ref.read(productServiceProvider);
-                        final result = await service.addByUrl(url);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          context.push('/product/${result.id}');
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(friendlyErrorMessage(e))),
-                          );
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('추가'),
-            ),
-          ],
         ),
-      ),
-    ).then((_) => controller.dispose());
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   Widget _trendIcon(String trend, AppColors appColors) {

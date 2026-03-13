@@ -64,8 +64,10 @@ pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
         ));
     }
 
-    let url = reqwest::Url::parse(url_str)
-        .map_err(|_| AppError::BadRequest("유효하지 않은 URL입니다".to_string()))?;
+    let url = reqwest::Url::parse(url_str).map_err(|e| {
+        tracing::debug!(url = url_str, error = %e, "URL 파싱 실패");
+        AppError::BadRequest("유효하지 않은 URL입니다".to_string())
+    })?;
 
     let host = url.host_str().unwrap_or_default();
     if host != "coupang.com" && host != "www.coupang.com" && !host.ends_with(".coupang.com") {

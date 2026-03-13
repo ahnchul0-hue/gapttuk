@@ -251,7 +251,10 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 20),
               color: appColors.error,
-              child: const Icon(Icons.delete_outline, color: Colors.white),
+              child: Semantics(
+                label: '알림 삭제',
+                child: const Icon(Icons.delete_outline, color: Colors.white),
+              ),
             ),
             onDismissed: (_) => onDismissed(alert),
             child: tileBuilder(alert),
@@ -333,7 +336,10 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   Widget _buildBody() {
     final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Semantics(
+        label: '알림 목록 로딩 중',
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null) {
       return Center(

@@ -1,0 +1,13 @@
+# cargo audit 설정
+# https://docs.rs/cargo-audit/latest/cargo_audit/config/struct.AuditConfig.html
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071: rsa crate Marvin Attack (timing side-channel)
+    # 이 취약점은 MySQL RSA 키 교환에만 적용됩니다.
+    # 우리 프로젝트는 PostgreSQL만 사용하며 MySQL을 전혀 사용하지 않습니다.
+    # rsa는 sqlx-mysql의 전이 의존성으로 Cargo.lock에 포함되지만
+    # 실제 코드 경로에서는 사용되지 않습니다.
+    # 수정 버전이 없으므로(No fix available) 현재로선 예외 처리합니다.
+    "RUSTSEC-2023-0071",
+]

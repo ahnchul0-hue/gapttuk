@@ -163,11 +163,12 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showAlertSetup(BuildContext context, WidgetRef ref) {
+  Future<void> _showAlertSetup(BuildContext context, WidgetRef ref) async {
     String selectedType = 'target_price';
     final priceController = TextEditingController();
+    try {
 
-    showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) => StatefulBuilder(
@@ -267,7 +268,10 @@ class ProductDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-    ).whenComplete(() => priceController.dispose());
+    );
+    } finally {
+      priceController.dispose();
+    }
   }
 }
 

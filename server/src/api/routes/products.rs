@@ -108,7 +108,14 @@ async fn search(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = params
+        .cursor
+        .as_deref()
+        .map(|c| {
+            c.parse::<i64>()
+                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+        })
+        .transpose()?;
 
     // 필터 검증
     if let Some(ref f) = params.filter {
@@ -182,7 +189,14 @@ async fn prices(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = params
+        .cursor
+        .as_deref()
+        .map(|c| {
+            c.parse::<i64>()
+                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+        })
+        .transpose()?;
 
     let items =
         product_service::get_price_history(&state.pool, id, params.from, params.to, cursor, limit)

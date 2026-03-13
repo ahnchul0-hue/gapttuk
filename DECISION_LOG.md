@@ -299,3 +299,73 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 **Status**: IMPLEMENTED — Rust lib 159 → 176건 (+17), clippy 0경고, Flutter 164건 유지
 
 ---
+
+# Night-14 Session (2026-03-14) — Silent Failure 제거 + Flutter 접근성
+
+## D-28: Silent Failure 10건 → 로깅 보강 (Phase 1-A)
+
+**Decision**: 서버에서 에러를 조용히 무시하는 패턴 10건을 찾아 로깅 보강 처리.
+
+**변경 파일**: `crawlers/mod.rs`, `services/reward_service.rs`, `services/product_service.rs`, `api/routes/products.rs`, `api/routes/notifications.rs`
+
+**핵심 패턴**:
+1. `unwrap_or(false)` (advisory lock DB 에러) → `Err(e)` 분기 + `tracing::error!` 후 early return
+2. `unwrap_or(0)` (잔액 조회 실패) → `unwrap_or_else` + `tracing::warn!`
+3. `map_err(|_|)` (URL 파싱) → `tracing::debug!` 추가
+4. cursor `.and_then(|c| c.parse::<i64>().ok())` → `.transpose()?` 로 400 에러 반환
+5. 스크래퍼 태스크 패닉 → `Err(join_err)` 분기 + `tracing::error!`
+6. 알림 평가 실패 `warn` → `error` (Sentry 캡처 대상으로 격상)
+
+**Status**: IMPLEMENTED — Rust lib 191건 통과, clippy 0경고
+
+---
+
+## D-29: CrawlError::Aborted 신규 Variant (Phase 1-C)
+
+**Decision**: 매직 넘버 `CrawlError::Blocked(0)` → 의미 있는 `CrawlError::Aborted` variant로 교체.
+
+**Rationale**: `Blocked(0)`은 "0개 블록 → 아직 감지 안됨"처럼 읽힐 수 있어 혼란스러움. `Aborted`는 전역 abort 플래그로 인한 조기 종료임을 명확히 표현.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-30: AppError #[non_exhaustive] 적용 (Phase 1-C)
+
+**Decision**: `AppError` 열거형에 `#[non_exhaustive]` 속성 추가.
+
+**Rationale**: 외부 크레이트가 `AppError`를 exhaustive match하면 새 variant 추가 시 컴파일 에러 발생. `#[non_exhaustive]`로 방지. 라이브러리 설계 모범 사례.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-31: Flutter 접근성 강화 — Semantics 3개 화면 (Phase 2-C)
+
+**변경 내역**:
+- `SearchScreen`: 빈 상태 텍스트 + 로딩 인디케이터 `Semantics(label: ...)`, `IconButton tooltip` 추가
+- `AlertScreen`: 로딩 인디케이터 Semantics 랩, Dismissible 배경 `Semantics(label: '알림 삭제')`
+- `NotificationListScreen`: 타일 전체 `Semantics(label: '${title}, 읽음/읽지 않음')` 랩
+- Phase 2-A: `_showAddByUrlDialog` + `_showAlertSetup` → async + `try/finally` 패턴 (controller 항상 dispose 보장)
+
+**Status**: IMPLEMENTED — flutter analyze 0 이슈, flutter test 164건 통과
+
+---
+
+## D-32: CheckinResult 열거형 재구조화 (보류)
+
+**현재**: `CheckinResult { rewarded: bool, cents_earned: i32 }` 구조체.
+
+**제안**: `AlreadyCheckedIn | Rewarded { cents_earned, new_balance } | Missed { new_balance }` 열거형.
+
+**보류 이유**: API 응답 직렬화 + Flutter 모델 동시 수정 필요. 현재 작동에 문제 없음.
+
+---
+
+## D-33: productDetailProvider keepAlive 5분 캐시 (보류)
+
+**제안**: 상품 상세 provider에 5분 keepAlive 추가 → 뒤로가기 후 재진입 시 네트워크 절감.
+
+**보류 이유**: 가격 데이터 실시간성과 상충 가능. 제품 결정 필요.
+
+---

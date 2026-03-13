@@ -39,7 +39,14 @@ async fn list_notifications(
     Auth(claims): Auth,
     Query(params): Query<PaginationParams>,
 ) -> Result<PaginatedResponse<Notification>, AppError> {
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = params
+        .cursor
+        .as_deref()
+        .map(|c| {
+            c.parse::<i64>()
+                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+        })
+        .transpose()?;
     let limit = params.effective_limit();
 
     let notifications =

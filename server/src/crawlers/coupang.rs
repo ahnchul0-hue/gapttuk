@@ -47,6 +47,9 @@ pub enum CrawlError {
     #[error("Possible CAPTCHA or anti-bot page (no product data found)")]
     PossibleCaptcha,
 
+    #[error("Crawl aborted by abort flag (global block detected)")]
+    Aborted,
+
     #[error("Database error: {0}")]
     Db(#[from] sqlx::Error),
 }
@@ -63,9 +66,9 @@ pub async fn scrape_product_page(
     let mut last_err = CrawlError::ParseError("no attempts made".to_string());
 
     for attempt in 0..=max_retries {
-        // abort 확인
+        // abort 확인 (다른 상품에서 403/429 감지 시 전체 중단)
         if abort_flag.load(std::sync::atomic::Ordering::Relaxed) {
-            return Err(CrawlError::Blocked(0));
+            return Err(CrawlError::Aborted);
         }
 
         // 재시도 대기 (첫 시도는 skip)

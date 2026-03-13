@@ -1,3 +1,114 @@
+# NIGHT_06_RESULT — 2026-03-14 (Night-14 continued)
+
+## Branch
+`auto/night-01-20260314_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 1-A: Silent Failure 제거 — 서버 에러 처리 패턴 수정 (10건)
+
+#### crawlers/mod.rs
+- Advisory lock DB 에러: `unwrap_or(false)` → `match` + `tracing::error!` + early return
+- 스크래퍼 태스크 패닉: `Err(join_err)` 분기 + `tracing::error!` (프로그램 버그 표시)
+- 알림 평가 실패: `tracing::warn!` → `tracing::error!` (Sentry 캡처 대상 격상)
+- 스크래핑 실패: `Err(_) => Failed` → `Err(e)` + `tracing::warn!(product_id, error = %e, ...)`
+
+#### services/reward_service.rs
+- `unwrap_or_else` + `tracing::warn!` — 3곳 (`is_new_user`, 잔액 조회 ×2, `get_points`)
+
+#### services/product_service.rs
+- URL 파싱 `map_err(|_|)` → `tracing::debug!(url, error = %e, ...)` 추가
+
+#### api/routes/products.rs, notifications.rs
+- cursor 파싱 `.and_then(|c| c.parse::<i64>().ok())` → `.map(...).transpose()?` — 잘못된 cursor에 400 반환
+
+### Phase 1-C: 타입 설계 품질 개선
+
+#### crawlers/coupang.rs
+- `CrawlError::Aborted` 신규 variant 추가
+- `CrawlError::Blocked(0)` 매직 넘버 → `CrawlError::Aborted` 교체
+
+#### error.rs
+- `AppError`에 `#[non_exhaustive]` 속성 추가 (외부 exhaustive match 방지)
+
+### Phase 2-A: Flutter dispose/메모리 누수 수정
+
+#### home_screen.dart
+- `_showAddByUrlDialog`: `void` + `.then()` → `async Future<void>` + `try/finally`
+
+#### product_detail_screen.dart
+- `_showAlertSetup`: `void` + `.whenComplete()` → `async Future<void>` + `try/finally`
+
+### Phase 2-B: Riverpod 3.0 패턴 확인
+- 기존 `@riverpod` 어노테이션이 이미 최적 패턴 적용 중 (autoDispose 기본값)
+- 구조적 변경 불필요 확인
+
+### Phase 2-C: Flutter 접근성(a11y) 강화 — 3개 화면
+
+#### search_screen.dart
+- 빈 상태 텍스트 → `Semantics(label: ...)` 랩
+- 로딩 인디케이터 → `Semantics(label: '검색 결과 로딩 중')` 랩
+- 검색 버튼 → `tooltip: '검색'` 추가
+
+#### alert_screen.dart
+- 로딩 인디케이터 → `Semantics(label: '알림 목록 로딩 중')` 랩
+- Dismissible 배경 아이콘 → `Semantics(label: '알림 삭제')` 랩
+
+#### notification_list_screen.dart
+- `_NotificationTile` 전체 → `Semantics(label: '${title}, 읽음/읽지 않음')` 랩
+- Dismissible 배경 아이콘 → `Semantics(label: '알림 삭제')` 랩
+
+### Phase 3-A: cargo audit 보안 스캔
+- `server/.cargo/audit.toml` 생성 — RUSTSEC-2023-0071 예외 처리 (문서화)
+- `cargo audit` 0 critical/high vulnerabilities 확인
+
+### Phase 3-C: CI 파이프라인 점검
+- `.github/workflows/ci.yml`: flutter job (analyze + test --coverage) 이미 존재 확인
+- 추가 변경 불필요
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **191/191 passed** (변화 없음) |
+| `cargo clippy -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff (cargo fmt 적용 후) |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (git diff --stat HEAD)
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `server/src/crawlers/mod.rs` | Silent failure 4건 → 로깅 보강 |
+| `server/src/crawlers/coupang.rs` | `CrawlError::Aborted` 신규 variant |
+| `server/src/error.rs` | `#[non_exhaustive]` 추가 |
+| `server/src/services/reward_service.rs` | Silent failure 4건 → 로깅 보강 |
+| `server/src/services/product_service.rs` | URL 파싱 에러 로깅 |
+| `server/src/api/routes/products.rs` | cursor transpose 2건 |
+| `server/src/api/routes/notifications.rs` | cursor transpose 1건 |
+| `server/.cargo/audit.toml` | RUSTSEC-2023-0071 예외 처리 |
+| `app/lib/screens/home/home_screen.dart` | try/finally dispose |
+| `app/lib/screens/product/product_detail_screen.dart` | try/finally dispose |
+| `app/lib/screens/search/search_screen.dart` | Semantics + tooltip |
+| `app/lib/screens/alert/alert_screen.dart` | Semantics 2건 |
+| `app/lib/screens/notification/notification_list_screen.dart` | Semantics 2건 |
+
+---
+
+## 결정 사항 (보류)
+→ [DECISION_LOG.md](DECISION_LOG.md) D-28 ~ D-33 참조
+- D-32: CheckinResult 열거형 재구조화 (다음 리팩토링 세션)
+- D-33: productDetailProvider keepAlive (제품 결정 필요)
+
+---
+
 # NIGHT_06_RESULT — 2026-03-13 (Night-14)
 
 ## Branch

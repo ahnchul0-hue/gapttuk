@@ -69,10 +69,24 @@ impl CrawlerService {
     /// pg_try_advisory_lock으로 동시 크롤링 방지 — 다중 인스턴스 환경에서 안전.
     /// AdvisoryLockGuard로 패닉/에러 시에도 unlock 보장.
     pub async fn run_cycle(&self) -> CycleStats {
-        let acquired: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock(842937)")
-            .fetch_one(&self.pool)
-            .await
-            .unwrap_or(false);
+        let acquired: bool = match sqlx::query_scalar::<_, bool>(
+            "SELECT pg_try_advisory_lock(842937)",
+        )
+        .fetch_one(&self.pool)
+        .await
+        {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::error!(error = %e, "Advisory lock 쿼리 실패 — DB 연결 문제, 크롤 주기 건너뜀");
+                return CycleStats {
+                    total: 0,
+                    success: 0,
+                    failed: 0,
+                    skipped_no_change: 0,
+                    duration_secs: 0.0,
+                };
+            }
+        };
         if !acquired {
             tracing::info!("크롤링 잠금 획득 실패 — 다른 인스턴스가 실행 중");
             return CycleStats {
@@ -192,7 +206,10 @@ impl CrawlerService {
                                 ScrapeOutcome::NoChange
                             }
                         }
-                        Err(_) => ScrapeOutcome::Failed,
+                        Err(e) => {
+                            tracing::warn!(product_id, error = %e, "상품 스크래핑 실패");
+                            ScrapeOutcome::Failed
+                        }
                     }
                 });
             }
@@ -318,7 +335,7 @@ async fn scrape_and_update(
         )
         .await
         {
-            tracing::warn!(product_id, error = %e, "Alert evaluation failed");
+            tracing::error!(product_id, error = %e, "가격 알림 평가 실패 — 사용자에게 알림이 전송되지 않을 수 있음");
         }
     }
 
@@ -349,7 +366,11 @@ fn tally_outcome(
     match result {
         Ok(ScrapeOutcome::Updated) => *success += 1,
         Ok(ScrapeOutcome::NoChange) => *skipped += 1,
-        Ok(ScrapeOutcome::Failed) | Ok(ScrapeOutcome::Aborted) | Err(_) => *failed += 1,
+        Ok(ScrapeOutcome::Failed) | Ok(ScrapeOutcome::Aborted) => *failed += 1,
+        Err(join_err) => {
+            tracing::error!(error = %join_err, "스크래퍼 태스크 패닉 — 프로그램 버그 가능성");
+            *failed += 1;
+        }
     }
 }
 

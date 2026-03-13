@@ -299,22 +299,27 @@ class _NotificationTile extends StatelessWidget {
     final isUnread = !notification.isRead;
     final unreadBg = Theme.of(context).colorScheme.primaryContainer.withAlpha(40);
 
-    return Dismissible(
-      key: ValueKey('notification_${notification.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: appColors.error,
-        child: const Icon(Icons.delete_outline, color: Colors.white),
-      ),
-      onDismissed: (_) => onDismissed(),
-      child: Material(
-        color: isUnread ? unreadBg : null,
-        child: ListTile(
-          onTap: onTap,
-          leading: _buildTypeIcon(notification.notificationType, appColors),
-          title: Text(
+    return Semantics(
+      label: '${notification.title}, ${isUnread ? "읽지 않음" : "읽음"}',
+      child: Dismissible(
+        key: ValueKey('notification_${notification.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: appColors.error,
+          child: Semantics(
+            label: '알림 삭제',
+            child: const Icon(Icons.delete_outline, color: Colors.white),
+          ),
+        ),
+        onDismissed: (_) => onDismissed(),
+        child: Material(
+          color: isUnread ? unreadBg : null,
+          child: ListTile(
+            onTap: onTap,
+            leading: _buildTypeIcon(notification.notificationType, appColors),
+            title: Text(
             notification.title,
             style: TextStyle(
               fontWeight:
@@ -339,6 +344,7 @@ class _NotificationTile extends StatelessWidget {
           ),
           isThreeLine: false,
         ),
+      ),
       ),
     );
   }

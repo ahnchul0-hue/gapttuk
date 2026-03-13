@@ -109,23 +109,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
+            tooltip: '검색',
             onPressed: _search,
           ),
         ],
       ),
       body: _results.isEmpty && !_loading
           ? Center(
-              child: Text(_hasSearched ? '검색 결과가 없습니다' : '검색어를 입력하세요'),
+              child: Semantics(
+                label: _hasSearched ? '검색 결과가 없습니다' : '검색어를 입력하세요',
+                child: Text(_hasSearched ? '검색 결과가 없습니다' : '검색어를 입력하세요'),
+              ),
             )
           : ListView.builder(
               controller: _scrollController,
               itemCount: _results.length + (_loading ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= _results.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(),
+                  return Semantics(
+                    label: '검색 결과 로딩 중',
+                    child: const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
                   );
                 }
