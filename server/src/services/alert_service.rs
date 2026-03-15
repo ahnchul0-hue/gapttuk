@@ -573,8 +573,12 @@ pub async fn evaluate_price_alerts(
         });
     }
 
-    // 모든 푸시 완료 대기
-    while push_tasks.join_next().await.is_some() {}
+    // 모든 푸시 완료 대기 — 태스크 패닉 감지
+    while let Some(result) = push_tasks.join_next().await {
+        if let Err(e) = result {
+            tracing::error!(error = %e, "Push notification task panicked");
+        }
+    }
 
     let triggered = claimed_ids.len();
     if triggered > 0 {
@@ -621,7 +625,10 @@ fn format_alert_body(alert_type: &AlertType, new_price: i32, target_price: Optio
     let formatted = format_price(new_price);
     match alert_type {
         AlertType::TargetPrice => {
-            let target = target_price.map(format_price).unwrap_or_default();
+            let target = target_price.map(format_price).unwrap_or_else(|| {
+                tracing::warn!("TargetPrice alert has no target_price — notification body will be malformed");
+                String::new()
+            });
             format!("현재가 {formatted}원 — 목표가 {target}원 이하로 떨어졌어요!")
         }
         AlertType::AllTimeLow => {

@@ -164,38 +164,43 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
 
   Future<void> _showAddKeywordDialog() async {
     final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('키워드 알림 추가'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '알림 받을 키워드 입력',
-            border: OutlineInputBorder(),
+    String? result;
+    try {
+      result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('키워드 알림 추가'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: '알림 받을 키워드 입력',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
           ),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('추가'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('추가'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
+      );
+    } finally {
+      controller.dispose();
+    }
 
     if (result == null || result.isEmpty) return;
+    final keyword = result;
     await _handleAlertAction(() async {
       final created =
-          await ref.read(alertServiceProvider).createKeywordAlert(keyword: result);
+          await ref.read(alertServiceProvider).createKeywordAlert(keyword: keyword);
       if (mounted) {
         setState(() {
           final list =

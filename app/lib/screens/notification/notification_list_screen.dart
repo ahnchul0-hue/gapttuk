@@ -100,8 +100,9 @@ class _NotificationListScreenState
           }
         });
       }
-    } catch (_) {
-      // 읽음 처리 실패 시 무시 — UX를 위해 조용히 처리
+    } catch (e) {
+      debugPrint('NotificationListScreen: markAsRead failed for ${notification.id} — $e');
+      // UX를 위해 UI는 읽음 상태 유지, 서버 동기화 실패는 무시
     }
   }
 
@@ -157,8 +158,8 @@ class _NotificationListScreenState
     if (deepLink != null && deepLink.isNotEmpty) {
       try {
         context.go(deepLink);
-      } catch (_) {
-        // deepLink가 유효하지 않은 경우 무시
+      } catch (e) {
+        debugPrint('NotificationListScreen: invalid deepLink "$deepLink" — $e');
       }
     }
   }

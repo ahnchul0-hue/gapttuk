@@ -10,11 +10,14 @@ class ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback? onTap;
 
+  // build()마다 생성하는 비용을 줄이기 위해 공유 포맷터 사용
+  static final _priceFormat = NumberFormat('#,###', 'ko_KR');
+
   const ProductCard({super.key, required this.product, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final priceFormat = NumberFormat('#,###', 'ko_KR');
+    final priceFormat = _priceFormat;
     final appColors = Theme.of(context).extension<AppColors>()!;
 
     final trendLabel = switch (product.priceTrend) {

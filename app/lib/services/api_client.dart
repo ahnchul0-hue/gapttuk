@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/api_endpoints.dart';
 import '../config/constants.dart';
@@ -99,7 +100,8 @@ class _AuthInterceptor extends Interceptor {
             return handler.next(e);
           }
         }
-      } catch (_) {
+      } catch (e, st) {
+        debugPrint('_AuthInterceptor: unexpected error during token refresh — $e\n$st');
         await _client._tokenStorage.clearTokens();
       }
     }

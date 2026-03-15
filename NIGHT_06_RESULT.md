@@ -1,3 +1,91 @@
+# NIGHT_06_RESULT — 2026-03-16 (Night-16)
+
+## Branch
+`auto/night-01-20260316_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: PRE-GATE 결정 (D-36~D-40) + Night-15 커밋
+
+- **D-36** (MCP 마이그레이션): C — 스킵. WebSearch/WebFetch로 대체.
+- **D-37** (Night-15 커밋): A — 별도 커밋 생성. 커밋 `5b9f5b9`.
+- **D-38** (최적화 범위): A — 서버+Flutter 균형.
+- **D-39** (E2E 테스트): B — 다음 세션 이연.
+- **D-40** (Ralph Loop): C — 수동만.
+
+### Phase 1: 총동원 심층 분석 (서브에이전트 4대 병렬)
+
+4대 에이전트가 병렬 분석:
+1. **feature-dev:code-explorer (서버)** — CRIT-2건 + HIGH-6건 + MED-5건 발견
+2. **feature-dev:code-explorer (Flutter)** — CRIT-3건 + HIGH-8건 + MED-3건 발견
+3. **pr-review-toolkit:silent-failure-hunter** — 13건 추가 패턴 발견
+4. **feature-dev:code-architect** — API 계약 불일치, 코드 중복, 테스트 갭 분석
+
+오탐 필터링 후 **Night-16 실행 대상**: 서버 7건 + Flutter 6건 = 총 13건
+
+### Phase 2-A: 서버 Silent Failure 로깅 보강 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/auth/providers/kakao.rs` | map_err(|_|) → tracing::warn! 로깅 2건 |
+| `server/src/auth/providers/apple.rs` | map_err(|_|) → debug/warn 로깅 2건 (JWT decode + RSA key) |
+| `server/src/auth/providers/google.rs` | map_err(|_|) → debug/warn 로깅 2건 (JWT decode + RSA key) |
+| `server/src/services/alert_service.rs` | JoinSet 패닉 감지 (`while let Some(result)`) + unwrap_or_default → warn |
+| `server/src/services/ai_prediction_service.rs` | NotFound → Internal 오분류 수정: `match e.as_ref()` |
+| `server/src/main.rs` | CORS filter_map silent drop → error! 로깅 + partition parse warn 분리 |
+
+### Phase 2-B: Flutter 로깅 보강 + 성능/접근성 개선 (6건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/lib/providers/auth_provider.dart` | `catch(_)` → `on DioException` + `catch(e, st)` with debugPrint |
+| `app/lib/services/api_client.dart` | `catch(_)` → `catch(e, st)` with debugPrint |
+| `app/lib/screens/my/my_page_screen.dart` | `catch(_)` 2건 → `catch(e)` + debugPrint + friendlyErrorMessage |
+| `app/lib/screens/favorites/favorites_screen.dart` | `catch(_)` → `catch(e)` with debugPrint + Semantics 접근성 레이블 |
+| `app/lib/screens/notification/notification_list_screen.dart` | markAsRead/deepLink `catch(_)` → debugPrint 2건 |
+| `app/lib/screens/alert/alert_screen.dart` | `_showAddKeywordDialog` → try/finally controller.dispose() 보장 |
+| `app/lib/widgets/product_card.dart` | `NumberFormat` build()마다 생성 → `static final _priceFormat` |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **191/191 passed** (변화 없음) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (13파일, +114/-53)
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `server/src/auth/providers/kakao.rs` | network/parse 에러 로깅 |
+| `server/src/auth/providers/apple.rs` | JWT/RSA 에러 로깅 |
+| `server/src/auth/providers/google.rs` | JWT/RSA 에러 로깅 |
+| `server/src/services/alert_service.rs` | JoinSet 패닉 + TargetPrice warn |
+| `server/src/services/ai_prediction_service.rs` | NotFound→Internal 오분류 수정 |
+| `server/src/main.rs` | CORS/partition silent 스킵 → 로깅 |
+| `app/lib/providers/auth_provider.dart` | catch(_) 세분화 |
+| `app/lib/services/api_client.dart` | catch(_) → catch(e, st) |
+| `app/lib/screens/my/my_page_screen.dart` | catch(e) + friendlyErrorMessage |
+| `app/lib/screens/favorites/favorites_screen.dart` | catch(e) + Semantics |
+| `app/lib/screens/notification/notification_list_screen.dart` | catch(e) 2건 |
+| `app/lib/screens/alert/alert_screen.dart` | try/finally dispose |
+| `app/lib/widgets/product_card.dart` | static final _priceFormat |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-36 ~ D-40 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-15 (Night-15)
 
 ## Branch

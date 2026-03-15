@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
+import '../../utils/error_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../services/reward_service.dart';
@@ -267,7 +268,8 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           _error = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_CentsBalanceTile._loadPoints: $e');
       if (mounted) setState(() => _error = true);
     }
   }
@@ -306,10 +308,11 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           );
         }
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_CentsBalanceTile._doCheckin: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('출석 체크 중 오류가 발생했습니다.')),
+          SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
     } finally {

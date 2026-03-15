@@ -218,7 +218,11 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     for (partition_name, bound_expr) in rows {
         // 파티션 경계의 TO 날짜 파싱
         let Some(to_date) = extract_partition_to_date(&bound_expr) else {
-            continue; // DEFAULT 파티션 또는 파싱 불가
+            // DEFAULT 파티션은 정상 스킵; 그 외 형식은 경고
+            if !bound_expr.contains("MAXVALUE") && !bound_expr.contains("DEFAULT") {
+                tracing::warn!(partition = %partition_name, bound = %bound_expr, "Unexpected partition bound format — skipping archive");
+            }
+            continue;
         };
 
         if to_date > cutoff {
@@ -448,7 +452,11 @@ async fn main() {
         let origins: Vec<HeaderValue> = config
             .allowed_origins
             .iter()
-            .filter_map(|o| o.parse().ok())
+            .filter_map(|o| {
+                o.parse().map_err(|e| {
+                    tracing::error!(origin = %o, error = %e, "Invalid ALLOWED_ORIGINS entry — skipping");
+                }).ok()
+            })
             .collect();
         CorsLayer::new()
             .allow_origin(origins)

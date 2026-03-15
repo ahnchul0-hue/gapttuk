@@ -54,8 +54,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               final product =
                   await ref.read(productDetailProvider(id).future);
               products[id] = product;
-            } catch (_) {
-              // 개별 상품 로드 실패 시 건너뜀
+            } catch (e) {
+              debugPrint('FavoritesScreen: product $id load failed — $e');
+              // 개별 상품 로드 실패 시 건너뜀 (로드된 상품만 표시)
             }
           }),
         );
@@ -119,7 +120,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     final productName = product?.productName ?? '상품 #${alert.productId}';
     final currentPrice = product?.currentPrice;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: '$productName${currentPrice != null ? ', $currentPrice원' : ''}, ${_alertTypeBadge(alert.alertType)} 알림${alert.isActive ? '' : ', 비활성'}',
+      child: GestureDetector(
       onTap: () => context.push('/product/${alert.productId}'),
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -215,6 +219,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

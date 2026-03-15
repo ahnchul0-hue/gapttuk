@@ -20,7 +20,10 @@ pub async fn get_prediction(
             fetch_or_generate(&pool, product_id).await
         })
         .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(|e| match e.as_ref() {
+            AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
+            _ => AppError::Internal(e.to_string()),
+        })?;
 
     Ok(prediction)
 }
