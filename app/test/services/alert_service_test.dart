@@ -24,7 +24,7 @@ void main() {
 
   group('getAlerts', () {
     test('3종 알림 목록 파싱', () async {
-      when(() => mockDio.get('/api/v1/alerts/')).thenAnswer(
+      when(() => mockDio.get('/api/v1/alerts')).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('빈 알림 목록', () async {
-      when(() => mockDio.get('/api/v1/alerts/')).thenAnswer(
+      when(() => mockDio.get('/api/v1/alerts')).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {

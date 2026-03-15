@@ -1,3 +1,92 @@
+# NIGHT_06_RESULT — 2026-03-15 (Night-15)
+
+## Branch
+`auto/night-01-20260315_0100`
+
+---
+
+## 완료된 작업
+
+### Night-15: PLAN_01.md §5.3 잔여 이슈 8건 처리
+
+#### F2: Colors.red → AppColors.error 교체 [HIGH] (3곳)
+- `my_page_screen.dart:103` — 로그아웃 다이얼로그 TextButton `Colors.red` → `Theme.of(ctx).extension<AppColors>()!.error`
+- `settings_screen.dart:38` — 로그아웃 다이얼로그 TextButton 동일 처리
+- `settings_screen.dart:67` — 회원 탈퇴 다이얼로그 TextButton 동일 처리
+
+#### S8: main.rs assert! → if/continue 복구 패턴 [MEDIUM]
+- `ensure_partitions()` 내 `assert!(["api_access_logs", "price_history"].contains(table))` — 항상 true인 단언 제거
+- `assert!(suffix.chars().all(...))` → `if !suffix...{ tracing::warn!; errors.push; continue; }` 교체
+- panic! 대신 에러 수집 후 계속 실행 → 서버 안정성 향상
+
+#### S9: pubspec build_runner 버전 확인 [MEDIUM — 보류]
+- `^4.0.0`은 pub.dev에 미존재 (version solving failed)
+- 기존 `^2.4.0` 유지 → DECISION_LOG D-35에 문서화
+- 향후 build_runner 4.x 릴리즈 후 재시도 필요
+
+#### F4: const 생성자 추가 [MEDIUM] (5곳)
+- `onboarding_screen.dart`: `_WelcomePage` + `_CompletePage` const 생성자 추가, 호출부 `const _WelcomePage()` + `const _CompletePage()`
+- `settings_screen.dart`: `_SectionHeader(title: '...')` 3곳 + `_PushNotificationTile()` → const 접두사 추가
+
+#### F5: router.dart productId:0 → early return guard [MEDIUM]
+- `'/product/:id'` 핸들러: `int.tryParse(...) ?? 0` → `int.tryParse(...)`
+- `id == null || id <= 0` 시 `WidgetsBinding.instance.addPostFrameCallback → context.go('/')` + `SizedBox.shrink()` early return
+
+#### F6: api_endpoints.dart trailing slash 일관성 정리 [MEDIUM] (6곳)
+- `alerts = '$_v1/alerts/'` → `'$_v1/alerts'` (trailing slash 제거)
+- `notifications = '$_v1/notifications/'` → `'$_v1/notifications'`
+- `devices = '$_v1/devices/'` → `'$_v1/devices'`
+- 테스트 파일 3개 동기화: `alert_service_test.dart`, `notification_service_test.dart`, `device_service_test.dart`
+
+#### F7: PointHistoryScreen 날짜 표시 추가 [MEDIUM]
+- `_formatDate(String isoDate) → String` 헬퍼 추가: `DateTime.parse(...).toLocal()` + YYYY.MM.DD 포맷
+- `ListTile.subtitle` → `Column([if(desc) Text(desc), Text(_formatDate(...))])` 구조로 항상 날짜 표시
+
+#### F8: LoadingSkeleton 다크모드 조건부 색상 [MEDIUM]
+- `isDark = Theme.of(context).brightness == Brightness.dark` 추가
+- `baseColor`: `Colors.grey.shade300` → `isDark ? Colors.grey.shade700 : Colors.grey.shade300`
+- `highlightColor`: `Colors.grey.shade100` → `isDark ? Colors.grey.shade600 : Colors.grey.shade100`
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **191/191 passed** (변화 없음) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `app/lib/screens/my/my_page_screen.dart` | F2: Colors.red → AppColors.error (1곳) |
+| `app/lib/screens/my/settings_screen.dart` | F2: Colors.red → AppColors.error (2곳), F4: const 4곳 |
+| `server/src/main.rs` | S8: assert! → if/continue |
+| `app/pubspec.yaml` | S9: build_runner 버전 확인 (^2.4.0 유지) |
+| `app/lib/screens/onboarding/onboarding_screen.dart` | F4: const _WelcomePage + _CompletePage |
+| `app/lib/config/router.dart` | F5: productId early return guard |
+| `app/lib/config/api_endpoints.dart` | F6: trailing slash 3곳 제거 |
+| `app/test/services/alert_service_test.dart` | F6: 테스트 URL 동기화 |
+| `app/test/services/notification_service_test.dart` | F6: 테스트 URL 동기화 |
+| `app/test/services/device_service_test.dart` | F6: 테스트 URL 동기화 |
+| `app/lib/screens/my/point_history_screen.dart` | F7: 날짜 표시 + _formatDate 헬퍼 |
+| `app/lib/widgets/loading_skeleton.dart` | F8: 다크모드 조건부 shimmer 색상 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-34 ~ D-35 참조
+- D-34: F6 trailing slash 제거 (api_endpoints + 테스트 3파일 동기화)
+- D-35: S9 build_runner ^4.0.0 불존재 — ^2.4.0 유지
+
+---
+
 # NIGHT_06_RESULT — 2026-03-14 (Night-14 continued)
 
 ## Branch

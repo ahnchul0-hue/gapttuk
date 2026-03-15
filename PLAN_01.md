@@ -271,15 +271,323 @@ auto/night-01-20260303_0100 ~ auto/night-01-20260307_0100
 | Phase | 상태 | 시작 | 완료 | 비고 |
 |-------|------|------|------|------|
 | 0 | ✅ 완료 | 2026-03-13 | 2026-03-13 | 브랜치 상태 확인 완료 |
-| 1 | ✅ 완료 (1-B) | 2026-03-13 | 2026-03-13 | 순수 함수 추출 +15 테스트 (176→191) |
-| 2 | 대기 | — | — | 사용자 승인 후 |
-| 3 | 대기 | — | — | 사용자 승인 후 |
-| 4 | 대기 | — | — | 사용자 승인 후 |
+| 1 | ✅ 완료 | 2026-03-13 | 2026-03-14 | 1-A Silent failure 10건 + 1-B 순수함수 15테스트 + 1-C 타입 개선 |
+| 2 | ✅ 완료 | 2026-03-14 | 2026-03-14 | 2-A try/finally dispose + 2-B Riverpod 확인 + 2-C Semantics 3화면 |
+| 3 | ✅ 완료 | 2026-03-14 | 2026-03-14 | 3-A cargo audit.toml + 3-C CI 확인 |
+| 4 | 대기 | — | — | 사용자 승인 후 (CodeRabbit/PR 분석) |
 | 5 | 계획만 | — | — | 별도 세션 |
 
 ---
 
-> 마지막 갱신: 2026-03-13 Night-14
+## Night-15 잔여 이슈 (Phase 0 분석에서 발견, 2026-03-15)
+
+> Night-14 Phase 0~3 완료 후 미착수 항목. 사용자 U-15 갱신 요청에 따라 실행.
+
+| # | 등급 | 작업 | 파일 | 상태 |
+|---|------|------|------|------|
+| F2 | HIGH | Colors.red → AppColors.error 교체 (3곳) | my_page_screen.dart, settings_screen.dart | ✅ 완료 |
+| S8 | MEDIUM | main.rs assert! → if/continue 복구 패턴 | main.rs | ✅ 완료 |
+| S9 | MEDIUM | build_runner pubspec 제약 업그레이드 | pubspec.yaml | ⚠️ 보류 (4.x 미존재) |
+| F4 | MEDIUM | const 생성자 추가 (5곳) | onboarding_screen.dart, settings_screen.dart | ✅ 완료 |
+| F5 | MEDIUM | router productId:0 → early return | router.dart | ✅ 완료 |
+| F6 | MEDIUM | trailing slash 일관성 정리 | api_endpoints.dart + 테스트 3파일 | ✅ 완료 |
+| F7 | MEDIUM | PointHistoryScreen 날짜 표시 추가 | point_history_screen.dart | ✅ 완료 |
+| F8 | MEDIUM | LoadingSkeleton 다크모드 조건부 색상 | loading_skeleton.dart | ✅ 완료 |
+
+> S2 (rotate_refresh_token 순수 함수 추출): DB 의존 함수로 순수 함수 추출 불가 — 영구 스킵
+> S6 (process_referral_purchase): Night-14에서 compute_referral_rewards 추출로 부분 완료
+
+---
+
+---
+
+## Night-16 종합 실용 최적화 (2026-03-16)
+
+> **세션**: Night-16
+> **목적**: 사용 가능한 MCP/플러그인/에이전트를 총동원하여 코드베이스 기술 수준을 실질적으로 끌어올리는 종합 최적화
+> **실행 모델**: Opus 4.6 = Main Agent (전략/결정/최종 결과), Sonnet 4.6 = Sub-agent (데이터 수집/기술 실행/진행 추적)
+> **전환 규칙**: 각 Phase 완료 후 반드시 사용자 승인을 받은 뒤 다음 Phase로 이동
+> **Ralph Loop**: 최대 10회
+
+---
+
+### MCP/플러그인 가용성 현황 (Night-16 재점검)
+
+| 도구 | 유형 | 상태 | 활용 계획 |
+|------|------|------|-----------|
+| **feature-dev** (code-explorer/architect/reviewer) | Agent | ✅ 작동 | Phase 1 심층 분석 (4대 병렬) |
+| **coderabbit:code-reviewer** | Agent | ✅ 작동 | Phase 3 PR 전 최종 리뷰 |
+| **pr-review-toolkit** (6종) | Agent | ✅ 작동 | Phase 2-3 silent-failure/type-design/test 분석 |
+| **superpowers** (TDD/debugging/brainstorming/verification) | Skill | ✅ 작동 | Phase 2 TDD 패턴 + Phase 3 최종 검증 |
+| **code-simplifier** | Agent | ✅ 작동 | Phase 2 코드 간결화 |
+| **frontend-design** | Skill | ✅ 작동 | Phase 2-B Flutter UI 최적화 |
+| **WebSearch + WebFetch** | Tool | ✅ 작동 | 최신 Axum/Flutter/Riverpod 문서 참조 |
+| **sonatype-guide** | MCP | ⚠️ 인증 불확실 | Phase 1-C 의존성 버전 확인 시도 |
+| **context7** | Plugin | ⚠️ 플러그인 활성/MCP 미등록 | Phase 1 문서 조회 시도 |
+| **serena** | MCP | ❌ 글로벌 등록 but 세션 미기동 | Phase 0에서 활성화 시도 |
+| **sequential-thinking** | MCP | ❌ pullcents에만 등록 | 마이그레이션 필요 → 결정 D-36 |
+| **playwright** | Plugin+MCP | ⚠️ 플러그인 활성/MCP pullcents만 | E2E 테스트 (이번 세션 범위 판단 필요) |
+| **mcp-tailwind-gemini** | MCP | ❌ Flutter 비해당 | Tailwind/React 전용 → 스킵 |
+| **shadcn** | MCP | ❌ Flutter 비해당 | React UI 전용 → 스킵 |
+| **chatgpt-mcp** | MCP | ❌ 미등록 | 어디에도 설정 없음 → 스킵 |
+
+#### MCP 격차 원인
+```
+MCPs (context7, sequential-thinking, playwright, shadcn, mcp-tailwind-gemini)는
+구 프로젝트 /home/code/pullcents에만 등록됨.
+현재 프로젝트 /home/code/gapttuk에는 MCP 서버 0개.
+serena만 ~/.claude.json 글로벌 등록이나 세션 미기동.
+```
+
+---
+
+### 🔒 PRE-GATE: 사용자 결정 필요 (5건)
+
+| # | 결정 | 설명 | 선택지 |
+|---|------|------|--------|
+| **D-36** | MCP 마이그레이션 | pullcents→gapttuk으로 MCP 설정 복사? | A) context7+sequential-thinking만 복사 B) 전부 복사 C) 마이그레이션 스킵 |
+| **D-37** | Night-15 unstaged 커밋 | 15파일 +518줄 unstaged 변경 처리 | A) 별도 커밋 생성 B) Night-14 커밋과 squash C) 유지(unstaged) |
+| **D-38** | Night-16 최적화 범위 | 어디에 집중할 것인가? | A) 서버+Flutter 균형 B) 서버 집중 C) Flutter 집중 D) Phase 4(리뷰+PR)만 |
+| **D-39** | E2E 테스트 착수 여부 | playwright로 Flutter Web E2E? | A) 이번 세션 포함 B) 다음 세션으로 이연 |
+| **D-40** | Ralph Loop 시작 | 자동 반복 모니터링 활성화? | A) Phase 2 시작 시 활성화 B) Phase 3 시작 시 활성화 C) 수동만 |
+
+---
+
+### Phase 0: 환경 정비 + 전제 조건 해결
+
+> **실행**: Opus Main + Sonnet Sub-agent
+> **예상**: 5~10분
+> **전제**: D-36, D-37 결정 완료 후 시작
+
+#### 0-A. MCP 마이그레이션 (D-36 결정에 따라)
+```
+IF D-36 == A or B:
+  도구: Bash
+  작업: ~/.claude.json projects["/home/code/gapttuk"].mcpServers에
+        pullcents에서 선택된 MCP 설정 복사
+  영향: 다음 Claude 세션부터 적용 (현 세션은 WebSearch/WebFetch로 대체)
+ELSE:
+  스킵 — 모든 외부 문서 참조는 WebSearch/WebFetch 사용
+```
+
+#### 0-B. Night-15 unstaged 변경사항 처리 (D-37 결정에 따라)
+```
+IF D-37 == A:
+  작업: git add + git commit (별도 커밋)
+  메시지: "feat(quality): Night-15 잔여 이슈 7건 수정 (F2/S8/F4/F5/F6/F7/F8)"
+IF D-37 == B:
+  작업: git add + git commit --amend (Night-14 마지막 커밋에 합침)
+  주의: 이미 push된 경우 force push 필요 → 확인 필요
+IF D-37 == C:
+  유지 — unstaged 상태로 Night-16 작업 진행
+```
+
+#### 0-C. 현재 브랜치 상태 확인
+```
+현재: auto/night-01-20260316_0100
+기반: main + Night-13~14 커밋 3건 + Night-15 unstaged 15파일
+결정: 이 브랜치에서 Night-16 작업 계속
+```
+
+### 🔒 GATE 0 → Phase 1 전환 시 사용자 승인 필요
+
+---
+
+### Phase 1: 총동원 심층 분석
+
+> **실행**: Opus Main (전략) + Sonnet Sub-agent 4~6대 (데이터 수집)
+> **범위**: 서버(Rust) + Flutter(Dart) 전체 코드베이스
+> **산출물**: CRITICAL/HIGH 실행 대상 확정 목록
+
+#### 1-A. Sonnet Sub-agent 병렬 분석 (4대)
+```
+에이전트 1: feature-dev:code-explorer → 서버 코드 심층 분석
+  - 신규 취약점, 미커버 에러 경로, 성능 병목
+  - Night-14 수정 이후 잔존 이슈
+
+에이전트 2: feature-dev:code-explorer → Flutter 코드 심층 분석
+  - 메모리 누수, 불필요한 리빌드, 접근성 누락
+  - Widget 트리 최적화 기회
+
+에이전트 3: feature-dev:code-architect → 아키텍처 개선 기회 분석
+  - 서버/클라이언트 간 API 계약 일관성
+  - 모듈 결합도, 순환 의존성
+
+에이전트 4: pr-review-toolkit:silent-failure-hunter → 잔존 silent failure 탐색
+  - Night-14에서 10건 수정 후 추가 발견 가능한 패턴
+```
+
+#### 1-B. 최신 프레임워크 문서 참조 (WebSearch)
+```
+도구: WebSearch + WebFetch
+대상:
+  - Axum 0.8 migration guide (현재 0.7 vs 0.8 차이)
+  - Flutter 3.41 breaking changes / deprecations
+  - Riverpod 3.0 best practices 2026
+  - moka cache 최신 API 변경사항
+실행: Sonnet Sub-agent
+```
+
+#### 1-C. 의존성 건강성 재확인
+```
+도구: sonatype-guide MCP (시도) + cargo audit + WebSearch 대체
+작업:
+  - Rust: cargo audit 재실행 → 신규 취약점 확인
+  - Flutter: pub outdated → 주요 의존성 업데이트 가능 여부
+  - 이전 세션 RUSTSEC-2023-0071 예외 유지 확인
+실행: Sonnet Sub-agent
+```
+
+#### 1-D. Opus Main: 오탐 필터링 + 우선순위 매트릭스
+```
+역할: Opus 4.6 Main Agent
+입력: 1-A 분석 결과 4건 + 1-B 문서 참조 + 1-C 의존성
+작업:
+  - 오탐 필터링 (경험상 ~40% 오탐률)
+  - CRITICAL/HIGH/MEDIUM 분류
+  - Phase 2 실행 대상 확정 (사용자 승인 후)
+산출물: 실행 매트릭스 (이 파일에 Phase 2 세부 항목으로 추가)
+```
+
+### 🔒 GATE 1 → Phase 2 전환 시 사용자 승인 필요
+```
+산출물:
+  - CRITICAL/HIGH 실행 대상 목록
+  - 예상 변경 파일 목록
+  - 예상 신규 테스트 수
+```
+
+---
+
+### Phase 2: 실행 — 서버 + Flutter 최적화 (D-38에 따라 범위 결정)
+
+> **실행**: Opus Main (결정/리뷰) + Sonnet Sub-agents (코딩)
+> **범위**: Phase 1-D 매트릭스 결과에 따라 확정
+> **검증**: 각 작업 후 cargo test/flutter test 즉시 실행
+
+#### 2-A. 서버(Rust) CRITICAL/HIGH 수정
+```
+도구: superpowers:test-driven-development 패턴
+작업: Phase 1-D에서 확정된 서버 이슈 수정
+  - 순수 함수 추출 + 단위 테스트 (TDD)
+  - Silent failure 잔존분 수정
+  - 성능 병목 해소
+실행: Sonnet Sub-agent (파일별 병렬)
+검증: cargo test --lib + cargo clippy -- -D warnings + cargo fmt --check
+```
+
+#### 2-B. Flutter(Dart) CRITICAL/HIGH 수정
+```
+도구: frontend-design 스킬 참조
+작업: Phase 1-D에서 확정된 Flutter 이슈 수정
+  - Widget 최적화 (const, 리빌드 최소화)
+  - 접근성(a11y) 추가 강화
+  - dispose/메모리 누수 수정
+실행: Sonnet Sub-agent (화면별 병렬)
+검증: flutter analyze + flutter test
+```
+
+#### 2-C. 코드 간결화
+```
+도구: code-simplifier:code-simplifier
+대상: Phase 2-A/2-B에서 수정된 파일
+작업: 변경 코드의 명확성, 일관성, 유지보수성 개선
+실행: Sonnet Sub-agent
+```
+
+#### 2-D. Ralph Loop 모니터링 (D-40에 따라)
+```
+IF D-40 == A:
+  도구: ralph-loop:ralph-loop
+  설정: 10분 간격, 최대 10회
+  감시: cargo test + flutter test + analyze 지속 통과 확인
+```
+
+### 🔒 GATE 2 → Phase 3 전환 시 사용자 승인 필요
+```
+검증 조건:
+  - cargo test --lib 전체 통과 (기존 191건 + 신규)
+  - cargo clippy -- -D warnings 경고 0건
+  - cargo fmt --check 통과
+  - flutter test 전체 통과 (기존 164건 + 신규)
+  - flutter analyze: 0 errors, 0 warnings, 0 infos
+```
+
+---
+
+### Phase 3: 종합 리뷰 + 커밋 + PR 준비
+
+> **실행**: Opus Main (전략) + 다중 리뷰 에이전트
+> **전제**: Phase 2 검증 조건 전체 통과
+
+#### 3-A. CodeRabbit AI 코드 리뷰
+```
+도구: coderabbit:code-reviewer
+대상: 이번 세션에서 변경된 모든 파일 (Night-15 + Night-16)
+작업: 자동 코드 리뷰 → CRITICAL/HIGH 피드백 반영
+실행: Sonnet Sub-agent
+```
+
+#### 3-B. PR 테스트 커버리지 분석
+```
+도구: pr-review-toolkit:pr-test-analyzer
+작업: 신규 코드의 테스트 커버리지 적절성 평가
+실행: Sonnet Sub-agent
+```
+
+#### 3-C. Silent Failure 최종 검사
+```
+도구: pr-review-toolkit:silent-failure-hunter
+작업: Phase 2 변경 코드에 새로운 silent failure 미유입 확인
+실행: Sonnet Sub-agent
+```
+
+#### 3-D. Comment 품질 분석
+```
+도구: pr-review-toolkit:comment-analyzer
+작업: 추가된 주석/문서의 정확성 검증
+실행: Sonnet Sub-agent
+```
+
+#### 3-E. 최종 검증 + 커밋
+```
+도구: superpowers:verification-before-completion
+검증:
+  - cargo test --lib 통과
+  - cargo clippy -- -D warnings 0건
+  - flutter test 통과
+  - flutter analyze 0 이슈
+  - git diff --stat 변경 범위 확인
+작업: 사용자 승인 후 커밋 + PR 생성 여부 결정
+```
+
+### 🔒 GATE 3 → 완료, 사용자에게 결과 보고
+
+---
+
+### 야간 세션 금지 항목 (유지)
+
+- ❌ 미머지 브랜치를 main에 머지하거나 force push
+- ❌ CD 파이프라인 활성화 또는 프로덕션 배포
+- ❌ 외부 API 키 또는 환경변수 변경
+- ❌ 마이그레이션 020 이후 번호 사용 (fix/phase0 브랜치와 충돌)
+- ❌ 사용자 승인 없이 Phase 간 전환
+
+---
+
+### Night-16 진행 추적
+
+| Phase | 상태 | 시작 | 완료 | 비고 |
+|-------|------|------|------|------|
+| PRE-GATE | ⏳ 대기 | — | — | D-36~D-40 사용자 결정 대기 |
+| 0 | 대기 | — | — | 환경 정비 + MCP + 커밋 |
+| 1 | 대기 | — | — | 총동원 심층 분석 |
+| 2 | 대기 | — | — | 서버/Flutter 최적화 실행 |
+| 3 | 대기 | — | — | 종합 리뷰 + PR |
+
+---
+
+> 마지막 갱신: 2026-03-16 Night-16
 > Main Agent: Claude Opus 4.6
 > Sub-agents: Claude Sonnet 4.6
 > Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>

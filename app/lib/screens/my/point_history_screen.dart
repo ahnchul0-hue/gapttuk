@@ -51,6 +51,18 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
     }
   }
 
+  String _formatDate(String isoDate) {
+    try {
+      final dt = DateTime.parse(isoDate).toLocal();
+      final y = dt.year;
+      final m = dt.month.toString().padLeft(2, '0');
+      final d = dt.day.toString().padLeft(2, '0');
+      return '$y.$m.$d';
+    } catch (_) {
+      return isoDate.length >= 10 ? isoDate.substring(0, 10) : isoDate;
+    }
+  }
+
   String _transactionLabel(String type) {
     return switch (type) {
       'daily_checkin' => '일일 출석 룰렛',
@@ -103,9 +115,20 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
                           color: isPositive ? appColors.success : appColors.error,
                         ),
                         title: Text(_transactionLabel(item.transactionType)),
-                        subtitle: item.description != null
-                            ? Text(item.description!)
-                            : null,
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.description != null)
+                              Text(item.description!),
+                            Text(
+                              _formatDate(item.createdAt),
+                              style:
+                                  Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: appColors.neutral,
+                                      ),
+                            ),
+                          ],
+                        ),
                         trailing: Text(
                           '${isPositive ? '+' : ''}${item.amount}${AppConstants.rewardUnit}',
                           style: TextStyle(

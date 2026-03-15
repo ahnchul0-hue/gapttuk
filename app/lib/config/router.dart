@@ -114,9 +114,15 @@ final appRouter = GoRouter(
     // 상품 상세 (탭 외부)
     GoRoute(
       path: '/product/:id',
-      builder: (context, state) => ProductDetailScreen(
-        productId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-      ),
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null || id <= 0) {
+          // 잘못된 productId — 홈으로 리다이렉트
+          WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/'));
+          return const SizedBox.shrink();
+        }
+        return ProductDetailScreen(productId: id);
+      },
     ),
     // 로그인
     GoRoute(

@@ -127,7 +127,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   setState(() => _currentPage = index);
                 },
                 children: [
-                  _WelcomePage(),
+                  const _WelcomePage(),
                   _TermsPage(
                     allAgreed: _allAgreed,
                     termsAgreed: _termsAgreed,
@@ -151,7 +151,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     onOpenTerms: () => _openUrl(AppConstants.termsUrl),
                     onOpenPrivacy: () => _openUrl(AppConstants.privacyUrl),
                   ),
-                  _CompletePage(),
+                  const _CompletePage(),
                 ],
               ),
             ),
@@ -261,6 +261,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 // ---------------------------------------------------------------------------
 
 class _WelcomePage extends StatelessWidget {
+  const _WelcomePage();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -536,6 +538,8 @@ class _TermsItem extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CompletePage extends StatelessWidget {
+  const _CompletePage();
+
   @override
   Widget build(BuildContext context) {
     return Padding(

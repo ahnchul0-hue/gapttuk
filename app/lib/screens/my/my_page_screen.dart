@@ -100,7 +100,9 @@ class MyPageScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).extension<AppColors>()!.error,
+            ),
             child: const Text('로그아웃'),
           ),
         ],

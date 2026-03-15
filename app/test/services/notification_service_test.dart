@@ -25,7 +25,7 @@ void main() {
   group('getNotifications', () {
     test('알림 목록 + 커서 페이지네이션', () async {
       when(() => mockDio.get(
-            '/api/v1/notifications/',
+            '/api/v1/notifications',
             queryParameters: any(named: 'queryParameters'),
           )).thenAnswer(
         (_) async => Response(
@@ -66,7 +66,7 @@ void main() {
 
     test('빈 알림 목록', () async {
       when(() => mockDio.get(
-            '/api/v1/notifications/',
+            '/api/v1/notifications',
             queryParameters: any(named: 'queryParameters'),
           )).thenAnswer(
         (_) async => Response(
@@ -88,7 +88,7 @@ void main() {
 
     test('커서 전달 확인', () async {
       when(() => mockDio.get(
-            '/api/v1/notifications/',
+            '/api/v1/notifications',
             queryParameters: any(named: 'queryParameters'),
           )).thenAnswer(
         (_) async => Response(
@@ -104,7 +104,7 @@ void main() {
       await service.getNotifications(cursor: 'abc123', limit: 10);
 
       verify(() => mockDio.get(
-            '/api/v1/notifications/',
+            '/api/v1/notifications',
             queryParameters: {'limit': 10, 'cursor': 'abc123'},
           )).called(1);
     });

@@ -91,10 +91,18 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         for table in &["api_access_logs", "price_history"] {
             // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
             // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
-            assert!(["api_access_logs", "price_history"].contains(table));
-            assert!(suffix
+            if !suffix
                 .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_'));
+                .all(|c| c.is_ascii_alphanumeric() || c == '_')
+            {
+                tracing::warn!(
+                    table = %table,
+                    suffix = %suffix,
+                    "Unexpected partition suffix format, skipping"
+                );
+                errors.push(format!("{table}_{suffix}: invalid suffix format"));
+                continue;
+            }
             let sql = format!(
                 "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
                  FOR VALUES FROM ('{start}') TO ('{next}')"

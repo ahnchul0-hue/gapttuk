@@ -352,6 +352,35 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 
 ---
 
+# Night-15 Session (2026-03-15) — 잔여 이슈 F2~F8, S8
+
+## D-34: api_endpoints.dart trailing slash 제거 + 테스트 동기화
+
+**Decision**: `alerts`, `notifications`, `devices` 엔드포인트 상수에서 trailing slash 제거. 테스트 mock URL도 동기화.
+
+**변경 전**: `'$_v1/alerts/'` / `'$_v1/notifications/'` / `'$_v1/devices/'`
+**변경 후**: `'$_v1/alerts'` / `'$_v1/notifications'` / `'$_v1/devices'`
+
+**Rationale**: REST API 경로 일관성 — 나머지 32개 엔드포인트는 trailing slash 없음. Axum 라우터는 trailing slash 없이 등록되므로 이 3개만 trailing slash 있으면 서버 404 위험 (Axum은 기본적으로 trailing slash redirect를 하지 않음).
+
+**영향**: `alert_service_test.dart`, `notification_service_test.dart`, `device_service_test.dart` mock URL 동시 수정. Flutter test 164건 통과 확인.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-35: build_runner ^4.0.0 업그레이드 불가 (보류)
+
+**Decision**: build_runner `^2.4.0` → `^4.0.0` 시도했으나 해당 버전 미존재. 원복 (`^2.4.0` 유지).
+
+**근거**: pub.dev에서 build_runner 4.x 버전이 존재하지 않음 (2026-03-15 기준). flutter pub add 결과: "doesn't match any versions". S9 항목의 원본 요구사항이 비현실적인 버전 번호였음.
+
+**향후 조치**: build_runner 2.x 최신 버전 확인 후 범위 확대 (`^2.4.0` → `>=2.4.0 <3.0.0`) 또는 pub.dev 공식 릴리즈 대기.
+
+**Status**: 보류 — build_runner 현행 유지
+
+---
+
 ## D-32: CheckinResult 열거형 재구조화 (보류)
 
 **현재**: `CheckinResult { rewarded: bool, cents_earned: i32 }` 구조체.
@@ -367,5 +396,57 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 **제안**: 상품 상세 provider에 5분 keepAlive 추가 → 뒤로가기 후 재진입 시 네트워크 절감.
 
 **보류 이유**: 가격 데이터 실시간성과 상충 가능. 제품 결정 필요.
+
+---
+
+# Night-16 Session (2026-03-16) — PRE-GATE 결정 + Night-15 커밋
+
+## D-36: MCP 마이그레이션 결정 (PRE-GATE)
+
+**Decision**: C — 마이그레이션 스킵. 모든 외부 문서 참조는 WebSearch/WebFetch 사용.
+
+**Rationale**: pullcents→gapttuk MCP 마이그레이션은 현재 세션에 영향이 없고, WebSearch/WebFetch로 동일한 결과를 얻을 수 있음. 다음 Claude 세션 시작 시 수동으로 복사하는 것이 더 안전.
+
+**Status**: SKIPPED
+
+---
+
+## D-37: Night-15 unstaged 커밋 방향 (PRE-GATE)
+
+**Decision**: A — 별도 커밋 생성. Night-14 커밋과 분리하여 히스토리 추적성 유지.
+
+**Rationale**: Night-15 변경사항(15파일, +511/-187)은 Night-14와 논리적으로 분리된 작업(잔여 이슈 소진). amend 대신 신규 커밋으로 히스토리를 명확히 유지.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-38: Night-16 최적화 범위 (PRE-GATE)
+
+**Decision**: A — 서버+Flutter 균형. Phase 1 분석 후 CRITICAL/HIGH에 집중.
+
+**Rationale**: 단일 영역 집중은 기술 부채를 한쪽에 축적함. 균형 접근이 전체 품질 향상에 유리.
+
+**Status**: CONFIRMED
+
+---
+
+## D-39: E2E 테스트 착수 여부 (PRE-GATE)
+
+**Decision**: B — 다음 세션으로 이연. 이번 세션은 코드 품질 최적화에 집중.
+
+**Rationale**: Flutter Web E2E 테스트는 별도 환경(Chromium) 설정이 필요. 현재 세션의 Phase 2 최적화가 먼저 완료되어야 E2E 기반이 안정적.
+
+**Status**: DEFERRED
+
+---
+
+## D-40: Ralph Loop 시작 여부 (PRE-GATE)
+
+**Decision**: C — 수동만. Ralph Loop 미사용.
+
+**Rationale**: 이번 세션은 단순 반복 모니터링보다 심층 분석 + 코드 수정이 주 목적. Ralph Loop는 장기 모니터링 세션에 더 적합.
+
+**Status**: SKIPPED
 
 ---

@@ -20,7 +20,7 @@ abstract final class ApiEndpoints {
   static const String productPopular = '$_v1/products/popular';
 
   // ── Alerts ───────────────────────────────────
-  static const String alerts = '$_v1/alerts/';
+  static const String alerts = '$_v1/alerts';
   static const String alertPrice = '$_v1/alerts/price';
   static const String alertCategory = '$_v1/alerts/category';
   static const String alertKeyword = '$_v1/alerts/keyword';
@@ -32,14 +32,14 @@ abstract final class ApiEndpoints {
   static String alertDelete(String type, int id) => '$_v1/alerts/$type/$id';
 
   // ── Notifications ───────────────────────────
-  static const String notifications = '$_v1/notifications/';
+  static const String notifications = '$_v1/notifications';
   static const String notificationUnreadCount = '$_v1/notifications/unread-count';
   static String notificationRead(int id) => '$_v1/notifications/$id/read';
   static const String notificationReadAll = '$_v1/notifications/read-all';
   static String notificationDelete(int id) => '$_v1/notifications/$id';
 
   // ── Devices ──────────────────────────────────
-  static const String devices = '$_v1/devices/';
+  static const String devices = '$_v1/devices';
   static String deviceDelete(int id) => '$_v1/devices/$id';
   static String devicePushToggle(int id) => '$_v1/devices/$id/push';
 
