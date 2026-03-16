@@ -73,15 +73,20 @@ class HomeScreen extends ConsumerWidget {
                   : Column(
                       children: searches
                           .take(10)
-                          .map((s) => ListTile(
-                                leading: CircleAvatar(
-                                  child: Text('${s.rank}'),
+                          .map((s) => Semantics(
+                                label:
+                                    '${s.rank}위 ${s.keyword}${s.trend != null ? ", 트렌드 ${s.trend}" : ""}',
+                                excludeSemantics: true,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text('${s.rank}'),
+                                  ),
+                                  title: Text(s.keyword),
+                                  trailing: s.trend != null
+                                      ? _trendIcon(s.trend!, appColors)
+                                      : null,
+                                  dense: true,
                                 ),
-                                title: Text(s.keyword),
-                                trailing: s.trend != null
-                                    ? _trendIcon(s.trend!, appColors)
-                                    : null,
-                                dense: true,
                               ))
                           .toList(),
                     ),
@@ -132,7 +137,8 @@ class HomeScreen extends ConsumerWidget {
                             Navigator.pop(context);
                             context.push('/product/${result.id}');
                           }
-                        } catch (e) {
+                        } catch (e, st) {
+                          debugPrint('HomeScreen._showAddByUrlDialog: $e\n$st');
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(

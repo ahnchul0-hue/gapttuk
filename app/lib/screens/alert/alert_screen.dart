@@ -47,7 +47,8 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AlertScreen._loadAlerts: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);

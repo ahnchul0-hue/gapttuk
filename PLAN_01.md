@@ -587,7 +587,66 @@ IF D-40 == A:
 
 ---
 
-> 마지막 갱신: 2026-03-16 Night-16
+---
+
+## Night-17 종합 실용 최적화 (2026-03-17)
+
+> **세션**: Night-17
+> **브랜치**: `auto/night-01-20260317_0100`
+> **실행**: Sonnet 4.6 Sub-agent (PLAN_01.md 기준 자율 실행)
+> **Ralph Loop**: 최대 10회
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+
+Night-16 종합 분석 내용이 unstaged — 별도 커밋으로 히스토리 정리 (`11db0ab`).
+
+### Phase 1: 서브에이전트 3대 병렬 분석
+
+| 에이전트 | 발견 |
+|----------|------|
+| `feature-dev:code-explorer` (서버) | HIGH-3 + MED-6 + LOW-4 |
+| `feature-dev:code-explorer` (Flutter) | HIGH-4 + MED-6 + LOW-2 |
+| `feature-dev:code-architect` | API불일치-3 + TEST갭-2 + 중복-2 |
+
+오탐 필터링: **서버 7건 + Flutter 9건 = 16건 확정**
+
+### Phase 2: 실행 (서버 + Flutter 균형)
+
+#### 2-A: 서버 타입 안전성 (7건)
+- `stats.rs`: `as f64` 오버플로 수정 + `num_days() as i32` → try_from (2곳)
+- `crawlers/mod.rs`: `as f32` 부동소수점 → 정수 연산
+- `coupang.rs`: `.unwrap()` → `.expect(...)` (7곳)
+- `auth_service.rs`: `jwt_refresh_ttl_secs as i64` 안전 변환 + `len()` → `chars().count()`
+- `reward_service.rs` + `pagination.rs`: `as i64` 비교 방향 수정
+
+#### 2-B: Flutter 관측성/성능/접근성/버그 (9건)
+- `product_detail_screen.dart`: static _priceFormat + catch(e, st)
+- `home_screen.dart`: catch(e, st) + Semantics 인기검색어
+- `point_history_screen.dart`: catch(e, st) + static _dateFormat + `referral_welcome_referrer` 케이스 추가 (버그)
+- `my_page_screen.dart`: _loadPoints/_doCheckin catch(e, st)
+- `alert_screen.dart`: _loadAlerts catch(e, st)
+
+### Phase 3: 검증 + 커밋
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ 191/191 |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 경고 |
+| `flutter analyze` | ✅ 0 이슈 |
+| `flutter test` | ✅ 164/164 |
+
+### Night-17 진행 추적
+
+| Phase | 상태 | 비고 |
+|-------|------|------|
+| 0 | ✅ 완료 | MORNING_BRIEFING.md 커밋 |
+| 1 | ✅ 완료 | 서브에이전트 3대 — 16건 확정 |
+| 2 | ✅ 완료 | 서버 7건 + Flutter 9건 수정 |
+| 3 | ✅ 완료 | 검증 통과 + 커밋 |
+
+---
+
+> 마지막 갱신: 2026-03-17 Night-17
 > Main Agent: Claude Opus 4.6
 > Sub-agents: Claude Sonnet 4.6
-> Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+> Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>

@@ -1,3 +1,103 @@
+# NIGHT_06_RESULT — 2026-03-17 (Night-17)
+
+## Branch
+`auto/night-01-20260317_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+
+- Night-16 종합 분석 업데이트 커밋 `11db0ab`
+
+### Phase 1: 서브에이전트 3대 병렬 분석
+
+| 에이전트 | 역할 | 발견 |
+|----------|------|------|
+| `feature-dev:code-explorer` (서버) | Rust 코드 심층 분석 | HIGH-3건 + MED-6건 + LOW-4건 |
+| `feature-dev:code-explorer` (Flutter) | Dart 코드 심층 분석 | HIGH-4건 + MED-6건 + LOW-2건 |
+| `feature-dev:code-architect` | 아키텍처/API 계약 분석 | API불일치-3건 + TEST갭-2건 + 코드중복-2건 |
+
+오탐 필터링 후 **Night-17 실행 대상**: 서버 7건 + Flutter 9건 = 총 16건
+
+### Phase 2-A: 서버(Rust) 타입 안전성 + 정수 연산 개선 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/crawlers/stats.rs` | `(a - b) as f64` → `a as f64 - b as f64` (오버플로 방지) |
+| `server/src/crawlers/stats.rs` | `num_days() as i32` → `try_from(...).unwrap_or(i32::MAX)` + `.max(0)` clamp (2곳) |
+| `server/src/crawlers/mod.rs` | `as f32 * 0.6 as usize` → `* 6 / 10` (불필요한 부동소수점 제거) |
+| `server/src/crawlers/coupang.rs` | `.unwrap()` → `.expect("hardcoded CSS selector — invalid selector is a compile-time bug")` (7곳) |
+| `server/src/services/auth_service.rs` | `jwt_refresh_ttl_secs as i64` → `i64::try_from(...).unwrap_or(i64::MAX)` (2곳) |
+| `server/src/services/auth_service.rs` | `code.len() != 10` → `code.chars().count() != 10` (유니코드 안전) |
+| `server/src/services/reward_service.rs` | `items.len() as i64 > limit` → `items.len() > limit as usize` |
+| `server/src/api/pagination.rs` | `items.len() as i64 > limit` → `items.len() > limit as usize` |
+
+### Phase 2-B: Flutter(Dart) 관측성 + 성능 + 접근성 + 버그 수정 (9건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/lib/screens/product/product_detail_screen.dart` | `NumberFormat` `build()` 매번 생성 → `static final _priceFormat` (성능) |
+| `app/lib/screens/product/product_detail_screen.dart` | `catch(e)` → `catch(e, st)` + `debugPrint` (관측성) |
+| `app/lib/screens/home/home_screen.dart` | `catch(e)` → `catch(e, st)` + `debugPrint` (관측성) |
+| `app/lib/screens/home/home_screen.dart` | 인기 검색어 `ListTile` → `Semantics(label: '${rank}위 ${keyword}...')` (접근성) |
+| `app/lib/screens/my/point_history_screen.dart` | `catch(e)` → `catch(e, st)` + `debugPrint` (관측성) |
+| `app/lib/screens/my/point_history_screen.dart` | `_formatDate` 인라인 패딩 → `static final _dateFormat = DateFormat(...)` (성능) |
+| `app/lib/screens/my/point_history_screen.dart` | `_transactionLabel` 'referral_welcome_referrer' 케이스 추가 (버그 수정) |
+| `app/lib/screens/my/my_page_screen.dart` | `_loadPoints`/`_doCheckin` `catch(e)` → `catch(e, st)` + st 로깅 (관측성) |
+| `app/lib/screens/alert/alert_screen.dart` | `_loadAlerts` `catch(e)` → `catch(e, st)` + `debugPrint` (관측성) |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **191/191 passed** (변화 없음) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (16파일)
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `server/src/crawlers/stats.rs` | f64 캐스팅 순서 수정 + days_since_lowest try_from 안전 변환 (2곳) |
+| `server/src/crawlers/mod.rs` | 동시성 계산 정수 연산으로 변환 |
+| `server/src/crawlers/coupang.rs` | LazyLock unwrap → expect 7곳 |
+| `server/src/services/auth_service.rs` | jwt_refresh_ttl_secs 안전 변환 + referral code chars().count() |
+| `server/src/services/reward_service.rs` | has_more 비교 방향 수정 |
+| `server/src/api/pagination.rs` | has_more 비교 방향 수정 |
+| `app/lib/screens/product/product_detail_screen.dart` | static _priceFormat + catch(e, st) |
+| `app/lib/screens/home/home_screen.dart` | catch(e, st) + Semantics |
+| `app/lib/screens/my/point_history_screen.dart` | catch(e, st) + static _dateFormat + referral_welcome_referrer 케이스 추가 |
+| `app/lib/screens/my/my_page_screen.dart` | _loadPoints/_doCheckin catch(e, st) |
+| `app/lib/screens/alert/alert_screen.dart` | _loadAlerts catch(e, st) |
+
+---
+
+## Night-17 스킵된 항목 (설계 결정 필요)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| `product_service.rs` 커서 페이지네이션 비-id 정렬 | MEDIUM | API 설계 변경 필요 |
+| `stats.rs` 중복 SQL 쿼리 추출 | MEDIUM | 리팩토링 범위 크고 버그 없음 |
+| `auth.rs` 비즈니스 로직 서비스 추출 | MEDIUM | 아키텍처 결정 필요 |
+| `crawlers/mod.rs` 세마포어 전/후 sleep 위치 | MEDIUM | 아키텍처 결정 필요 |
+| `product_detail_screen.dart` Semantics 확대 | MEDIUM | 다음 접근성 Phase |
+| `point_history_screen.dart` 에러 재시도 버튼 | LOW | UX 결정 필요 |
+| `showErrorSnackBar` 12개 인라인 통합 | MEDIUM | 14파일 변경, 독립 커밋 필요 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-41 ~ D-42 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-16 (Night-16)
 
 ## Branch

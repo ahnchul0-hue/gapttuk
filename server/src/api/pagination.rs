@@ -43,7 +43,7 @@ impl<T: Serialize> PaginatedResponse<T> {
     /// `limit`개 초과 시 `has_more = true`로 설정하고 마지막 항목을 제거한다.
     /// `cursor_fn`은 마지막 가시 항목에서 커서 값을 추출하는 클로저.
     pub fn new(mut items: Vec<T>, limit: i64, cursor_fn: impl Fn(&T) -> String) -> Self {
-        let has_more = items.len() as i64 > limit;
+        let has_more = items.len() > limit as usize;
         if has_more {
             items.pop();
         }

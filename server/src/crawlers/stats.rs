@@ -5,7 +5,8 @@ pub fn compute_trend(current_price: i32, average_price: i32) -> PriceTrend {
     if average_price == 0 {
         return PriceTrend::Stable;
     }
-    let diff_pct = ((current_price - average_price) as f64 / average_price as f64) * 100.0;
+    let diff_pct =
+        ((current_price as f64 - average_price as f64) / average_price as f64) * 100.0;
     if diff_pct > 2.0 {
         PriceTrend::Rising
     } else if diff_pct < -2.0 {
@@ -102,7 +103,10 @@ pub async fn refresh_product_stats(
 
     let days_since_lowest = stats
         .lowest_date
-        .map(|d| (chrono::Utc::now() - d).num_days() as i32)
+        .map(|d| {
+            let days = (chrono::Utc::now() - d).num_days().max(0);
+            i32::try_from(days).unwrap_or(i32::MAX)
+        })
         .unwrap_or(0);
 
     let buy_timing_score =
@@ -183,7 +187,10 @@ pub async fn refresh_product_stats_with_metadata(
     let drop_from_average = average_price - new_price;
     let days_since_lowest = stats
         .lowest_date
-        .map(|d| (chrono::Utc::now() - d).num_days() as i32)
+        .map(|d| {
+            let days = (chrono::Utc::now() - d).num_days().max(0);
+            i32::try_from(days).unwrap_or(i32::MAX)
+        })
         .unwrap_or(0);
     let buy_timing_score =
         compute_buy_timing_score(drop_from_average, average_price, days_since_lowest, &trend);

@@ -15,10 +15,11 @@ class ProductDetailScreen extends ConsumerWidget {
 
   const ProductDetailScreen({super.key, required this.productId});
 
+  static final _priceFormat = NumberFormat('#,###', 'ko_KR');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productAsync = ref.watch(productDetailProvider(productId));
-    final priceFormat = NumberFormat('#,###', 'ko_KR');
 
     final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
@@ -87,7 +88,7 @@ class ProductDetailScreen extends ConsumerWidget {
             // 현재 가격
             if (product.currentPrice != null) ...[
               Text(
-                '₩${priceFormat.format(product.currentPrice)}',
+                '₩${_priceFormat.format(product.currentPrice)}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: product.isOutOfStock ? appColors.neutral : null,
@@ -118,20 +119,20 @@ class ProductDetailScreen extends ConsumerWidget {
                     _StatColumn(
                       label: '최저가',
                       value: product.lowestPrice != null
-                          ? '₩${priceFormat.format(product.lowestPrice)}'
+                          ? '₩${_priceFormat.format(product.lowestPrice)}'
                           : '-',
                       color: AppTheme.priceDown,
                     ),
                     _StatColumn(
                       label: '평균가',
                       value: product.averagePrice != null
-                          ? '₩${priceFormat.format(product.averagePrice)}'
+                          ? '₩${_priceFormat.format(product.averagePrice)}'
                           : '-',
                     ),
                     _StatColumn(
                       label: '최고가',
                       value: product.highestPrice != null
-                          ? '₩${priceFormat.format(product.highestPrice)}'
+                          ? '₩${_priceFormat.format(product.highestPrice)}'
                           : '-',
                       color: AppTheme.priceUp,
                     ),
@@ -253,7 +254,8 @@ class ProductDetailScreen extends ConsumerWidget {
                           const SnackBar(content: Text('가격 알림이 설정되었습니다')),
                         );
                       }
-                    } catch (e) {
+                    } catch (e, st) {
+                      debugPrint('ProductDetailScreen._showAlertSetup: $e\n$st');
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(friendlyErrorMessage(e))),

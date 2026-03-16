@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
@@ -44,20 +45,19 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
         }
         _error = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('PointHistoryScreen._loadMore: $e\n$st');
       if (mounted) setState(() => _error = friendlyErrorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  static final _dateFormat = DateFormat('yyyy.MM.dd');
+
   String _formatDate(String isoDate) {
     try {
-      final dt = DateTime.parse(isoDate).toLocal();
-      final y = dt.year;
-      final m = dt.month.toString().padLeft(2, '0');
-      final d = dt.day.toString().padLeft(2, '0');
-      return '$y.$m.$d';
+      return _dateFormat.format(DateTime.parse(isoDate).toLocal());
     } catch (_) {
       return isoDate.length >= 10 ? isoDate.substring(0, 10) : isoDate;
     }
@@ -67,6 +67,7 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
     return switch (type) {
       'daily_checkin' => '일일 출석 룰렛',
       'referral_welcome' => '추천 가입 보상',
+      'referral_welcome_referrer' => '추천인 웰컴 보상',
       'referral_purchase_referred' => '추천 구매 보상',
       'referral_purchase_referrer' => '추천인 보상',
       'signup_bonus' => '가입 보너스',

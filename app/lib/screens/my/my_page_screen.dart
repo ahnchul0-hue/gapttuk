@@ -268,8 +268,8 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           _error = false;
         });
       }
-    } catch (e) {
-      debugPrint('_CentsBalanceTile._loadPoints: $e');
+    } catch (e, st) {
+      debugPrint('_CentsBalanceTile._loadPoints: $e\n$st');
       if (mounted) setState(() => _error = true);
     }
   }
@@ -308,8 +308,8 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           );
         }
       });
-    } catch (e) {
-      debugPrint('_CentsBalanceTile._doCheckin: $e');
+    } catch (e, st) {
+      debugPrint('_CentsBalanceTile._doCheckin: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),

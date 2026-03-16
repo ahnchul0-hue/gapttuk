@@ -49,7 +49,7 @@ impl CrawlerService {
             .expect("Failed to build crawler HTTP client");
 
         // DB 풀의 60%를 크롤러 동시성 상한으로 (나머지 40%는 API 요청용)
-        let concurrency = ((db_max_connections as f32 * 0.6) as usize).clamp(2, 8);
+        let concurrency = ((db_max_connections as usize * 6) / 10).clamp(2, 8);
         tracing::info!(
             db_max_connections,
             concurrency,

@@ -33,7 +33,7 @@ pub fn validate_consent(terms_agreed: bool, privacy_agreed: bool) -> Result<(), 
 /// 유효 형식: "GAP-XXXXXX" (접두사 4자 + 영대문자/숫자 6자 = 총 10자).
 /// trim을 수행하지 않음 — 호출자(find_referrer_by_code)가 책임.
 pub fn is_valid_referral_code_format(code: &str) -> bool {
-    if code.len() != 10 {
+    if code.chars().count() != 10 {
         return false;
     }
     if !code.starts_with("GAP-") {
@@ -178,7 +178,10 @@ pub async fn create_token_pair(
     let refresh_token = generate_refresh_token();
     let token_hash = hash_refresh_token(&refresh_token);
 
-    let expires_at = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
+    let expires_at = Utc::now()
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs).unwrap_or(i64::MAX),
+        );
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)
@@ -281,7 +284,10 @@ pub async fn rotate_refresh_token(
     let (access_token, expires_in) = encode_access_token(user_id, config)?;
     let new_refresh = generate_refresh_token();
     let new_hash = hash_refresh_token(&new_refresh);
-    let new_expires = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
+    let new_expires = Utc::now()
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs).unwrap_or(i64::MAX),
+        );
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)

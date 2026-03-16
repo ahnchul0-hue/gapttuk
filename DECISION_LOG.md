@@ -450,3 +450,27 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 **Status**: SKIPPED
 
 ---
+
+# Night-17 Session (2026-03-17) — 타입 안전성 + Flutter 관측성
+
+## D-41: is_valid_referral_code_format len() → chars().count() 적용
+
+**Decision**: `code.len() != 10` → `code.chars().count() != 10`으로 변경.
+
+**Rationale**: Rust `str::len()`은 바이트 길이를 반환. "GAP-ÄÄ" 같은 멀티바이트 문자 포함 코드가 바이트 수는 10이지만 문자 수는 10 미만일 때 길이 검사를 통과할 수 있음. `chars().all(is_ascii)` 최종 검사가 방어하지만, `chars().count()`가 의도를 명확히 표현. Night-13 서버 수정(chars().count() for keyword search)과 동일한 컨벤션 유지.
+
+**Status**: IMPLEMENTED
+
+---
+
+## D-42: _transactionLabel 'referral_welcome_referrer' 케이스 추가
+
+**Decision**: `point_history_screen.dart`의 `_transactionLabel` switch에 `'referral_welcome_referrer' => '추천인 웰컴 보상'` 추가.
+
+**Rationale**: `auth_service.rs`의 `upsert_user`에서 추천 코드 가입 시 추천인(referrer)에게 `add_points_and_record(pool, referrer_id, 1, "referral_welcome_referrer", ...)` 로 포인트 지급. 이 트랜잭션 타입이 `_transactionLabel` switch에 없어 raw 영문 문자열 `"referral_welcome_referrer"`가 UI에 노출되는 버그. 아키텍처 에이전트가 발견.
+
+**Impact**: 사용자 대면 버그 수정 — 추천인의 포인트 내역에서 "추천인 웰컴 보상"으로 정상 표시.
+
+**Status**: IMPLEMENTED
+
+---

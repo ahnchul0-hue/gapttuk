@@ -324,7 +324,7 @@ pub async fn get_history(
         .await?
     };
 
-    let has_more = items.len() as i64 > effective_limit;
+    let has_more = items.len() > effective_limit as usize;
     let result: Vec<PointHistoryItem> = items.into_iter().take(effective_limit as usize).collect();
     Ok((result, has_more))
 }
