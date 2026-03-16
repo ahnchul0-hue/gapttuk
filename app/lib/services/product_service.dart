@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../config/api_endpoints.dart';
 import '../config/constants.dart';
+import '../models/monthly_price.dart';
 import '../models/price_history.dart';
 import '../models/product.dart';
 import 'api_client.dart';
@@ -94,6 +95,17 @@ class ProductService {
         await _api.dio.get(ApiEndpoints.productDailyPrices(productId));
     return (response.data['data'] as List)
         .map((e) => DailyPriceAggregate.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 월별 평균 가격 조회 (장기 추이).
+  Future<List<MonthlyPrice>> getMonthlyPrices(int productId, {int months = 24}) async {
+    final response = await _api.dio.get(
+      ApiEndpoints.productMonthlyPrices(productId),
+      queryParameters: {'months': months},
+    );
+    return (response.data['data'] as List)
+        .map((e) => MonthlyPrice.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

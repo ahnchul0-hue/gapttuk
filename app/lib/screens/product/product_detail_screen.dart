@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/monthly_price_chart.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/loading_skeleton.dart';
 
@@ -152,6 +153,25 @@ class ProductDetailScreen extends ConsumerWidget {
             SizedBox(
               height: 250,
               child: PriceChart(productId: productId),
+            ),
+            const SizedBox(height: 24),
+
+            // 장기 가격 추이 (월별)
+            Text('장기 가격 추이',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, _) {
+                final monthlyAsync = ref.watch(monthlyPricesProvider(productId));
+                return monthlyAsync.when(
+                  data: (prices) => MonthlyPriceChart(prices: prices),
+                  loading: () => const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (_, _) => const SizedBox.shrink(),
+                );
+              },
             ),
             // FAB와 겹치지 않도록 여백 추가
             const SizedBox(height: 80),
