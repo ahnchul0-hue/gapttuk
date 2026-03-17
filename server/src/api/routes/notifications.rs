@@ -43,8 +43,10 @@ async fn list_notifications(
         .cursor
         .as_deref()
         .map(|c| {
-            c.parse::<i64>()
-                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+            c.parse::<i64>().map_err(|e| {
+                tracing::debug!(cursor = c, error = %e, "Invalid cursor value in notifications");
+                AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
+            })
         })
         .transpose()?;
     let limit = params.effective_limit();

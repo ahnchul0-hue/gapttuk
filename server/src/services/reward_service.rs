@@ -53,9 +53,11 @@ pub async fn add_points_and_record(
     .execute(&mut **tx)
     .await?;
 
-    // 비즈니스 메트릭: 포인트 발행 추적
-    metrics::counter!("points_issued_total", "reason" => transaction_type.to_string())
-        .increment(amount as u64);
+    // 비즈니스 메트릭: 포인트 발행 추적 (amount는 validate_point_amount에서 양수 검증됨)
+    if let Ok(n) = u64::try_from(amount) {
+        metrics::counter!("points_issued_total", "reason" => transaction_type.to_string())
+            .increment(n);
+    }
 
     Ok(())
 }

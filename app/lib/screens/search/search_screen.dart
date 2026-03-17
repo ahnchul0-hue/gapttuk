@@ -82,7 +82,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           SnackBar(content: Text(friendlyErrorMessage(e))),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('SearchScreen._search: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),

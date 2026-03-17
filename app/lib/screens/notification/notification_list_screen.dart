@@ -75,7 +75,8 @@ class _NotificationListScreenState
           _isLoadingMore = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._loadNotifications: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);
@@ -100,8 +101,8 @@ class _NotificationListScreenState
           }
         });
       }
-    } catch (e) {
-      debugPrint('NotificationListScreen: markAsRead failed for ${notification.id} — $e');
+    } catch (e, st) {
+      debugPrint('NotificationListScreen: markAsRead failed for ${notification.id} — $e\n$st');
       // UX를 위해 UI는 읽음 상태 유지, 서버 동기화 실패는 무시
     }
   }
@@ -123,7 +124,8 @@ class _NotificationListScreenState
           const SnackBar(content: Text('모든 알림을 읽음 처리했습니다.')),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._markAllAsRead: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),
@@ -141,7 +143,8 @@ class _NotificationListScreenState
           _notifications.removeWhere((n) => n.id == notification.id);
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._deleteNotification: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),
@@ -158,8 +161,8 @@ class _NotificationListScreenState
     if (deepLink != null && deepLink.isNotEmpty) {
       try {
         context.go(deepLink);
-      } catch (e) {
-        debugPrint('NotificationListScreen: invalid deepLink "$deepLink" — $e');
+      } catch (e, st) {
+        debugPrint('NotificationListScreen: invalid deepLink "$deepLink" — $e\n$st');
       }
     }
   }

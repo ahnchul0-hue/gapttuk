@@ -324,9 +324,10 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   Widget build(BuildContext context) {
     final balance = _points?.balance ?? 0;
 
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return ListTile(
       onTap: () => context.push('/my/points'),
-      leading: const Icon(Icons.monetization_on_outlined, color: Colors.amber),
+      leading: Icon(Icons.monetization_on_outlined, color: appColors.warning),
       title: Text(
         '센트(¢) 잔액',
         style: Theme.of(context).textTheme.bodyLarge,
@@ -337,8 +338,7 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
               child: Text(
                 '로드 실패 (탭하여 재시도)',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          Theme.of(context).extension<AppColors>()!.error,
+                      color: appColors.error,
                     ),
               ),
             )
@@ -346,7 +346,7 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
               '$balance${AppConstants.rewardUnit}',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber[700],
+                    color: appColors.warning,
                   ),
             ),
       trailing: _loading

@@ -76,7 +76,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.go('/');
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('LoginScreen._login: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),

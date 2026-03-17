@@ -14,6 +14,7 @@ class PriceChart extends ConsumerWidget {
   const PriceChart({super.key, required this.productId});
 
   static const _dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+  static final _priceFormat = NumberFormat('#,###', 'ko_KR');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,8 +41,6 @@ class PriceChart extends ConsumerWidget {
           return const Center(child: Text('평균 가격 데이터가 없습니다'));
         }
 
-        final priceFormat = NumberFormat('#,###', 'ko_KR');
-
         return LineChart(
           LineChartData(
             gridData: const FlGridData(show: false),
@@ -51,7 +50,7 @@ class PriceChart extends ConsumerWidget {
                   showTitles: true,
                   reservedSize: 60,
                   getTitlesWidget: (value, meta) => Text(
-                    '₩${priceFormat.format(value.toInt())}',
+                    '₩${_priceFormat.format(value.toInt())}',
                     style: const TextStyle(fontSize: 10),
                   ),
                 ),
@@ -96,7 +95,7 @@ class PriceChart extends ConsumerWidget {
               touchTooltipData: LineTouchTooltipData(
                 getTooltipItems: (spots) => spots.map((spot) {
                   return LineTooltipItem(
-                    '₩${priceFormat.format(spot.y.toInt())}',
+                    '₩${_priceFormat.format(spot.y.toInt())}',
                     const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

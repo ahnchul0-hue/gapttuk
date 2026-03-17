@@ -63,7 +63,8 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   Future<void> _handleAlertAction(Future<void> Function() action) async {
     try {
       await action();
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AlertScreen._handleAlertAction: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(friendlyErrorMessage(e))),

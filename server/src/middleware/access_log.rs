@@ -89,7 +89,7 @@ pub async fn access_log(
     let response = next.run(req).await;
 
     let elapsed = start.elapsed();
-    let status_code = response.status().as_u16() as i16;
+    let status_code = i16::try_from(response.status().as_u16()).unwrap_or(-1);
     let elapsed_ms = elapsed.as_millis().min(i32::MAX as u128) as i32;
 
     // Prometheus 메트릭 — 정규화된 endpoint 사용 (카디널리티 폭발 방지)

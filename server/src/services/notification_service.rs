@@ -349,4 +349,10 @@ mod tests {
         let link = build_deep_link(&NotificationType::System, 0);
         assert_eq!(link, "gapttuk://my");
     }
+
+    #[test]
+    fn build_deep_link_event_contains_id() {
+        let link = build_deep_link(&NotificationType::Event, 5);
+        assert_eq!(link, "gapttuk://event/5");
+    }
 }

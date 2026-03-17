@@ -80,7 +80,8 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           context.go('/login');
         }
-      } catch (e) {
+      } catch (e, st) {
+        debugPrint('SettingsScreen._showDeleteAccountDialog: $e\n$st');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(friendlyErrorMessage(e))),

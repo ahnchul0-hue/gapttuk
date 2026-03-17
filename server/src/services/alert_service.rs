@@ -604,7 +604,9 @@ fn evaluate_condition(
         AlertType::NearLowest => {
             // 역대 최저가의 NEAR_LOWEST_THRESHOLD(105%) 이내
             lowest_price.is_some_and(|lowest| {
-                let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD) as i32;
+                let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD)
+                    .round()
+                    .clamp(0.0, i32::MAX as f64) as i32;
                 new_price <= threshold
             })
         }
@@ -626,7 +628,9 @@ fn format_alert_body(alert_type: &AlertType, new_price: i32, target_price: Optio
     match alert_type {
         AlertType::TargetPrice => {
             let target = target_price.map(format_price).unwrap_or_else(|| {
-                tracing::warn!("TargetPrice alert has no target_price — notification body will be malformed");
+                tracing::warn!(
+                    "TargetPrice alert has no target_price — notification body will be malformed"
+                );
                 String::new()
             });
             format!("현재가 {formatted}원 — 목표가 {target}원 이하로 떨어졌어요!")
@@ -766,6 +770,14 @@ mod tests {
         assert_eq!(format_price(999), "999");
         assert_eq!(format_price(1_000_000), "1,000,000");
         assert_eq!(format_price(10), "10");
+    }
+
+    #[test]
+    fn test_format_price_negative_preserved() {
+        // 음수는 실제 가격 데이터에 존재하지 않지만, char 역순 처리 방식 덕분에
+        // 부호가 올바르게 보존됨을 문서화한다 (회귀 방지)
+        assert_eq!(format_price(-1_000), "-1,000");
+        assert_eq!(format_price(-1_000_000), "-1,000,000");
     }
 
     // --- format_alert_title ---

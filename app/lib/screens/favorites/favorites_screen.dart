@@ -54,8 +54,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               final product =
                   await ref.read(productDetailProvider(id).future);
               products[id] = product;
-            } catch (e) {
-              debugPrint('FavoritesScreen: product $id load failed — $e');
+            } catch (e, st) {
+              debugPrint('FavoritesScreen: product $id load failed — $e\n$st');
               // 개별 상품 로드 실패 시 건너뜀 (로드된 상품만 표시)
             }
           }),
@@ -71,7 +71,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('FavoritesScreen._loadData: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);

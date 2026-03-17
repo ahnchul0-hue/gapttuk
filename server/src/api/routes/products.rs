@@ -112,8 +112,10 @@ async fn search(
         .cursor
         .as_deref()
         .map(|c| {
-            c.parse::<i64>()
-                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+            c.parse::<i64>().map_err(|e| {
+                tracing::debug!(cursor = c, error = %e, "Invalid cursor value in products list");
+                AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
+            })
         })
         .transpose()?;
 
@@ -193,8 +195,10 @@ async fn prices(
         .cursor
         .as_deref()
         .map(|c| {
-            c.parse::<i64>()
-                .map_err(|_| AppError::BadRequest("cursor가 유효하지 않습니다".to_string()))
+            c.parse::<i64>().map_err(|e| {
+                tracing::debug!(cursor = c, error = %e, "Invalid cursor value in price history");
+                AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
+            })
         })
         .transpose()?;
 

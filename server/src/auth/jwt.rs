@@ -39,9 +39,11 @@ pub struct TokenPair {
 pub fn encode_access_token(user_id: i64, config: &Config) -> Result<(String, u64), AppError> {
     let now = chrono::Utc::now().timestamp();
     let ttl = config.jwt_access_ttl_secs;
+    let ttl_i64 = i64::try_from(ttl)
+        .map_err(|_| AppError::Internal("JWT TTL out of i64 range".to_string()))?;
     let claims = Claims {
         sub: user_id,
-        exp: now + ttl as i64,
+        exp: now + ttl_i64,
         iat: now,
         aud: JWT_AUDIENCE.to_string(),
         iss: JWT_ISSUER.to_string(),
