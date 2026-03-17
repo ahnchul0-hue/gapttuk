@@ -1,3 +1,107 @@
+# NIGHT_06_RESULT — 2026-03-18 (Night-18)
+
+## Branch
+`auto/night-01-20260318_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+- 커밋 `0e45dc8`: Night-17 종합 분석 업데이트 (145줄 추가/96줄 교체)
+
+### Phase 1: 서브에이전트 3대 병렬 심층 분석
+
+| 에이전트 | 역할 | 발견 |
+|----------|------|------|
+| `feature-dev:code-explorer` #1 | 서버 코드 분석 | CRIT-1 + HIGH-6 + MED-5 + LOW-3 |
+| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | HIGH-8 + MED-5 + LOW-2 |
+| `feature-dev:code-architect` | 아키텍처/테스트 갭 분석 | HIGH-2 + MED-6 + LOW-2 |
+
+오탐 필터링 후 **Night-18 실행 대상**: 서버 7건 + Flutter 9건 + 테스트 2건 = **18건**
+
+### Phase 2-A: 서버(Rust) 타입 안전성 + 에러 로깅 개선 (7건 + 테스트 2건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/auth/jwt.rs` | `ttl as i64` → `i64::try_from()` (u64 오버플로 방어) |
+| `server/src/services/alert_service.rs` | NearLowest threshold `as i32` → `.round().clamp()` |
+| `server/src/services/reward_service.rs` | `amount as u64` → `u64::try_from()` (metrics counter 안전 변환) |
+| `server/src/crawlers/stats.rs` | `drop * 100` → `.saturating_mul(100)` (오버플로 방어) |
+| `server/src/middleware/access_log.rs` | `u16 as i16` → `i16::try_from().unwrap_or(-1)` |
+| `server/src/api/routes/products.rs` | cursor parse `map_err(|_|)` → `tracing::debug!` 로깅 (2곳) |
+| `server/src/api/routes/notifications.rs` | cursor parse `map_err(|_|)` → `tracing::debug!` 로깅 |
+| `server/src/services/notification_service.rs` | `build_deep_link` Event variant 테스트 추가 |
+| `server/src/services/alert_service.rs` | `format_price` 음수 처리 동작 문서화 테스트 추가 |
+
+### Phase 2-B: Flutter(Dart) 관측성 + 테마 일관성 + 성능 개선 (9건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/lib/screens/auth/login_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint |
+| `app/lib/screens/favorites/favorites_screen.dart` | `catch(e)` → `catch(e, st)` (2건) |
+| `app/lib/screens/notification/notification_list_screen.dart` | `catch(e)` → `catch(e, st)` (5건) |
+| `app/lib/screens/my/settings_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint |
+| `app/lib/screens/alert/alert_screen.dart` | `catch(e)` → `catch(e, st)` (공통 래퍼 — 6개 mutation 커버) |
+| `app/lib/screens/onboarding/onboarding_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint |
+| `app/lib/screens/search/search_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint |
+| `app/lib/widgets/price_chart.dart` | `NumberFormat` build()마다 생성 → `static final _priceFormat` |
+| `app/lib/screens/my/my_page_screen.dart` | `Colors.amber` → `AppColors.warning` (다크모드 테마 일관성) |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **193/193 passed** (+2 대비 이전 191) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (19파일, +126/-70)
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `server/src/auth/jwt.rs` | ttl i64::try_from 안전 변환 |
+| `server/src/services/alert_service.rs` | threshold clamp + 테스트 2건 |
+| `server/src/services/reward_service.rs` | amount u64::try_from |
+| `server/src/crawlers/stats.rs` | saturating_mul |
+| `server/src/middleware/access_log.rs` | status i16::try_from |
+| `server/src/api/routes/products.rs` | cursor debug 로깅 2건 |
+| `server/src/api/routes/notifications.rs` | cursor debug 로깅 |
+| `server/src/services/notification_service.rs` | Event 테스트 |
+| `app/lib/screens/auth/login_screen.dart` | catch(e, st) |
+| `app/lib/screens/favorites/favorites_screen.dart` | catch(e, st) 2건 |
+| `app/lib/screens/notification/notification_list_screen.dart` | catch(e, st) 5건 |
+| `app/lib/screens/my/settings_screen.dart` | catch(e, st) |
+| `app/lib/screens/alert/alert_screen.dart` | catch(e, st) |
+| `app/lib/screens/onboarding/onboarding_screen.dart` | catch(e, st) |
+| `app/lib/screens/search/search_screen.dart` | catch(e, st) |
+| `app/lib/widgets/price_chart.dart` | static _priceFormat |
+| `app/lib/screens/my/my_page_screen.dart` | AppColors.warning |
+
+---
+
+## Night-18 스킵된 항목 (사용자 결정 대기)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| CRIT-2: upsert_user referral_code TOCTOU | CRITICAL | DB retry 루프 설계 필요 |
+| C-2: router.dart TokenStorage 인스턴스 | HIGH | 전역 상태 설계 변경 필요 |
+| UserDto/MeResponse 통합 | HIGH | 리팩토링 범위 크고 테스트 영향 있음 |
+| Phase 2-C: code-simplifier | MEDIUM | 3회 연속 미착수 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-42까지 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-17 (Night-17)
 
 ## Branch
