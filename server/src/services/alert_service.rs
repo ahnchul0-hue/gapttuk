@@ -44,17 +44,15 @@ impl AlertTypeInput {
     }
 }
 
-// ── CRUD ─────────────────────────────────────────────────
+// ── 검증 순수 함수 ─────────────────────────────────────────
 
-/// 가격 알림 생성.
-pub async fn create_price_alert(
-    pool: &PgPool,
-    user_id: i64,
-    req: &CreatePriceAlertRequest,
-) -> Result<PriceAlert, AppError> {
-    // TargetPrice는 target_price 필수 + 양수 검증
-    if matches!(req.alert_type, AlertTypeInput::TargetPrice) {
-        match req.target_price {
+/// TargetPrice 알림 유형의 target_price 필수/양수 검증.
+pub fn validate_target_price(
+    alert_type: &AlertTypeInput,
+    target_price: Option<i32>,
+) -> Result<(), AppError> {
+    if matches!(alert_type, AlertTypeInput::TargetPrice) {
+        match target_price {
             None => {
                 return Err(AppError::BadRequest(
                     "target_price는 target_price 알림 유형에 필수입니다".to_string(),
@@ -68,6 +66,33 @@ pub async fn create_price_alert(
             _ => {}
         }
     }
+    Ok(())
+}
+
+/// 키워드 알림의 키워드 trim + 길이 검증. 정제된 키워드 반환.
+pub fn validate_keyword(raw: &str) -> Result<String, AppError> {
+    let trimmed = raw.trim().to_string();
+    if trimmed.is_empty() {
+        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
+    }
+    if trimmed.chars().count() > 100 {
+        return Err(AppError::BadRequest(
+            "키워드는 100자 이하로 입력해주세요".to_string(),
+        ));
+    }
+    Ok(trimmed)
+}
+
+// ── CRUD ─────────────────────────────────────────────────
+
+/// 가격 알림 생성.
+pub async fn create_price_alert(
+    pool: &PgPool,
+    user_id: i64,
+    req: &CreatePriceAlertRequest,
+) -> Result<PriceAlert, AppError> {
+    // TargetPrice는 target_price 필수 + 양수 검증
+    validate_target_price(&req.alert_type, req.target_price)?;
 
     // 상품 존재 확인
     let exists =
@@ -290,15 +315,7 @@ pub async fn create_keyword_alert(
     keyword: String,
 ) -> Result<KeywordAlert, AppError> {
     // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
-    let keyword = keyword.trim().to_string();
-    if keyword.is_empty() {
-        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
-    }
-    if keyword.chars().count() > 100 {
-        return Err(AppError::BadRequest(
-            "키워드는 100자 이하로 입력해주세요".to_string(),
-        ));
-    }
+    let keyword = validate_keyword(&keyword)?;
 
     // 전체 알림 개수 제한 확인
     let count = count_all_user_alerts(pool, user_id).await?;
@@ -417,15 +434,7 @@ pub async fn update_keyword_alert(
     alert_id: i64,
     keyword: &str,
 ) -> Result<(), AppError> {
-    let keyword = keyword.trim();
-    if keyword.is_empty() {
-        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
-    }
-    if keyword.chars().count() > 100 {
-        return Err(AppError::BadRequest(
-            "키워드는 100자 이하여야 합니다".to_string(),
-        ));
-    }
+    let keyword = validate_keyword(keyword)?;
     let result = sqlx::query(
         "UPDATE keyword_alerts SET keyword = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3",
     )
@@ -778,6 +787,63 @@ mod tests {
         // 부호가 올바르게 보존됨을 문서화한다 (회귀 방지)
         assert_eq!(format_price(-1_000), "-1,000");
         assert_eq!(format_price(-1_000_000), "-1,000,000");
+    }
+
+    // --- validate_target_price ---
+    #[test]
+    fn test_validate_target_price_required_for_target_type() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, None).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_zero_rejected() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(0)).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_negative_rejected() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(-1)).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_positive_ok() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(1)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_target_price_not_required_for_other_types() {
+        assert!(validate_target_price(&AlertTypeInput::AllTimeLow, None).is_ok());
+        assert!(validate_target_price(&AlertTypeInput::BelowAverage, None).is_ok());
+        assert!(validate_target_price(&AlertTypeInput::NearLowest, None).is_ok());
+    }
+
+    // --- validate_keyword ---
+    #[test]
+    fn test_validate_keyword_empty_rejected() {
+        assert!(validate_keyword("").is_err());
+    }
+
+    #[test]
+    fn test_validate_keyword_whitespace_only_rejected() {
+        assert!(validate_keyword("   ").is_err());
+    }
+
+    #[test]
+    fn test_validate_keyword_trim_applied() {
+        let result = validate_keyword("  맥북  ").unwrap();
+        assert_eq!(result, "맥북");
+    }
+
+    #[test]
+    fn test_validate_keyword_100_chars_ok() {
+        let keyword = "가".repeat(100);
+        assert!(validate_keyword(&keyword).is_ok());
+    }
+
+    #[test]
+    fn test_validate_keyword_101_chars_rejected() {
+        let keyword = "가".repeat(101);
+        assert!(validate_keyword(&keyword).is_err());
     }
 
     // --- format_alert_title ---

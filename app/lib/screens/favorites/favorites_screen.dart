@@ -87,7 +87,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   String _alertTypeBadge(String type) {
     switch (type) {
       case 'target_price':
-        return '목표가';
+        return '목표 가격';
       case 'below_average':
         return '평균 이하';
       case 'near_lowest':

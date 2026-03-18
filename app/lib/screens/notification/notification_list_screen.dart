@@ -286,7 +286,7 @@ class _NotificationTile extends StatelessWidget {
     required this.onDismissed,
   });
 
-  String _formatTime(DateTime? dateTime) {
+  static String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return '';
     final now = DateTime.now();
     final diff = now.difference(dateTime);

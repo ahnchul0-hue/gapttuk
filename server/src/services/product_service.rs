@@ -234,6 +234,7 @@ pub async fn search_products(
 /// URL로 상품 추가 (placeholder 등록 — 실제 크롤링은 M1-6)
 ///
 /// `INSERT ON CONFLICT DO NOTHING`으로 TOCTOU 레이스 컨디션 방지.
+#[tracing::instrument(skip(pool, cache))]
 pub async fn add_product_by_url(
     pool: &PgPool,
     cache: &AppCache,

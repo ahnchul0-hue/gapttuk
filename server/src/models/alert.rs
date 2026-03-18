@@ -4,6 +4,7 @@ use serde::Serialize;
 /// 가격 알림 유형
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, sqlx::Type)]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum AlertType {
     TargetPrice,
     BelowAverage,

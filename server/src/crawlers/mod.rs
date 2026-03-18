@@ -272,6 +272,7 @@ impl CrawlerService {
 
 /// 단일 상품 스크래핑 + DB 갱신 + 알림 평가.
 /// 가격 변동이 있으면 `true`, 없으면 `false` 반환.
+#[tracing::instrument(skip(pool, cache, push, client, abort_flag), fields(product_id))]
 async fn scrape_and_update(
     pool: &sqlx::PgPool,
     cache: &AppCache,

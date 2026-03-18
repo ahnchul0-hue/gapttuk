@@ -35,7 +35,7 @@ void main() {
               {
                 'id': 1,
                 'user_id': 10,
-                'notification_type': 'price_drop',
+                'notification_type': 'price_alert',
                 'title': '가격 하락!',
                 'body': '에어팟 프로가 10% 하락했습니다.',
                 'is_read': false,
@@ -43,7 +43,7 @@ void main() {
               {
                 'id': 2,
                 'user_id': 10,
-                'notification_type': 'all_time_low',
+                'notification_type': 'price_alert',
                 'title': '역대 최저가!',
                 'body': '갤럭시 버즈가 역대 최저가입니다.',
                 'is_read': true,

@@ -221,7 +221,7 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         add_points_and_record(
             &mut tx,
             user_id,
-            reward as i32,
+            i32::from(reward),
             "daily_checkin",
             "일일 출석 룰렛 보상",
             None,

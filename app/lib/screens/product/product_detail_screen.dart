@@ -231,10 +231,12 @@ class ProductDetailScreen extends ConsumerWidget {
                       final parsed = int.tryParse(
                           priceController.text.replaceAll(',', ''));
                       if (parsed == null || parsed <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('유효한 목표 가격을 입력해 주세요.')),
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('유효한 목표 가격을 입력해 주세요.')),
+                          );
+                        }
                         return;
                       }
                     }

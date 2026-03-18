@@ -7,7 +7,7 @@ void main() {
       final json = {
         'id': 1,
         'user_id': 10,
-        'notification_type': 'price_drop',
+        'notification_type': 'price_alert',
         'reference_id': 100,
         'reference_type': 'price_alert',
         'title': '가격 하락!',
@@ -21,7 +21,7 @@ void main() {
       final notif = AppNotification.fromJson(json);
 
       expect(notif.id, 1);
-      expect(notif.notificationType, 'price_drop');
+      expect(notif.notificationType, 'price_alert');
       expect(notif.title, '가격 하락!');
       expect(notif.body, contains('에어팟'));
       expect(notif.deepLink, 'gapttuk://product/100');
@@ -55,7 +55,7 @@ void main() {
       final json = {
         'id': 3,
         'user_id': 1,
-        'notification_type': 'price_drop',
+        'notification_type': 'price_alert',
         'title': '가격 변동',
         'body': '가격이 변동되었습니다.',
         'is_read': true,
