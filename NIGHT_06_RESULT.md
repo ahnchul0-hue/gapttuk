@@ -1,3 +1,104 @@
+# NIGHT_06_RESULT — 2026-03-19 (Night-19)
+
+## Branch
+`auto/night-01-20260319_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+- 커밋 `a861272`: Night-18 종합 분석 업데이트
+
+### Phase 1: 서브에이전트 3대 병렬 심층 분석
+
+| 에이전트 | 역할 | 발견 |
+|----------|------|------|
+| `feature-dev:code-explorer` #1 | 서버 코드 분석 | MED-5 + LOW-5 |
+| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | MED-6 + LOW-9 |
+| `feature-dev:code-architect` | 아키텍처/API 계약/테스트 갭 | HIGH-3 + MED-4 + LOW-2 |
+
+오탐 필터링 후 **Night-19 실행 대상**: 서버 7건 + Flutter 7건 = **14건**
+
+### Phase 2-A: 서버(Rust) API 계약 + 타입 안전성 + 관측성 (7건 + 테스트 10건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/models/notification.rs` | `NotificationType`에 `#[serde(rename_all = "snake_case")]` 추가 |
+| `server/src/models/alert.rs` | `AlertType`에 `#[serde(rename_all = "snake_case")]` 추가 |
+| `server/src/services/alert_service.rs` | `validate_target_price` 순수함수 추출 + 테스트 5건 |
+| `server/src/services/alert_service.rs` | `validate_keyword` 순수함수 추출 (DRY) + 테스트 5건 |
+| `server/src/services/ai_prediction_service.rs` | `buy_timing_score.clamp(0, 100)` 범위 보장 |
+| `server/src/services/reward_service.rs` | `reward as i32` → `i32::from(reward)` 명시적 변환 |
+| `server/src/services/product_service.rs` | `add_product_by_url`에 `#[tracing::instrument]` 추가 |
+| `server/src/crawlers/mod.rs` | `scrape_and_update`에 `#[tracing::instrument]` 추가 |
+
+### Phase 2-B: Flutter(Dart) API 계약 + 관측성 + 버그수정 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/test/models/notification_test.dart` | `'price_drop'` → `'price_alert'` (API 계약 정합, 3개소) |
+| `app/test/services/notification_service_test.dart` | `'price_drop'`/`'all_time_low'` → `'price_alert'` (2개소) |
+| `app/lib/services/push_service.dart` | `catch(e)` → `catch(e, st)` + stacktrace 로깅 |
+| `app/lib/config/router.dart` | `TokenStorage()` 매 리다이렉트마다 생성 → 파일 레벨 싱글톤 |
+| `app/lib/screens/notification/notification_list_screen.dart` | `_formatTime` 인스턴스 메서드 → `static` |
+| `app/lib/screens/product/product_detail_screen.dart` | `StatefulBuilder` 내 `mounted` 가드 추가 |
+| `app/lib/screens/search/search_screen.dart` | `on DioException catch (e)` → `catch (e, st)` |
+| `app/lib/providers/auth_provider.dart` | `on DioException catch (e)` → `catch (e, st)` |
+| `app/lib/screens/favorites/favorites_screen.dart` | `'목표가'` → `'목표 가격'` (alert_screen 레이블 통일) |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **203/203 passed** (+10 대비 이전 193) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (16파일, +123/-48)
+
+| 파일 | 핵심 내용 |
+|------|-----------|
+| `server/src/models/notification.rs` | serde rename_all 추가 |
+| `server/src/models/alert.rs` | serde rename_all 추가 |
+| `server/src/services/alert_service.rs` | validate_target_price + validate_keyword 추출 + 테스트 10건 |
+| `server/src/services/ai_prediction_service.rs` | score clamp |
+| `server/src/services/reward_service.rs` | i32::from 명시적 변환 |
+| `server/src/services/product_service.rs` | tracing::instrument |
+| `server/src/crawlers/mod.rs` | tracing::instrument |
+| `app/test/models/notification_test.dart` | API 계약 fixture 수정 |
+| `app/test/services/notification_service_test.dart` | API 계약 fixture 수정 |
+| `app/lib/services/push_service.dart` | catch(e, st) |
+| `app/lib/config/router.dart` | TokenStorage 싱글톤 |
+| `app/lib/screens/notification/notification_list_screen.dart` | _formatTime static |
+| `app/lib/screens/product/product_detail_screen.dart` | mounted 가드 |
+| `app/lib/screens/search/search_screen.dart` | DioException catch(e, st) |
+| `app/lib/providers/auth_provider.dart` | DioException catch(e, st) |
+| `app/lib/screens/favorites/favorites_screen.dart` | 레이블 통일 |
+
+---
+
+## Night-19 스킵된 항목 (사용자 결정 대기)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| `notification_service.rs` has_more 계약 변경 | MEDIUM | API 계약 변경 범위 큼 |
+| `showErrorSnackBar` 12개소 통합 | MEDIUM | Night-17부터 3회 스킵 이력, 14파일 변경 |
+| `PointHistoryItem.createdAt` String → DateTime | MEDIUM | 기존 동작 문제 없음, 리팩토링 범위 큼 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-42까지 참조
+
+---
+
 # NIGHT_06_RESULT — 2026-03-18 (Night-18)
 
 ## Branch
