@@ -1,3 +1,103 @@
+# NIGHT_06_RESULT — 2026-03-20 (Night-20)
+
+## Branch
+`auto/night-01-20260320_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+- 커밋 `a1f3183`: Night-19 종합 분석 업데이트
+
+### Phase 1: 서브에이전트 3대 병렬 심층 분석
+
+| 에이전트 | 역할 | 발견 |
+|----------|------|------|
+| `feature-dev:code-explorer` #1 | 서버 코드 분석 | HIGH-4 + MED-7 + LOW-6 |
+| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | MED-6 + LOW-10 |
+| `feature-dev:code-architect` | 아키텍처/API 계약/코드간결화 | CRITICAL-1 + HIGH-3 + MED-5 |
+
+오탐 필터링 후 **Night-20 실행 대상**: 서버 7건 + Flutter 7건 = **14건**
+
+**핵심 발견**: `PriceTrend` serde rename_all 누락으로 JSON `"Falling"` vs Flutter `'falling'` 비교 영구 false → 가격 트렌드 UI 완전 무동작 버그 (CRITICAL)
+
+### Phase 2-A: 서버(Rust) API 정합성 + 타입 안전성 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/models/product.rs` | `PriceTrend`에 `#[serde(rename_all = "snake_case")]` 추가 — 가격 트렌드 UI 버그 수정 |
+| `server/src/models/user.rs` | `Platform`에 `#[serde(rename_all = "snake_case")]` 추가 — API 계약 정합 |
+| `server/src/services/alert_service.rs` | `i32::MAX as f64 as i32` → `i32::try_from(... as i64).unwrap_or(i32::MAX)` 안전 변환 |
+| `server/src/services/ai_prediction_service.rs` | `i16 as i32` → `i32::from()` 명시적 widening |
+| `server/src/crawlers/mod.rs` | `usize as u64` 3곳 → `u64::try_from().unwrap_or(u64::MAX)` |
+| `server/src/lib.rs` | `as_millis() as u64` → `u64::try_from()` u128→u64 안전 변환 |
+| `server/src/api/pagination.rs` + 라우터 3개 | `parse_cursor` 헬퍼 추출 → products/notifications 3곳 DRY (-18줄) |
+
+### Phase 2-B: Flutter(Dart) Phase 2-C 코드간결화 + 버그수정 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/lib/screens/alert/alert_screen.dart` | `showErrorSnackBar` 통합 + switch 표현식 변환 |
+| `app/lib/screens/auth/login_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/home/home_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/my/my_page_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/my/settings_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/notification/notification_list_screen.dart` | `showErrorSnackBar` 통합 (2곳) |
+| `app/lib/screens/onboarding/onboarding_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/product/product_detail_screen.dart` | `showErrorSnackBar` 통합 |
+| `app/lib/screens/search/search_screen.dart` | DioException+catch 두 블록 통합 + `showErrorSnackBar` |
+| `app/lib/services/api_client.dart` | `catch(e)` → `catch(e, st)` stacktrace 보존 |
+| `app/lib/services/reward_service.dart` | `PointHistoryItem.createdAt` String → DateTime |
+| `app/lib/screens/my/point_history_screen.dart` | `_formatDate` static + DateTime 직접 수신 |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **203/203 passed** (변화 없음) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (21파일, +64/-130)
+
+총 -66줄 순감소 (코드 간결화 효과)
+
+| 주요 변화 | 규모 |
+|-----------|------|
+| `showErrorSnackBar` 통합 9개 화면 11개소 | -34줄 |
+| `parse_cursor` 헬퍼 추출 3개 라우터 | -18줄 |
+| `search_screen` DioException catch 통합 | -7줄 |
+| `PriceTrend`/`Platform` serde rename_all | +2줄 (버그 수정) |
+| `_formatDate` static + DateTime | -7줄 |
+| switch 표현식 변환 | -8줄 |
+
+---
+
+## Night-20 스킵된 항목 (사용자 결정 대기)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| `count_all_user_alerts` TOCTOU (50개 한도) | HIGH | DB 트랜잭션 잠금 설계 필요 |
+| `upsert_user` referral_code TOCTOU (CRIT-2 기존) | CRITICAL | DB retry 루프 설계 필요 |
+| `refresh_product_stats` 중복 구현 제거 | MEDIUM | 통합 테스트 환경 없이 위험 |
+| `AdvisoryLockGuard` block_in_place 런타임 문제 | MEDIUM | 테스트 환경에만 영향 |
+| M-2: 로그아웃 다이얼로그 중복 (my_page+settings) | MEDIUM | 새 위젯 파일 생성 필요 |
+| M-3: ErrorStateView 위젯 추출 | MEDIUM | 새 파일 생성 + 3개 화면 변경 |
+
+---
+
+## 결정 사항
+→ [DECISION_LOG.md](DECISION_LOG.md) D-42까지 참조 (Night-20 신규 DECISION 없음)
+
+---
+
 # NIGHT_06_RESULT — 2026-03-19 (Night-19)
 
 ## Branch
