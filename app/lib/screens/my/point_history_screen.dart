@@ -55,13 +55,8 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
 
   static final _dateFormat = DateFormat('yyyy.MM.dd');
 
-  String _formatDate(String isoDate) {
-    try {
-      return _dateFormat.format(DateTime.parse(isoDate).toLocal());
-    } catch (_) {
-      return isoDate.length >= 10 ? isoDate.substring(0, 10) : isoDate;
-    }
-  }
+  static String _formatDate(DateTime dt) =>
+      _dateFormat.format(dt.toLocal());
 
   String _transactionLabel(String type) {
     return switch (type) {

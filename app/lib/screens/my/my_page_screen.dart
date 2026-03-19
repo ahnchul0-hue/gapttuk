@@ -310,11 +310,7 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
       });
     } catch (e, st) {
       debugPrint('_CentsBalanceTile._doCheckin: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      if (mounted) showErrorSnackBar(context, e);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

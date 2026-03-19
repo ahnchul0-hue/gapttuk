@@ -5,6 +5,22 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::error::AppError;
+
+/// 문자열 커서를 `i64`로 파싱한다.
+///
+/// 파싱 실패 시 `tracing::debug`로 기록하고 `AppError::BadRequest`를 반환한다.
+/// `location`은 디버그 로그에서 어느 엔드포인트인지 식별하는 데 사용된다.
+pub fn parse_cursor(raw: Option<&str>, location: &str) -> Result<Option<i64>, AppError> {
+    raw.map(|c| {
+        c.parse::<i64>().map_err(|e| {
+            tracing::debug!(cursor = c, error = %e, "Invalid cursor value in {location}");
+            AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
+        })
+    })
+    .transpose()
+}
+
 /// 커서 기반 페이지네이션 쿼리 파라미터.
 /// 핸들러에서 `Query<PaginationParams>`로 추출한다.
 #[derive(Debug, Deserialize)]

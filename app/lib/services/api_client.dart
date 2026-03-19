@@ -96,7 +96,8 @@ class _AuthInterceptor extends Interceptor {
           try {
             final response = await _client.dio.fetch(err.requestOptions);
             return handler.resolve(response);
-          } on DioException catch (e) {
+          } on DioException catch (e, st) {
+            debugPrint('_AuthInterceptor: retry request failed — $e\n$st');
             return handler.next(e);
           }
         }

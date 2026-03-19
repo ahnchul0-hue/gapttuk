@@ -258,11 +258,7 @@ class ProductDetailScreen extends ConsumerWidget {
                       }
                     } catch (e, st) {
                       debugPrint('ProductDetailScreen._showAlertSetup: $e\n$st');
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(friendlyErrorMessage(e))),
-                        );
-                      }
+                      if (context.mounted) showErrorSnackBar(context, e);
                     }
                   },
                   child: const Text('알림 설정'),

@@ -613,9 +613,12 @@ fn evaluate_condition(
         AlertType::NearLowest => {
             // 역대 최저가의 NEAR_LOWEST_THRESHOLD(105%) 이내
             lowest_price.is_some_and(|lowest| {
-                let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD)
-                    .round()
-                    .clamp(0.0, i32::MAX as f64) as i32;
+                let threshold = i32::try_from(
+                    (f64::from(lowest) * NEAR_LOWEST_THRESHOLD)
+                        .round()
+                        .clamp(0.0, f64::from(i32::MAX)) as i64,
+                )
+                .unwrap_or(i32::MAX);
                 new_price <= threshold
             })
         }

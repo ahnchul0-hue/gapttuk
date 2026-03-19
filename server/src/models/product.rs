@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// 가격 추세
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum PriceTrend {
     Rising,

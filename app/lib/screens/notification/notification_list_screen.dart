@@ -126,11 +126,7 @@ class _NotificationListScreenState
       }
     } catch (e, st) {
       debugPrint('NotificationListScreen._markAllAsRead: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 
@@ -146,9 +142,7 @@ class _NotificationListScreenState
     } catch (e, st) {
       debugPrint('NotificationListScreen._deleteNotification: $e\n$st');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
+        showErrorSnackBar(context, e);
         // 스와이프 복원을 위해 다시 로드
         _loadNotifications(refresh: true);
       }

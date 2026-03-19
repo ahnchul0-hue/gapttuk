@@ -86,7 +86,7 @@ class PointHistoryItem {
   final int amount;
   final String transactionType;
   final String? description;
-  final String createdAt;
+  final DateTime createdAt;
 
   const PointHistoryItem({
     required this.id,
@@ -102,6 +102,6 @@ class PointHistoryItem {
         amount: json['amount'] as int,
         transactionType: json['transaction_type'] as String,
         description: json['description'] as String?,
-        createdAt: json['created_at'] as String,
+        createdAt: DateTime.parse(json['created_at'] as String),
       );
 }

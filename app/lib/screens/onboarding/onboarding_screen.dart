@@ -104,11 +104,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } catch (e, st) {
       // 동의 전송 실패해도 앱 사용은 가능 (다음 로그인 시 재시도)
       debugPrint('OnboardingScreen._finish: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      if (mounted) showErrorSnackBar(context, e);
     }
     if (mounted) context.go('/');
   }

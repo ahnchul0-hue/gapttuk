@@ -75,21 +75,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _hasMore = result.hasMore;
         });
       }
-    } on DioException catch (e, st) {
-      if (e.type == DioExceptionType.cancel) return;
-      debugPrint('SearchScreen._search DioException: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
     } catch (e, st) {
+      if (e is DioException && e.type == DioExceptionType.cancel) return;
       debugPrint('SearchScreen._search: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      if (mounted) showErrorSnackBar(context, e);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

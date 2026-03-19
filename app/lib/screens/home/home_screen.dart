@@ -141,9 +141,7 @@ class HomeScreen extends ConsumerWidget {
                           debugPrint('HomeScreen._showAddByUrlDialog: $e\n$st');
                           if (context.mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(friendlyErrorMessage(e))),
-                            );
+                            showErrorSnackBar(context, e);
                           }
                         }
                       },

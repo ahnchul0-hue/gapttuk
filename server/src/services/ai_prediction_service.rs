@@ -57,7 +57,7 @@ async fn generate_prediction(pool: &PgPool, product_id: i64) -> Result<AiPredict
     .await?
     .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
 
-    let score = row.buy_timing_score.unwrap_or(50).clamp(0, 100) as i32;
+    let score = i32::from(row.buy_timing_score.unwrap_or(50).clamp(0, 100));
     let trend = row.price_trend.as_deref().unwrap_or("stable");
     let days = row.days_since_lowest.unwrap_or(999);
     let current_price = row.current_price.unwrap_or(0);

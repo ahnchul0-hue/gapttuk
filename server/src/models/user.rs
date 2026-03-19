@@ -13,6 +13,7 @@ pub enum AuthProvider {
 
 /// 디바이스 플랫폼
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum Platform {
     Android,

@@ -238,11 +238,11 @@ impl CrawlerService {
         // Prometheus 메트릭 기록
         metrics::histogram!("crawler_cycle_duration_seconds").record(stats.duration_secs);
         metrics::counter!("crawler_products_total", "status" => "success")
-            .increment(stats.success as u64);
+            .increment(u64::try_from(stats.success).unwrap_or(u64::MAX));
         metrics::counter!("crawler_products_total", "status" => "failed")
-            .increment(stats.failed as u64);
+            .increment(u64::try_from(stats.failed).unwrap_or(u64::MAX));
         metrics::counter!("crawler_products_total", "status" => "skipped")
-            .increment(stats.skipped_no_change as u64);
+            .increment(u64::try_from(stats.skipped_no_change).unwrap_or(u64::MAX));
         metrics::gauge!("crawler_products_tracked").set(stats.total as f64);
 
         tracing::info!(

@@ -65,11 +65,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
       await action();
     } catch (e, st) {
       debugPrint('AlertScreen._handleAlertAction: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 
@@ -273,33 +269,20 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
 
   // ─── 헬퍼 ─────────────────────────────────────────────────────────────────
 
-  String _alertTypeLabel(String type) {
-    switch (type) {
-      case 'target_price':
-        return '목표 가격';
-      case 'below_average':
-        return '평균 이하';
-      case 'near_lowest':
-        return '최저가 근접';
-      case 'all_time_low':
-        return '최저가 갱신';
-      default:
-        return type;
-    }
-  }
+  String _alertTypeLabel(String type) => switch (type) {
+        'target_price' => '목표 가격',
+        'below_average' => '평균 이하',
+        'near_lowest' => '최저가 근접',
+        'all_time_low' => '최저가 갱신',
+        _ => type,
+      };
 
-  String _categoryConditionLabel(String condition) {
-    switch (condition) {
-      case 'any_drop':
-        return '어떤 하락이든';
-      case 'threshold':
-        return '특정 비율 할인';
-      case 'below_max':
-        return '최대가 이하';
-      default:
-        return condition;
-    }
-  }
+  String _categoryConditionLabel(String condition) => switch (condition) {
+        'any_drop' => '어떤 하락이든',
+        'threshold' => '특정 비율 할인',
+        'below_max' => '최대가 이하',
+        _ => condition,
+      };
 
   // ─── 빌드 ─────────────────────────────────────────────────────────────────
 

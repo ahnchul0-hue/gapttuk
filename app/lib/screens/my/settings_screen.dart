@@ -82,11 +82,7 @@ class SettingsScreen extends ConsumerWidget {
         }
       } catch (e, st) {
         debugPrint('SettingsScreen._showDeleteAccountDialog: $e\n$st');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(friendlyErrorMessage(e))),
-          );
-        }
+        if (context.mounted) showErrorSnackBar(context, e);
       }
     }
   }

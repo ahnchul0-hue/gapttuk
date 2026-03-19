@@ -6,7 +6,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
-use crate::api::pagination::PaginatedResponse;
+use crate::api::pagination::{parse_cursor, PaginatedResponse};
 use crate::api::{ApiResponse, Created};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
@@ -108,16 +108,7 @@ async fn search(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params
-        .cursor
-        .as_deref()
-        .map(|c| {
-            c.parse::<i64>().map_err(|e| {
-                tracing::debug!(cursor = c, error = %e, "Invalid cursor value in products list");
-                AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
-            })
-        })
-        .transpose()?;
+    let cursor = parse_cursor(params.cursor.as_deref(), "products list")?;
 
     // 필터 검증
     if let Some(ref f) = params.filter {
@@ -191,16 +182,7 @@ async fn prices(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params
-        .cursor
-        .as_deref()
-        .map(|c| {
-            c.parse::<i64>().map_err(|e| {
-                tracing::debug!(cursor = c, error = %e, "Invalid cursor value in price history");
-                AppError::BadRequest("cursor가 유효하지 않습니다".to_string())
-            })
-        })
-        .transpose()?;
+    let cursor = parse_cursor(params.cursor.as_deref(), "price history")?;
 
     let items =
         product_service::get_price_history(&state.pool, id, params.from, params.to, cursor, limit)
