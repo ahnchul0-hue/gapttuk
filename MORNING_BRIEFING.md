@@ -1,16 +1,16 @@
-# MORNING BRIEFING — 2026-03-18 (Night-13 ~ Night-18 종합 분석)
+# MORNING BRIEFING — 2026-03-19 (Night-13 ~ Night-19 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-18 (2026-03-12 ~ 2026-03-18)
-> **현재 브랜치**: `auto/night-01-20260318_0100` (main + 10 commits, clean)
+> **분석 대상**: Night-13 ~ Night-19 (2026-03-12 ~ 2026-03-19)
+> **현재 브랜치**: `auto/night-01-20260319_0100` (main + 13 commits, clean)
 > **생성**: Opus 4.6 종합 분석
-> **이전 브리핑**: 2026-03-17 (Night-17 기준)
-> **신규 변경**: Night-18 타입 안전성 + Flutter 관측성/테마 개선 (17건, +2 테스트)
+> **이전 브리핑**: 2026-03-18 (Night-18 기준)
+> **신규 변경**: Night-19 API 계약 정합 + 순수함수 추출 + 타입 안전성 (14건, +10 테스트)
 
 ---
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-18 세션별 전략
+### 1.1 Night-13 ~ Night-19 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -19,7 +19,8 @@
 | 15 | 03-15 | 잔여 이슈 소진 | D-34~D-35: trailing slash 정리, build_runner 보류 | `5b9f5b9` |
 | 16 | 03-16 | 심층 분석 + 로깅 보강 | D-36~D-40: MCP 스킵, 서버+Flutter 균형, E2E 이연 | `b57981d` |
 | 17 | 03-17 | 타입 안전성 + 관측성 | D-41~D-42: chars().count(), referral_welcome_referrer 버그 수정 | `d8e76a7` |
-| **18** | **03-18** | **타입 안전성 심화 + 에러 로깅** | **테스트 +2, saturating_mul, clamp, cursor 로깅** | **`39dca08`, `ad20246`** |
+| 18 | 03-18 | 타입 안전성 심화 + 에러 로깅 | 테스트 +2, saturating_mul, clamp, cursor 로깅 | `39dca08` |
+| **19** | **03-19** | **API 계약 정합 + 순수함수 DRY** | **serde rename_all, validate 추출, 테스트 +10, mounted 가드** | **`966ca32`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -34,35 +35,36 @@ Night 15:    잔여 소진 ───── §5.3 잔여 이슈 8건 일괄 처�
 Night 16:    심층 재분석 ──── 4대 병렬 서브에이전트 → 13건 확정 실행
 Night 17:    정밀 안전성 ──── 타입 캐스팅/산술 오버플로 제거 + UI 버그
 Night 18:    수확 체감 지점 ── 동일 패턴 3회 반복, 테스트 +2만 증가
+Night 19:    수확 체감 확정 ── API 계약 보정 + 순수함수 DRY, 신규 DECISION 0건 4연속
 ```
 
 ### 1.3 Opus 4.6의 핵심 전략 패턴
 
 1. **PLAN_01.md GATE 체계**: Phase 전환마다 사용자 승인 필수 → Night-14에서 Phase 4 앞에서 정지 (효과 검증 완료)
-2. **오탐 필터링**: 서브에이전트 3~4대가 30+건 발견 → Opus가 ~40% 필터링 → 13~18건 실행 확정 (Night-16~18 일관)
-3. **순수 함수 추출**: DB 의존 로직에서 validation/transformation 분리 → 9개 함수, 42 테스트 (0ms 실행)
+2. **오탐 필터링**: 서브에이전트 3~4대가 30+건 발견 → Opus가 ~40% 필터링 → 13~18건 실행 확정 (Night-16~19 일관)
+3. **순수 함수 추출**: DB 의존 로직에서 validation/transformation 분리 → 11개 함수, 54 테스트 (0ms 실행)
 4. **PRE-GATE 결정 패턴**: Night-16에서 5건(D-36~D-40) 선결정 요청 → 이후 세션에서 동일 결정 재활용
-5. **타입 안전성 계층화** (Night-17~18): `as` 캐스트 → `try_from`/`saturating_mul`/`.clamp()` + 정수 연산으로 산술 오버플로/부동소수점 오차 제거
-6. **수확 체감 인식** (Night-18 신규): 3회 연속 동일 Phase 0~3 실행으로 신규 발견 건수 감소 → Phase 4(리뷰+PR) 전환 시점 도달
+5. **타입 안전성 계층화** (Night-17~19): `as` 캐스트 → `try_from`/`saturating_mul`/`.clamp()` + 정수 연산으로 산술 오버플로/부동소수점 오차 제거
+6. **수확 체감 확정** (Night-19): 4회 연속 동일 Phase 0~3 실행, 신규 DECISION 0건 4연속 → Phase 4(리뷰+PR) 전환 필수
 
 ### 1.4 의사결정 일관성
 
-- **총 42개 결정** (D-1 ~ D-42) — Night-18은 신규 의사결정 0건 (기존 프레임워크 재활용)
+- **총 42개 결정** (D-1 ~ D-42) — Night-17 이후 3세션 연속 신규 의사결정 0건 (기존 프레임워크 재활용)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
 - **나머지 35건: IMPLEMENTED 유지**
 
-### 1.5 Night-18 전략 특징
+### 1.5 Night-19 전략 특징
 
-Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 3회째 반복. 서브에이전트 3대 병렬 분석 → 오탐 필터링 → 18건 확정 → 실행 → 검증.
+Night-19은 Night-16~18과 동일한 **Phase 0→1→2→3 파이프라인**을 4회째 반복. 서브에이전트 3대 병렬 분석 → 오탐 필터링 → 14건 확정 → 실행 → 검증.
 
 **전략적 관찰:**
-- **수확 체감**: 서버 타입 안전성 수정이 Night-17의 `as` 캐스트 제거에서 Night-18의 `saturating_mul`/`.clamp()` 등 점점 더 세밀한 영역으로 이동
-- **테스트 순증가**: Night-17은 +0, Night-18은 +2 — 기존 순수 함수 42테스트 체계가 포화
-- **Flutter catch(e,st)**: Night-16(5건) → Night-17(+6=11건) → Night-18(+13=24건) — 관측성 패턴 코드베이스 전반 확산 완료
-- **신규 의사결정 0건**: 기존 D-1~D-42 프레임워크 내에서 실행, 아키텍처 변경 없음
+- **API 계약 보정 신규 패턴**: `#[serde(rename_all = "snake_case")]` 추가 → JSON 직렬화가 `"PriceAlert"` 대신 `"price_alert"`로 변경. Flutter 테스트 fixture도 동기화
+- **순수 함수 DRY**: `validate_target_price` + `validate_keyword` 추출로 create/update 경로의 중복 검증 제거
+- **수확 체감 확정**: 서브에이전트 발견 등급이 MED-5+LOW-5(서버), MED-6+LOW-9(Flutter)로 하락 — HIGH 이상 발견 0건(서버)
+- **테스트 순증가 반등**: Night-17은 +0, Night-18은 +2, Night-19는 **+10** — 순수함수 추출이 테스트 증가의 핵심 동인
 
 ---
 
@@ -75,31 +77,34 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | **전략/결정/리뷰** | Opus 4.6 (Main Agent) | 오탐 필터링, GATE 승인 요청, 최종 결정 |
 | **데이터 수집/코딩** | Sonnet 4.6 (Sub-agent) | 병렬 분석, 코드 생성, 검증 루틴 |
 
-### 2.2 Night-16~18 서브에이전트 운용 비교
+### 2.2 Night-16~19 서브에이전트 운용 비교
 
 | Night | 에이전트 수 | 발견 | 오탐 필터링 후 | 실행 건수 |
 |-------|------------|------|--------------|----------|
 | 16 | 4대 | CRIT-2+HIGH-6+MED-5 (서버), CRIT-3+HIGH-8+MED-3 (Flutter), 13건(silent), 아키텍처 | **13건** | 서버7+Flutter6 |
 | 17 | 3대 | HIGH-3+MED-6+LOW-4 (서버), HIGH-4+MED-6+LOW-2 (Flutter), API불일치-3+TEST갭-2 | **16건** | 서버7+Flutter9 |
-| **18** | **3대** | **CRIT-1+HIGH-6+MED-5+LOW-3 (서버), HIGH-8+MED-5+LOW-2 (Flutter), HIGH-2+MED-6+LOW-2 (아키텍처)** | **18건** | **서버7+Flutter9+테스트2** |
+| 18 | 3대 | CRIT-1+HIGH-6+MED-5+LOW-3 (서버), HIGH-8+MED-5+LOW-2 (Flutter), HIGH-2+MED-6+LOW-2 (아키텍처) | **18건** | 서버7+Flutter9+테스트2 |
+| **19** | **3대** | **MED-5+LOW-5 (서버), MED-6+LOW-9 (Flutter), HIGH-3+MED-4+LOW-2 (아키텍처)** | **14건** | **서버7+Flutter7+테스트10** |
 
-**Night-18 서브에이전트 상세:**
+**Night-19 서브에이전트 상세:**
 
 | 에이전트 | 역할 | 발견 |
 |----------|------|------|
-| `feature-dev:code-explorer` #1 | 서버 코드 분석 | CRIT-1 + HIGH-6 + MED-5 + LOW-3 |
-| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | HIGH-8 + MED-5 + LOW-2 |
-| `feature-dev:code-architect` | 아키텍처/테스트 갭 분석 | HIGH-2 + MED-6 + LOW-2 |
+| `feature-dev:code-explorer` #1 | 서버 코드 분석 | MED-5 + LOW-5 |
+| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | MED-6 + LOW-9 |
+| `feature-dev:code-architect` | 아키텍처/API 계약/테스트 갭 | HIGH-3 + MED-4 + LOW-2 |
 
-### 2.3 MCP/플러그인 활용 현황 (Night-16~18 통합)
+**Night-19 발견 등급 하락 주목**: 서버 분석에서 **HIGH 이상 0건** — Night-16의 CRIT-2+HIGH-6에서 4세션 만에 HIGH 이상 고갈.
+
+### 2.3 MCP/플러그인 활용 현황 (Night-16~19 통합)
 
 **활성 전투력:**
 
 | 카테고리 | 도구 | 활용 |
 |----------|------|------|
-| 코드 탐색 | `feature-dev:code-explorer` (누적 10대) | Phase 1 심층 분석 |
+| 코드 탐색 | `feature-dev:code-explorer` (누적 13대) | Phase 1 심층 분석 |
 | Silent failure | `pr-review-toolkit:silent-failure-hunter` | Phase 1 에러 패턴 탐색 |
-| 아키텍처 | `feature-dev:code-architect` (3회) | API 계약 분석 + 타입 설계 |
+| 아키텍처 | `feature-dev:code-architect` (4회) | API 계약 분석 + 타입 설계 |
 | 검증 | `superpowers:verification-before-completion` | 최종 4단계 검증 |
 | 외부 참조 | WebSearch + WebFetch | MCP 대체 (D-36:C 결정) |
 
@@ -110,7 +115,7 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | `coderabbit:code-reviewer` | AI 코드 리뷰 | Phase 4 사용자 승인 대기 |
 | `pr-review-toolkit:pr-test-analyzer` | 테스트 커버리지 | PR 생성 시 |
 | `pr-review-toolkit:comment-analyzer` | 주석 검증 | PR 생성 시 |
-| `code-simplifier` | 코드 간결화 | Phase 2-C 3회 연속 미착수 |
+| `code-simplifier` | 코드 간결화 | Phase 2-C 4회 연속 미착수 |
 
 **MCP 서버 상태:**
 
@@ -125,25 +130,27 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 
 ### 2.4 기술 실행 품질
 
-**Night-18 최종 검증:**
+**Night-19 최종 검증:**
 
 | 항목 | 결과 |
 |------|------|
-| `cargo test --lib` | **193/193 passed** (+2 vs Night-17) |
+| `cargo test --lib` | **203/203 passed** (+10 vs Night-18) |
 | `cargo clippy -- -D warnings` | 0 warnings |
+| `cargo fmt --check` | No diff |
 | `flutter analyze` | **0 issues** |
 | `flutter test` | **164/164 passed** |
 
-**Night-16~18 누적 강점:**
+**Night-16~19 누적 강점:**
 - 일관된 5단계 검증 루틴 (test → clippy → fmt → analyze → flutter test)
-- **0건 테스트 회귀**: 6개 세션(Night-13~18)에서 기존 테스트 깨짐 0건
+- **0건 테스트 회귀**: 7개 세션(Night-13~19)에서 기존 테스트 깨짐 0건
 - `map_err(|_|)` → `tracing::warn!/debug!` 에러 정보 보존 패턴 완성
 - `catch(_)` → `catch(e,st)` + debugPrint 관측성 패턴 코드베이스 전반 확산
 - `as i64`/`as f64` → `try_from`/`saturating_mul`/`.clamp()` 산술 안전성 체계화
+- `#[serde(rename_all)]` API 계약 정합성 확보 (Night-19 신규)
 
 **지속적 약점:**
 - `cargo test --lib`만 실행 — 통합 테스트 41건 스킵 (환경 제약 지속)
-- Phase 2-C(코드 간결화) **3회 연속 미착수** — 시간 제약
+- Phase 2-C(코드 간결화) **4회 연속 미착수** — 시간 제약
 - Phase 4(CodeRabbit 리뷰 + PR) 미진입 — 사용자 승인 대기
 
 ---
@@ -160,64 +167,63 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | Night-13 | 176 | 164 | 340 |
 | Night-14 최종 | 191 | 164 | 355 |
 | Night-15~17 | 191 | 164 | 355 |
-| **Night-18 최종** | **193** | **164** | **357** |
+| Night-18 | 193 | 164 | 357 |
+| **Night-19 최종** | **203** | **164** | **367** |
 
-> Night-18: `build_deep_link` Event 테스트 + `format_price` 음수 처리 테스트 = +2건.
-> 통합(41) + doc(4) 포함 시 추정 ~402건.
+> Night-19: `validate_target_price` 5건 + `validate_keyword` 5건 = +10건.
+> 통합(41) + doc(4) 포함 시 추정 ~412건.
 
 ### 3.2 코드베이스 규모
 
-| 항목 | Night-17 | **Night-18** | 변화 |
+| 항목 | Night-18 | **Night-19** | 변화 |
 |------|----------|-------------|------|
 | DB 마이그레이션 (main) | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | — |
 | DECISION_LOG 항목 | D-42 | D-42 | — |
-| 순수 함수 추출 누계 | 9개/42테스트 | 9개/**44테스트** | **+2** |
-| Silent Failure 수정 | 23건+ | **23건+** | — (관측성 보강 중심) |
+| 순수 함수 추출 누계 | 9개/44테스트 | **11개/54테스트** | **+2함수/+10테스트** |
+| Silent Failure 수정 | 23건+ | **23건+** | — |
 | Flutter 접근성 화면 | 7개 | 7개 | — |
-| Flutter catch(e,st) 적용 | 11건 | **24건** | **+13** |
-| 타입 안전 캐스트 수정 | 8건 | **13건** | **+5** |
+| Flutter catch(e,st) 적용 | 24건 | **27건** | **+3** |
+| 타입 안전 캐스트 수정 | 13건 | **14건** | **+1** |
 | PR 머지 | 3 | 3 | — |
-| auto 브랜치 | 17 | **18** | **+1** |
-| main 대비 커밋 | 7 | **10** | **+3** |
-| main 대비 파일 변경 | 41 | **45** | **+4** |
-| main 대비 줄 변경 | +2,506/-302 | **+2,748/-335** | **+242/-33** |
+| auto 브랜치 | 18 | **19** | **+1** |
+| main 대비 커밋 | 10 | **13** | **+3** |
+| main 대비 파일 변경 | 45 | **49** | **+4** |
+| main 대비 줄 변경 | +2,748/-335 | **+2,996/-381** | **+248/-46** |
 
-### 3.3 Night-18 변경 상세
+### 3.3 Night-19 변경 상세
 
-**브랜치: `auto/night-01-20260318_0100` — main + 10 commits, clean (45 files, +2,748/-335)**
+**브랜치: `auto/night-01-20260319_0100` — main + 13 commits, clean (49 files, +2,996/-381)**
 
-#### Night-18 커밋 (`39dca08`) — 서버 7건 + Flutter 9건 + 테스트 2건 = 18건 수정
+#### Night-19 커밋 (`966ca32`) — 서버 7건 + Flutter 7건 + 테스트 10건 = 14건 수정
 
-**서버 타입 안전성 + 에러 로깅 (7건 + 테스트 2건):**
+**서버 API 계약 + 타입 안전성 + 관측성 (7건 + 테스트 10건):**
 
-| 파일 | 수정 | 위험 등급 | 핵심 |
-|------|------|-----------|------|
-| `jwt.rs` | `ttl as i64` → `i64::try_from()` | HIGH | u64 오버플로 방어 |
-| `alert_service.rs` | NearLowest threshold `as i32` → `.round().clamp()` | HIGH | 정밀 변환 + 범위 제한 |
-| `reward_service.rs` | `amount as u64` → `u64::try_from()` | MEDIUM | metrics counter 안전 변환 |
-| `stats.rs` | `drop * 100` → `.saturating_mul(100)` | MEDIUM | i32 오버플로 방어 |
-| `access_log.rs` | `u16 as i16` → `i16::try_from().unwrap_or(-1)` | MEDIUM | HTTP 상태 코드 안전 변환 |
-| `products.rs` | cursor `map_err(\|_\|)` → `tracing::debug!` 2곳 | LOW | 파싱 실패 진단 로깅 |
-| `notifications.rs` | cursor `map_err(\|_\|)` → `tracing::debug!` | LOW | 파싱 실패 진단 로깅 |
-| `notification_service.rs` | `build_deep_link` Event variant 테스트 추가 | — | 커버리지 확대 |
-| `alert_service.rs` | `format_price` 음수 처리 문서화 테스트 | — | 엣지 케이스 문서화 |
+| 파일 | 수정 | 핵심 |
+|------|------|------|
+| `models/notification.rs` | `#[serde(rename_all = "snake_case")]` 추가 | JSON API 계약 일관성 — `"PriceAlert"` → `"price_alert"` |
+| `models/alert.rs` | `#[serde(rename_all = "snake_case")]` 추가 | JSON API 계약 일관성 |
+| `services/alert_service.rs` | `validate_target_price` 순수함수 추출 | create/update DRY 통합 + 테스트 5건 |
+| `services/alert_service.rs` | `validate_keyword` 순수함수 추출 | create/update DRY 통합 + 테스트 5건 |
+| `services/ai_prediction_service.rs` | `buy_timing_score.clamp(0, 100)` | 범위 보장 |
+| `services/reward_service.rs` | `reward as i32` → `i32::from(reward)` | 명시적 변환 |
+| `services/product_service.rs` | `#[tracing::instrument]` 추가 | `add_product_by_url` 관측성 |
+| `crawlers/mod.rs` | `#[tracing::instrument]` 추가 | `scrape_and_update` 관측성 |
 
-**Flutter 관측성 + 테마 일관성 + 성능 (9건):**
+**Flutter API 계약 + 관측성 + 버그수정 (7건):**
 
-| 파일 | 수정 | 위험 등급 | 핵심 |
-|------|------|-----------|------|
-| `login_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint | MEDIUM | 로그인 에러 스택 트레이스 보존 |
-| `favorites_screen.dart` | `catch(e)` → `catch(e, st)` 2건 | MEDIUM | 즐겨찾기 로드 에러 관측성 |
-| `notification_list_screen.dart` | `catch(e)` → `catch(e, st)` 5건 | MEDIUM | 알림 CRUD 에러 관측성 |
-| `settings_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint | MEDIUM | 설정 저장 에러 관측성 |
-| `alert_screen.dart` | `catch(e)` → `catch(e, st)` 공통 래퍼 | MEDIUM | 6개 mutation 에러 커버 |
-| `onboarding_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint | MEDIUM | 온보딩 에러 관측성 |
-| `search_screen.dart` | `catch(e)` → `catch(e, st)` + debugPrint | MEDIUM | 검색 에러 관측성 |
-| `price_chart.dart` | `NumberFormat` build()마다 생성 → `static final` | LOW | 위젯 리빌드 성능 |
-| `my_page_screen.dart` | `Colors.amber` → `AppColors.warning` | LOW | 다크모드 테마 일관성 |
+| 파일 | 수정 | 핵심 |
+|------|------|------|
+| `test/models/notification_test.dart` | `'price_drop'` → `'price_alert'` (3개소) | API 계약 fixture 정합 |
+| `test/services/notification_service_test.dart` | `'price_drop'`/`'all_time_low'` → `'price_alert'` (2개소) | API 계약 fixture 정합 |
+| `services/push_service.dart` | `catch(e)` → `catch(e, st)` | stacktrace 로깅 |
+| `config/router.dart` | `TokenStorage()` → 파일 레벨 싱글톤 | 매 네비게이션 인스턴스 생성 제거 |
+| `screens/notification/notification_list_screen.dart` | `_formatTime` → `static` | 불필요 인스턴스 메서드 제거 |
+| `screens/product/product_detail_screen.dart` | `mounted` 가드 추가 | StatefulBuilder 내 비동기 안전성 |
+| `screens/search/search_screen.dart` + `auth_provider.dart` | `DioException catch(e)` → `catch(e, st)` | stacktrace 보존 |
+| `screens/favorites/favorites_screen.dart` | `'목표가'` → `'목표 가격'` | alert_screen 레이블 통일 |
 
 ### 3.4 순수 함수 추출 현황 (전체)
 
@@ -228,14 +234,16 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | device_service | `validate_device_token` | 6 | Night-01 |
 | auth_service | `validate_consent` | 5 | Night-13 |
 | auth_service | `is_valid_referral_code_format` | 12 | Night-13 |
-| notification_service | `build_deep_link` | **6** (+1) | Night-14, +18 |
+| notification_service | `build_deep_link` | 6 (+1 Night-18) | Night-14 |
 | product_service | `build_search_pattern` | 6 | Night-14 |
 | reward_service | `compute_referral_rewards` | 4 | Night-14 |
-| alert_service | `format_price` | **1** (new) | Night-18 |
+| alert_service | `format_price` | 1 | Night-18 |
+| **alert_service** | **`validate_target_price`** | **5** | **Night-19** |
+| **alert_service** | **`validate_keyword`** | **5** | **Night-19** |
 
-**총 9개 함수 + 1 엣지 테스트, 44 테스트 — DB 의존 없이 ~0ms 실행**
+**총 11개 함수, 54 테스트 — DB 의존 없이 ~0ms 실행**
 
-### 3.5 Night-13~18 세션별 변경 요약
+### 3.5 Night-13~19 세션별 변경 요약
 
 | Night | 커밋 | 수정 건수 | 핵심 변경 |
 |-------|------|----------|-----------|
@@ -244,24 +252,25 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | 15 | `5b9f5b9` | 8건 | Colors.red→AppColors.error, assert→if, trailing slash 등 |
 | 16 | `b57981d` | 13건 | Silent failure 로깅 보강 (map_err→warn, catch(_)→catch(e,st)) |
 | 17 | `d8e76a7` | 16건 | 타입 안전 캐스트 8건 + Flutter catch(e,st) 6건 + 버그 1건 |
-| **18** | **`39dca08`** | **18건** | **타입 안전성 5건 + 에러 로깅 3건 + Flutter catch(e,st) 13건 + 테스트 2건** |
+| 18 | `39dca08` | 18건 | 타입 안전성 5건 + 에러 로깅 3건 + Flutter catch(e,st) 13건 + 테스트 2건 |
+| **19** | **`966ca32`** | **14건** | **API 계약 정합 2건 + 순수함수 DRY 2건 + 관측성 5건 + 테스트 10건** |
 
 ---
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-03-18)
+### 4.1 활성 브랜치 (2026-03-19)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260318_0100`** ★ | **+10 commits, clean** | Night-13~18 전체 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260319_0100`** ★ | **+13 commits, clean** | Night-13~19 전체 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin에 push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin에 push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
 | `auto/night-01-20260310_0100` | +5 commits | OpenAPI + M-5/M-7 | **높음** | 로컬만 |
 | `auto/night-01-20260311_0100` | +2 commits | Monthly + Referral (중복) | **중간** | 로컬만 |
 
-### 4.2 삭제 안전한 브랜치 (13개)
+### 4.2 삭제 안전한 브랜치 (14개)
 
 | 브랜치 | 근거 |
 |--------|------|
@@ -273,12 +282,13 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | `auto/night-01-20260314_0100` | Night-15에 완전 포함 |
 | `auto/night-01-20260315_0100` | Night-16에 완전 포함 |
 | `auto/night-01-20260316_0100` | Night-17에 완전 포함 |
-| **`auto/night-01-20260317_0100`** | **Night-18에 완전 포함 (신규)** |
+| `auto/night-01-20260317_0100` | Night-18에 완전 포함 |
+| **`auto/night-01-20260318_0100`** | **Night-19에 완전 포함 (신규)** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260318_0100 → main (현재, 충돌 없음, 10커밋) → 즉시 PR 가능
+1. auto/night-01-20260319_0100 → main (현재, 충돌 없음, 13커밋) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. auto/night-01-20260310_0100 (OpenAPI, 충돌 가능)
 4. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
@@ -298,7 +308,7 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 
 ---
 
-## 5. PLAN_01.md Phase 진행 상황 (Night-18 최종)
+## 5. PLAN_01.md Phase 진행 상황 (Night-19 최종)
 
 | Phase | 상태 | Night | 결과 |
 |-------|------|-------|------|
@@ -309,7 +319,8 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | §5.3 잔여 | ✅ 완료 | 15 | 8건 처리 (7완료 + 1보류) |
 | Night-16 Phase 0~3 | ✅ 완료 | 16 | Silent failure 13건 로깅 보강 |
 | Night-17 Phase 0~3 | ✅ 완료 | 17 | 타입 안전성 7건 + Flutter 9건 |
-| **Night-18 Phase 0~3** | **✅ 완료** | **18** | **타입 안전성 5건 + 에러 로깅 3건 + Flutter 9건 + 테스트 2건** |
+| Night-18 Phase 0~3 | ✅ 완료 | 18 | 타입 안전성 5건 + 에러 로깅 3건 + Flutter 9건 + 테스트 2건 |
+| **Night-19 Phase 0~3** | **✅ 완료** | **19** | **API 계약 2건 + 순수함수 DRY 2건 + 관측성 5건 + 테스트 10건** |
 | 4 (CodeRabbit/PR) | ⏳ 대기 | — | **사용자 승인 필요** |
 | 5 (브랜치 통합) | 📋 계획만 | — | 별도 세션 |
 
@@ -321,7 +332,7 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~18 머지 방향 | `auto/night-01-20260318_0100` (45파일, +2,748줄, **10커밋**) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~19 머지 방향 | `auto/night-01-20260319_0100` (49파일, +2,996줄, **13커밋**) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 | **U-13** | Phase 4 실행 승인 | CodeRabbit 리뷰 + PR 테스트 분석 + 커밋/PR 생성 | A) 승인 B) 항목 조정 C) 스킵 |
 | **U-1** | 중복 구현 채택 | Monthly prices + ReferralScreen이 여러 브랜치에 이중 구현 | A) `feat/phase2` B) Night-12 C) cherry-pick |
 | **U-2** | 미머지 브랜치 통합 순서 | 5개 미머지 브랜치 충돌 해결 | A) §4.3 권장 순서 B) 사용자 지정 C) 전부 폐기+재작업 |
@@ -330,13 +341,12 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-5** | auto 브랜치 정리 | **13개** 삭제 안전 (§4.2) — Night-17 포함으로 1개 증가 |
-| **U-6** | 통합 테스트 실행 | Night-18도 `cargo test --lib`만 (통합 41건 스킵) |
+| **U-5** | auto 브랜치 정리 | **14개** 삭제 안전 (§4.2) — Night-18 포함으로 1개 증가 |
+| **U-6** | 통합 테스트 실행 | Night-19도 `cargo test --lib`만 (통합 41건 스킵) |
 | **U-7** | OpenAPI 채택 | `auto/...0310`의 utoipa 5.x + Swagger UI |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-18** | CRIT-2: upsert_user referral_code TOCTOU | retry 루프 설계 필요 — 아키텍처 결정 |
-| **U-19** | C-2: router.dart TokenStorage 인스턴스 분리 | 전역 상태 설계 변경 필요 |
-| **U-21** | UserDto/MeResponse 통합 | Night-18에서 발견 — 리팩토링 범위 크고 테스트 영향 |
+| **U-23** | Night-19 serde rename_all 영향 | `NotificationType`/`AlertType` JSON 직렬화 형식 변경 → 기존 클라이언트 호환성 확인 |
 
 ### 🔵 MEDIUM (이번 주 내 결정)
 
@@ -347,40 +357,41 @@ Night-18은 Night-16~17과 동일한 **Phase 0→1→2→3 파이프라인**을 
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | **U-20** | H-4: OnboardingScreen 동의 실패 후 홈 이동 | 비즈니스 결정 필요 |
-| **U-22** | Phase 2-C 코드 간결화 | 3회 연속 미착수 — 독립 세션 할당 필요? |
+| **U-22** | Phase 2-C 코드 간결화 | **4회 연속 미착수** — 독립 세션 할당 필요? |
+| **U-24** | 스킵 항목 3건 | notification has_more 계약, showErrorSnackBar 통합, PointHistoryItem.createdAt 타입 |
 
 ---
 
-## 7. Night-18에서 스킵된 항목 (사용자 결정 대기)
+## 7. Night-19에서 스킵된 항목 (사용자 결정 대기)
 
-Night-16~18 분석에서 발견되었으나 자동 수정하지 않은 항목:
+Night-16~19 분석에서 발견되었으나 자동 수정하지 않은 항목:
 
 | 항목 | 등급 | 설명 | 보류 이유 |
 |------|------|------|-----------|
 | CRIT-2 | CRITICAL | `upsert_user` referral_code TOCTOU 경쟁 조건 | DB retry 루프 설계 필요 — 아키텍처 결정 |
-| C-2 | HIGH | `router.dart` TokenStorage 인스턴스 분리 | 전역 상태 설계 변경 필요 |
-| UserDto/MeResponse | HIGH | 서버 DTO 통합 리팩토링 | 리팩토링 범위 크고 테스트 영향 있음 |
-| H-4 | HIGH | OnboardingScreen 동의 실패 후 홈 이동 허용 여부 | 비즈니스 결정 (약관 미동의 사용자 차단 vs 허용) |
-| H-5 | MEDIUM | productDetailProvider keepAlive 5분 캐시 | D-33 보류 — 가격 실시간성과 상충 |
-| Phase 2-C | MEDIUM | 코드 간결화 (code-simplifier) | **3회 연속 미착수** — 시간 제약 |
+| `notification_service.rs` has_more | MEDIUM | API 계약 변경 범위 큼 | Night-19에서도 스킵 |
+| `showErrorSnackBar` 12개소 통합 | MEDIUM | 14파일 변경 필요 | Night-17부터 **4회 연속 스킵** |
+| `PointHistoryItem.createdAt` String→DateTime | MEDIUM | 기존 동작 문제 없음 | 리팩토링 범위 큼 |
+| Phase 2-C: code-simplifier | MEDIUM | 코드 간결화 | **4회 연속 미착수** — 시간 제약 |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-03-18)
+### 8.1 현재 지표 (2026-03-19)
 
-| 지표 | **Night-18** | Night-17 | Night-16 | Night-15 | Night-14 | 변화 (vs 17) |
-|------|------------|----------|----------|----------|----------|-------------|
-| Rust 테스트 (lib) | **193** | 191 | 191 | 191 | 191 | **+2** |
-| Flutter 테스트 | **164** | 164 | 164 | 164 | 164 | — |
-| DECISION_LOG | D-42 | D-42 | D-40 | D-35 | D-33 | — |
-| Silent Failure 수정 누계 | **23건+** | 23건+ | 23건 | 10건 | 10건 | — |
-| catch(e,st) 적용 | **24건** | 11건 | 5건 | — | — | **+13** |
-| 타입 안전 캐스트 수정 | **13건** | 8건 | — | — | — | **+5** |
-| 커밋 (main 대비) | **10** | 7 | 5 | 3 | 3 | **+3** |
-| 미머지 브랜치 | 5 | 5 | 5 | 5 | 5 | — |
-| auto 브랜치 | **18** | 17 | 16 | 15 | 12 | **+1** |
+| 지표 | **Night-19** | Night-18 | Night-17 | Night-16 | Night-15 | Night-14 | 변화 (vs 18) |
+|------|------------|----------|----------|----------|----------|----------|-------------|
+| Rust 테스트 (lib) | **203** | 193 | 191 | 191 | 191 | 191 | **+10** |
+| Flutter 테스트 | **164** | 164 | 164 | 164 | 164 | 164 | — |
+| DECISION_LOG | D-42 | D-42 | D-42 | D-40 | D-35 | D-33 | — |
+| Silent Failure 수정 누계 | **23건+** | 23건+ | 23건+ | 23건 | 10건 | 10건 | — |
+| catch(e,st) 적용 | **27건** | 24건 | 11건 | 5건 | — | — | **+3** |
+| 타입 안전 캐스트 수정 | **14건** | 13건 | 8건 | — | — | — | **+1** |
+| 순수 함수 추출 | **11개/54테스트** | 9개/44테스트 | — | — | — | — | **+2/+10** |
+| 커밋 (main 대비) | **13** | 10 | 7 | 5 | 3 | 3 | **+3** |
+| 미머지 브랜치 | 5 | 5 | 5 | 5 | 5 | 5 | — |
+| auto 브랜치 | **19** | 18 | 17 | 16 | 15 | 12 | **+1** |
 
 ### 8.2 기술 부채 현황
 
@@ -391,65 +402,68 @@ Night-16~18 분석에서 발견되었으나 자동 수정하지 않은 항목:
 | Flutter 테마 일관성 | **해결됨** ✅ |
 | 서버 안정성 (assert!/panic) | **해결됨** ✅ |
 | API 엔드포인트 일관성 | **해결됨** ✅ |
-| 타입 안전성 (as 캐스트) | **완료** ✅ (Night-17~18: 13건 적용, 잔존 최소) |
-| Flutter 에러 관측성 | **완료** ✅ (catch(e,st) 24건 — 코드베이스 전반 확산) |
+| 타입 안전성 (as 캐스트) | **완료** ✅ (Night-17~19: 14건 적용, 잔존 최소) |
+| Flutter 에러 관측성 | **완료** ✅ (catch(e,st) 27건 — 코드베이스 전반 확산) |
+| API 계약 정합성 | **개선됨** ✅ (serde rename_all 추가 — Night-19) |
+| 순수 함수 / DRY | **개선됨** ✅ (11개 함수, 54테스트 — Night-19) |
 | TOCTOU 경쟁 조건 | **미해결** ⚠️ (CRIT-2) |
 | 미머지 브랜치 통합 | **적체** ⚠️ (5개) |
-| auto 브랜치 정리 | **미처리** ⚠️ (13개 삭제 가능) |
+| auto 브랜치 정리 | **미처리** ⚠️ (14개 삭제 가능) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (D-39:B 이연) |
-| 코드 간결화 | **미실행** ⚠️ (Phase 2-C 3회 연속 미착수) |
+| 코드 간결화 | **미실행** ⚠️ (Phase 2-C 4회 연속 미착수) |
 
-### 8.3 Night-13→18 누적 성과 요약
+### 8.3 Night-13→19 누적 성과 요약
 
 ```
-+34 테스트 (Night-13 auth 17 + Night-14 서비스 15 + Night-18 +2)
++44 테스트 (Night-13 auth 17 + Night-14 서비스 15 + Night-18 +2 + Night-19 +10)
 +23 silent failure 수정
 +2  사용자 대면 버그 수정 (D-42 라벨 누락 + 센트 에러 표시)
-+13 타입 안전 캐스트 변환
-+24 Flutter catch(e,st) 관측성 보강
++14 타입 안전 캐스트 변환
++27 Flutter catch(e,st) 관측성 보강
 +7  접근성 적용 화면
-+9  순수 함수 추출 (44 테스트)
++11 순수 함수 추출 (54 테스트)
 +7  의사결정 (D-36~D-42)
- 45 파일, +2,748줄, -335줄 (main 대비)
+ 49 파일, +2,996줄, -381줄 (main 대비)
 ```
 
-### 8.4 수확 체감 분석 (Night-18 신규 섹션)
+### 8.4 수확 체감 분석 (Night-19 업데이트)
 
-Night-16~18에서 동일한 Phase 0→3 파이프라인을 3회 반복한 결과:
+Night-16~19에서 동일한 Phase 0→3 파이프라인을 4회 반복한 결과:
 
-| 지표 | Night-16 | Night-17 | Night-18 | 추세 |
-|------|----------|----------|----------|------|
-| 서브에이전트 | 4대 | 3대 | 3대 | 안정 |
-| 실행 확정 건수 | 13건 | 16건 | 18건 | 미세 증가 |
-| 신규 테스트 | 0 | 0 | **+2** | 미세 증가 |
-| 신규 DECISION | 5건 | 2건 | **0건** | **감소** ↓ |
-| 변경 줄 수 | +114/-53 | ~+150/-80 | **+126/-70** | 안정 |
-| 발견 등급 | CRIT-2+HIGH | HIGH | CRIT-1+HIGH | **CRIT 감소** |
+| 지표 | Night-16 | Night-17 | Night-18 | **Night-19** | 추세 |
+|------|----------|----------|----------|-------------|------|
+| 서브에이전트 | 4대 | 3대 | 3대 | **3대** | 안정 |
+| 실행 확정 건수 | 13건 | 16건 | 18건 | **14건** | **감소** ↓ |
+| 신규 테스트 | 0 | 0 | +2 | **+10** | 반등 (순수함수) |
+| 신규 DECISION | 5건 | 2건 | 0건 | **0건** | **0 고착** |
+| 변경 줄 수 | +114/-53 | ~+150/-80 | +126/-70 | **+123/-48** | 안정→감소 |
+| 서버 HIGH 이상 발견 | CRIT-2+HIGH-6 | HIGH-3 | CRIT-1+HIGH-6 | **HIGH-0** | **고갈** ↓↓ |
 
-**결론**: 코드베이스 품질이 포화 지점에 접근. 다음 세션은 Phase 0~3 반복보다 **Phase 4(종합 리뷰 + PR)** 또는 **새로운 기능 작업**으로 전환하는 것이 효율적.
+**결론**: 서버 코드베이스에서 HIGH 이상 이슈가 **완전 고갈**됨. Night-19의 테스트 +10은 순수함수 추출 효과이지, 신규 결함 발견이 아님. 다음 세션은 Phase 0~3 반복보다 **Phase 4(종합 리뷰 + PR)** 또는 **새로운 기능 작업**으로 전환하는 것이 필수적.
 
 ---
 
 ## 9. 권장 다음 행동
 
 ### 즉시 (오늘)
-1. **U-3**: Night-13~18 결과물 main 반영 여부 결정 (충돌 없음, 10커밋 clean)
+1. **U-3**: Night-13~19 결과물 main 반영 여부 결정 (충돌 없음, 13커밋 clean)
 2. **U-13**: Phase 4 CodeRabbit 리뷰 + PR 생성 승인 여부
-3. **U-5**: auto 브랜치 13개 정리
+3. **U-23**: serde rename_all 영향 — 기존 API 소비자(Flutter 외) 호환성 확인
+4. **U-5**: auto 브랜치 14개 정리
 
 ### 이번 주
-4. **U-1~U-2**: 중복 구현 채택 + 미머지 브랜치 통합 순서 확정
-5. **U-6**: `cargo test` 전체 실행 (통합 테스트 포함)
-6. **U-18**: CRIT-2 referral_code TOCTOU 해결 방향 결정
-7. **U-22**: Phase 2-C 코드 간결화 독립 세션 할당
+5. **U-1~U-2**: 중복 구현 채택 + 미머지 브랜치 통합 순서 확정
+6. **U-6**: `cargo test` 전체 실행 (통합 테스트 포함)
+7. **U-18**: CRIT-2 referral_code TOCTOU 해결 방향 결정
+8. **U-22**: Phase 2-C 코드 간결화 독립 세션 할당
 
 ### 다음 주
-8. **U-8**: Phase 5/6 로드맵 방향 결정 (수확 체감 고려 — 새 기능 vs 인프라)
-9. M0 사전 준비: 쿠팡파트너스 API 키 신청 (2~4주 리드타임)
-10. **U-11**: HF_TOKEN 갱신 (https://hf.co/settings/mcp/)
+9. **U-8**: Phase 5/6 로드맵 방향 결정 (수확 체감 고려 — 새 기능 vs 인프라)
+10. M0 사전 준비: 쿠팡파트너스 API 키 신청 (2~4주 리드타임)
+11. **U-11**: HF_TOKEN 갱신 (https://hf.co/settings/mcp/)
 
 ---
 
-> **생성**: 2026-03-18 Morning Briefing — Night-13~18 종합 분석
+> **생성**: 2026-03-19 Morning Briefing — Night-13~19 종합 분석
 > Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
