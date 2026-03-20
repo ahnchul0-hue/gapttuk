@@ -348,29 +348,13 @@ class _NotificationTile extends StatelessWidget {
   }
 
   Widget _buildTypeIcon(String type, AppColors appColors) {
-    IconData icon;
-    Color color;
-    switch (type) {
-      case 'price_alert':
-        icon = Icons.price_change;
-        color = appColors.info;
-        break;
-      case 'keyword_alert':
-        icon = Icons.search;
-        color = appColors.warning;
-        break;
-      case 'category_alert':
-        icon = Icons.category;
-        color = appColors.warning;
-        break;
-      case 'system':
-        icon = Icons.info_outline;
-        color = appColors.neutral;
-        break;
-      default:
-        icon = Icons.notifications_outlined;
-        color = appColors.info;
-    }
+    final (icon, color) = switch (type) {
+      'price_alert' => (Icons.price_change, appColors.info),
+      'keyword_alert' => (Icons.search, appColors.warning),
+      'category_alert' => (Icons.category, appColors.warning),
+      'system' => (Icons.info_outline, appColors.neutral),
+      _ => (Icons.notifications_outlined, appColors.info),
+    };
     return CircleAvatar(
       radius: 20,
       backgroundColor: color.withAlpha(30),

@@ -53,12 +53,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
-  void _updateAllAgreedState() {
-    setState(() {
-      _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
-    });
-  }
-
   bool get _canProceedFromPage2 => _termsAgreed && _privacyAgreed;
 
   Future<void> _openUrl(String urlStr) async {
@@ -133,16 +127,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     referralController: _referralController,
                     onAllAgreedChanged: _onAllAgreedChanged,
                     onTermsChanged: (v) {
-                      setState(() => _termsAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _termsAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onPrivacyChanged: (v) {
-                      setState(() => _privacyAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _privacyAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onMarketingChanged: (v) {
-                      setState(() => _marketingAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _marketingAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onReferralChanged: (v) => _referralCode = v,
                     onOpenTerms: () => _openUrl(AppConstants.termsUrl),

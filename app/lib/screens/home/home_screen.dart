@@ -162,17 +162,10 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
-  Widget _trendIcon(String trend, AppColors appColors) {
-    switch (trend) {
-      case 'up':
-        return Icon(Icons.trending_up, color: appColors.error, size: 18);
-      case 'down':
-        return Icon(Icons.trending_down, color: appColors.info, size: 18);
-      case 'new':
-        return Text('NEW',
-            style: TextStyle(color: appColors.warning, fontSize: 12));
-      default:
-        return Icon(Icons.trending_flat, color: appColors.neutral, size: 18);
-    }
-  }
+  Widget _trendIcon(String trend, AppColors appColors) => switch (trend) {
+    'up' => Icon(Icons.trending_up, color: appColors.error, size: 18),
+    'down' => Icon(Icons.trending_down, color: appColors.info, size: 18),
+    'new' => Text('NEW', style: TextStyle(color: appColors.warning, fontSize: 12)),
+    'stable' || _ => Icon(Icons.trending_flat, color: appColors.neutral, size: 18),
+  };
 }

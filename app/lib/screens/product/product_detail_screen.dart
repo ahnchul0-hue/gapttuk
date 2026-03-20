@@ -360,15 +360,19 @@ class _PredictionCard extends ConsumerWidget {
         if (data.isEmpty) return const SizedBox.shrink();
         final action =
             (data['predicted_action'] as String?) ?? 'neutral';
-        final confidence =
-            (data['confidence'] as num?)?.toDouble() ?? 0.0;
+        // confidence는 rust_decimal serde-with-str 특성으로 JSON String으로 직렬화됨
+        final confidence = switch (data['confidence']) {
+          num n => n.toDouble(),
+          String s => double.tryParse(s) ?? 0.0,
+          _ => 0.0,
+        };
         final confidencePct = (confidence * 100).round();
 
         final appColors = Theme.of(context).extension<AppColors>()!;
         final (icon, iconColor, actionText) = switch (action) {
           'buy_now' => (Icons.shopping_cart, AppTheme.priceDown, '지금 구매'),
           'wait' => (Icons.hourglass_top, AppTheme.priceUp, '대기'),
-          _ => (Icons.trending_flat, appColors.neutral, '보합'),
+          'neutral' || _ => (Icons.trending_flat, appColors.neutral, '보합'),
         };
 
         return Card(

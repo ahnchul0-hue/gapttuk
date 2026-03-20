@@ -592,7 +592,8 @@ pub async fn evaluate_price_alerts(
     let triggered = claimed_ids.len();
     if triggered > 0 {
         tracing::info!(product_id, triggered, "Price alerts evaluated");
-        metrics::counter!("alerts_triggered_total").increment(triggered as u64);
+        metrics::counter!("alerts_triggered_total")
+            .increment(u64::try_from(triggered).unwrap_or(u64::MAX));
     }
 
     Ok(triggered)

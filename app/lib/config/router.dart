@@ -120,7 +120,9 @@ final appRouter = GoRouter(
         final id = int.tryParse(state.pathParameters['id'] ?? '');
         if (id == null || id <= 0) {
           // 잘못된 productId — 홈으로 리다이렉트
-          WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/'));
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) context.go('/');
+          });
           return const SizedBox.shrink();
         }
         return ProductDetailScreen(productId: id);

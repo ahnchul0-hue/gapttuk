@@ -249,7 +249,8 @@ class _CentsBalanceTile extends ConsumerStatefulWidget {
 
 class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   PointsInfo? _points;
-  bool _loading = false;
+  bool _loading = false;       // 체크인 버튼 로딩
+  bool _loadingBalance = true; // 초기 잔액 로딩
   bool _checkinDone = false;
   bool _error = false;
 
@@ -260,17 +261,19 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   }
 
   Future<void> _loadPoints() async {
+    setState(() => _loadingBalance = true);
     try {
       final info = await ref.read(rewardServiceProvider).getPoints();
       if (mounted) {
         setState(() {
           _points = info;
           _error = false;
+          _loadingBalance = false;
         });
       }
     } catch (e, st) {
       debugPrint('_CentsBalanceTile._loadPoints: $e\n$st');
-      if (mounted) setState(() => _error = true);
+      if (mounted) setState(() { _error = true; _loadingBalance = false; });
     }
   }
 
@@ -338,13 +341,20 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
                     ),
               ),
             )
-          : Text(
-              '$balance${AppConstants.rewardUnit}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: appColors.warning,
-                  ),
-            ),
+          : _loadingBalance
+              ? Text(
+                  '로딩 중...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: appColors.neutral,
+                      ),
+                )
+              : Text(
+                  '$balance${AppConstants.rewardUnit}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: appColors.warning,
+                      ),
+                ),
       trailing: _loading
           ? const SizedBox(
               width: 20,
