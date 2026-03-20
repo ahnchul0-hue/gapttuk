@@ -1,3 +1,97 @@
+# NIGHT_06_RESULT — 2026-03-21 (Night-21)
+
+## Branch
+`auto/night-01-20260321_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 커밋
+- 커밋 `ae0b778`: Night-20 종합 분석 업데이트
+
+### Phase 1: 서브에이전트 3대 병렬 심층 분석
+
+| 에이전트 | 역할 | 발견 |
+|----------|------|------|
+| `feature-dev:code-explorer` #1 | 서버 코드 분석 | CRIT-2 + HIGH-5 + MED-6 + LOW-4 |
+| `feature-dev:code-explorer` #2 | Flutter 코드 분석 | CRIT-2 + HIGH-5 + MED-6 + LOW-3 |
+| `feature-dev:code-architect` | 아키텍처/API 계약/테스트 갭 | CRIT-3 + HIGH-6 + MED-5 + LOW-1 |
+
+오탐 필터링 후 **Night-21 실행 대상**: 서버 7건 + Flutter 7건 = **14건**
+
+**오탐 필터링:**
+- Flutter `RadioGroup` → Flutter 3.41.3에 실제 존재 (`radio_group.dart`), `RadioListTile`이 `RadioGroupRegistry` 자동 상속
+- `ref.watch` → Riverpod 3.0 future provider에서 반응형 의존성으로 정당
+- `validate_consent` 테스트 → auth_service.rs에 이미 12건 존재
+
+**핵심 발견**: Night-19(AlertType/NotificationType), Night-20(PriceTrend/Platform)에 이어 Night-21에서 3번째 serde rename_all 파급 누락 패턴 발견 — `PredictedAction`, `SearchTrend`, `AuthProvider`. 또한 `rust_decimal serde-with-str` 특성으로 `confidence` 값이 항상 0%로 표시되는 버그 발견.
+
+### Phase 2-A: 서버(Rust) API 직렬화 + 타입 안전성 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `server/src/models/ai_prediction.rs` | `PredictedAction`에 `#[serde(rename_all = "snake_case")]` 추가 + 직렬화 테스트 3건 |
+| `server/src/models/popular_search.rs` | `SearchTrend`에 `#[serde(rename_all = "snake_case")]` 추가 + 직렬화 테스트 4건 |
+| `server/src/models/user.rs` | `AuthProvider`에 `#[serde(rename_all = "snake_case")]` 추가 + 직렬화 테스트 4건 + Platform 테스트 3건 |
+| `server/src/services/alert_service.rs` | `triggered as u64` → `u64::try_from(triggered).unwrap_or(u64::MAX)` (Night-20 패턴 적용) |
+
+### Phase 2-B: Flutter(Dart) 코드간결화 + 버그수정 (7건)
+
+| 파일 | 수정 내용 |
+|------|-----------|
+| `app/lib/screens/product/product_detail_screen.dart` | `confidence` String/num 방어 파싱 (`rust_decimal serde-with-str` 대응) + 'neutral' 명시적 case |
+| `app/lib/screens/onboarding/onboarding_screen.dart` | `setState` 이중 호출 → 단일 `setState` 통합, `_updateAllAgreedState` 제거 |
+| `app/lib/config/router.dart` | `addPostFrameCallback` 내 `context.mounted` 체크 추가 |
+| `app/lib/screens/notification/notification_list_screen.dart` | `_buildTypeIcon` C-style switch → Dart 3 switch 표현식 (-15줄) |
+| `app/lib/screens/my/my_page_screen.dart` | `_loadingBalance` 상태 추가 → 초기 잔액 로딩 중 "로딩 중..." 표시 |
+| `app/lib/screens/home/home_screen.dart` | `_trendIcon` C-style switch → switch 표현식 + 'stable' 명시적 case (-9줄) |
+
+---
+
+## 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `cargo test --lib` | ✅ **207/207 passed** (기존 203 + 신규 4건) |
+| `cargo clippy --lib -- -D warnings` | ✅ 0 warnings |
+| `cargo fmt --check` | ✅ No diff |
+| `flutter analyze` | ✅ **0 issues** |
+| `flutter test` | ✅ **164/164 passed** (변화 없음) |
+
+---
+
+## 코드 변화 요약 (10파일, +134/-62)
+
+총 +72줄 순증가 (테스트 14건 추가로 인한 증가)
+
+| 주요 변화 | 규모 |
+|-----------|------|
+| serde 직렬화 단위 테스트 14건 추가 | +58줄 |
+| `_buildTypeIcon`/`_trendIcon` switch 표현식 | -24줄 |
+| `onboarding_screen` setState 통합 + `_updateAllAgreedState` 제거 | -5줄 |
+| `confidence` 방어 파싱 + `_loadingBalance` 추가 | +12줄 |
+| `context.mounted` 체크, `neutral` case, `u64::try_from` | +5줄 |
+
+---
+
+## Night-21 스킵된 항목 (사용자 결정 대기)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| `count_all_user_alerts` TOCTOU | HIGH | DB 트랜잭션 잠금 설계 필요 |
+| `upsert_user` referral_code TOCTOU | CRITICAL | DB retry 루프 설계 필요 |
+| `SearchScreen` 필터/정렬 미연결 | MEDIUM | fix/phase0 브랜치와 충돌 위험 |
+| `_alertTypeBadge` 3파일 중복 | LOW | 신규 파일 생성 필요 |
+| `formatPrice` 레이어 이동 | LOW | 영향 범위 넓음 |
+
+---
+
+## 결정 사항
+→ Night-21 신규 DECISION 없음 (기존 프레임워크 재활용)
+
+---
+
 # NIGHT_06_RESULT — 2026-03-20 (Night-20)
 
 ## Branch
