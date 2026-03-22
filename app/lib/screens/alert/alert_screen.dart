@@ -4,6 +4,7 @@ import '../../config/theme.dart';
 import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/alert_type_badge.dart';
 
 /// 알림 센터 화면 — 가격 알림 / 카테고리 알림 / 키워드 알림 3탭.
 class AlertScreen extends ConsumerStatefulWidget {
@@ -269,14 +270,6 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
 
   // ─── 헬퍼 ─────────────────────────────────────────────────────────────────
 
-  String _alertTypeLabel(String type) => switch (type) {
-        'target_price' => '목표 가격',
-        'below_average' => '평균 이하',
-        'near_lowest' => '최저가 근접',
-        'all_time_low' => '최저가 갱신',
-        _ => type,
-      };
-
   String _categoryConditionLabel(String condition) => switch (condition) {
         'any_drop' => '어떤 하락이든',
         'threshold' => '특정 비율 할인',
@@ -388,7 +381,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_alertTypeLabel(alert.alertType)),
+                Text(alertTypeLabel(alert.alertType)),
                 if (alert.targetPrice != null)
                   Text(
                     '목표가: ${formatPrice(alert.targetPrice!)}',

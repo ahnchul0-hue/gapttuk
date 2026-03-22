@@ -86,6 +86,7 @@ pub fn validate_keyword(raw: &str) -> Result<String, AppError> {
 // ── CRUD ─────────────────────────────────────────────────
 
 /// 가격 알림 생성.
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
 pub async fn create_price_alert(
     pool: &PgPool,
     user_id: i64,
@@ -94,7 +95,7 @@ pub async fn create_price_alert(
     // TargetPrice는 target_price 필수 + 양수 검증
     validate_target_price(&req.alert_type, req.target_price)?;
 
-    // 상품 존재 확인
+    // 상품 존재 확인 (트랜잭션 밖: products는 거의 삭제되지 않으므로 허용)
     let exists =
         sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)")
             .bind(req.product_id)
@@ -105,8 +106,16 @@ pub async fn create_price_alert(
         return Err(AppError::NotFound("상품".to_string()));
     }
 
-    // 사용자당 전체 알림 개수 제한 (최대 50개, 모든 유형 합산)
-    let count = count_all_user_alerts(pool, user_id).await?;
+    // 한도 체크 + INSERT를 단일 트랜잭션으로 묶어 TOCTOU 방지
+    let mut tx = pool.begin().await?;
+
+    // users 행 잠금 → 동일 user의 알림 생성 요청 직렬화
+    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
@@ -124,9 +133,10 @@ pub async fn create_price_alert(
     .bind(req.product_id)
     .bind(req.alert_type.as_str())
     .bind(req.target_price)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 
@@ -188,8 +198,11 @@ pub async fn toggle_price_alert(
 
 // ── 전체 알림 개수 카운트 ────────────────────────────────
 
-/// 사용자의 전체 알림 개수 합산 (price + category + keyword)
-async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {
+/// 사용자의 전체 알림 개수 합산 (price + category + keyword) — 트랜잭션 내 실행.
+async fn count_all_user_alerts_in_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    user_id: i64,
+) -> Result<i64, AppError> {
     let count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT
@@ -199,7 +212,7 @@ async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppEr
         "#,
     )
     .bind(user_id)
-    .fetch_one(pool)
+    .fetch_one(&mut **tx)
     .await?;
 
     Ok(count)
@@ -208,14 +221,14 @@ async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppEr
 // ── 카테고리 알림 CRUD ──────────────────────────────────
 
 /// 카테고리 알림 생성.
-///
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
 /// `alert_condition`은 NOT NULL 제약조건이 있으므로 기본값 `"any_drop"`을 사용한다.
 pub async fn create_category_alert(
     pool: &PgPool,
     user_id: i64,
     category_id: i32,
 ) -> Result<CategoryAlert, AppError> {
-    // 카테고리 존재 확인
+    // 카테고리 존재 확인 (트랜잭션 밖: 허용)
     let exists =
         sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)")
             .bind(category_id)
@@ -226,8 +239,14 @@ pub async fn create_category_alert(
         return Err(AppError::NotFound("카테고리".to_string()));
     }
 
-    // 전체 알림 개수 제한 확인
-    let count = count_all_user_alerts(pool, user_id).await?;
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
@@ -244,9 +263,10 @@ pub async fn create_category_alert(
     )
     .bind(user_id)
     .bind(category_id)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 
@@ -309,6 +329,7 @@ pub async fn toggle_category_alert(
 // ── 키워드 알림 CRUD ────────────────────────────────────
 
 /// 키워드 알림 생성.
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
 pub async fn create_keyword_alert(
     pool: &PgPool,
     user_id: i64,
@@ -317,8 +338,14 @@ pub async fn create_keyword_alert(
     // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
     let keyword = validate_keyword(&keyword)?;
 
-    // 전체 알림 개수 제한 확인
-    let count = count_all_user_alerts(pool, user_id).await?;
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
@@ -335,9 +362,10 @@ pub async fn create_keyword_alert(
     )
     .bind(user_id)
     .bind(&keyword)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 

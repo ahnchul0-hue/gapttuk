@@ -8,6 +8,7 @@ import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/alert_type_badge.dart';
 
 /// 즐겨찾기 화면 — 가격 알림이 설정된 상품 그리드.
 class FavoritesScreen extends ConsumerStatefulWidget {
@@ -82,38 +83,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     }
   }
 
-  // ─── 알림 타입 뱃지 ────────────────────────────────────────────────────────
-
-  String _alertTypeBadge(String type) {
-    switch (type) {
-      case 'target_price':
-        return '목표 가격';
-      case 'below_average':
-        return '평균 이하';
-      case 'near_lowest':
-        return '최저가 근접';
-      case 'all_time_low':
-        return '최저가 갱신';
-      default:
-        return type;
-    }
-  }
-
-  Color _alertTypeBadgeColor(String type, AppColors appColors) {
-    switch (type) {
-      case 'target_price':
-        return appColors.info;
-      case 'below_average':
-        return appColors.success;
-      case 'near_lowest':
-        return appColors.warning;
-      case 'all_time_low':
-        return appColors.error;
-      default:
-        return appColors.neutral;
-    }
-  }
-
   // ─── 상품 카드 ─────────────────────────────────────────────────────────────
 
   Widget _buildProductCard(PriceAlert alert, Product? product, AppColors appColors) {
@@ -123,7 +92,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
     return Semantics(
       button: true,
-      label: '$productName${currentPrice != null ? ', $currentPrice원' : ''}, ${_alertTypeBadge(alert.alertType)} 알림${alert.isActive ? '' : ', 비활성'}',
+      label: '$productName${currentPrice != null ? ', $currentPrice원' : ''}, ${alertTypeLabel(alert.alertType)} 알림${alert.isActive ? '' : ', 비활성'}',
       child: GestureDetector(
       onTap: () => context.push('/product/${alert.productId}'),
       child: Card(
@@ -172,10 +141,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: _buildBadge(
-                      _alertTypeBadge(alert.alertType),
-                      _alertTypeBadgeColor(alert.alertType, appColors),
-                    ),
+                    child: AlertTypeBadge(alertType: alert.alertType),
                   ),
                 ],
               ),
@@ -231,24 +197,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         Icons.shopping_bag_outlined,
         size: 48,
         color: appColors.neutral,
-      ),
-    );
-  }
-
-  Widget _buildBadge(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withAlpha(230),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }

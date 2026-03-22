@@ -61,6 +61,10 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
+      - name: Verify serde rename_all on Serialize enums
+        working-directory: .
+        run: python3 scripts/check_serde_enums.py server/src
+
       - name: Clippy lint
         run: cargo clippy -- -D warnings
 

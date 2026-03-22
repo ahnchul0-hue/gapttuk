@@ -97,28 +97,49 @@ pub async fn upsert_user(
             None
         };
 
-        // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
-        let referral_code = generate_referral_code(pool).await?;
-        let mut tx = pool.begin().await?;
-
-        let user: User = sqlx::query_as(
-            r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
-                profile_image_url, referral_code, referred_by,
-                terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#,
-        )
-        .bind(&info.email)
-        .bind(&info.nickname)
-        .bind(provider_str)
-        .bind(&info.provider_id)
-        .bind(&info.profile_image_url)
-        .bind(&referral_code)
-        .bind(referred_by)
-        .bind(terms_at)
-        .bind(privacy_at)
-        .bind(marketing_at)
-        .fetch_one(&mut *tx)
-        .await?;
+        // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성.
+        // TOCTOU 방어: DB UNIQUE 위반 시 최대 3회 재시도.
+        let mut tx_result: Result<(User, sqlx::Transaction<'_, sqlx::Postgres>), AppError> = Err(
+            AppError::Internal("referral_code 생성 시도 횟수 초과".to_string()),
+        );
+        for _ in 0..3u8 {
+            let referral_code = generate_referral_code(pool).await?;
+            let mut tx = pool.begin().await?;
+            let res: Result<User, sqlx::Error> = sqlx::query_as(
+                r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
+                    profile_image_url, referral_code, referred_by,
+                    terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#,
+            )
+            .bind(&info.email)
+            .bind(&info.nickname)
+            .bind(provider_str)
+            .bind(&info.provider_id)
+            .bind(&info.profile_image_url)
+            .bind(&referral_code)
+            .bind(referred_by)
+            .bind(terms_at)
+            .bind(privacy_at)
+            .bind(marketing_at)
+            .fetch_one(&mut *tx)
+            .await;
+            match res {
+                Ok(user) => {
+                    tx_result = Ok((user, tx));
+                    break;
+                }
+                Err(e) if is_referral_code_collision(&e) => {
+                    tracing::warn!("referral_code 충돌 감지, 재시도");
+                    let _ = tx.rollback().await;
+                    tx_result = Err(AppError::from(e));
+                }
+                Err(e) => {
+                    let _ = tx.rollback().await;
+                    return Err(AppError::from(e));
+                }
+            }
+        }
+        let (user, mut tx) = tx_result?;
 
         // user_points 초기화 (balance=0, total_earned=0, total_spent=0)
         sqlx::query("INSERT INTO user_points (user_id) VALUES ($1)")
@@ -133,7 +154,7 @@ pub async fn upsert_user(
             )
             .bind(referrer_id)
             .bind(user.id)
-            .bind(&referral_code)
+            .bind(&user.referral_code)
             .execute(&mut *tx)
             .await?;
 
@@ -313,6 +334,19 @@ pub async fn logout(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     .execute(pool)
     .await?;
     Ok(())
+}
+
+/// referral_code DB UNIQUE 충돌 여부 판별.
+/// users 테이블의 referral_code UNIQUE 제약 위반인지 확인한다.
+fn is_referral_code_collision(e: &sqlx::Error) -> bool {
+    if let sqlx::Error::Database(db_err) = e {
+        db_err.is_unique_violation()
+            && db_err
+                .constraint()
+                .is_some_and(|c| c.contains("referral_code"))
+    } else {
+        false
+    }
 }
 
 /// 추천 코드 생성: GAP-XXXXXX (영숫자 6자리, 36^6 ≈ 22억 조합).
