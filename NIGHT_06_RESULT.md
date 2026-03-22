@@ -1,3 +1,160 @@
+# NIGHT_06_RESULT — 2026-03-23 (Night-23)
+
+## Branch
+`auto/night-01-20260323_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: Night-22 커밋 + 기준선 확인
+
+Night-22 미커밋 변경 8 modified + 5 untracked → 커밋 `f1ab244` 완료.
+
+**기준선**: Rust lib 207건 ✅ / Flutter 180건 ✅ / analyze 0 ✅
+
+### Phase 1: 의존성 건강성 분석
+
+**cargo audit** (7개 취약점):
+
+| Crate | 버전 | CVE | 심각도 | 해결 |
+|-------|------|-----|--------|------|
+| aws-lc-sys | 0.37.1 | RUSTSEC-2026-0044/45/46/47/48 | HIGH/MEDIUM | >=0.38-0.39 |
+| rustls-webpki | 0.102.8/0.103.9 | RUSTSEC-2026-0049 | - | >=0.103.10 |
+| rustls-pemfile | 2.2.0 | RUSTSEC-2025-0134 | warning | unmaintained |
+
+모두 `reqwest`/`sqlx`/`sentry`의 **간접 의존성** — `cargo update`로 해결 가능. 사용자 승인 필요 (업그레이드 미실행).
+
+**flutter pub outdated** 주요 항목:
+- `go_router 16→17` (breaking), `flutter_riverpod 3.0→3.3` (breaking), `fl_chart 0.69→1.2` (breaking)
+- `build_runner`, `freezed`, `flutter_svg` — 안전하게 업그레이드 가능
+- sonatype-guide: 인증 미설정으로 API 호출 불가 (Night-22와 동일)
+
+### Phase 2: 미완료 항목 실행
+
+| 항목 | 결과 | 수정 내용 |
+|------|------|-----------|
+| 2-A. Silent Failure 수정 | ✅ | auth_service(3곳)+main.rs(3곳)+alert_service(1곳) warn! 추가 |
+| 2-B. rust_decimal API 계약 | ✅ | 불일치 없음 — 숫자 직렬화, Flutter는 알 수 없는 키 무시 |
+| 2-C. formatPrice 추출 | ✅ | 이미 `utils/error_utils.dart`에 단일 정의 — 추출 불필요 |
+
+**2-A 상세**: `let _ = tx.rollback().await` → `if let Err(rb_err) = tx.rollback().await { warn!(...) }` 패턴 5곳 적용.
+
+### Phase 3: 테스트 확대
+
+| 파일 | 건수 | 내용 |
+|------|------|------|
+| `test/screens/product_detail_screen_test.dart` | 7건 | AppBar/FAB/상품명/가격/로딩(Completer)/에러(async throw)/품절 |
+| `test/screens/alert_screen_test.dart` | 6건 | AppBar/3탭/로딩/빈목록/에러/"목표가" |
+| `test/screens/favorites_screen_test.dart` | 5건 | AppBar/로딩/빈상태/버튼/alertTypeLabel |
+| `test/helpers/fake_alert_service.dart` | — | FakeAlertService 공통 헬퍼 (slow/error/response 모드) |
+
+**핵심 패턴**: `implements AlertService` (Dart structural typing) — 플랫폼 채널 없이 fake 생성. `async { throw }` — zone 전파 없는 에러 상태 테스트.
+
+### Phase 4: 종합 코드 리뷰 + 추가 수정
+
+**silent-failure-hunter 발견 → 반영**:
+- [C-1] CRITICAL: count/verify 쿼리 `?` 조기 반환 경로 rollback+warn 누락 → match 패턴으로 수정 (`main.rs`)
+- [H-1] HIGH: warn 순서 역전 (rollback warn → 원인 warn) → 원인 warn 먼저 수정 (3곳)
+- [M-3] MEDIUM: 빈 디바이스 warn에 product_id 누락 → 추가
+
+**code-simplifier 개선**:
+- `_FakeAlertService` 2개 파일 중복(77줄) → `test/helpers/fake_alert_service.dart` 통합
+- `_alertTypeLabel` 복사본 → 실제 `alertTypeLabel` import로 교체
+
+---
+
+## 테스트 카운트
+
+| 구분 | Night-22 | Night-23 | 증감 |
+|------|---------|---------|------|
+| Rust lib | 207 | 207 | +0 |
+| Flutter | 180 | **198** | **+18** |
+| **합계** | **~430** | **~448** | **+18** |
+
+---
+
+## 의사결정 (D-44~D-46)
+
+| ID | 결정 | 근거 |
+|----|------|------|
+| D-44 | rust_decimal serde-with-str: 수정 불필요 | `serde(with)` 어트리뷰트 없는 필드는 숫자 직렬화 → Flutter 무시 |
+| D-45 | formatPrice 추출 불필요 | 이미 `utils/error_utils.dart` 단일 정의, 4곳만 사용 |
+| D-46 | cargo audit 취약점: 업그레이드 연기 | 모두 간접 의존성, breaking 없지만 사용자 승인 후 `cargo update` 권장 |
+
+---
+
+# NIGHT_06_RESULT — 2026-03-22 (Night-22)
+
+## Branch
+`auto/night-01-20260322_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: 환경 정비 + 분석
+
+**sonatype-guide**: 인증 자격증명 미설정으로 API 호출 불가 — Phase 3-A 건너뜀.
+
+**Silent Failure 조사** (서버 전수 스캔 51개 파일):
+
+| 우선순위 | 위치 | 패턴 | 문제 |
+|---------|------|------|------|
+| **HIGH** | `auth_service.rs:230` | `let _ = tx.rollback()` | 토큰 탈취 감지 후 롤백 실패 → 로그 없음 |
+| **HIGH** | `main.rs:275,301,328` | `let _ = tx.rollback()` (3건) | 아카이빙 트랜잭션 롤백 실패 3곳 무시 |
+| **HIGH** | `alert_service.rs:557` | `.unwrap_or_default()` | 디바이스 없는 사용자 push silent skip |
+| MEDIUM | `main.rs:197` | `.ok()` | 파티션 날짜 파싱 실패 원인 미기록 |
+| MEDIUM | `access_log.rs:86` | `.ok()` | 만료/조작 JWT가 user_id=None으로만 기록 |
+| MEDIUM | `coupang.rs:226` | `.ok()` | 가격 파싱 실패 무음 |
+| LOW | config/fcm 환경변수 체인 | 다수 | 의도된 optional/fallback 패턴 |
+
+`.unwrap()` 프로덕션 코드: **0건** (전부 테스트 블록) ✅
+
+### Phase 1: Rust CRITICAL/HIGH 수정 (3건)
+
+| 항목 | 파일 | 수정 내용 |
+|------|------|-----------|
+| 1-A. referral_code TOCTOU | `auth_service.rs` | DB UNIQUE 충돌 시 최대 3회 retry loop + `is_referral_code_collision()` 헬퍼 추가 |
+| 1-B. alert 한도 TOCTOU | `alert_service.rs` | `create_price/category/keyword_alert` 3함수: `SELECT FOR UPDATE` + 트랜잭션화, `count_all_user_alerts_in_tx()` 분리 |
+| 1-D. serde CI 자동검증 | `scripts/check_serde_enums.py` + `ci.yml` | Serialize enum에 rename_all 누락 시 CI 실패 — Night-19~21 3회 파급 재발 방지 |
+
+**검증**: `cargo check` ✅ / `cargo test --lib` 207건 ✅ / `cargo clippy -D warnings` ✅ / `check_serde_enums.py` 0건 ✅
+
+### Phase 2: Flutter 품질 확대 (4건)
+
+| 항목 | 파일 | 수정 내용 |
+|------|------|-----------|
+| 2-A. HomeScreen 테스트 | `test/screens/home_screen_test.dart` | 7건 (AppBar/검색바/URL카드/인기검색어/데이터/에러/다이얼로그) |
+| 2-A. SearchScreen 테스트 | `test/screens/search_screen_test.dart` | 4건 (AppBar/TextField/초기상태/입력) |
+| 2-B. Provider 테스트 | `test/providers/product_provider_test.dart` | 5건 (productDetail/dailyPrices/popularSearches) |
+| 2-C. alertTypeLabel 공통화 | `widgets/alert_type_badge.dart` (신규) | `alertTypeLabel()`, `alertTypeColor()`, `AlertTypeBadge` 위젯 — favorites_screen + alert_screen 중복 제거 |
+
+**검증**: `flutter analyze` 0 issues ✅ / `flutter test` **180건** 통과 ✅ (164→+16)
+
+### Phase 3-B: CI serde 검증 통합 (Phase 1-D에 포함)
+- `ci.yml` check job에 `python3 scripts/check_serde_enums.py server/src` step 추가
+
+---
+
+## 테스트 카운트
+
+| 구분 | Night-21 | Night-22 | 증감 |
+|------|---------|---------|------|
+| Rust lib | 207 | 207 | +0 |
+| Flutter | 164 | **180** | **+16** |
+| **합계** | **~414** | **~430** | **+16** |
+
+---
+
+## 의사결정 (D-43)
+
+| ID | 결정 | 근거 |
+|----|------|------|
+| D-43 | 1-B alert TOCTOU: `SELECT FOR UPDATE` on users row | 가장 단순하고 명확한 직렬화 — Advisory lock보다 오버헤드 낮음, 같은 user의 동시 요청만 serialize |
+
+---
+
 # NIGHT_06_RESULT — 2026-03-21 (Night-21)
 
 ## Branch
