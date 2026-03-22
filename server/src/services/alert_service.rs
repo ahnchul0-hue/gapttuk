@@ -583,6 +583,9 @@ pub async fn evaluate_price_alerts(
         let push = std::sync::Arc::clone(&push);
         let deep_link = deep_link.clone();
         let devices = devices_by_user.get(&user_id).cloned().unwrap_or_default();
+        if devices.is_empty() {
+            tracing::warn!(user_id = %user_id, alert_id = %alert_id, product_id = %product_id, "알림 대상 사용자에 등록된 디바이스 없음 — push 전송 건너뜀");
+        }
 
         push_tasks.spawn(async move {
             if let Err(e) = notification_service::create_notification_and_push(

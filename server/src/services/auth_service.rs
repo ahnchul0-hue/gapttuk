@@ -130,11 +130,15 @@ pub async fn upsert_user(
                 }
                 Err(e) if is_referral_code_collision(&e) => {
                     tracing::warn!("referral_code 충돌 감지, 재시도");
-                    let _ = tx.rollback().await;
+                    if let Err(rb_err) = tx.rollback().await {
+                        tracing::warn!(error = %rb_err, "referral_code 충돌 롤백 실패");
+                    }
                     tx_result = Err(AppError::from(e));
                 }
                 Err(e) => {
-                    let _ = tx.rollback().await;
+                    if let Err(rb_err) = tx.rollback().await {
+                        tracing::warn!(error = %rb_err, "upsert_user 트랜잭션 롤백 실패");
+                    }
                     return Err(AppError::from(e));
                 }
             }
@@ -248,7 +252,9 @@ pub async fn rotate_refresh_token(
     // 2. 탈취 감지 — 이미 revoke된 토큰 재사용
     if revoked_at.is_some() {
         // tx를 먼저 롤백 (aborted state 방지)
-        let _ = tx.rollback().await;
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "탈취 감지 후 트랜잭션 롤백 실패");
+        }
 
         // pool에서 직접 실행 — 멱등 UPDATE이므로 트랜잭션 불필요
         for attempt in 1..=2 {

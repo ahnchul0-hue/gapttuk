@@ -272,17 +272,28 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
             partition_name
         );
         if let Err(e) = sqlx::query(&aggregate_sql).execute(&mut *tx).await {
-            let _ = tx.rollback().await;
             tracing::warn!(partition = %partition_name, error = %e, "Aggregation failed, skipping DROP");
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(partition = %partition_name, error = %rb_err, "집계 오류 후 롤백 실패");
+            }
             return Err(format!("Aggregation of {partition_name} failed: {e}"));
         }
 
         // 2. 행 수 검증 — 해당 파티션의 product만 대상 (CR-2)
         let count_sql = format!("SELECT COUNT(*)::BIGINT FROM \"{}\"", partition_name);
-        let (source_count,): (i64,) = sqlx::query_as(&count_sql)
+        let source_count: i64 = match sqlx::query_as::<_, (i64,)>(&count_sql)
             .fetch_one(&mut *tx)
             .await
-            .map_err(|e| format!("Count query failed: {e}"))?;
+        {
+            Ok((n,)) => n,
+            Err(e) => {
+                tracing::warn!(partition = %partition_name, error = %e, "Count 쿼리 실패");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "Count 실패 후 롤백 실패");
+                }
+                return Err(format!("Count query failed: {e}"));
+            }
+        };
 
         let verify_sql = format!(
             "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
@@ -292,19 +303,30 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
                AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
             partition_name, partition_name, partition_name
         );
-        let (aggregated_count,): (i64,) = sqlx::query_as(&verify_sql)
+        let aggregated_count: i64 = match sqlx::query_as::<_, (i64,)>(&verify_sql)
             .fetch_one(&mut *tx)
             .await
-            .map_err(|e| format!("Verify query failed: {e}"))?;
+        {
+            Ok((n,)) => n,
+            Err(e) => {
+                tracing::warn!(partition = %partition_name, error = %e, "Verify 쿼리 실패");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "Verify 실패 후 롤백 실패");
+                }
+                return Err(format!("Verify query failed: {e}"));
+            }
+        };
 
         if aggregated_count < source_count {
-            let _ = tx.rollback().await;
             tracing::warn!(
                 partition = %partition_name,
                 source = source_count,
                 aggregated = aggregated_count,
                 "Row count mismatch — skipping DROP"
             );
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(partition = %partition_name, error = %rb_err, "검증 불일치 후 롤백 실패");
+            }
             return Err(format!(
                 "{partition_name}: count mismatch {source_count} vs {aggregated_count}"
             ));
@@ -325,8 +347,10 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
                 );
             }
             Err(e) => {
-                let _ = tx.rollback().await;
                 tracing::warn!(partition = %partition_name, error = %e, "Failed to drop archived partition");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "DROP 실패 후 롤백 실패");
+                }
                 return Err(format!("DROP {partition_name} failed: {e}"));
             }
         }
