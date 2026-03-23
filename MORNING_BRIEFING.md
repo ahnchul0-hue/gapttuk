@@ -523,3 +523,30 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md + PLAN_01.md 업데이트.
 > **Night-22가 "발견과 구조적 전환"이었다면, Night-23은 "수정과 완결"이다.**
 > PLAN_01.md 6 Phase를 전부 완수한 최초의 세션이며, Silent Failure HIGH 잔존 0건 달성 + 비즈니스 핵심 화면 테스트 기반 구축(FakeAlertService 패턴) + cargo audit 의존성 감사까지 수행.
 > 남은 과제는 **사용자 결정**(cargo update, 브랜치 머지, 메이저 업그레이드)에 집중되어 있다.
+
+---
+
+## 10. Night-24 결과 요약 (2026-03-24)
+
+> **Night-23이 "발견과 계획"을 마쳤다면, Night-24는 "실행과 해소"다.**
+> cargo audit 7건 취약점을 `cargo update`로 직접 해결 (6건) + audit.toml ignore 처리 (1건). Flutter 테스트 헬퍼 패턴(`FakeRewardService` + `FakeNotificationService`)을 `FakeAlertService`에 이어 완성하여 MyPage/PointHistory/Notification 3개 화면 테스트 기반 구축. **Flutter 198 → 216건 (+18건)**.
+
+### Night-24 변경 상세
+
+| Phase | 내용 | 결과 |
+|-------|------|------|
+| Phase 0 | MORNING_BRIEFING.md 정정 커밋 | 커밋 `4263a76` |
+| Phase 1 | `cargo update` + audit.toml D-47 | 취약점 7→0건 ✅ |
+| Phase 2 | Flutter 테스트 +18건 (3화면 + 2헬퍼) | 198→216건 ✅ |
+| Phase 3 | 품질 검증 (fmt/clippy/serde CI) | 0건 이상 ✅ |
+| Phase 4 | 최종 검증 + 커밋 `025eaeb` + 문서화 | 완료 ✅ |
+
+### Night-24 잔존 항목 (다음 세션)
+
+| 항목 | 등급 | 보류 이유 |
+|------|------|-----------|
+| go_router/riverpod/fl_chart 메이저 업그레이드 | HIGH | breaking changes — 별도 계획 필요 |
+| sonatype-guide 인증 설정 | MEDIUM | 자격증명 필요 |
+| `SearchScreen` 필터/정렬 미연결 | MEDIUM | fix/phase0 브랜치 충돌 위험 |
+| 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
+| 미머지 브랜치 5개 통합 | HIGH | 사용자 결정 필요 |

@@ -1,3 +1,77 @@
+# NIGHT_06_RESULT — 2026-03-24 (Night-24)
+
+## Branch
+`auto/night-01-20260324_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md 정정 커밋
+
+Night-23 MORNING_BRIEFING.md 마이너 수정 (커밋수 + 문구) → 커밋 `4263a76`
+
+### Phase 1: cargo 취약점 해결
+
+**cargo update** 실행 — 취약점 7건 → 0건:
+
+| 해결 방법 | 대상 취약점 | 결과 |
+|-----------|------------|------|
+| `cargo update` | aws-lc-sys 5건 (HIGH/MEDIUM), rustls-webpki 1건 | ✅ 해결 |
+| `audit.toml` ignore 추가 | RUSTSEC-2026-0049 (a2 upstream 미업그레이드) | ✅ 예외 처리 |
+
+**RUSTSEC-2026-0049 ignore 근거**: `a2` 크레이트(APNs 푸시)가 `rustls 0.22`를 사용. `a2` upstream(최신 0.10.0)이 rustls 0.23으로 아직 미이전. APNs는 신뢰할 수 있는 엔드포인트이므로 CRL 매칭 버그 실제 위험 없음.
+
+**cargo audit 최종**: error 0건, warning 1건 (rustls-pemfile unmaintained — 허용)
+
+### Phase 2: Flutter 테스트 확대 (+18건)
+
+**신규 헬퍼 (2파일)**:
+
+| 파일 | 패턴 |
+|------|------|
+| `test/helpers/fake_reward_service.dart` | `implements RewardService` — getPoints/getHistory/checkin 제어 |
+| `test/helpers/fake_notification_service.dart` | `implements NotificationService` — getNotifications 제어 |
+
+**신규 테스트 (3파일)**:
+
+| 파일 | 건수 | 핵심 테스트 |
+|------|------|-------------|
+| `test/screens/my_page_screen_test.dart` | 6건 | 미인증/"로그인이 필요합니다"/닉네임/추천코드/로그아웃 |
+| `test/screens/point_history_screen_test.dart` | 5건 | 빈목록/"아직 내역이 없습니다"/항목레이블/에러/금액포맷 |
+| `test/screens/notification_list_screen_test.dart` | 7건 | AppBar/모두읽음/로딩/빈목록/에러/알림항목 |
+
+**핵심 패턴**:
+- `_FakeAuthState extends AuthState` + `authStateProvider.overrideWith(() => ...)` — Riverpod Notifier 초기 상태 주입
+- `NotifResult` 공개 타입 별칭 (private `_NotifResult` → `library_private_types_in_public_api` 경고 방지)
+- `Completer<T>().future` 로딩 상태 테스트 (FakeRewardService/FakeNotificationService slow 모드)
+
+### Phase 3: 코드 품질 확인
+
+- `cargo fmt --check`: 포맷 이상 없음 ✅
+- `check_serde_enums.py`: 0건 ✅ (serde CI 유지)
+- 프로덕션 코드 `.unwrap()` 검색: 모두 `#[test]` 블록 내부 — 0건 프로덕션 ✅
+
+---
+
+## 테스트 카운트
+
+| 구분 | Night-23 | Night-24 | 증감 |
+|------|---------|---------|------|
+| Rust lib | 207 | 207 | +0 |
+| Flutter | 198 | **216** | **+18** |
+| **합계** | **~448** | **~466** | **+18** |
+
+---
+
+## 의사결정 (D-47)
+
+| ID | 결정 | 근거 |
+|----|------|------|
+| D-47 | RUSTSEC-2026-0049 (rustls-webpki via a2): ignore 처리 | a2 0.10.0 upstream 미업그레이드, APNs 신뢰 엔드포인트 → 실제 위험 없음 |
+
+---
+
 # NIGHT_06_RESULT — 2026-03-23 (Night-23)
 
 ## Branch
