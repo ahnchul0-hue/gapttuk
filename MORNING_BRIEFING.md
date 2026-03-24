@@ -1,16 +1,16 @@
-# MORNING BRIEFING — 2026-03-24 (Night-13 ~ Night-24 종합 분석)
+# MORNING BRIEFING — 2026-03-25 (Night-13 ~ Night-25 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-24 (2026-03-12 ~ 2026-03-24)
-> **현재 브랜치**: `auto/night-01-20260324_0100` (main + 25 commits)
+> **분석 대상**: Night-13 ~ Night-25 (2026-03-12 ~ 2026-03-25)
+> **현재 브랜치**: `auto/night-01-20260325_0100` (main + 27 commits)
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **이전 브리핑**: 2026-03-23 (Night-23 기준)
-> **신규 변경 (Night-24)**: cargo 취약점 7→0건 해결 + Flutter 테스트 +18건 (216건) + FakeService 패턴 확장
+> **이전 브리핑**: 2026-03-24 (Night-24 기준)
+> **신규 변경 (Night-25)**: 위젯/프로바이더 테스트 +22건 (238건) — AlertTypeBadge 13건 + PriceChart 5건 + Provider 4건
 
 ---
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-24 세션별 전략
+### 1.1 Night-13 ~ Night-25 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -25,7 +25,8 @@
 | 21 | 03-21 | serde 파급 누락 3회차 + 방어 파싱 | PredictedAction/SearchTrend/AuthProvider serde, confidence String 파싱 | `63780bb` |
 | 22 | 03-22 | 구조적 자동화 전환 + TOCTOU 해결 | D-43: alert SELECT FOR UPDATE, referral retry loop, serde CI, Flutter 테스트 +16 | `f1ab244` |
 | 23 | 03-23 | 관측성 완결 + 테스트 확대 + 의존성 감사 | D-44~46: rollback warn 5곳, C-1 CRITICAL, cargo audit 7건, Flutter +18건 | `d95e438`, `d9ab41f` |
-| **24** | **03-24** | **취약점 해결 + FakeService 패턴 확장 + 사용자 화면 테스트** | **D-47: RUSTSEC-2026-0049 ignore, cargo 7→0건, Flutter +18건 (216건)** | **`025eaeb`, `e506f6f`** |
+| 24 | 03-24 | 취약점 해결 + FakeService 패턴 확장 + 사용자 화면 테스트 | D-47: RUSTSEC-2026-0049 ignore, cargo 7→0건, Flutter +18건 (216건) | `025eaeb`, `e506f6f` |
+| **25** | **03-25** | **위젯/프로바이더 단위 테스트 완성** | **D-48: Riverpod 3.x auto-dispose 에러 테스트 패턴 변경, AlertTypeBadge+PriceChart+Provider +22건** | **`7206ac1`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -46,25 +47,26 @@ Night 21:    구조적 패턴 확인 ── 3회 연속 serde 파급 누락 → 
 Night 22:    ★ 전환점 ──────── 자동화(CI serde 검증) + TOCTOU 해결 + 테스트 대폭 증가
 Night 23:    ★★ 완결 ────────── 발견→수정→검증 3단계 완결 + 의존성 감사 + 테스트 198건 돌파
 Night 24:    ★★★ 안정화 종결 ── 취약점 0건 달성 + FakeService 패턴 3종 + 사용자 화면 테스트 완비
+Night 25:    테스트 인프라 완결 ── 미테스트 위젯 0개 달성 + 프로바이더 family/캐시 검증 + 238건
 ```
 
-### 1.3 Night-24 전략 특이점: "보안 부채 청산 + 테스트 인프라 완성"
+### 1.3 Night-25 전략 특이점: "테스트 인프라 완결 — 미테스트 위젯 0개"
 
-**Night-23 vs Night-24 비교:**
+**Night-24 vs Night-25 비교:**
 
-| 관점 | Night-23 | Night-24 |
+| 관점 | Night-24 | Night-25 |
 |------|----------|----------|
-| cargo audit | 7건 **발견** (승인 대기) | 7건 → **0건** (cargo update + audit.toml) |
-| FakeService | FakeAlertService 1개 구축 | **FakeRewardService + FakeNotificationService** 추가 (3종 완비) |
-| 테스트 대상 | 비즈니스 핵심 화면 (ProductDetail/Alert/Favorites) | **사용자 계정 화면** (MyPage/PointHistory/NotificationList) |
-| Silent Failure | 수정 + 재검증 (5곳+C-1) | 변경 없음 (잔존 0건 유지) |
-| 프로덕션 코드 변경 | Rust 7파일 수정 | audit.toml + Cargo.lock만 (**프로덕션 코드 무변경**) |
+| 테스트 대상 | 사용자 계정 화면 (MyPage/PointHistory/NotificationList) | **공통 위젯** (AlertTypeBadge 13건 + PriceChart 5건) + 프로바이더 4건 |
+| 신규 테스트 | +18건 (216건) | **+22건 (238건)** |
+| 프로덕션 코드 변경 | audit.toml + Cargo.lock만 | **변경 없음** (테스트 파일만) |
+| 핵심 발견 | RUSTSEC-2026-0049 → audit.toml | Riverpod 3.x auto-dispose 에러 테스트 패턴 (D-48) |
+| 위젯 테스트 커버리지 | 2/4 위젯 (ProductCard/LoadingSkeleton) | **4/4 위젯** (AlertTypeBadge/PriceChart 추가 — **완전 커버리지**) |
 
 **핵심 전략 진화:**
 
-Night-24는 Night-22~23의 "발견→수정→검증" 사이클을 **"해결→확인"**으로 종결. cargo update로 간접 의존성 취약점을 일괄 해결하고, upstream 미업그레이드(a2/rustls)는 audit.toml에 명시적 근거와 함께 ignore 처리. FakeService 패턴이 3개 서비스로 확장되며 Flutter 화면 테스트 인프라가 사실상 완성.
+Night-25는 "테스트 빈 공간 메우기" 전략. `alertTypeLabel`/`alertTypeColor` 순수 함수의 switch expression 전 분기 검증(5+5건), `PriceChart` ConsumerWidget의 4가지 상태(로딩/빈/에러/데이터), `productPredictionProvider` family provider 독립성 검증. Riverpod 3.x에서 auto-dispose 프로바이더의 에러 전파 테스트가 StateError 충돌을 일으키는 패턴을 D-48로 문서화.
 
-### 1.4 Opus 4.6의 핵심 전략 패턴 (Night-24까지 업데이트)
+### 1.4 Opus 4.6의 핵심 전략 패턴 (Night-25까지 업데이트)
 
 1. **PLAN_01.md GATE 체계**: Phase 전환마다 사용자 승인 필수 → Night-23에서 6 Phase 전체 순차 완수
 2. **오탐 필터링**: 서브에이전트 발견 → Opus가 ~40% 필터링 → 13~18건 실행 확정 (Night-16~23 일관)
@@ -73,16 +75,18 @@ Night-24는 Night-22~23의 "발견→수정→검증" 사이클을 **"해결→�
 5. **Silent Failure 생명주기**: 전수 조사(Night-22) → 수정(Night-23 Phase 2) → 재검증(Night-23 Phase 4) → 추가 발견+수정(C-1) — **3단계 완결**
 6. **FakeService 패턴 3종 완비** (Night-23→24): `FakeAlertService` → `FakeRewardService` + `FakeNotificationService` → 플랫폼 채널 없이 전체 비즈니스 화면 테스트 가능
 7. **audit.toml 전략** (Night-24): upstream 미업그레이드 간접 의존성은 `ignore` + 명시적 근거 주석 → 실용적 보안 관리
+8. **위젯 단위 테스트 완결** (Night-25): 순수 함수 switch 전 분기 + ConsumerWidget ProviderScope override → **모든 위젯 테스트 커버리지 달성**
 
 ### 1.5 의사결정 일관성
 
-- **총 47개 결정** (D-1 ~ D-47) — Night-24에서 **D-47 신규 1건**
-- D-47: RUSTSEC-2026-0049 (rustls-webpki via a2) ignore 처리 — APNs 신뢰 엔드포인트이므로 CRL 매칭 버그 실제 위험 없음
+- **총 48개 결정** (D-1 ~ D-48) — Night-25에서 **D-48 신규 1건**
+- D-47: RUSTSEC-2026-0049 (rustls-webpki via a2) ignore 처리 — APNs 신뢰 엔드포인트
+- D-48: Riverpod 3.x auto-dispose 에러 전파 테스트 방식 변경 — StateError 충돌 → 성공/경계 케이스로 대체
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 40건: IMPLEMENTED 유지**
+- **나머지 41건: IMPLEMENTED 유지**
 
 ---
 

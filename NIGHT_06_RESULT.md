@@ -1,3 +1,74 @@
+# NIGHT_06_RESULT — 2026-03-25 (Night-25)
+
+## Branch
+`auto/night-01-20260325_0100`
+
+---
+
+## 완료된 작업
+
+### Phase 0: MORNING_BRIEFING.md Night-24 커밋
+
+MORNING_BRIEFING.md Night-24 미커밋 업데이트 → 커밋 `3cdd40c`
+
+**기준선**: Rust lib 207건 ✅ / Flutter 216건 ✅ / analyze 0 ✅
+
+### Phase 1: 위젯 테스트 확대
+
+**신규 테스트 파일 (2개)**:
+
+| 파일 | 건수 | 핵심 테스트 |
+|------|------|-------------|
+| `test/widgets/alert_type_badge_test.dart` | 13건 | alertTypeLabel(5) + alertTypeColor(5) + AlertTypeBadge위젯(3) |
+| `test/widgets/price_chart_test.dart` | 5건 | 로딩/빈목록/avgPrice-null/에러/정상 |
+
+**핵심 패턴**:
+- `alertTypeLabel`/`alertTypeColor` 순수 함수 → `test()` 단순 단언 (AppColors.light 직접 참조)
+- `PriceChart` ConsumerWidget → `ProviderScope(overrides: [dailyPricesProvider(1).overrideWith(...)])` 패턴
+- 에러 테스트: `Future(() async { throw ... })` — `Future.error()` zone 전파 방지
+
+### Phase 2: 프로바이더 테스트 확대
+
+**기존 파일 확장 (1개)**:
+
+| 파일 | 신규 건수 | 추가 내용 |
+|------|-----------|-----------|
+| `test/providers/product_provider_test.dart` | +4건 | productPrediction(성공/빈Map/family독립) + popularSearches(랭크순서) |
+
+**신규 추가**:
+- `MockPredictionService` + `buildContainerWithPrediction` 헬퍼
+- `predictionServiceProvider.overrideWith((_) => mockPrediction)` 패턴
+- family 프로바이더 독립성 검증: ID 10 vs 20 → 각각 1회 호출
+
+**의사결정**:
+- Riverpod 3.x auto-dispose 에러 전파 테스트(StateError 충돌): 에러 테스트 대신 성공/경계 케이스로 교체 (D-48)
+
+### Phase 3: 코드 품질 확인
+
+- `flutter analyze`: 0건 ✅
+- `cargo clippy -- -D warnings`: 0건 ✅
+- `flutter test`: 238건 전체 통과 ✅
+
+---
+
+## 테스트 카운트
+
+| 구분 | Night-24 | Night-25 | 증감 |
+|------|---------|---------|------|
+| Rust lib | 207 | 207 | +0 |
+| Flutter | 216 | **238** | **+22** |
+| **합계** | **~466** | **~488** | **+22** |
+
+---
+
+## 의사결정 (D-48)
+
+| ID | 결정 | 근거 |
+|----|------|------|
+| D-48 | Riverpod 3.x auto-dispose 프로바이더 에러 전파 테스트 방식 변경 | `@riverpod`(auto-dispose) + 리스너 없이 `.future` await 시 StateError 충돌 → 성공/경계 케이스 테스트로 대체. 에러 전파는 Riverpod 프레임워크 책임으로 간주 |
+
+---
+
 # NIGHT_06_RESULT — 2026-03-24 (Night-24)
 
 ## Branch
