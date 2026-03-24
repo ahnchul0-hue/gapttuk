@@ -6,6 +6,7 @@ import 'package:gapttuk_app/models/product.dart';
 import 'package:gapttuk_app/providers/product_provider.dart';
 import 'package:gapttuk_app/providers/service_providers.dart';
 import 'package:gapttuk_app/services/api_client.dart';
+import 'package:gapttuk_app/services/prediction_service.dart';
 import 'package:gapttuk_app/services/product_service.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -15,10 +16,22 @@ class MockApiClient extends Mock implements ApiClient {}
 
 class MockProductService extends Mock implements ProductService {}
 
+class MockPredictionService extends Mock implements PredictionService {}
+
 ProviderContainer buildContainer(ProductService mockService) {
   return ProviderContainer(
     overrides: [
       productServiceProvider.overrideWith((_) => mockService),
+    ],
+  );
+}
+
+ProviderContainer buildContainerWithPrediction(
+  MockPredictionService mockPrediction,
+) {
+  return ProviderContainer(
+    overrides: [
+      predictionServiceProvider.overrideWith((_) => mockPrediction),
     ],
   );
 }
@@ -108,6 +121,78 @@ void main() {
 
       final result = await container.read(popularSearchesProvider.future);
       expect(result, isEmpty);
+    });
+
+    test('getPopularSearches 랭크 순서 유지', () async {
+      final searches = [
+        PopularSearch(rank: 2, keyword: '갤럭시 S24', id: 2, searchCount: 80),
+        PopularSearch(rank: 1, keyword: '아이폰 15', id: 1, searchCount: 100),
+        PopularSearch(rank: 3, keyword: '버즈 프로', id: 3, searchCount: 50),
+      ];
+      when(() => mockService.getPopularSearches())
+          .thenAnswer((_) async => searches);
+
+      final container = buildContainer(mockService);
+      addTearDown(container.dispose);
+
+      final result = await container.read(popularSearchesProvider.future);
+      expect(result.length, 3);
+      // 서버가 내려준 순서 그대로 반환 (클라이언트 정렬 없음)
+      expect(result[0].rank, 2);
+      expect(result[1].rank, 1);
+    });
+  });
+
+  group('productPredictionProvider', () {
+    late MockPredictionService mockPrediction;
+
+    setUp(() {
+      mockPrediction = MockPredictionService();
+    });
+
+    tearDown(() {
+      reset(mockPrediction);
+    });
+
+    test('getPrediction 성공 시 Map 반환', () async {
+      final data = {'action': 'buy', 'confidence': 0.85};
+      when(() => mockPrediction.getPrediction(10))
+          .thenAnswer((_) async => data);
+
+      final container = buildContainerWithPrediction(mockPrediction);
+      addTearDown(container.dispose);
+
+      final result = await container.read(productPredictionProvider(10).future);
+      expect(result['action'], 'buy');
+      expect(result['confidence'], 0.85);
+    });
+
+    test('getPrediction 빈 Map 반환', () async {
+      when(() => mockPrediction.getPrediction(11))
+          .thenAnswer((_) async => {});
+
+      final container = buildContainerWithPrediction(mockPrediction);
+      addTearDown(container.dispose);
+
+      final result = await container.read(productPredictionProvider(11).future);
+      expect(result, isEmpty);
+    });
+
+    test('productId별 독립 캐시 — 다른 ID는 각각 호출', () async {
+      when(() => mockPrediction.getPrediction(10))
+          .thenAnswer((_) async => {'action': 'buy'});
+      when(() => mockPrediction.getPrediction(20))
+          .thenAnswer((_) async => {'action': 'wait'});
+
+      final container = buildContainerWithPrediction(mockPrediction);
+      addTearDown(container.dispose);
+
+      final r1 = await container.read(productPredictionProvider(10).future);
+      final r2 = await container.read(productPredictionProvider(20).future);
+      expect(r1['action'], 'buy');
+      expect(r2['action'], 'wait');
+      verify(() => mockPrediction.getPrediction(10)).called(1);
+      verify(() => mockPrediction.getPrediction(20)).called(1);
     });
   });
 }
