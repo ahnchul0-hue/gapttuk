@@ -74,5 +74,32 @@ void main() {
       await tester.pump();
       expect(find.text('로그아웃'), findsOneWidget);
     });
+
+    // ── Night-27 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('로그인 — "알림 설정" 메뉴 항목 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      expect(find.text('알림 설정'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — "설정" 메뉴 항목 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      expect(find.text('설정'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 이메일 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      expect(find.text('test@example.com'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 포인트 로드 후 잔액 "5¢" 표시', (tester) async {
+      // FakeRewardService 기본값: balance = 5
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('5¢'), findsOneWidget);
+    });
   });
 }

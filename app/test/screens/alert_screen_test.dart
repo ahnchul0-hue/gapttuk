@@ -74,5 +74,53 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('목표가'), findsOneWidget);
     });
+
+    // ── Night-27 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('카테고리 탭 전환 후 빈 상태 메시지 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen());
+      await tester.pumpAndSettle();
+      // "카테고리" 탭 탭
+      await tester.tap(find.text('카테고리'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('카테고리 알림이 없습니다'), findsOneWidget);
+    });
+
+    testWidgets('키워드 탭 전환 후 빈 상태 메시지 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen());
+      await tester.pumpAndSettle();
+      // "키워드" 탭 탭
+      await tester.tap(find.text('키워드'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('키워드 알림이 없습니다'), findsOneWidget);
+    });
+
+    testWidgets('키워드 알림 있을 때 키워드 텍스트 표시', (tester) async {
+      const kwAlert = KeywordAlert(
+        id: 1, userId: 1, keyword: '무선이어폰',
+      );
+      final data = AlertListResponse(keywordAlerts: [kwAlert]);
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(response: data),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('키워드'));
+      await tester.pumpAndSettle();
+      expect(find.text('무선이어폰'), findsOneWidget);
+    });
+
+    testWidgets('카테고리 알림 있을 때 "카테고리 #5" 표시', (tester) async {
+      const catAlert = CategoryAlert(
+        id: 1, userId: 1, categoryId: 5,
+      );
+      final data = AlertListResponse(categoryAlerts: [catAlert]);
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(response: data),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('카테고리'));
+      await tester.pumpAndSettle();
+      expect(find.text('카테고리 #5'), findsOneWidget);
+    });
   });
 }

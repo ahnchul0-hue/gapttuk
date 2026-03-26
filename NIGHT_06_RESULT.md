@@ -1,56 +1,64 @@
-# NIGHT_06_RESULT — 2026-03-26 (Night-26)
+# NIGHT_06_RESULT — 2026-03-27 (Night-27)
 
 ## Branch
-`auto/night-01-20260326_0100`
+`auto/night-01-20260327_0100`
 
 ---
 
 ## 완료된 작업
 
-### Phase 0: 기준선 확인
+### Phase 0: 기준선 확인 + 미커밋 커밋
 
-**기준선**: Rust lib 207건 ✅ / Flutter 238건 ✅ / analyze 0 ✅
+**기준선**: Rust lib 207건 ✅ / Flutter 248건 ✅ / analyze 0 ✅
 
-MORNING_BRIEFING.md Night-25 미커밋 변경 확인 → Night-26 작업에 포함하여 커밋.
+MORNING_BRIEFING.md Night-26 미커밋 변경 확인 → 커밋 `bea696b` 으로 정리.
 
-### Phase 1: AuthState 프로바이더 테스트
+### Phase 1: FavoritesScreen 테스트 확대
 
-**신규 파일**: `test/providers/auth_provider_test.dart` (6건)
-
-| 테스트 | 핵심 검증 |
-|--------|-----------|
-| 초기 상태 null | `authStateProvider` 초기값 null |
-| login 성공 시 state = user | socialLogin → state.id/nickname 업데이트 + pushService 호출 |
-| logout 후 state null | logout() → state = null, authService.logout() 검증 |
-| refresh 성공 시 state = user | me() → state 업데이트 + pushService 호출 |
-| refresh DioException 시 state null 유지 | 네트워크 오류 시 state = null (에러 전파 없음) |
-| withdraw 후 state null | withdraw() → state = null, authService.withdraw() 검증 |
-
-**핵심 패턴**:
-- `MockAuthService extends Mock implements AuthService` + `MockPushService`
-- `pushServiceProvider.overrideWith((_) => mockPush)` — login/refresh 시 pushService.registerDeviceIfNeeded() stub 필수
-- `keepAlive: true` Notifier → ProviderContainer 직접 읽기로 상태 검증
-- DioException 예외: AuthState.refresh()의 `on DioException catch` 분기 검증 (debugPrint 로그 정상 출력)
-
-### Phase 2: SearchScreen 테스트 확대
-
-**기존 파일 확장**: `test/screens/search_screen_test.dart` (4건 → 8건, +4건)
+**기존 파일 확장**: `test/screens/favorites_screen_test.dart` (5건 → 9건, +4건)
 
 | 신규 테스트 | 핵심 검증 |
 |------------|-----------|
-| 초기 "검색어를 입력하세요" 텍스트 표시 | 기존 `find.byType(TextField)` 중복 → 실제 텍스트 검증으로 교체 |
-| 힌트 텍스트 "상품명 또는 URL 검색" 표시 | `TextField.decoration?.hintText` 직접 검증 |
-| 검색 아이콘 버튼 표시 | `Icons.search` IconButton 존재 |
-| 초기 로딩 인디케이터 없음 | `CircularProgressIndicator` findsNothing |
-| 초기 상태에서 ListView 없음 | 검색 전 빈 상태 — ListView findsNothing |
+| 에러 시 "즐겨찾기를 불러오지 못했습니다" 표시 | FakeAlertService(error) → 에러 메시지 |
+| 에러 시 "다시 시도" 버튼 표시 | 에러 상태의 재시도 버튼 |
+| 알림 1개 있을 때 AppBar "1개" 배지 | PriceAlert 1개 → `_priceAlerts.length`개 배지 |
+| 알림 1개 있을 때 "상품 #100" 폴백 표시 | productDetailProvider 실패 → 폴백 텍스트 |
 
-**추가 개선**: `buildScreen()` 헬퍼 `AppTheme.light` 주입으로 통일 (중복 제거).
+**핵심 패턴**:
+- `_buildScreenWithProduct(service, productId)` 헬퍼: `alertServiceProvider` + `productDetailProvider(id)` 동시 override
+- `productDetailProvider(100).overrideWith((ref) async { throw Exception('not found'); })` — product load 실패 시 폴백 `'상품 #${alert.productId}'` 검증
 
-### Phase 3: 최종 검증
+### Phase 2: MyPageScreen 테스트 확대
+
+**기존 파일 확장**: `test/screens/my_page_screen_test.dart` (6건 → 10건, +4건)
+
+| 신규 테스트 | 핵심 검증 |
+|------------|-----------|
+| 로그인 — "알림 설정" 메뉴 항목 표시 | `ListTile(title: '알림 설정')` 존재 |
+| 로그인 — "설정" 메뉴 항목 표시 | `ListTile(title: '설정')` 존재 |
+| 로그인 — 이메일 표시 | `_fakeUser.email` 표시 |
+| 로그인 — 포인트 로드 후 "5¢" 표시 | FakeRewardService 기본값 balance=5 → `'5¢'` |
+
+### Phase 3: AlertScreen 탭 전환 테스트
+
+**기존 파일 확장**: `test/screens/alert_screen_test.dart` (6건 → 10건, +4건)
+
+| 신규 테스트 | 핵심 검증 |
+|------------|-----------|
+| 카테고리 탭 전환 후 빈 상태 메시지 | `tester.tap(find.text('카테고리'))` → "카테고리 알림이 없습니다" |
+| 키워드 탭 전환 후 빈 상태 메시지 | `tester.tap(find.text('키워드'))` → "키워드 알림이 없습니다" |
+| 키워드 알림 있을 때 키워드 표시 | `KeywordAlert(keyword: '무선이어폰')` → 텍스트 렌더링 |
+| 카테고리 알림 있을 때 "카테고리 #5" 표시 | `CategoryAlert(categoryId: 5)` → 텍스트 렌더링 |
+
+**핵심 패턴 (Night-27 신규)**:
+- `TabBar` 탭 전환: `tester.tap(find.text('탭명'))` + `pumpAndSettle()` — TabBarView 내용 전환 검증
+- `AlertListResponse(categoryAlerts: [...])` / `AlertListResponse(keywordAlerts: [...])` — 탭별 데이터 분리 주입
+
+### Phase 4: 최종 검증
 
 | 검증 | 결과 |
 |------|------|
-| `flutter test --no-pub` | **248건 전체 통과** ✅ (+10건) |
+| `flutter test --no-pub` | **260건 전체 통과** ✅ (+12건) |
 | `flutter analyze --no-pub` | 0건 ✅ |
 | Rust lib 변경 | 없음 (207건 유지) |
 
@@ -60,17 +68,24 @@ MORNING_BRIEFING.md Night-25 미커밋 변경 확인 → Night-26 작업에 포�
 
 | 파일 | 이전 | 이후 | 변화 |
 |------|------|------|------|
-| `test/providers/auth_provider_test.dart` | 신규 | 6건 | +6 |
-| `test/screens/search_screen_test.dart` | 4건 | 8건 | +4 |
-| **합계** | **238건** | **248건** | **+10** |
+| `test/screens/favorites_screen_test.dart` | 5건 | 9건 | +4 |
+| `test/screens/my_page_screen_test.dart` | 6건 | 10건 | +4 |
+| `test/screens/alert_screen_test.dart` | 6건 | 10건 | +4 |
+| **합계** | **248건** | **260건** | **+12** |
 
 ---
 
 ## 의사결정 기록
 
-**D-49**: AuthState 테스트 — PushService mock 주입 필수
+**D-50**: FavoritesScreen — productDetailProvider(id) family override 패턴
 
-- `AuthState.login()`과 `refresh()`는 성공 후 `pushServiceProvider.registerDeviceIfNeeded()` 호출.
-- `pushServiceProvider` stub 없이 override만 하면 MissingStubError 발생.
-- `when(() => mockPush.registerDeviceIfNeeded()).thenAnswer((_) async {})` → setUp에 배치.
+- FavoritesScreen 내부에서 `ref.read(productDetailProvider(id).future)` 를 각 product ID별로 호출.
+- 테스트에서 `productDetailProvider(100).overrideWith(...)` 로 특정 ID만 override — 상품 로드 실패 시 폴백 `'상품 #${alert.productId}'` 검증 가능.
+- `_buildScreenWithProduct(service, productId)` 헬퍼로 alert + product 동시 override 패턴 확립.
+- **Status**: IMPLEMENTED
+
+**D-51**: AlertScreen TabBar 전환 테스트 — `tester.tap(find.text('탭명'))` 패턴
+
+- `TabController`가 있는 `TabBar` 전환: `find.text('카테고리')` 탭 탭 → `pumpAndSettle()` → `TabBarView` 내용 검증.
+- 각 탭의 데이터는 `AlertListResponse`의 해당 필드로 독립 주입.
 - **Status**: IMPLEMENTED
