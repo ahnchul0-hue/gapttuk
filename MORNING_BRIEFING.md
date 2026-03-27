@@ -1,17 +1,18 @@
 # MORNING BRIEFING — 2026-03-27 (Night-13 ~ Night-27 종합 분석)
 
 > **분석 대상**: Night-13 ~ Night-27 (2026-03-12 ~ 2026-03-27)
-> **현재 브랜치**: `auto/night-01-20260327_0100` (main + 32 commits)
+> **현재 브랜치**: `auto/night-01-20260327_0100` (main + 33 commits)
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-03-27 (Night-27 최종, 검증 완료)
-> **변경 규모**: 74파일+
+> **최종 업데이트**: 2026-03-27 (Night-27 최종, 종합 분석 완료)
+> **변경 규모**: 74파일 (+4,076 / -889)
 > **검증**: Rust 207건 ✅ / Flutter 260건 ✅ / analyze 0건 ✅ (2026-03-27 실측)
+> **총 커밋**: main + 33 commits
 
 ---
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-26 세션별 전략
+### 1.1 Night-13 ~ Night-27 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -29,7 +30,7 @@
 | 24 | 03-24 | 취약점 해결 + FakeService 패턴 확장 | D-47: RUSTSEC-2026-0049 ignore, cargo 7→0건, Flutter +18건 (216건) | `025eaeb`, `e506f6f` |
 | 25 | 03-25 | 위젯/프로바이더 단위 테스트 완성 | D-48: Riverpod 3.x auto-dispose 에러 테스트 패턴, 위젯 4/4 커버리지 | `7206ac1`, `d6364ac` |
 | **26** | **03-26** | **AuthState 프로바이더 + SearchScreen 테스트 완성** | **D-49: keepAlive Notifier 테스트 시 PushService stub 필수** | **`b4b7cd0`** |
-| **27** | **03-27** | **화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭)** | **D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트** | **TBD** |
+| **27** | **03-27** | **화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭)** | **D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트** | **`6c3358c`, `58452ec`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -68,12 +69,12 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 
 ### 1.4 의사결정 일관성
 
-- **총 48개 결정** (D-1 ~ D-48)
+- **총 51개 결정** (D-1 ~ D-51)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 41건: IMPLEMENTED 유지**
+- **나머지 44건: IMPLEMENTED 유지**
 
 ---
 
@@ -101,6 +102,7 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 | 24 | ~3대 (순차) | Phase 1: cargo update+audit.toml | Phase 2: +18건 테스트 (3 FakeService) | — (수정 완결) | 서버2+Flutter18 |
 | **25** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-2: +22건 테스트** | **—** | **Flutter22** |
 | **26** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-2: +10건 테스트** | **—** | **Flutter10** |
+| **27** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -123,13 +125,13 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 | serena | ✅ 설치 (stdio) | 코드 심볼 분석 — 향후 활성화 가능 |
 | shadcn, mcp-tailwind-gemini | ❌ Flutter 비해당 | React/Tailwind 전용 → 영구 스킵 |
 | Hugging Face | ⚠️ OAuth 만료 | `HF_TOKEN` 갱신 필요 |
-| **Sonatype Guide** | **⚠️ 인증 미설정** | **Night-22~26 5세션 연속 API 호출 실패** |
+| **Sonatype Guide** | **⚠️ 인증 미설정** | **Night-22~27 6세션 연속 API 호출 실패** |
 
 ### 2.4 기술 실행 품질
 
 **Night-16~25 누적 강점:**
 - 일관된 5단계 검증 루틴 (test → clippy → fmt → analyze → flutter test)
-- **0건 테스트 회귀**: 14개 세션(Night-13~26)에서 기존 테스트 깨짐 0건
+- **0건 테스트 회귀**: 15개 세션(Night-13~27)에서 기존 테스트 깨짐 0건
 - `map_err(|_|)` → `tracing::warn!/debug!` 에러 정보 보존 패턴 완성
 - `catch(_)` → `catch(e,st)` + debugPrint 관측성 패턴 코드베이스 전반 확산
 - `as i64`/`as f64` → `try_from`/`saturating_mul`/`.clamp()` 산술 안전성 체계화
@@ -141,7 +143,7 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 
 **지속적 약점:**
 - `cargo test --lib`만 실행 — 통합 테스트 43건 스킵 (환경 제약 지속)
-- `sonatype-guide` 인증 미설정 — 의존성 보안 점수 미확인 (**5세션 연속**)
+- `sonatype-guide` 인증 미설정 — 의존성 보안 점수 미확인 (**6세션 연속**)
 - RUSTSEC-2026-0049: a2 upstream rustls 0.23 전환 대기 (audit.toml ignore 중)
 
 ---
@@ -200,14 +202,14 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 | FakeService 패턴 | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | 4개 | 4개 | 4개 | — |
 | PR 머지 | 3 | 3 | 3 | — |
-| main 대비 커밋 | **32** | 30 | 28 | **+2** |
-| main 대비 파일 변경 | **74파일+** | 74파일 | 73파일 | — |
+| main 대비 커밋 | **33** | 30 | 28 | **+3** |
+| main 대비 파일 변경 | **74파일** | 74파일 | 73파일 | — |
 
 ### 3.3 Night-27 변경 상세
 
-**브랜치: `auto/night-01-20260327_0100` — main + 32 commits (2개 Night-27 신규)**
+**브랜치: `auto/night-01-20260327_0100` — main + 33 commits (3개 Night-27 신규)**
 
-#### 커밋 TBD — Night-27 코드 변경
+#### 커밋 `6c3358c` — Night-27 코드 변경 / `58452ec` — Night-27 문서
 
 **Flutter 테스트 (3파일 확장):**
 
@@ -287,6 +289,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 24 | `025eaeb` | ~5건 | cargo 취약점 7→0 + audit.toml + FakeRewardService/NotificationService + Flutter +18 |
 | **25** | **`7206ac1`** | **+22건 테스트** | **AlertTypeBadge 13 + PriceChart 5 + Provider 4 — 프로덕션 코드 변경 없음** |
 | **26** | **`b4b7cd0`** | **+10건 테스트** | **AuthState Notifier 6건 + SearchScreen +4건 — 프로덕션 코드 변경 없음** |
+| **27** | **`6c3358c`** | **+12건 테스트** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 — 프로덕션 코드 변경 없음** |
 
 ### 3.5 FakeService 패턴 현황 (Night-24~25 안정)
 
@@ -320,30 +323,30 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-03-26)
+### 4.1 활성 브랜치 (2026-03-27)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260326_0100`** ★ | **+30 commits** | Night-13~26 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
+| **`auto/night-01-20260327_0100`** ★ | **+33 commits** | Night-13~27 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin에 push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin에 push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
 | `auto/night-01-20260310_0100` | +5 commits | OpenAPI + M-5/M-7 | **높음** | 로컬만 |
 | `auto/night-01-20260311_0100` | +2 commits | Monthly + Referral (중복) | **중간** | 로컬만 |
 
-### 4.2 삭제 안전한 브랜치 (18개+)
+### 4.2 삭제 안전한 브랜치 (19개+)
 
 | 브랜치 | 근거 |
 |--------|------|
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 auth 코드 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0325_0100` (14개) | **Night-26 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0326_0100` (15개) | **Night-27 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260326_0100 → main (현재, 충돌 없음, 30커밋) → 즉시 PR 가능
+1. auto/night-01-20260327_0100 → main (현재, 충돌 없음, 33커밋) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. auto/night-01-20260310_0100 (OpenAPI, 충돌 가능)
 4. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
@@ -378,7 +381,8 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | Night-24 | ✅ 완료 | 24 | cargo 7→0건 + FakeService 3종 + Flutter +18 |
 | **Night-25** | **✅ 완료** | **25** | **위젯 4/4 + Provider family + Flutter +22 (238건)** |
 | **Night-26** | **✅ 완료** | **26** | **AuthState Notifier 6건 + SearchScreen +4건 = 248건** |
-| sonatype-guide | ⏭️ 건너뜀 | 22~26 | 인증 미설정 (5세션 연속) |
+| **Night-27** | **✅ 완료** | **27** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 = 260건** |
+| sonatype-guide | ⏭️ 건너뜀 | 22~27 | 인증 미설정 (6세션 연속) |
 | PR 생성 + 머지 | ⏳ 대기 | — | **사용자 승인 필요** |
 
 ---
@@ -389,17 +393,17 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~26 머지 방향 | `auto/night-01-20260326_0100` (74파일, 30커밋, cargo audit 0건, Flutter 248건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~27 머지 방향 | `auto/night-01-20260327_0100` (74파일, 33커밋, cargo audit 0건, Flutter 260건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 
 ### 🔶 HIGH (금일 중 결정 권장)
 
 | # | 항목 | 설명 |
 |---|------|------|
 | **U-34** | go_router/flutter_riverpod/fl_chart 메이저 업그레이드 | breaking changes 포함 — 별도 세션 계획 필요 |
-| **U-32** | sonatype-guide 인증 설정 | Night-22~26 **5세션 연속** API 호출 실패 — 의존성 보안 점수 미확인 |
+| **U-32** | sonatype-guide 인증 설정 | Night-22~27 **6세션 연속** API 호출 실패 — 의존성 보안 점수 미확인 |
 | **U-1** | 중복 구현 채택 | Monthly prices + ReferralScreen이 여러 브랜치에 이중 구현 |
 | **U-2** | 미머지 브랜치 통합 순서 | 5개 미머지 브랜치 충돌 해결 |
-| **U-5** | auto 브랜치 정리 | **18개+** 삭제 안전 (§4.2) |
+| **U-5** | auto 브랜치 정리 | **19개+** 삭제 안전 (§4.2) |
 | **U-6** | 통합 테스트 실행 | Night-25도 `cargo test --lib`만 (통합 43건 스킵) |
 
 ### 🔵 MEDIUM (이번 주 내 결정)
@@ -431,12 +435,12 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 항목 | 등급 | 보류 이유 |
 |------|------|-----------|
 | go_router/riverpod/fl_chart 메이저 업그레이드 | HIGH | breaking changes — 별도 계획 필요 |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**6세션 연속**) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**6세션 연속 Night-22~27**) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 (audit.toml ignore 중) |
 | `SearchScreen` 필터/정렬 미연결 | MEDIUM | fix/phase0 브랜치와 충돌 위험 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
 | E2E 테스트 | LOW | D-39:B 이연 |
-| auto 브랜치 18개+ 정리 | LOW | 사용자 승인 대기 |
+| auto 브랜치 19개+ 정리 | LOW | 사용자 승인 대기 |
 
 ---
 
@@ -465,7 +469,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | FakeService 패턴 | **3종** | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | **4개** | 4개 | 4개 | 4개 | — |
 | 순수 함수 추출 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | — |
-| 커밋 (main 대비) | **32** | 30 | 28 | 25 | **+2** |
+| 커밋 (main 대비) | **33** | 30 | 28 | 25 | **+3** |
 
 ### 8.2 기술 부채 현황
 
@@ -486,8 +490,8 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 의존성 보안 | **해결됨** ✅ (cargo audit 0건) |
 | **Flutter 테스트 커버리지** | **화면별 심층 완결** ✅ (260건 — 위젯 4/4 + AuthState 6건 + 탭전환 4건 + FakeService 3종) |
 | 미머지 브랜치 통합 | **적체** ⚠️ (5개) |
-| auto 브랜치 정리 | **미처리** ⚠️ (18개+ 삭제 가능) |
+| auto 브랜치 정리 | **미처리** ⚠️ (19개+ 삭제 가능) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (D-39:B 이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (6세션 연속) |
+| sonatype-guide 인증 | **미설정** ⚠️ (6세션 연속 Night-22~27) |
 | RUSTSEC-2026-0049 | **모니터링 필요** ⚠️ (audit.toml ignore 중) |
