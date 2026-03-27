@@ -1,7 +1,7 @@
-# NIGHT_06_RESULT — 2026-03-27 (Night-27)
+# NIGHT_06_RESULT — 2026-03-28 (Night-28)
 
 ## Branch
-`auto/night-01-20260327_0100`
+`auto/night-01-20260328_0100`
 
 ---
 
@@ -9,56 +9,60 @@
 
 ### Phase 0: 기준선 확인 + 미커밋 커밋
 
-**기준선**: Rust lib 207건 ✅ / Flutter 248건 ✅ / analyze 0 ✅
+**기준선**: Rust lib 207건 ✅ / Flutter 260건 ✅ / analyze 0 ✅
 
-MORNING_BRIEFING.md Night-26 미커밋 변경 확인 → 커밋 `bea696b` 으로 정리.
+MORNING_BRIEFING.md Night-27 종합 분석 완료 → 커밋 `f168637`.
 
-### Phase 1: FavoritesScreen 테스트 확대
+### Phase 1: ProductDetailScreen 테스트 확대
 
-**기존 파일 확장**: `test/screens/favorites_screen_test.dart` (5건 → 9건, +4건)
+**기존 파일 확장**: `test/screens/product_detail_screen_test.dart` (7건 → 11건, +4건)
 
 | 신규 테스트 | 핵심 검증 |
 |------------|-----------|
-| 에러 시 "즐겨찾기를 불러오지 못했습니다" 표시 | FakeAlertService(error) → 에러 메시지 |
-| 에러 시 "다시 시도" 버튼 표시 | 에러 상태의 재시도 버튼 |
-| 알림 1개 있을 때 AppBar "1개" 배지 | PriceAlert 1개 → `_priceAlerts.length`개 배지 |
-| 알림 1개 있을 때 "상품 #100" 폴백 표시 | productDetailProvider 실패 → 폴백 텍스트 |
+| priceTrend falling → "하락" 칩 표시 | `fakeProduct.priceTrend = 'falling'` → `_TrendChip` → `'하락'` |
+| buyTimingScore 85 → "매수 타이밍 85점" 배지 표시 | `buyTimingScore: 85` → `_TimingBadge` → `'매수 타이밍 85점'` |
+| 최저가 ₩25,000 통계 카드 표시 | `lowestPrice: 25000` → `_StatColumn` → `'₩25,000'` |
+| AI 예측 buy_now → "지금 구매" 텍스트 표시 | `predictionFuture` 데이터 주입 → `_PredictionCard` → `'지금 구매'` |
 
 **핵심 패턴**:
-- `_buildScreenWithProduct(service, productId)` 헬퍼: `alertServiceProvider` + `productDetailProvider(id)` 동시 override
-- `productDetailProvider(100).overrideWith((ref) async { throw Exception('not found'); })` — product load 실패 시 폴백 `'상품 #${alert.productId}'` 검증
+- `buildScreen(predictionFuture: Future.value({...}))` — `productPredictionProvider` override로 AI 예측 카드 상태 검증
+- `_TrendChip`/`_TimingBadge`/`_StatColumn` private 위젯들은 상위 buildScreen()으로 간접 검증
 
-### Phase 2: MyPageScreen 테스트 확대
+### Phase 2: NotificationListScreen 테스트 확대
 
-**기존 파일 확장**: `test/screens/my_page_screen_test.dart` (6건 → 10건, +4건)
-
-| 신규 테스트 | 핵심 검증 |
-|------------|-----------|
-| 로그인 — "알림 설정" 메뉴 항목 표시 | `ListTile(title: '알림 설정')` 존재 |
-| 로그인 — "설정" 메뉴 항목 표시 | `ListTile(title: '설정')` 존재 |
-| 로그인 — 이메일 표시 | `_fakeUser.email` 표시 |
-| 로그인 — 포인트 로드 후 "5¢" 표시 | FakeRewardService 기본값 balance=5 → `'5¢'` |
-
-### Phase 3: AlertScreen 탭 전환 테스트
-
-**기존 파일 확장**: `test/screens/alert_screen_test.dart` (6건 → 10건, +4건)
+**기존 파일 확장**: `test/screens/notification_list_screen_test.dart` (6건 → 10건, +4건)
 
 | 신규 테스트 | 핵심 검증 |
 |------------|-----------|
-| 카테고리 탭 전환 후 빈 상태 메시지 | `tester.tap(find.text('카테고리'))` → "카테고리 알림이 없습니다" |
-| 키워드 탭 전환 후 빈 상태 메시지 | `tester.tap(find.text('키워드'))` → "키워드 알림이 없습니다" |
-| 키워드 알림 있을 때 키워드 표시 | `KeywordAlert(keyword: '무선이어폰')` → 텍스트 렌더링 |
-| 카테고리 알림 있을 때 "카테고리 #5" 표시 | `CategoryAlert(categoryId: 5)` → 텍스트 렌더링 |
+| 알림 본문(body) 텍스트 표시 | `body: '가격이 목표가에 도달했습니다.'` → `_NotificationTile` subtitle 렌더링 |
+| 읽지 않은 알림(isRead: false) 항목 렌더링 | `isRead: false` 알림 → ListTile 정상 표시 |
+| "모두 읽음" 탭 후 스낵바 표시 | `tap(find.text('모두 읽음'))` → `'모든 알림을 읽음 처리했습니다.'` 스낵바 |
+| 두 개의 알림 항목 모두 제목 표시 | 2개 `AppNotification` 주입 → 두 제목 모두 `findsOneWidget` |
 
-**핵심 패턴 (Night-27 신규)**:
-- `TabBar` 탭 전환: `tester.tap(find.text('탭명'))` + `pumpAndSettle()` — TabBarView 내용 전환 검증
-- `AlertListResponse(categoryAlerts: [...])` / `AlertListResponse(keywordAlerts: [...])` — 탭별 데이터 분리 주입
+**핵심 패턴 (Night-28 신규)**:
+- `FakeNotificationService.markAllAsRead()` → 즉시 성공 → `ScaffoldMessenger` 스낵바 검증
+- `isRead: false` → `Semantics(label: '..., 읽지 않음')` 렌더링 — Semantics 접근성 레이블 간접 검증
+
+### Phase 3: PointHistoryScreen 테스트 확대
+
+**기존 파일 확장**: `test/screens/point_history_screen_test.dart` (6건 → 10건, +4건)
+
+| 신규 테스트 | 핵심 검증 |
+|------------|-----------|
+| 'referral_welcome' 타입 → "추천 가입 보상" 레이블 | `_transactionLabel('referral_welcome')` 분기 검증 |
+| 'gifticon_exchange' 타입 → "기프티콘 교환" 레이블 | `_transactionLabel('gifticon_exchange')` 분기 검증 |
+| 음수 금액 amount: -5 → "-5¢" 표시 | `isPositive=false` → `'${amount}¢'` ('+' 없음) |
+| 날짜 "yyyy.MM.dd" 형식 표시 | `DateTime(2026, 3, 24)` → `'2026.03.24'` |
+
+**핵심 패턴 (Night-28 신규)**:
+- `_transactionLabel` switch 분기 전수 테스트: `daily_checkin`(기존) + `referral_welcome` + `gifticon_exchange` = 3/8 분기 커버
+- 음수 금액: `amount: -5` → `isPositive=false` → trailing `'-5¢'` (접두어 없음) vs 양수 `'+3¢'` 대비
 
 ### Phase 4: 최종 검증
 
 | 검증 | 결과 |
 |------|------|
-| `flutter test --no-pub` | **260건 전체 통과** ✅ (+12건) |
+| `flutter test --no-pub` | **272건 전체 통과** ✅ (+12건) |
 | `flutter analyze --no-pub` | 0건 ✅ |
 | Rust lib 변경 | 없음 (207건 유지) |
 
@@ -68,24 +72,25 @@ MORNING_BRIEFING.md Night-26 미커밋 변경 확인 → 커밋 `bea696b` 으로
 
 | 파일 | 이전 | 이후 | 변화 |
 |------|------|------|------|
-| `test/screens/favorites_screen_test.dart` | 5건 | 9건 | +4 |
-| `test/screens/my_page_screen_test.dart` | 6건 | 10건 | +4 |
-| `test/screens/alert_screen_test.dart` | 6건 | 10건 | +4 |
-| **합계** | **248건** | **260건** | **+12** |
+| `test/screens/product_detail_screen_test.dart` | 7건 | 11건 | +4 |
+| `test/screens/notification_list_screen_test.dart` | 6건 | 10건 | +4 |
+| `test/screens/point_history_screen_test.dart` | 6건 | 10건 | +4 |
+| **합계** | **260건** | **272건** | **+12** |
 
 ---
 
 ## 의사결정 기록
 
-**D-50**: FavoritesScreen — productDetailProvider(id) family override 패턴
+**D-52**: NotificationListScreen — `_markAllAsRead` 스낵바 검증 패턴
 
-- FavoritesScreen 내부에서 `ref.read(productDetailProvider(id).future)` 를 각 product ID별로 호출.
-- 테스트에서 `productDetailProvider(100).overrideWith(...)` 로 특정 ID만 override — 상품 로드 실패 시 폴백 `'상품 #${alert.productId}'` 검증 가능.
-- `_buildScreenWithProduct(service, productId)` 헬퍼로 alert + product 동시 override 패턴 확립.
+- `FakeNotificationService.markAllAsRead()` → 즉시 `0` 반환 (에러 없음)
+- `tap(find.text('모두 읽음'))` + `pumpAndSettle()` → `ScaffoldMessenger` 스낵바 텍스트 검증
+- 기존 Fake에 이미 no-op 구현이 있어서 별도 수정 불필요 — `FakeNotificationService` 재사용성 검증
 - **Status**: IMPLEMENTED
 
-**D-51**: AlertScreen TabBar 전환 테스트 — `tester.tap(find.text('탭명'))` 패턴
+**D-53**: PointHistoryScreen — `_transactionLabel` switch 분기 단위 테스트 전략
 
-- `TabController`가 있는 `TabBar` 전환: `find.text('카테고리')` 탭 탭 → `pumpAndSettle()` → `TabBarView` 내용 검증.
-- 각 탭의 데이터는 `AlertListResponse`의 해당 필드로 독립 주입.
+- `_transactionLabel`은 private 메서드이므로 직접 호출 불가 → 위젯 통합 테스트로 간접 검증
+- 각 분기별로 `PointHistoryItem(transactionType: '...')` 주입 → 렌더링된 텍스트로 switch 결과 검증
+- 8개 분기 중 3개 커버 (`daily_checkin`/`referral_welcome`/`gifticon_exchange`)
 - **Status**: IMPLEMENTED

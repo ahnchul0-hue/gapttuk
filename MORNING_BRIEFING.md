@@ -1,18 +1,18 @@
-# MORNING BRIEFING — 2026-03-27 (Night-13 ~ Night-27 종합 분석)
+# MORNING BRIEFING — 2026-03-28 (Night-13 ~ Night-28 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-27 (2026-03-12 ~ 2026-03-27)
-> **현재 브랜치**: `auto/night-01-20260327_0100` (main + 33 commits)
+> **분석 대상**: Night-13 ~ Night-28 (2026-03-12 ~ 2026-03-28)
+> **현재 브랜치**: `auto/night-01-20260328_0100` (main + 35 commits)
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-03-27 (Night-27 최종, 종합 분석 완료)
-> **변경 규모**: 74파일 (+4,076 / -889)
-> **검증**: Rust 207건 ✅ / Flutter 260건 ✅ / analyze 0건 ✅ (2026-03-27 실측)
-> **총 커밋**: main + 33 commits
+> **최종 업데이트**: 2026-03-28 (Night-28 최종, 검증 완료)
+> **변경 규모**: 74파일+ (+4,076 / -889)
+> **검증**: Rust 207건 ✅ / Flutter 272건 ✅ / analyze 0건 ✅ (2026-03-28 실측)
+> **총 커밋**: main + 35 commits
 
 ---
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-27 세션별 전략
+### 1.1 Night-13 ~ Night-28 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -29,8 +29,9 @@
 | 23 | 03-23 | 관측성 완결 + 테스트 확대 + 의존성 감사 | D-44~46: rollback warn 5곳, C-1 CRITICAL, cargo audit 7건, Flutter +18건 | `d95e438`, `d9ab41f` |
 | 24 | 03-24 | 취약점 해결 + FakeService 패턴 확장 | D-47: RUSTSEC-2026-0049 ignore, cargo 7→0건, Flutter +18건 (216건) | `025eaeb`, `e506f6f` |
 | 25 | 03-25 | 위젯/프로바이더 단위 테스트 완성 | D-48: Riverpod 3.x auto-dispose 에러 테스트 패턴, 위젯 4/4 커버리지 | `7206ac1`, `d6364ac` |
-| **26** | **03-26** | **AuthState 프로바이더 + SearchScreen 테스트 완성** | **D-49: keepAlive Notifier 테스트 시 PushService stub 필수** | **`b4b7cd0`** |
-| **27** | **03-27** | **화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭)** | **D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트** | **`6c3358c`, `58452ec`** |
+| 26 | 03-26 | AuthState 프로바이더 + SearchScreen 테스트 완성 | D-49: keepAlive Notifier 테스트 시 PushService stub 필수 | `b4b7cd0` |
+| 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
+| **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -54,9 +55,10 @@ Night 24:    ★★★ 안정화 종결 ── 취약점 0건 달성 + FakeServi
 Night 25:    ★★★★ 테스트 완결 ── 미테스트 위젯 0개 + 프로바이더 family 검증 + 238건
 Night 26:    ★★★★★ 상태 관리 테스트 ── AuthState Notifier 검증 + SearchScreen 확장 + 248건
 Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPage/Alert 탭전환 + productDetailProvider family + 260건
+Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDetail/Notification/PointHistory 내부 위젯 검증 + 272건
 ```
 
-### 1.3 Opus 4.6의 핵심 전략 패턴 (Night-27까지)
+### 1.3 Opus 4.6의 핵심 전략 패턴 (Night-28까지)
 
 1. **PLAN_01.md GATE 체계**: Phase 전환마다 사용자 승인 필수 → Night-23에서 6 Phase 전체 순차 완수
 2. **오탐 필터링**: 서브에이전트 발견 → Opus가 ~40% 필터링 → 13~18건 실행 확정 (Night-16~23 일관)
@@ -69,12 +71,12 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 
 ### 1.4 의사결정 일관성
 
-- **총 51개 결정** (D-1 ~ D-51)
+- **총 53개 결정** (D-1 ~ D-53)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 44건: IMPLEMENTED 유지**
+- **나머지 46건: IMPLEMENTED 유지**
 
 ---
 
@@ -168,22 +170,24 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 | Night-24 최종 | 207 | 216 | 423 |
 | Night-25 최종 | 207 | 238 | 445 |
 | Night-26 최종 | 207 | 248 | 455 |
-| **Night-27 최종** | **207** | **260** | **467** |
+| Night-27 최종 | 207 | 260 | 467 |
+| **Night-28 최종** | **207** | **272** | **479** |
 
 > Night-25: Flutter 테스트 +22건 (AlertTypeBadge 13 + PriceChart 5 + Provider 4). 위젯 테스트 4/4 완전 커버리지.
 > Night-26: Flutter 테스트 +10건 (AuthState provider 6 + SearchScreen 확장 4). keepAlive Notifier 테스트 패턴 완성.
 > Night-27: Flutter 테스트 +12건 (FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4). productDetailProvider family override + TabBar 탭 전환 패턴 완성.
-> 통합(43) + doc(4) 포함 시 추정 ~514건.
+> Night-28: Flutter 테스트 +12건 (ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4). markAllAsRead 스낵바 + _transactionLabel switch 간접 검증 패턴 완성.
+> 통합(43) + doc(4) 포함 시 추정 ~526건.
 
 ### 3.2 코드베이스 규모
 
-| 항목 | **Night-27** | Night-26 | Night-25 | 변화 (vs 26) |
+| 항목 | **Night-28** | Night-27 | Night-26 | 변화 (vs 27) |
 |------|-------------|----------|----------|-------------|
 | DB 마이그레이션 (main) | 018 | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-51** | D-49 | D-48 | **+2** |
+| DECISION_LOG 항목 | **D-53** | D-51 | D-49 | **+2** |
 | 순수 함수 추출 누계 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | — |
 | Silent Failure 수정 | 28건+ (잔존 0건) | 28건+ | 28건+ | — |
 | Flutter 접근성 화면 | 7개 | 7개 | 7개 | — |
@@ -195,17 +199,37 @@ Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPa
 | serde CI 자동검증 | ✅ | ✅ | ✅ | — |
 | TOCTOU 해결 | 2건 | 2건 | 2건 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 ✅ | 0건 ✅ | — |
-| **Flutter 테스트** | **260건** | 248건 | 238건 | **+12** |
+| **Flutter 테스트** | **272건** | 260건 | 248건 | **+12** |
 | **위젯 테스트 커버리지** | **4/4** ✅ | 4/4 ✅ | 4/4 ✅ | — |
-| **AuthState 프로바이더 테스트** | **✅ (6건)** | ✅ (6건) | ❌ | — |
-| **탭 전환 테스트** | **✅ (4건)** | ❌ | ❌ | **신규** |
+| **AuthState 프로바이더 테스트** | **✅ (6건)** | ✅ (6건) | ✅ (6건) | — |
+| **탭 전환 테스트** | **✅ (4건)** | ✅ (4건) | ❌ | — |
+| **markAllAsRead 스낵바 테스트** | **✅ (1건)** | ❌ | ❌ | **신규** |
 | FakeService 패턴 | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | 4개 | 4개 | 4개 | — |
 | PR 머지 | 3 | 3 | 3 | — |
-| main 대비 커밋 | **33** | 30 | 28 | **+3** |
-| main 대비 파일 변경 | **74파일** | 74파일 | 73파일 | — |
+| main 대비 커밋 | **35** | 33 | 30 | **+2** |
+| main 대비 파일 변경 | **74파일+** | 74파일 | 74파일 | — |
 
-### 3.3 Night-27 변경 상세
+### 3.3 Night-28 변경 상세
+
+**브랜치: `auto/night-01-20260328_0100` — main + 35 commits (2개 Night-28 신규)**
+
+#### 커밋 TBD — Night-28 코드 변경 / TBD — Night-28 문서
+
+**Flutter 테스트 (3파일 확장):**
+
+| 파일 | 건수 | 핵심 테스트 |
+|------|------|-------------|
+| `test/screens/product_detail_screen_test.dart` (확장) | +4건 | 하락칩/타이밍85점/최저가₩25000/AI예측buy_now |
+| `test/screens/notification_list_screen_test.dart` (확장) | +4건 | 본문텍스트/읽지않음렌더링/모두읽음스낵바/다중알림 |
+| `test/screens/point_history_screen_test.dart` (확장) | +4건 | referral_welcome/gifticon_exchange/음수-5¢/날짜포맷 |
+
+**핵심 테스트 패턴 (Night-28 신규):**
+- `buildScreen(predictionFuture: Future.value({...}))` — `productPredictionProvider` override로 AI 예측 카드 직접 검증
+- `tap(find.text('모두 읽음'))` + `pumpAndSettle()` → `ScaffoldMessenger` 스낵바 텍스트 검증 (`_markAllAsRead` 성공 경로)
+- `PointHistoryItem(transactionType: '...')` 주입 → `_transactionLabel` switch 분기 간접 검증 (private 메서드 우회)
+
+### 3.3 Night-27 변경 상세 (이전)
 
 **브랜치: `auto/night-01-20260327_0100` — main + 33 commits (3개 Night-27 신규)**
 
@@ -419,23 +443,22 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ---
 
-## 7. Night-27에서 해결된 항목 + 잔존 항목
+## 7. Night-28에서 해결된 항목 + 잔존 항목
 
-### ✅ Night-27에서 해결됨
+### ✅ Night-28에서 해결됨
 
-| 항목 | 등급 | Night-27 해결 방법 |
+| 항목 | 등급 | Night-28 해결 방법 |
 |------|------|-------------------|
-| FavoritesScreen 에러 상태 테스트 0건 | MEDIUM | +2건 (에러메시지/다시시도버튼) |
-| FavoritesScreen 상품 폴백 테스트 0건 | MEDIUM | productDetailProvider family override 패턴 (D-50) |
-| MyPageScreen 메뉴/이메일/포인트 테스트 0건 | MEDIUM | +4건 (알림설정/설정/이메일/센트잔액) |
-| AlertScreen 탭 전환 테스트 0건 | MEDIUM | TabBar tap 패턴 + 탭별 데이터 주입 (D-51) |
+| ProductDetailScreen priceTrend/타이밍/최저가/AI예측 테스트 0건 | MEDIUM | +4건 (하락칩/85점배지/₩25000/buy_now) |
+| NotificationListScreen 본문/읽지않음/markAllAsRead 테스트 0건 | MEDIUM | +4건 (본문/isRead false/스낵바/다중알림) |
+| PointHistoryScreen transactionType/음수/날짜 테스트 부족 | MEDIUM | +4건 (referral_welcome/gifticon/음수-5¢/날짜) |
 
 ### ⏳ 잔존 항목 (다음 세션)
 
 | 항목 | 등급 | 보류 이유 |
 |------|------|-----------|
 | go_router/riverpod/fl_chart 메이저 업그레이드 | HIGH | breaking changes — 별도 계획 필요 |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**6세션 연속 Night-22~27**) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**7세션 연속 Night-22~28**) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 (audit.toml ignore 중) |
 | `SearchScreen` 필터/정렬 미연결 | MEDIUM | fix/phase0 브랜치와 충돌 위험 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
@@ -446,14 +469,14 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-03-27, 실측 검증 완료)
+### 8.1 현재 지표 (2026-03-28, 실측 검증 완료)
 
-| 지표 | **Night-27** | Night-26 | Night-25 | Night-24 | 변화 (vs 26) |
+| 지표 | **Night-28** | Night-27 | Night-26 | Night-25 | 변화 (vs 27) |
 |------|------------|----------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | 207 | — |
-| Flutter 테스트 | **260** ✅ | 248 | 238 | 216 | **+12** |
+| Flutter 테스트 | **272** ✅ | 260 | 248 | 238 | **+12** |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | 0건 | — |
-| DECISION_LOG | **D-51** | D-49 | D-48 | D-47 | **+2** |
+| DECISION_LOG | **D-53** | D-51 | D-49 | D-48 | **+2** |
 | Silent Failure 수정 누계 | **28건+** | 28건+ | 28건+ | 28건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | 20건 | — |
@@ -463,13 +486,14 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | serde CI 자동검증 | **✅** | ✅ | ✅ | ✅ | — |
 | TOCTOU 해결 | **2건** | 2건 | 2건 | 2건 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 ✅ | 0건 ✅ | 0건 ✅ | — |
-| **위젯 테스트 커버리지** | **4/4** ✅ | 4/4 ✅ | 4/4 ✅ | 2/4 | — |
-| **AuthState 프로바이더 테스트** | **✅ 6건** | ✅ 6건 | ❌ | ❌ | — |
-| **탭 전환 테스트** | **✅ 4건** | ❌ | ❌ | ❌ | **신규** |
+| **위젯 테스트 커버리지** | **4/4** ✅ | 4/4 ✅ | 4/4 ✅ | 4/4 ✅ | — |
+| **AuthState 프로바이더 테스트** | **✅ 6건** | ✅ 6건 | ✅ 6건 | ❌ | — |
+| **탭 전환 테스트** | **✅ 4건** | ✅ 4건 | ❌ | ❌ | — |
+| **markAllAsRead 스낵바 테스트** | **✅ 1건** | ❌ | ❌ | ❌ | **신규** |
 | FakeService 패턴 | **3종** | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | **4개** | 4개 | 4개 | 4개 | — |
 | 순수 함수 추출 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | — |
-| 커밋 (main 대비) | **33** | 30 | 28 | 25 | **+3** |
+| 커밋 (main 대비) | **35** | 33 | 30 | 28 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -488,10 +512,10 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 순수 함수 / DRY | **개선됨** ✅ (11개 함수, 54테스트 + 헬퍼 4개) |
 | Flutter 에러 표시 일관성 | **완료** ✅ (showErrorSnackBar 11개소) |
 | 의존성 보안 | **해결됨** ✅ (cargo audit 0건) |
-| **Flutter 테스트 커버리지** | **화면별 심층 완결** ✅ (260건 — 위젯 4/4 + AuthState 6건 + 탭전환 4건 + FakeService 3종) |
+| **Flutter 테스트 커버리지** | **세부 UI 상태 완결** ✅ (272건 — 위젯 4/4 + AuthState 6건 + 탭전환 4건 + markAllAsRead 스낵바 + FakeService 3종) |
 | 미머지 브랜치 통합 | **적체** ⚠️ (5개) |
 | auto 브랜치 정리 | **미처리** ⚠️ (19개+ 삭제 가능) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (D-39:B 이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (6세션 연속 Night-22~27) |
+| sonatype-guide 인증 | **미설정** ⚠️ (7세션 연속 Night-22~28) |
 | RUSTSEC-2026-0049 | **모니터링 필요** ⚠️ (audit.toml ignore 중) |
