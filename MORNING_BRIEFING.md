@@ -31,7 +31,7 @@
 | 25 | 03-25 | 위젯/프로바이더 단위 테스트 완성 | D-48: Riverpod 3.x auto-dispose 에러 테스트 패턴, 위젯 4/4 커버리지 | `7206ac1`, `d6364ac` |
 | 26 | 03-26 | AuthState 프로바이더 + SearchScreen 테스트 완성 | D-49: keepAlive Notifier 테스트 시 PushService stub 필수 | `b4b7cd0` |
 | 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
-| **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **TBD** |
+| **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **`7db6024`, `7d05701`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -214,7 +214,7 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 
 **브랜치: `auto/night-01-20260328_0100` — main + 35 commits (2개 Night-28 신규)**
 
-#### 커밋 TBD — Night-28 코드 변경 / TBD — Night-28 문서
+#### 커밋 `7db6024` — Night-28 코드 변경 / `7d05701` — Night-28 문서
 
 **Flutter 테스트 (3파일 확장):**
 

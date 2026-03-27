@@ -11,7 +11,7 @@
 
 **기준선**: Rust lib 207건 ✅ / Flutter 260건 ✅ / analyze 0 ✅
 
-MORNING_BRIEFING.md Night-27 종합 분석 완료 → 커밋 `f168637`.
+MORNING_BRIEFING.md Night-27 종합 분석 완료 → 커밋 `f168637` (Phase 0 기준선).
 
 ### Phase 1: ProductDetailScreen 테스트 확대
 
