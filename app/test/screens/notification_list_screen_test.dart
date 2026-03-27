@@ -81,5 +81,82 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('목표 가격 달성!'), findsOneWidget);
     });
+
+    testWidgets('알림 본문(body) 텍스트 표시', (tester) async {
+      final notification = AppNotification(
+        id: 2,
+        userId: 1,
+        notificationType: 'price_alert',
+        title: '알림',
+        body: '가격이 목표가에 도달했습니다.',
+        sentAt: DateTime(2026, 3, 25),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('가격이 목표가에 도달했습니다.'), findsOneWidget);
+    });
+
+    testWidgets('읽지 않은 알림(isRead: false) 항목 렌더링', (tester) async {
+      final notification = AppNotification(
+        id: 3,
+        userId: 1,
+        notificationType: 'keyword_alert',
+        title: '키워드 알림',
+        isRead: false,
+        sentAt: DateTime(2026, 3, 25),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('키워드 알림'), findsOneWidget);
+    });
+
+    testWidgets('"모두 읽음" 탭 후 스낵바 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('모두 읽음'));
+      await tester.pumpAndSettle();
+      expect(find.text('모든 알림을 읽음 처리했습니다.'), findsOneWidget);
+    });
+
+    testWidgets('두 개의 알림 항목 모두 제목 표시', (tester) async {
+      final notifications = [
+        AppNotification(
+          id: 4,
+          userId: 1,
+          notificationType: 'price_alert',
+          title: '첫 번째 알림',
+          sentAt: DateTime(2026, 3, 24),
+        ),
+        AppNotification(
+          id: 5,
+          userId: 1,
+          notificationType: 'system',
+          title: '두 번째 알림',
+          sentAt: DateTime(2026, 3, 25),
+        ),
+      ];
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: notifications, cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('첫 번째 알림'), findsOneWidget);
+      expect(find.text('두 번째 알림'), findsOneWidget);
+    });
   });
 }

@@ -115,5 +115,37 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('품절'), findsOneWidget);
     });
+
+    testWidgets('priceTrend falling → "하락" 칩 표시', (tester) async {
+      // fakeProduct.priceTrend = 'falling' → _TrendChip → '하락'
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('하락'), findsOneWidget);
+    });
+
+    testWidgets('buyTimingScore 85 → "매수 타이밍 85점" 배지 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('매수 타이밍 85점'), findsOneWidget);
+    });
+
+    testWidgets('최저가 ₩25,000 통계 카드 표시', (tester) async {
+      // fakeProduct.lowestPrice = 25000
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('₩25,000'), findsOneWidget);
+    });
+
+    testWidgets('AI 예측 buy_now → "지금 구매" 텍스트 표시', (tester) async {
+      await tester.pumpWidget(buildScreen(
+        predictionFuture: Future.value({
+          'predicted_action': 'buy_now',
+          'confidence': '0.92',
+        }),
+      ));
+      await tester.pumpAndSettle();
+      // _PredictionCard: action='buy_now' → actionText='지금 구매'
+      expect(find.textContaining('지금 구매'), findsOneWidget);
+    });
   });
 }

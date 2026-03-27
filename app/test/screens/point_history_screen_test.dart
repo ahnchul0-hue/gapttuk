@@ -90,5 +90,70 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('+3¢'), findsOneWidget);
     });
+
+    testWidgets('"referral_welcome" 타입 → "추천 가입 보상" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 3,
+        amount: 1,
+        transactionType: 'referral_welcome',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('추천 가입 보상'), findsOneWidget);
+    });
+
+    testWidgets('"gifticon_exchange" 타입 → "기프티콘 교환" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 4,
+        amount: -5,
+        transactionType: 'gifticon_exchange',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('기프티콘 교환'), findsOneWidget);
+    });
+
+    testWidgets('음수 금액 → "-5¢" 접두어 없이 표시', (tester) async {
+      final item = PointHistoryItem(
+        id: 5,
+        amount: -5,
+        transactionType: 'gifticon_exchange',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // isPositive=false → "${amount}¢" = "-5¢" (접두어 "+" 없음)
+      expect(find.textContaining('-5¢'), findsOneWidget);
+    });
+
+    testWidgets('날짜 "yyyy.MM.dd" 형식 표시', (tester) async {
+      final item = PointHistoryItem(
+        id: 6,
+        amount: 1,
+        transactionType: 'daily_checkin',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('2026.03.24'), findsOneWidget);
+    });
   });
 }
