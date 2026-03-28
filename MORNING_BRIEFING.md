@@ -105,6 +105,7 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 | **25** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-2: +22건 테스트** | **—** | **Flutter22** |
 | **26** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-2: +10건 테스트** | **—** | **Flutter10** |
 | **27** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
+| **28** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -314,6 +315,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | **25** | **`7206ac1`** | **+22건 테스트** | **AlertTypeBadge 13 + PriceChart 5 + Provider 4 — 프로덕션 코드 변경 없음** |
 | **26** | **`b4b7cd0`** | **+10건 테스트** | **AuthState Notifier 6건 + SearchScreen +4건 — 프로덕션 코드 변경 없음** |
 | **27** | **`6c3358c`** | **+12건 테스트** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 — 프로덕션 코드 변경 없음** |
+| **28** | **`7db6024`** | **+12건 테스트** | **ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4 — 프로덕션 코드 변경 없음** |
 
 ### 3.5 FakeService 패턴 현황 (Night-24~25 안정)
 
@@ -347,11 +349,11 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-03-27)
+### 4.1 활성 브랜치 (2026-03-28)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260327_0100`** ★ | **+33 commits** | Night-13~27 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
+| **`auto/night-01-20260328_0100`** ★ | **+35 commits** | Night-13~28 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin에 push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin에 push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -365,12 +367,12 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 auth 코드 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0326_0100` (15개) | **Night-27 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0327_0100` (16개) | **Night-28 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260327_0100 → main (현재, 충돌 없음, 33커밋) → 즉시 PR 가능
+1. auto/night-01-20260328_0100 → main (현재, 충돌 없음, 35커밋) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. auto/night-01-20260310_0100 (OpenAPI, 충돌 가능)
 4. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
@@ -406,7 +408,8 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | **Night-25** | **✅ 완료** | **25** | **위젯 4/4 + Provider family + Flutter +22 (238건)** |
 | **Night-26** | **✅ 완료** | **26** | **AuthState Notifier 6건 + SearchScreen +4건 = 248건** |
 | **Night-27** | **✅ 완료** | **27** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 = 260건** |
-| sonatype-guide | ⏭️ 건너뜀 | 22~27 | 인증 미설정 (6세션 연속) |
+| **Night-28** | **✅ 완료** | **28** | **ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4 = 272건** |
+| sonatype-guide | ⏭️ 건너뜀 | 22~28 | 인증 미설정 (7세션 연속) |
 | PR 생성 + 머지 | ⏳ 대기 | — | **사용자 승인 필요** |
 
 ---
@@ -417,7 +420,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~27 머지 방향 | `auto/night-01-20260327_0100` (74파일, 33커밋, cargo audit 0건, Flutter 260건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~28 머지 방향 | `auto/night-01-20260328_0100` (74파일+, 35커밋, cargo audit 0건, Flutter 272건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 
 ### 🔶 HIGH (금일 중 결정 권장)
 
