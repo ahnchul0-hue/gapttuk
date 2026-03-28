@@ -1,12 +1,12 @@
-# MORNING BRIEFING — 2026-03-28 (Night-13 ~ Night-28 종합 분석)
+# MORNING BRIEFING — 2026-03-29 (Night-13 ~ Night-29 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-28 (2026-03-12 ~ 2026-03-28)
-> **현재 브랜치**: `auto/night-01-20260328_0100` (main + 35 commits)
+> **분석 대상**: Night-13 ~ Night-29 (2026-03-12 ~ 2026-03-29)
+> **현재 브랜치**: `auto/night-01-20260329_0100` (main + 37 commits)
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-03-28 (Night-28 최종, 검증 완료)
+> **최종 업데이트**: 2026-03-29 (Night-29 최종, 검증 완료)
 > **변경 규모**: 74파일+ (+4,076 / -889)
-> **검증**: Rust 207건 ✅ / Flutter 272건 ✅ / analyze 0건 ✅ (2026-03-28 실측)
-> **총 커밋**: main + 35 commits
+> **검증**: Rust 207건 ✅ / Flutter 284건 ✅ / analyze 0건 ✅ (2026-03-29 실측)
+> **총 커밋**: main + 37 commits
 
 ---
 
@@ -32,6 +32,7 @@
 | 26 | 03-26 | AuthState 프로바이더 + SearchScreen 테스트 완성 | D-49: keepAlive Notifier 테스트 시 PushService stub 필수 | `b4b7cd0` |
 | 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
 | **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **`7db6024`, `7d05701`** |
+| **29** | **03-29** | **미확장 화면 테스트 완성 (Home/Login/Onboarding)** | **D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화** | **`(Night-29)`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -56,6 +57,7 @@ Night 25:    ★★★★ 테스트 완결 ── 미테스트 위젯 0개 + 프
 Night 26:    ★★★★★ 상태 관리 테스트 ── AuthState Notifier 검증 + SearchScreen 확장 + 248건
 Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPage/Alert 탭전환 + productDetailProvider family + 260건
 Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDetail/Notification/PointHistory 내부 위젯 검증 + 272건
+Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/Onboarding switch분기+상태검증 + 284건
 ```
 
 ### 1.3 Opus 4.6의 핵심 전략 패턴 (Night-28까지)
@@ -106,6 +108,7 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 | **26** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-2: +10건 테스트** | **—** | **Flutter10** |
 | **27** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
 | **28** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
+| **29** | **직접 실행** | **— (프로덕션 코드 변경 없음)** | **Phase 1-3: +12건 테스트** | **—** | **Flutter12** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -172,7 +175,8 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 | Night-25 최종 | 207 | 238 | 445 |
 | Night-26 최종 | 207 | 248 | 455 |
 | Night-27 최종 | 207 | 260 | 467 |
-| **Night-28 최종** | **207** | **272** | **479** |
+| Night-28 최종 | 207 | 272 | 479 |
+| **Night-29 최종** | **207** | **284** | **491** |
 
 > Night-25: Flutter 테스트 +22건 (AlertTypeBadge 13 + PriceChart 5 + Provider 4). 위젯 테스트 4/4 완전 커버리지.
 > Night-26: Flutter 테스트 +10건 (AuthState provider 6 + SearchScreen 확장 4). keepAlive Notifier 테스트 패턴 완성.
@@ -182,13 +186,13 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 
 ### 3.2 코드베이스 규모
 
-| 항목 | **Night-28** | Night-27 | Night-26 | 변화 (vs 27) |
+| 항목 | **Night-29** | Night-28 | Night-27 | 변화 (vs 28) |
 |------|-------------|----------|----------|-------------|
 | DB 마이그레이션 (main) | 018 | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-53** | D-51 | D-49 | **+2** |
+| DECISION_LOG 항목 | **D-55** | D-53 | D-51 | **+2** |
 | 순수 함수 추출 누계 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | — |
 | Silent Failure 수정 | 28건+ (잔존 0건) | 28건+ | 28건+ | — |
 | Flutter 접근성 화면 | 7개 | 7개 | 7개 | — |
@@ -200,18 +204,37 @@ Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDeta
 | serde CI 자동검증 | ✅ | ✅ | ✅ | — |
 | TOCTOU 해결 | 2건 | 2건 | 2건 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 ✅ | 0건 ✅ | — |
-| **Flutter 테스트** | **272건** | 260건 | 248건 | **+12** |
+| **Flutter 테스트** | **284건** | 272건 | 260건 | **+12** |
 | **위젯 테스트 커버리지** | **4/4** ✅ | 4/4 ✅ | 4/4 ✅ | — |
 | **AuthState 프로바이더 테스트** | **✅ (6건)** | ✅ (6건) | ✅ (6건) | — |
-| **탭 전환 테스트** | **✅ (4건)** | ✅ (4건) | ❌ | — |
-| **markAllAsRead 스낵바 테스트** | **✅ (1건)** | ❌ | ❌ | **신규** |
+| **탭 전환 테스트** | **✅ (4건)** | ✅ (4건) | ✅ (4건) | — |
+| **markAllAsRead 스낵바 테스트** | **✅ (1건)** | ✅ (1건) | ❌ | — |
+| **전체동의 상태 버튼 활성화 테스트** | **✅ (1건)** | ❌ | ❌ | **신규** |
 | FakeService 패턴 | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | 4개 | 4개 | 4개 | — |
 | PR 머지 | 3 | 3 | 3 | — |
-| main 대비 커밋 | **35** | 33 | 30 | **+2** |
-| main 대비 파일 변경 | **74파일+** | 74파일 | 74파일 | — |
+| main 대비 커밋 | **37** | 35 | 33 | **+2** |
+| main 대비 파일 변경 | **74파일+** | 74파일+ | 74파일 | — |
 
-### 3.3 Night-28 변경 상세
+### 3.3 Night-29 변경 상세
+
+**브랜치: `auto/night-01-20260329_0100` — main + 37 commits (2개 Night-29 신규)**
+
+**Flutter 테스트 (3파일 확장):**
+
+| 파일 | 건수 | 핵심 테스트 |
+|------|------|-------------|
+| `test/screens/home_screen_test.dart` (확장) | +4건 | trend up/down/new 아이콘 · 빈목록 텍스트 |
+| `test/screens/login_screen_test.dart` (확장) | +4건 | 버튼아이콘 3종(chat_bubble/apple/north_east) · 로딩표시기없음 |
+| `test/screens/onboarding_screen_test.dart` (확장) | +4건 | 약관타이틀 · 보너스안내 · 전체동의활성화 · 기능설명 |
+
+**핵심 테스트 패턴 (Night-29 신규):**
+- `_trendIcon` switch 분기 간접 검증: `trend` 값 주입 → `Icon`/`Text` 위젯 `findsOneWidget`
+- `CircularProgressIndicator` `findsNothing`: 초기 상태(`_isLoading=false`) 로딩 분기 간접 검증
+- `find.textContaining()`: 긴 문자열/멀티라인에서 핵심 키워드만 추출 — 레이아웃 변경에 내성
+- `'전체 동의'` ListTile 탭 → `ElevatedButton.onPressed isNotNull`: setState 기반 버튼 활성화 검증
+
+### 3.3 Night-28 변경 상세 (이전)
 
 **브랜치: `auto/night-01-20260328_0100` — main + 35 commits (2개 Night-28 신규)**
 
@@ -349,11 +372,11 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-03-28)
+### 4.1 활성 브랜치 (2026-03-29)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260328_0100`** ★ | **+35 commits** | Night-13~28 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
+| **`auto/night-01-20260329_0100`** ★ | **+37 commits** | Night-13~29 전체 | **낮음** | 현재 HEAD, **커밋 완료** |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin에 push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin에 push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -367,12 +390,12 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 auth 코드 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0327_0100` (16개) | **Night-28 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0328_0100` (17개) | **Night-29 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260328_0100 → main (현재, 충돌 없음, 35커밋) → 즉시 PR 가능
+1. auto/night-01-20260329_0100 → main (현재, 충돌 없음, 37커밋) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. auto/night-01-20260310_0100 (OpenAPI, 충돌 가능)
 4. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
@@ -409,7 +432,8 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | **Night-26** | **✅ 완료** | **26** | **AuthState Notifier 6건 + SearchScreen +4건 = 248건** |
 | **Night-27** | **✅ 완료** | **27** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 = 260건** |
 | **Night-28** | **✅ 완료** | **28** | **ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4 = 272건** |
-| sonatype-guide | ⏭️ 건너뜀 | 22~28 | 인증 미설정 (7세션 연속) |
+| **Night-29** | **✅ 완료** | **29** | **HomeScreen +4 + LoginScreen +4 + OnboardingScreen +4 = 284건** |
+| sonatype-guide | ⏭️ 건너뜀 | 22~29 | 인증 미설정 (8세션 연속) |
 | PR 생성 + 머지 | ⏳ 대기 | — | **사용자 승인 필요** |
 
 ---
@@ -420,7 +444,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~28 머지 방향 | `auto/night-01-20260328_0100` (74파일+, 35커밋, cargo audit 0건, Flutter 272건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~29 머지 방향 | `auto/night-01-20260329_0100` (74파일+, 37커밋, cargo audit 0건, Flutter 284건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 
 ### 🔶 HIGH (금일 중 결정 권장)
 
