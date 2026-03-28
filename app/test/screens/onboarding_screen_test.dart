@@ -81,5 +81,45 @@ void main() {
 
       expect(find.text('값뚝에 오신 걸 환영합니다!'), findsOneWidget);
     });
+
+    testWidgets('약관 페이지: 타이틀 텍스트 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('서비스 이용을 위해'), findsOneWidget);
+    });
+
+    testWidgets('약관 페이지: 추천 코드 보너스 안내 텍스트 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('1¢ 웰컴 보너스'), findsOneWidget);
+    });
+
+    testWidgets('약관 페이지: 전체 동의 탭 → "다음" 버튼 활성화', (tester) async {
+      await tester.pumpWidget(buildScreen());
+
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+
+      // 전체 동의 체크박스 탭
+      await tester.tap(find.text('전체 동의'));
+      await tester.pumpAndSettle();
+
+      // 이제 _canProceedFromPage2 = true → '다음' 버튼 활성화
+      final nextButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, '다음'),
+      );
+      expect(nextButton.onPressed, isNotNull);
+    });
+
+    testWidgets('환영 페이지: 가격 알림 기능 설명 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.text('원하는 가격이 되면 즉시 알려드립니다.'), findsOneWidget);
+    });
   });
 }

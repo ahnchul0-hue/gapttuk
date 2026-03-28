@@ -95,5 +95,54 @@ void main() {
       expect(find.text('URL로 상품 추가'), findsWidgets);
       expect(find.text('취소'), findsOneWidget);
     });
+
+    testWidgets('trend up → trending_up 아이콘 표시', (tester) async {
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '아이폰 15', searchCount: 500, trend: 'up'),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.trending_up), findsOneWidget);
+    });
+
+    testWidgets('trend down → trending_down 아이콘 표시', (tester) async {
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '갤럭시 S24', searchCount: 400, trend: 'down'),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.trending_down), findsOneWidget);
+    });
+
+    testWidgets('trend new → "NEW" 텍스트 표시', (tester) async {
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '에어팟', searchCount: 300, trend: 'new'),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('NEW'), findsOneWidget);
+    });
+
+    testWidgets('빈 인기 검색어 → "인기 검색어가 없습니다" 표시', (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(<PopularSearch>[]))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('인기 검색어가 없습니다'), findsOneWidget);
+    });
   });
 }

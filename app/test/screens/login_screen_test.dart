@@ -44,5 +44,25 @@ void main() {
       await tester.pumpWidget(buildScreen());
       expect(find.byType(ElevatedButton), findsNWidgets(4));
     });
+
+    testWidgets('카카오 버튼 chat_bubble 아이콘 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.chat_bubble), findsOneWidget);
+    });
+
+    testWidgets('Apple 버튼 apple 아이콘 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.apple), findsOneWidget);
+    });
+
+    testWidgets('네이버 버튼 north_east 아이콘 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.north_east), findsOneWidget);
+    });
+
+    testWidgets('초기 상태에서 로딩 표시기 없음', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
   });
 }
