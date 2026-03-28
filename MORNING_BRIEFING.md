@@ -32,7 +32,7 @@
 | 26 | 03-26 | AuthState 프로바이더 + SearchScreen 테스트 완성 | D-49: keepAlive Notifier 테스트 시 PushService stub 필수 | `b4b7cd0` |
 | 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
 | **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **`7db6024`, `7d05701`** |
-| **29** | **03-29** | **미확장 화면 테스트 완성 (Home/Login/Onboarding)** | **D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화** | **`(Night-29)`** |
+| **29** | **03-29** | **미확장 화면 테스트 완성 (Home/Login/Onboarding)** | **D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화** | **`d8adc28`, `d5270fc`** |
 
 ### 1.2 전략적 성숙도 곡선
 
