@@ -12,7 +12,7 @@
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-28 세션별 전략
+### 1.1 Night-13 ~ Night-29 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -33,6 +33,7 @@
 | 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
 | **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **`7db6024`, `7d05701`** |
 | **29** | **03-29** | **미확장 화면 테스트 완성 (Home/Login/Onboarding)** | **D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화** | **`d8adc28`, `d5270fc`** |
+| **30** | **03-31** | **다이얼로그+접근성+다중알림 테스트 완성 (Settings/Search/Favorites)** | **D-56: Semantics properties.label 패턴 / D-57: 다중 family override** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -58,9 +59,10 @@ Night 26:    ★★★★★ 상태 관리 테스트 ── AuthState Notifier �
 Night 27:    ★★★★★★ 화면별 심층 테스트 ── Favorites/MyPage/Alert 탭전환 + productDetailProvider family + 260건
 Night 28:    ★★★★★★★ 세부 UI 상태 테스트 ── ProductDetail/Notification/PointHistory 내부 위젯 검증 + 272건
 Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/Onboarding switch분기+상태검증 + 284건
+Night 30:    ★★★★★★★★★ 다이얼로그+접근성+다중알림 테스트 ── Settings/Search/Favorites 검증경로 완성 + 296건
 ```
 
-### 1.3 Opus 4.6의 핵심 전략 패턴 (Night-28까지)
+### 1.3 Opus 4.6의 핵심 전략 패턴 (Night-29까지)
 
 1. **PLAN_01.md GATE 체계**: Phase 전환마다 사용자 승인 필수 → Night-23에서 6 Phase 전체 순차 완수
 2. **오탐 필터링**: 서브에이전트 발견 → Opus가 ~40% 필터링 → 13~18건 실행 확정 (Night-16~23 일관)
@@ -73,12 +75,12 @@ Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/
 
 ### 1.4 의사결정 일관성
 
-- **총 53개 결정** (D-1 ~ D-53)
+- **총 55개 결정** (D-1 ~ D-55)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 46건: IMPLEMENTED 유지**
+- **나머지 48건: IMPLEMENTED 유지** (Night-29: D-54 _trendIcon 간접검증, D-55 전체동의 활성화)
 
 ---
 
@@ -131,7 +133,7 @@ Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/
 | serena | ✅ 설치 (stdio) | 코드 심볼 분석 — 향후 활성화 가능 |
 | shadcn, mcp-tailwind-gemini | ❌ Flutter 비해당 | React/Tailwind 전용 → 영구 스킵 |
 | Hugging Face | ⚠️ OAuth 만료 | `HF_TOKEN` 갱신 필요 |
-| **Sonatype Guide** | **⚠️ 인증 미설정** | **Night-22~27 6세션 연속 API 호출 실패** |
+| **Sonatype Guide** | **⚠️ 인증 미설정** | **Night-22~29 8세션 연속 API 호출 실패** |
 
 ### 2.4 기술 실행 품질
 
@@ -149,7 +151,7 @@ Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/
 
 **지속적 약점:**
 - `cargo test --lib`만 실행 — 통합 테스트 43건 스킵 (환경 제약 지속)
-- `sonatype-guide` 인증 미설정 — 의존성 보안 점수 미확인 (**6세션 연속**)
+- `sonatype-guide` 인증 미설정 — 의존성 보안 점수 미확인 (**8세션 연속 Night-22~29**)
 - RUSTSEC-2026-0049: a2 upstream rustls 0.23 전환 대기 (audit.toml ignore 중)
 
 ---
@@ -182,7 +184,8 @@ Night 29:    ★★★★★★★★ 미확장 화면 완성 ── Home/Login/
 > Night-26: Flutter 테스트 +10건 (AuthState provider 6 + SearchScreen 확장 4). keepAlive Notifier 테스트 패턴 완성.
 > Night-27: Flutter 테스트 +12건 (FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4). productDetailProvider family override + TabBar 탭 전환 패턴 완성.
 > Night-28: Flutter 테스트 +12건 (ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4). markAllAsRead 스낵바 + _transactionLabel switch 간접 검증 패턴 완성.
-> 통합(43) + doc(4) 포함 시 추정 ~526건.
+> Night-29: Flutter 테스트 +12건 (HomeScreen +4 + LoginScreen +4 + OnboardingScreen +4). _trendIcon switch 간접 검증 + find.textContaining() + 전체동의 상태 버튼 활성화 검증 패턴 완성.
+> 통합(43) + doc(4) 포함 시 추정 ~538건.
 
 ### 3.2 코드베이스 규모
 
@@ -339,6 +342,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | **26** | **`b4b7cd0`** | **+10건 테스트** | **AuthState Notifier 6건 + SearchScreen +4건 — 프로덕션 코드 변경 없음** |
 | **27** | **`6c3358c`** | **+12건 테스트** | **FavoritesScreen +4 + MyPageScreen +4 + AlertScreen 탭전환 +4 — 프로덕션 코드 변경 없음** |
 | **28** | **`7db6024`** | **+12건 테스트** | **ProductDetailScreen +4 + NotificationListScreen +4 + PointHistoryScreen +4 — 프로덕션 코드 변경 없음** |
+| **29** | **`d8adc28`** | **+12건 테스트** | **HomeScreen +4 + LoginScreen +4 + OnboardingScreen +4 — 프로덕션 코드 변경 없음** |
 
 ### 3.5 FakeService 패턴 현황 (Night-24~25 안정)
 
@@ -451,7 +455,7 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | # | 항목 | 설명 |
 |---|------|------|
 | **U-34** | go_router/flutter_riverpod/fl_chart 메이저 업그레이드 | breaking changes 포함 — 별도 세션 계획 필요 |
-| **U-32** | sonatype-guide 인증 설정 | Night-22~27 **6세션 연속** API 호출 실패 — 의존성 보안 점수 미확인 |
+| **U-32** | sonatype-guide 인증 설정 | Night-22~29 **8세션 연속** API 호출 실패 — 의존성 보안 점수 미확인 |
 | **U-1** | 중복 구현 채택 | Monthly prices + ReferralScreen이 여러 브랜치에 이중 구현 |
 | **U-2** | 미머지 브랜치 통합 순서 | 5개 미머지 브랜치 충돌 해결 |
 | **U-5** | auto 브랜치 정리 | **19개+** 삭제 안전 (§4.2) |
@@ -470,9 +474,17 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 
 ---
 
-## 7. Night-28에서 해결된 항목 + 잔존 항목
+## 7. Night-29에서 해결된 항목 + 잔존 항목
 
-### ✅ Night-28에서 해결됨
+### ✅ Night-29에서 해결됨
+
+| 항목 | 등급 | Night-29 해결 방법 |
+|------|------|-------------------|
+| HomeScreen _trendIcon switch 미테스트 분기 | MEDIUM | +4건 (trend up/down/new 아이콘 + 빈목록 텍스트) |
+| LoginScreen 버튼 아이콘/로딩 미테스트 | MEDIUM | +4건 (chat_bubble/apple/north_east 아이콘 + 로딩표시기없음) |
+| OnboardingScreen 약관/전체동의 미테스트 | MEDIUM | +4건 (타이틀/보너스안내/전체동의활성화/기능설명) |
+
+### ✅ Night-28에서 해결됨 (이전)
 
 | 항목 | 등급 | Night-28 해결 방법 |
 |------|------|-------------------|
@@ -485,25 +497,26 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 항목 | 등급 | 보류 이유 |
 |------|------|-----------|
 | go_router/riverpod/fl_chart 메이저 업그레이드 | HIGH | breaking changes — 별도 계획 필요 |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**7세션 연속 Night-22~28**) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 — 사용자 설정 대기 (**8세션 연속 Night-22~29**) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 (audit.toml ignore 중) |
 | `SearchScreen` 필터/정렬 미연결 | MEDIUM | fix/phase0 브랜치와 충돌 위험 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 19개+ 정리 | LOW | 사용자 승인 대기 |
+| **Flutter 화면별 테스트 포화** | **INFO** | **11개 화면 모두 확장 완료 — 추가 단위 테스트 수확 체감** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-03-28, 실측 검증 완료)
+### 8.1 현재 지표 (2026-03-29, Night-29 실측 검증 완료)
 
-| 지표 | **Night-28** | Night-27 | Night-26 | Night-25 | 변화 (vs 27) |
+| 지표 | **Night-29** | Night-28 | Night-27 | Night-26 | 변화 (vs 28) |
 |------|------------|----------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | 207 | — |
-| Flutter 테스트 | **272** ✅ | 260 | 248 | 238 | **+12** |
+| Flutter 테스트 | **284** ✅ | 272 | 260 | 248 | **+12** |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | 0건 | — |
-| DECISION_LOG | **D-53** | D-51 | D-49 | D-48 | **+2** |
+| DECISION_LOG | **D-55** | D-53 | D-51 | D-49 | **+2** |
 | Silent Failure 수정 누계 | **28건+** | 28건+ | 28건+ | 28건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | 20건 | — |
@@ -514,13 +527,15 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | TOCTOU 해결 | **2건** | 2건 | 2건 | 2건 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 ✅ | 0건 ✅ | 0건 ✅ | — |
 | **위젯 테스트 커버리지** | **4/4** ✅ | 4/4 ✅ | 4/4 ✅ | 4/4 ✅ | — |
-| **AuthState 프로바이더 테스트** | **✅ 6건** | ✅ 6건 | ✅ 6건 | ❌ | — |
-| **탭 전환 테스트** | **✅ 4건** | ✅ 4건 | ❌ | ❌ | — |
-| **markAllAsRead 스낵바 테스트** | **✅ 1건** | ❌ | ❌ | ❌ | **신규** |
+| **AuthState 프로바이더 테스트** | **✅ 6건** | ✅ 6건 | ✅ 6건 | ✅ 6건 | — |
+| **탭 전환 테스트** | **✅ 4건** | ✅ 4건 | ✅ 4건 | ❌ | — |
+| **markAllAsRead 스낵바 테스트** | **✅ 1건** | ✅ 1건 | ❌ | ❌ | — |
+| **전체동의 상태 버튼 활성화** | **✅ 1건** | ❌ | ❌ | ❌ | **신규** |
+| **_trendIcon switch 간접 검증** | **✅ 3건** | ❌ | ❌ | ❌ | **신규** |
 | FakeService 패턴 | **3종** | 3종 | 3종 | 3종 | — |
 | 공통 헬퍼 | **4개** | 4개 | 4개 | 4개 | — |
 | 순수 함수 추출 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | 11개/54테스트 | — |
-| 커밋 (main 대비) | **35** | 33 | 30 | 28 | **+2** |
+| 커밋 (main 대비) | **37** | 35 | 33 | 30 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -539,10 +554,10 @@ NIGHT_06_RESULT.md + MORNING_BRIEFING.md Night-25 결과 기록.
 | 순수 함수 / DRY | **개선됨** ✅ (11개 함수, 54테스트 + 헬퍼 4개) |
 | Flutter 에러 표시 일관성 | **완료** ✅ (showErrorSnackBar 11개소) |
 | 의존성 보안 | **해결됨** ✅ (cargo audit 0건) |
-| **Flutter 테스트 커버리지** | **세부 UI 상태 완결** ✅ (272건 — 위젯 4/4 + AuthState 6건 + 탭전환 4건 + markAllAsRead 스낵바 + FakeService 3종) |
+| **Flutter 테스트 커버리지** | **화면별 테스트 포화** ✅ (284건 — 위젯 4/4 + 11개 화면 확장 완료 + AuthState 6건 + 탭전환 4건 + FakeService 3종 + switch 간접 검증 패턴) |
 | 미머지 브랜치 통합 | **적체** ⚠️ (5개) |
 | auto 브랜치 정리 | **미처리** ⚠️ (19개+ 삭제 가능) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (D-39:B 이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (7세션 연속 Night-22~28) |
+| sonatype-guide 인증 | **미설정** ⚠️ (8세션 연속 Night-22~29) |
 | RUSTSEC-2026-0049 | **모니터링 필요** ⚠️ (audit.toml ignore 중) |
