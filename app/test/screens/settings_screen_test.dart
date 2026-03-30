@@ -56,5 +56,36 @@ void main() {
       expect(switchWidget.onChanged, isNull);
       expect(find.text('준비 중'), findsOneWidget);
     });
+
+    // ── Night-30 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('로그아웃 탭 → 확인 다이얼로그 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.tap(find.text('로그아웃'));
+      await tester.pumpAndSettle();
+      expect(find.text('정말 로그아웃 하시겠습니까?'), findsOneWidget);
+    });
+
+    testWidgets('로그아웃 다이얼로그 취소 탭 → 다이얼로그 닫힘', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.tap(find.text('로그아웃'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('회원 탈퇴 탭 → 확인 다이얼로그 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.tap(find.text('회원 탈퇴'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('정말 탈퇴하시겠습니까?'), findsOneWidget);
+    });
+
+    testWidgets('계정 섹션 아이콘 표시 — logout + person_remove_outlined', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.logout), findsOneWidget);
+      expect(find.byIcon(Icons.person_remove_outlined), findsOneWidget);
+    });
   });
 }

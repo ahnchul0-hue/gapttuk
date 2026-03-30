@@ -124,5 +124,68 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('상품 #100'), findsOneWidget);
     });
+
+    // ── Night-30 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('알림 카드에 AlertTypeBadge 위젯 표시', (tester) async {
+      const alert = PriceAlert(
+        id: 1, userId: 1, productId: 100,
+        alertType: 'target_price', targetPrice: 20000,
+      );
+      final service = FakeAlertService(
+        response: const AlertListResponse(priceAlerts: [alert]),
+      );
+      await tester.pumpWidget(_buildScreenWithProduct(
+        service: service,
+        productId: 100,
+      ));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertTypeBadge), findsOneWidget);
+    });
+
+    testWidgets('알림 2개 있을 때 AppBar "2개" 배지 표시', (tester) async {
+      const alert1 = PriceAlert(id: 1, userId: 1, productId: 100, alertType: 'target_price');
+      const alert2 = PriceAlert(id: 2, userId: 1, productId: 200, alertType: 'all_time_low');
+      final service = FakeAlertService(
+        response: const AlertListResponse(priceAlerts: [alert1, alert2]),
+      );
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          alertServiceProvider.overrideWithValue(service),
+          productDetailProvider(100).overrideWith((ref) async { throw Exception(''); }),
+          productDetailProvider(200).overrideWith((ref) async { throw Exception(''); }),
+        ],
+        child: MaterialApp(theme: AppTheme.light, home: const FavoritesScreen()),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('2개'), findsOneWidget);
+    });
+
+    testWidgets('비활성 알림(isActive: false) → "비활성" 오버레이 표시', (tester) async {
+      const alert = PriceAlert(
+        id: 1, userId: 1, productId: 100,
+        alertType: 'target_price',
+        isActive: false,
+      );
+      final service = FakeAlertService(
+        response: const AlertListResponse(priceAlerts: [alert]),
+      );
+      await tester.pumpWidget(_buildScreenWithProduct(
+        service: service,
+        productId: 100,
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('비활성'), findsOneWidget);
+    });
+
+    testWidgets('에러 후 "다시 시도" 탭 → 에러 상태 재표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(error: Exception('서버 오류')),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('다시 시도'));
+      await tester.pumpAndSettle();
+      expect(find.text('즐겨찾기를 불러오지 못했습니다'), findsOneWidget);
+    });
   });
 }

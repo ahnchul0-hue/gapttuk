@@ -56,5 +56,40 @@ void main() {
       await tester.pump();
       expect(find.byType(ListView), findsNothing);
     });
+
+    // ── Night-30 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('초기 텍스트 Semantics 위젯으로 감싸짐 — label 검증', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+      // 최근접 Semantics 조상 (.first = 가장 가까운 Semantics)
+      final semanticsNode = tester.widget<Semantics>(
+        find.ancestor(
+          of: find.text('검색어를 입력하세요'),
+          matching: find.byType(Semantics),
+        ).first,
+      );
+      expect(semanticsNode.properties.label, '검색어를 입력하세요');
+    });
+
+    testWidgets('TextField textInputAction.search 설정', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      final tf = tester.widget<TextField>(find.byType(TextField));
+      expect(tf.textInputAction, TextInputAction.search);
+    });
+
+    testWidgets('검색 아이콘 버튼 tooltip "검색" 설정', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      final iconBtn = tester.widget<IconButton>(find.byType(IconButton));
+      expect(iconBtn.tooltip, '검색');
+    });
+
+    testWidgets('빈 검색어로 검색 버튼 탭 → 로딩 인디케이터 없음', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
   });
 }
