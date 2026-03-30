@@ -33,7 +33,7 @@
 | 27 | 03-27 | 화면별 심층 테스트 완성 (Favorites/MyPage/Alert 탭) | D-50: productDetailProvider family override / D-51: TabBar 탭 전환 테스트 | `6c3358c`, `58452ec` |
 | **28** | **03-28** | **세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory)** | **D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증** | **`7db6024`, `7d05701`** |
 | **29** | **03-29** | **미확장 화면 테스트 완성 (Home/Login/Onboarding)** | **D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화** | **`d8adc28`, `d5270fc`** |
-| **30** | **03-31** | **다이얼로그+접근성+다중알림 테스트 완성 (Settings/Search/Favorites)** | **D-56: Semantics properties.label 패턴 / D-57: 다중 family override** | **TBD** |
+| **30** | **03-31** | **다이얼로그+접근성+다중알림 테스트 완성 (Settings/Search/Favorites)** | **D-56: Semantics properties.label 패턴 / D-57: 다중 family override** | **`63016a4`, `0996518`** |
 
 ### 1.2 전략적 성숙도 곡선
 
