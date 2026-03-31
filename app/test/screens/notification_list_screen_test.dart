@@ -158,5 +158,77 @@ void main() {
       expect(find.text('첫 번째 알림'), findsOneWidget);
       expect(find.text('두 번째 알림'), findsOneWidget);
     });
+
+    // ── Night-31 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('에러 시 "알림 내역을 불러오지 못했습니다" 텍스트 표시', (tester) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(error: Exception('서버 오류')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('알림 내역을 불러오지 못했습니다'), findsOneWidget);
+    });
+
+    testWidgets('읽음 알림(isRead: true) 항목 제목 표시', (tester) async {
+      final notification = AppNotification(
+        id: 6,
+        userId: 1,
+        notificationType: 'price_alert',
+        title: '읽음 알림',
+        isRead: true,
+        sentAt: DateTime(2026, 3, 20),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('읽음 알림'), findsOneWidget);
+    });
+
+    testWidgets('sentAt: 방금 전 → "방금" 시간 표시', (tester) async {
+      // _formatTime: diff.inMinutes < 1 → '방금'
+      final notification = AppNotification(
+        id: 7,
+        userId: 1,
+        notificationType: 'system',
+        title: '최신 알림',
+        sentAt: DateTime.now(),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('방금'), findsOneWidget);
+    });
+
+    testWidgets('sentAt: 1시간 전 → "1시간 전" 시간 표시', (tester) async {
+      // _formatTime: diff.inHours < 24 → '${diff.inHours}시간 전'
+      final notification = AppNotification(
+        id: 8,
+        userId: 1,
+        notificationType: 'price_alert',
+        title: '한시간 전 알림',
+        sentAt: DateTime.now().subtract(const Duration(hours: 1)),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('1시간 전'), findsOneWidget);
+    });
   });
 }

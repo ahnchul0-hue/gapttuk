@@ -147,5 +147,52 @@ void main() {
       // _PredictionCard: action='buy_now' → actionText='지금 구매'
       expect(find.textContaining('지금 구매'), findsOneWidget);
     });
+
+    // ── Night-31 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('priceTrend rising → "상승" 칩 표시', (tester) async {
+      await tester.pumpWidget(buildScreen(
+        productFuture: Future.value(const Product(
+          id: productId,
+          productName: '상승 중 상품',
+          currentPrice: 30000,
+          priceTrend: 'rising',
+        )),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('상승'), findsOneWidget);
+    });
+
+    testWidgets('priceTrend stable → "안정" 칩 표시 (default 분기)', (tester) async {
+      // 'stable'은 switch default(_)에 매핑 → '안정'
+      await tester.pumpWidget(buildScreen(
+        productFuture: Future.value(const Product(
+          id: productId,
+          productName: '안정 상품',
+          currentPrice: 30000,
+          priceTrend: 'stable',
+        )),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('안정'), findsOneWidget);
+    });
+
+    testWidgets('최고가 ₩35,000 통계 카드 표시', (tester) async {
+      // fakeProduct.highestPrice = 35000
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('₩35,000'), findsOneWidget);
+    });
+
+    testWidgets('AI 예측 wait → "대기" 텍스트 표시', (tester) async {
+      await tester.pumpWidget(buildScreen(
+        predictionFuture: Future.value({
+          'predicted_action': 'wait',
+          'confidence': '0.75',
+        }),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('대기'), findsOneWidget);
+    });
   });
 }

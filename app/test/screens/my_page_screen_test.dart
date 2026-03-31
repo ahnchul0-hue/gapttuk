@@ -101,5 +101,45 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('5¢'), findsOneWidget);
     });
+
+    // ── Night-31 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('로그인 — "센트(¢) 잔액" 타이틀 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pumpAndSettle();
+      expect(find.text('센트(¢) 잔액'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — "오늘 출석" 버튼 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pumpAndSettle();
+      expect(find.text('오늘 출석'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 출석 탭 후 "1¢ 획득" 스낵바 표시', (tester) async {
+      // FakeRewardService.checkin() → rewardAmount: 1
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pumpAndSettle(); // getPoints 완료
+      await tester.tap(find.text('오늘 출석'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1¢ 획득'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 포인트 에러 → "로드 실패" 메시지 표시', (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith(() => _FakeAuthState(_fakeUser)),
+          rewardServiceProvider.overrideWith(
+            (ref) => FakeRewardService(error: Exception('네트워크 오류')),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MyPageScreen(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('로드 실패'), findsOneWidget);
+    });
   });
 }
