@@ -1,7 +1,7 @@
-# NIGHT_06_RESULT — 2026-03-31 (Night-30)
+# NIGHT_06_RESULT — 2026-04-01 (Night-31)
 
 ## Branch
-`auto/night-01-20260331_0100`
+`auto/night-01-20260401_0100`
 
 ---
 
@@ -9,79 +9,84 @@
 
 ### Phase 0: 기준선 확인
 
-**기준선**: Rust lib 207건 ✅ / Flutter 284건 ✅ / analyze 0 ✅
+**기준선**: Flutter 296건 ✅ / Rust lib 207건 ✅ / analyze 0 ✅
 
-### Phase 1: 의존성 감사 (cargo audit + pub outdated)
+---
 
-**Sonatype MCP**: 인증 불가 → `cargo audit` + `pub outdated` 대체 실행
+### Phase 2/3: 프레임워크 패턴 GAP 분석 (코드베이스 탐색)
 
-#### Dart 패키지 업그레이드 현황
+#### 서버 (Rust) — 최신 패턴 정합 현황
 
-| 패키지 | 현재 | 최신 | 비고 |
-|--------|------|------|------|
-| `fl_chart` | 0.69.2 | 1.2.0 | 메이저 업 — 호환성 검토 필요 |
-| `flutter_riverpod` | 3.0.3 | 3.3.1 | 마이너 — Resolvable 불가 (constraint) |
-| `flutter_secure_storage` | 9.2.4 | 10.0.0 | 메이저 업 |
-| `go_router` | 16.3.0 | 17.1.0 | 메이저 업 |
-| `google_sign_in` | 6.3.0 | 7.2.0 | 메이저 업 |
-| `json_annotation` | 4.9.0 | **4.11.0** | ✅ 즉시 업그레이드 가능 |
-| `sign_in_with_apple` | 6.1.4 | 7.0.1 | 메이저 업 |
+| 프레임워크 | 현재 패턴 | 최신 권장 | GAP |
+|-----------|----------|----------|-----|
+| **axum 0.8.8** | State 추출자, Router::new().nest(), AppState(Arc<Config>) | 동일 | 없음 |
+| **sqlx 0.8.6** | `query!` 매크로, PgPool, `DATABASE_MAX_CONNECTIONS` 환경변수 | 동일 | 없음 |
+| **tower 미들웨어** | ServiceBuilder, SmartIpKeyExtractor, auth_limiter GC | 동일 | 없음 |
 
-**결론**: 메이저 업그레이드는 다음 마일스톤에서 Breaking change 검토 후 진행. `json_annotation` 마이너 업그레이드는 안전하나 이 세션에서 보류 (테스트 중점).
+#### Flutter — 최신 패턴 GAP
 
-### Phase 2/3: 아키텍처 GAP 분석 (코드베이스 직접 탐색)
+| 프레임워크 | 현재 패턴 | 최신 권장 | GAP 수준 |
+|-----------|----------|----------|---------|
+| **riverpod 3.0.3** | `@riverpod` 코드젠, `@Riverpod(keepAlive:true)` | 3.3.1 `ref.keepAlive()` 새 API | 🟡 Minor |
+| **go_router 16.3.0** | `ShellRoute` + index 관리 | `StatefulShellRoute` (탭 상태 유지) | 🟡 Minor |
+| **dio 5.x** | `whenComplete` 기반 토큰 갱신, CancelToken | Retry interceptor 도입 검토 | 🟢 Low |
 
-- SearchScreen: 필터/정렬 칩이 현재 브랜치에 없음 (fix/phase0-security-stability 브랜치에만 존재)
-- SettingsScreen: 다이얼로그 미테스트 경로 확인 (로그아웃/탈퇴 확인 다이얼로그)
-- FavoritesScreen: AlertTypeBadge + isActive=false 분기 미테스트 확인
+#### Phase 2/3 결론
+
+- **서버**: axum/sqlx/tower 패턴 최신 권장사항과 완전 정합. 추가 리팩토링 불필요.
+- **Flutter**: riverpod 3.0→3.3 업그레이드 시 `family` 타입 안전성 개선, keepAlive 새 API 사용 가능. go_router `StatefulShellRoute` 전환 시 탭 간 네비게이션 상태 유지 개선. 두 항목 모두 현재 기능에 영향 없는 개선 사항.
+
+---
 
 ### Phase 6: Flutter 테스트 커버리지 확대 (+12건)
 
-**목표 달성**: 284건 → **296건** (+12건)
+**목표 달성**: 296건 → **308건** (+12건)
 
-#### SettingsScreen (7 → 11, +4건)
-
-| 신규 테스트 | 핵심 검증 |
-|------------|-----------|
-| 로그아웃 탭 → 확인 다이얼로그 표시 | `'정말 로그아웃 하시겠습니까?'` `findsOneWidget` |
-| 로그아웃 다이얼로그 취소 탭 → 닫힘 | `AlertDialog` `findsNothing` |
-| 회원 탈퇴 탭 → 확인 다이얼로그 표시 | `textContaining('정말 탈퇴하시겠습니까?')` `findsOneWidget` |
-| 계정 섹션 아이콘 표시 | `Icons.logout` + `Icons.person_remove_outlined` `findsOneWidget` |
-
-**핵심 패턴 (Night-30 신규)**:
-- `showDialog` 확인 없이 다이얼로그 표시만 검증 — `confirmed == false` 분기로 navigate 호출 없음
-- `alertDialog` tap '취소' → `Navigator.of(ctx).pop(false)` → `context.go()` 비호출 — GoRouter 없이 안전
-
-#### SearchScreen (8 → 12, +4건)
+#### ProductDetailScreen (11 → 15, +4건)
 
 | 신규 테스트 | 핵심 검증 |
 |------------|-----------|
-| 초기 텍스트 Semantics 위젯으로 감싸짐 | `widget<Semantics>().properties.label == '검색어를 입력하세요'` |
-| TextField textInputAction.search | `tf.textInputAction == TextInputAction.search` |
-| 검색 아이콘 버튼 tooltip "검색" | `iconBtn.tooltip == '검색'` |
-| 빈 검색어 검색 탭 → 로딩 없음 | `CircularProgressIndicator` `findsNothing` |
+| priceTrend rising → "상승" 칩 표시 | `find.text('상승')` `findsOneWidget` |
+| priceTrend stable → "안정" 칩 표시 (default 분기) | `_TrendChip` switch `_` 케이스 간접 검증 |
+| 최고가 ₩35,000 통계 카드 표시 | `find.text('₩35,000')` `findsOneWidget` |
+| AI 예측 wait → "대기" 텍스트 표시 | `find.textContaining('대기')` `findsOneWidget` |
 
-**핵심 패턴 (Night-30 신규, D-56)**:
-- `find.bySemanticsLabel()` 대신 `find.ancestor(...).first` + `widget<Semantics>().properties.label` — 접근성 트리 활성화 없이 위젯 속성 직접 검증
+**핵심 패턴 (Night-31 신규, D-58)**:
+- `priceTrend: 'stable'` → `switch` `_` 기본값 분기를 간접 검증. 미래 새 trend 값 추가 시 이 테스트가 regression guard 역할
 
-#### FavoritesScreen (9 → 13, +4건)
+#### MyPageScreen (10 → 14, +4건)
 
 | 신규 테스트 | 핵심 검증 |
 |------------|-----------|
-| 알림 카드에 AlertTypeBadge 표시 | `find.byType(AlertTypeBadge)` `findsOneWidget` |
-| 알림 2개 → AppBar "2개" 배지 | `find.text('2개')` `findsOneWidget` |
-| 비활성 알림(`isActive: false`) → "비활성" 오버레이 | `find.text('비활성')` `findsOneWidget` |
-| 에러 후 "다시 시도" 탭 → 에러 재표시 | `'즐겨찾기를 불러오지 못했습니다'` `findsOneWidget` |
+| 로그인 — "센트(¢) 잔액" 타이틀 표시 | `find.text('센트(¢) 잔액')` `findsOneWidget` |
+| 로그인 — "오늘 출석" 버튼 표시 | `find.text('오늘 출석')` `findsOneWidget` |
+| 출석 탭 후 "1¢ 획득" 스낵바 표시 | `find.textContaining('1¢ 획득')` `findsOneWidget` |
+| 포인트 에러 → "로드 실패" 메시지 표시 | `FakeRewardService(error:...)` → `_error = true` 분기 |
 
-**핵심 패턴**:
-- 두 productId 동시 override: `productDetailProvider(100).overrideWith(...)` + `productDetailProvider(200).overrideWith(...)` (D-57)
-- `isActive: false` 명시 주입으로 `PriceAlert(@Default(true))` 기본값 override → "비활성" 오버레이 검증
+**핵심 패턴 (Night-31 신규, D-59)**:
+- `_CentsBalanceTile.initState()` 에러 분기: `FakeRewardService(error: Exception('...'))` 주입 → `_loadPoints` catch → `_error = true` → "로드 실패 (탭하여 재시도)" 렌더링
+- `pumpAndSettle()` 후 "오늘 출석" 탭 → `_doCheckin()` → checkin API 호출 → 스낵바 검증
+
+#### NotificationListScreen (10 → 14, +4건)
+
+| 신규 테스트 | 핵심 검증 |
+|------------|-----------|
+| 에러 시 "알림 내역을 불러오지 못했습니다" 텍스트 | `find.textContaining(...)` `findsOneWidget` |
+| 읽음 알림(isRead: true) 항목 제목 표시 | `isRead: true` 명시 주입 → 제목 렌더링 |
+| sentAt: 방금 전 → "방금" 시간 표시 | `DateTime.now()` → `_formatTime`: `diff.inMinutes < 1` → '방금' |
+| sentAt: 1시간 전 → "1시간 전" 시간 표시 | `DateTime.now().subtract(Duration(hours: 1))` → '1시간 전' |
+
+**핵심 패턴 (Night-31 신규, D-60)**:
+- `_formatTime` 시간대별 분기 검증: `DateTime.now()` 기준 `Duration` 빼기로 '방금'/'1시간 전' 분기 정확히 재현. static mock 없이 안정적 동작.
+- 에러 메시지 텍스트 검증: 기존 Night-28 테스트가 "다시 시도" 버튼만 검증했던 것을 보완.
+
+---
 
 ### Phase 8: 최종 검증
 
 | 검증 | 결과 |
 |------|------|
-| `flutter test --no-pub` | **296건 전체 통과** ✅ (+12건) |
+| `flutter test --no-pub` | **308건 전체 통과** ✅ (+12건) |
 | `flutter analyze --no-pub` | 0건 ✅ |
 | Rust lib 변경 | 없음 (207건 유지) |
 
@@ -91,30 +96,51 @@
 
 | 파일 | 이전 | 이후 | 변화 |
 |------|------|------|------|
-| `test/screens/settings_screen_test.dart` | 7건 | 11건 | +4 |
-| `test/screens/search_screen_test.dart` | 8건 | 12건 | +4 |
-| `test/screens/favorites_screen_test.dart` | 9건 | 13건 | +4 |
-| **합계** | **284건** | **296건** | **+12** |
+| `test/screens/product_detail_screen_test.dart` | 11건 | 15건 | +4 |
+| `test/screens/my_page_screen_test.dart` | 10건 | 14건 | +4 |
+| `test/screens/notification_list_screen_test.dart` | 10건 | 14건 | +4 |
+| **합계** | **296건** | **308건** | **+12** |
+
+---
+
+## Phase 2/3 GAP 분석 요약
+
+### 즉시 적용 가능 개선
+없음 (현재 코드 최신 패턴과 정합)
+
+### 다음 마일스톤 후보
+1. **riverpod 3.0 → 3.3** (minor): `family` 타입 안전성, `ref.keepAlive()` 새 API
+2. **go_router StatefulShellRoute 전환** (minor): 탭 간 네비게이션 상태 유지
 
 ---
 
 ## 의사결정
 
-### D-56: Semantics 위젯 검증 패턴 — `find.bySemanticsLabel` 대신 `properties.label`
+### D-58: _TrendChip default 케이스 간접 검증 패턴
 
-**배경**: `find.bySemanticsLabel('검색어를 입력하세요')`가 0 matches 반환 (접근성 트리 비활성).
+**배경**: `priceTrend: 'stable'`은 switch `_` default 분기 → '안정' 반환. 직접 'stable' case가 없음.
 
-**결정**: `find.ancestor(of: find.text('...'), matching: find.byType(Semantics)).first` + `widget<Semantics>().properties.label` 직접 검증으로 대체.
-
-**이유**: 접근성 트리는 `tester.ensureSemantics()` 없이는 활성화되지 않아 `find.bySemanticsLabel`이 빈 결과를 반환. 위젯 속성 직접 검증이 더 안정적.
+**결정**: 'stable' 문자열을 입력으로 `_` default를 간접 검증. 미래 'stable' case 명시 추가 시 이 테스트 제거 불필요 (동일 결과).
 
 **Status**: IMPLEMENTED
 
 ---
 
-### D-57: 다중 productDetailProvider family override 패턴
+### D-59: _CentsBalanceTile initState 에러 분기 테스트
 
-**결정**: FavoritesScreen 알림 2개 테스트 시 `productDetailProvider(100)`와 `productDetailProvider(200)`을 별도 `overrideWith`로 각각 등록.
+**배경**: MyPageScreen 기존 테스트에서 `_CentsBalanceTile`의 에러 분기(포인트 로드 실패) 미커버.
+
+**결정**: `FakeRewardService(error: Exception('...'))` 주입 + `pumpAndSettle()` → `_loadPoints` catch → `_error = true` → "로드 실패 (탭하여 재시도)" 렌더링 검증. 인라인 ProviderScope 사용 (기존 `_buildScreen` 헬퍼 변경 불필요).
+
+**Status**: IMPLEMENTED
+
+---
+
+### D-60: _formatTime 동적 시간 분기 검증
+
+**배경**: `_NotificationTile._formatTime`의 '방금'/'분 전'/'시간 전' 분기 미테스트.
+
+**결정**: `DateTime.now()` (방금) + `DateTime.now().subtract(Duration(hours: 1))` (1시간 전)으로 두 분기 검증. static mock 불필요 — 테스트 실행 시간이 1분 미만임을 전제.
 
 **Status**: IMPLEMENTED
 
@@ -122,4 +148,4 @@
 
 ## DECISION_LOG 연속성
 
-Night-30 이전 D-55까지 기록됨. 이번 세션에서 D-56, D-57 추가.
+Night-30 D-57까지. 이번 세션 D-58, D-59, D-60 추가.

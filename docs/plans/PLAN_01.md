@@ -1,8 +1,10 @@
 # PLAN_01: 값뚝(gapttuk) 종합 실무 최적화
 
-> 작성: 2026-03-31 | 브랜치: `auto/night-01-20260331_0100`
-> 베이스라인: Flutter 284건 ✅ | Rust 207건 ✅ | analyze 0 issues
+> 작성: 2026-03-31 | **실행: 2026-04-01** | 브랜치: `auto/night-01-20260401_0100`
+> 베이스라인: Flutter 296건 ✅ | Rust 207건 ✅ | analyze 0 issues
+> **Night-31 진행**: Flutter **308건** ✅ (+12) | Phase 2/3 완료 | Phase 4/5/7/8 미시작
 > 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/실행
+> Ralph-loop 한도: **10회**
 
 ---
 
@@ -67,11 +69,72 @@
 | cached_network_image | 3.4.0 | 최신 안정 |
 | flutter_secure_storage | 9.2.0 | CVE |
 
-### 1-C. 산출물
-- 업그레이드 필요 패키지 목록 + 호환성 영향 분석
-- cargo audit / pub outdated 결과 대조
+### 1-C. 산출물 (2026-04-01 실행 결과)
+
+> **도구**: Sonatype MCP (인증 미구성 → WebSearch + pub outdated 대체)
+> **실행자**: Sonnet 4.6 Sub-agent ×3 (병렬) → Opus 4.6 종합
+
+#### 🔴 CRITICAL / HIGH 발견 사항
+
+| # | 대상 | CVE/Advisory | 심각도 | 상태 | 조치 |
+|---|------|-------------|--------|------|------|
+| C-1 | **tokio** (Rust) | RUSTSEC-2025-0023 | Medium (Unsound) | ✅ **이미 해결** — 현재 1.50.0 ≥ 패치(1.44.2) | 추가 조치 불필요 |
+| C-2 | **Cargo toolchain** | CVE-2026-33056 (tar-rs) | Medium | ⚠️ 빌드타임 — Rust ≥1.94.1 필요 | 서버 빌드 환경에서 rustup update |
+| C-3 | **Flutter/Skia** | CVE-2025-27363 (FreeType OOB) | HIGH (CISA KEV) | ⚠️ 불확실 — Flutter 3.41.x Skia 번들 확인 필요 | Flutter 최신 패치 모니터링 |
+| C-4 | **Flutter/Skia** | CVE-2026-3909 (Skia zero-day) | HIGH (8.8) | ⚠️ 불확실 — 엔진 패치 대기 | Flutter stable 업데이트 시 즉시 적용 |
+| C-5 | **Dart SDK** | CVE-2026-27704 (pub path traversal) | HIGH | ✅ **이미 해결** — SDK ^3.11.1 / Flutter 3.41.3 | 추가 조치 불필요 |
+
+#### ✅ Rust Crates — 보안 청정 (30개 직접 의존성)
+
+| 크레이트 | 현재 버전 | 상태 |
+|----------|----------|------|
+| axum | 0.8.8 | ✅ CVE 없음 |
+| sqlx | 0.8.6 | ✅ CVE 없음 |
+| reqwest | 0.12.28 | ✅ CVE 없음 |
+| jsonwebtoken | 9.3.1 | ✅ CVE 없음 |
+| sentry | 0.37.0 | ✅ CVE 없음 |
+| moka | 0.12.15 | ✅ CVE 없음 |
+| a2 | 0.10.0 | ✅ CVE 없음 (APNs 인증서 호환성 확인 권장) |
+| scraper | 0.25.0 | ✅ CVE 없음 |
+| 기타 (tokio, tower, chrono, rand, etc.) | 최신 | ✅ 전부 청정 |
+
+#### 📦 Dart Packages — 업그레이드 후보 (pub outdated)
+
+| 패키지 | 현재 | Resolvable | Latest | 유형 | 권장 |
+|--------|------|-----------|--------|------|------|
+| **flutter_riverpod** | 3.0.3 | 3.0.3 | **3.3.1** | minor | ⬆️ 업그레이드 (API 호환) |
+| **go_router** | 16.3.0 | 16.3.0 | **17.1.0** | **BREAKING** | ⏸️ 영향 분석 후 결정 |
+| **fl_chart** | 0.69.2 | 0.69.2 | **1.2.0** | **BREAKING** | ⏸️ API 변경 범위 확인 필요 |
+| **flutter_secure_storage** | 9.2.4 | 9.2.4 | **10.0.0** | **BREAKING** | ⏸️ 마이그레이션 가이드 확인 |
+| **google_sign_in** | 6.3.0 | 6.3.0 | **7.2.0** | **BREAKING** | ⏸️ OAuth 2.0 강화 — 보안 이점 |
+| **sign_in_with_apple** | 6.1.4 | 6.1.4 | **7.0.1** | **BREAKING** | ⏸️ 영향 분석 후 결정 |
+| **intl** | 0.19.0 | 0.19.0 | **0.20.2** | minor | ⬆️ 업그레이드 (API 호환) |
+| **json_annotation** | 4.9.0 | 4.9.0 | **4.11.0** | minor | ⬆️ 업그레이드 |
+| cupertino_icons | 1.0.8 | 1.0.9 | 1.0.9 | patch | ⬆️ 즉시 |
+| build_runner (dev) | 2.12.1 | 2.13.1 | 2.13.1 | minor | ⬆️ 업그레이드 |
+| freezed (dev) | 3.2.3 | 3.2.3 | **3.2.5** | patch | ⬆️ 즉시 |
+| json_serializable (dev) | 6.11.2 | 6.13.0 | **6.13.1** | minor | ⬆️ 업그레이드 |
+| riverpod_generator (dev) | 3.0.3 | 3.0.3 | **4.0.3** | **BREAKING** | ⏸️ riverpod 3.3.1과 함께 결정 |
+
+#### 📊 Phase 1 종합 판정
+
+| 항목 | 결과 |
+|------|------|
+| **Rust 보안** | ✅ 취약점 0건 (tokio 이미 패치, cargo audit.toml RUSTSEC-2026-0049 ignore 유지) |
+| **Dart 보안** | ✅ 직접 패키지 CVE 0건 / ⚠️ 엔진 레벨 Skia CVE 2건 (Flutter 팀 패치 대기) |
+| **즉시 가능 업그레이드** | 6건 (minor/patch — cupertino_icons, intl, json_annotation, build_runner, freezed, json_serializable) |
+| **BREAKING 업그레이드** | 6건 (go_router, fl_chart, flutter_secure_storage, google_sign_in, sign_in_with_apple, riverpod_generator) |
 
 ### ⏸️ 확인점 1: Phase 1 결과 리뷰 후 업그레이드 범위 결정
+
+**사용자 결정 필요 사항:**
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-58** | minor/patch 6건 즉시 업그레이드? | A) 전체 적용 / B) 선택적 / C) 보류 |
+| **D-59** | BREAKING 6건 중 이번에 시도할 범위? | A) 전체 / B) 보안 이점 있는 것만 (google_sign_in) / C) 전부 보류 |
+| **D-60** | flutter_riverpod 3.0→3.3 업그레이드? | A) 예 (riverpod_generator 4.x 동반) / B) 3.0 유지 |
+| **D-61** | Sonatype MCP 인증 설정 진행? | A) 예 (API 키 제공) / B) WebSearch 대체 유지 |
 
 ---
 
