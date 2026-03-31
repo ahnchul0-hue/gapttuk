@@ -34,7 +34,7 @@
 | 28 | 03-28 | 세부 UI 상태 테스트 완성 (ProductDetail/Notification/PointHistory) | D-52: markAllAsRead 스낵바 검증 / D-53: _transactionLabel switch 간접 검증 | `7db6024` |
 | 29 | 03-29 | 미확장 화면 테스트 완성 (Home/Login/Onboarding) | D-54: _trendIcon switch 간접 검증 / D-55: 전체동의 상태 버튼 활성화 | `d8adc28` |
 | **30** | **03-31** | **PLAN_01.md 8-Phase 전략 수립 + 다이얼로그/접근성/다중알림 테스트** | **D-56: Semantics properties.label 패턴 / D-57: 다중 family override** | **`63016a4`** |
-| **31** | **04-01** | **Phase 2/3 GAP 분석 + ProductDetail/MyPage/Notification 테스트 +12건** | **D-58: default 케이스 간접 검증 / D-59: initState 에러 분기 / D-60: _formatTime 분기** | **TBD** |
+| **31** | **04-01** | **Phase 2/3 GAP 분석 + ProductDetail/MyPage/Notification 테스트 +12건** | **D-58: default 케이스 간접 검증 / D-59: initState 에러 분기 / D-60: _formatTime 분기** | **`c8efba4`** |
 
 ### 1.2 전략적 성숙도 곡선
 
