@@ -155,5 +155,72 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('2026.03.24'), findsOneWidget);
     });
+
+    // ── Night-32 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('"referral_welcome_referrer" 타입 → "추천인 웰컴 보상" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 7,
+        amount: 2,
+        transactionType: 'referral_welcome_referrer',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('추천인 웰컴 보상'), findsOneWidget);
+    });
+
+    testWidgets('"referral_purchase_referrer" 타입 → "추천인 보상" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 8,
+        amount: 3,
+        transactionType: 'referral_purchase_referrer',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('추천인 보상'), findsOneWidget);
+    });
+
+    testWidgets('"admin_adjustment" 타입 → "운영자 조정" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 9,
+        amount: 5,
+        transactionType: 'admin_adjustment',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('운영자 조정'), findsOneWidget);
+    });
+
+    testWidgets('description 있을 때 설명 텍스트 표시', (tester) async {
+      final item = PointHistoryItem(
+        id: 10,
+        amount: 1,
+        transactionType: 'daily_checkin',
+        description: '3일 연속 출석 보너스',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('3일 연속 출석 보너스'), findsOneWidget);
+    });
   });
 }

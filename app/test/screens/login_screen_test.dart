@@ -64,5 +64,36 @@ void main() {
       await tester.pumpWidget(buildScreen());
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
+
+    // ── Night-32 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('Google 버튼 g_mobiledata 아이콘 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.g_mobiledata), findsOneWidget);
+    });
+
+    testWidgets('로고 Semantics "값뚝 로고" 레이블', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      final logoSemantics = find
+          .ancestor(
+            of: find.byIcon(Icons.trending_down),
+            matching: find.byType(Semantics),
+          )
+          .first;
+      expect(
+        tester.widget<Semantics>(logoSemantics).properties.label,
+        '값뚝 로고',
+      );
+    });
+
+    testWidgets('TextButton (둘러보기) 1개 렌더링', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byType(TextButton), findsOneWidget);
+    });
+
+    testWidgets('SafeArea 렌더링', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byType(SafeArea), findsOneWidget);
+    });
   });
 }

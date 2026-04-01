@@ -122,5 +122,49 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('카테고리 #5'), findsOneWidget);
     });
+
+    // ── Night-32 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('AppBar "키워드 알림 추가" 아이콘 버튼 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen());
+      expect(find.byIcon(Icons.add), findsOneWidget);
+    });
+
+    testWidgets('에러 시 "다시 시도" 버튼 표시', (tester) async {
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(error: Exception('서버 오류')),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('다시 시도'), findsOneWidget);
+    });
+
+    testWidgets('가격 알림 1건 로드 후 탭 Badge 표시', (tester) async {
+      final alert = PriceAlert(
+        id: 1, userId: 1, productId: 100,
+        alertType: 'all_time_low', isActive: true,
+      );
+      final data = AlertListResponse(priceAlerts: [alert]);
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(response: data),
+      ));
+      await tester.pumpAndSettle();
+      // 탭 count > 0 → _buildTab이 Badge 위젯 렌더링
+      expect(find.byType(Badge), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('CategoryAlert thresholdPercent → "%이상 할인" 텍스트 표시', (tester) async {
+      const catAlert = CategoryAlert(
+        id: 2, userId: 1, categoryId: 3,
+        thresholdPercent: 20,
+      );
+      final data = AlertListResponse(categoryAlerts: [catAlert]);
+      await tester.pumpWidget(_buildScreen(
+        service: FakeAlertService(response: data),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('카테고리'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('20% 이상 할인'), findsOneWidget);
+    });
   });
 }
