@@ -1,3 +1,56 @@
+# NIGHT_06_RESULT — 2026-04-03 (Night-33 추가)
+
+> **Night-33 결과**: Flutter **332건** ✅ (+12) | analyze 0건 ✅
+> **Night-32 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-33 (2026-04-03) — Phase 6 계속
+
+**브랜치**: `auto/night-01-20260403_0100`
+**베이스라인**: 320건 → **332건** (+12건)
+
+### D-64: MyPageScreen +4건 (14 → 18건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| 출석 탭 후 "출석 완료" 버튼으로 변경 | `_doCheckin()` → `_checkinDone=true` → TextButton '출석 완료' |
+| 추천 코드 복사 버튼 tooltip "복사" | `_ReferralCodeTile` IconButton.tooltip |
+| 로그아웃 탭 → AlertDialog 표시 | `MyPageScreen._showLogoutDialog` 실행 확인 |
+| 로그아웃 다이얼로그 취소 탭 → 닫힘 | 취소 → `logout()` 미호출, AlertDialog 닫힘 |
+
+**패턴**: `find.widgetWithText(ListTile, '로그아웃')` — 중복 텍스트를 위젯 타입으로 좁혀 tap.
+
+### D-65: NotificationListScreen +4건 (13 → 17건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| sentAt: 5분 전 → "5분 전" | `_formatTime`: `inMinutes < 60` 분기 |
+| sentAt: 2일 전 → "2일 전" | `_formatTime`: `inDays < 7` 분기 |
+| sentAt: 10일 전 → "M/D" 날짜 형식 | `_formatTime`: `inDays >= 7` 분기 — `'${date.month}/${date.day}'` 동적 계산 |
+| notificationType "system" → Icons.info_outline | `_buildTypeIcon` switch 'system' case |
+
+**패턴**: M/D 날짜는 `DateTime.now().subtract(Duration(days: 10))`으로 동적 계산해 하드코딩 회피.
+
+### D-66: SettingsScreen +4건 (11 → 15건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| 회원 탈퇴 다이얼로그 "탈퇴" 버튼 표시 | `_showDeleteAccountDialog` TextButton '탈퇴' |
+| 회원 탈퇴 다이얼로그 취소 탭 → 닫힘 | 취소 → `withdraw()` 미호출 |
+| 로그아웃 다이얼로그 "로그아웃" 확인 버튼 표시 | dialog actions TextButton '로그아웃' |
+| 탈퇴 경고 문구 "데이터가 삭제됩니다" | AlertDialog content 포함 검증 |
+
+### Night-33 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter test` | **332건 전체 통과** ✅ (+12건) |
+| `flutter analyze` | 0건 ✅ |
+| Rust lib 변경 | 없음 (207건 유지) |
+
+---
+
 # NIGHT_06_RESULT — 2026-04-02 (Night-32)
 
 ## Branch

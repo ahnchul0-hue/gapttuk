@@ -230,5 +230,88 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('1시간 전'), findsOneWidget);
     });
+
+    // ── Night-33 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('sentAt: 5분 전 → "5분 전" 표시', (tester) async {
+      // _formatTime: diff.inMinutes < 60 → '${diff.inMinutes}분 전'
+      final notification = AppNotification(
+        id: 9,
+        userId: 1,
+        notificationType: 'system',
+        title: '5분 전 알림',
+        sentAt: DateTime.now().subtract(const Duration(minutes: 5)),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('5분 전'), findsOneWidget);
+    });
+
+    testWidgets('sentAt: 2일 전 → "2일 전" 표시', (tester) async {
+      // _formatTime: diff.inDays < 7 → '${diff.inDays}일 전'
+      final notification = AppNotification(
+        id: 10,
+        userId: 1,
+        notificationType: 'price_alert',
+        title: '이틀 전 알림',
+        sentAt: DateTime.now().subtract(const Duration(days: 2)),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('2일 전'), findsOneWidget);
+    });
+
+    testWidgets('sentAt: 10일 전 → "M/D" 날짜 형식 표시', (tester) async {
+      // _formatTime: diff.inDays >= 7 → '${dateTime.month}/${dateTime.day}'
+      final date = DateTime.now().subtract(const Duration(days: 10));
+      final notification = AppNotification(
+        id: 11,
+        userId: 1,
+        notificationType: 'keyword_alert',
+        title: '오래된 알림',
+        sentAt: date,
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('${date.month}/${date.day}'), findsOneWidget);
+    });
+
+    testWidgets('notificationType "system" → Icons.info_outline 아이콘 표시', (tester) async {
+      // _buildTypeIcon switch: 'system' → (Icons.info_outline, appColors.neutral)
+      final notification = AppNotification(
+        id: 12,
+        userId: 1,
+        notificationType: 'system',
+        title: '시스템 알림',
+        sentAt: DateTime.now(),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeNotificationService(
+            result: (notifications: [notification], cursor: null, hasMore: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    });
   });
 }

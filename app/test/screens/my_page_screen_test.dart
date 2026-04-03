@@ -141,5 +141,48 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('로드 실패'), findsOneWidget);
     });
+
+    // ── Night-33 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('로그인 — 출석 탭 후 "출석 완료" 버튼으로 변경', (tester) async {
+      // FakeRewardService.checkin() → rewardAmount:1, alreadyCheckedIn:false
+      // _doCheckin() 완료 → _checkinDone = true → TextButton child '출석 완료'
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pumpAndSettle(); // _loadPoints 완료
+      await tester.tap(find.text('오늘 출석'));
+      await tester.pumpAndSettle();
+      expect(find.text('출석 완료'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 추천 코드 복사 버튼 tooltip "복사" 표시', (tester) async {
+      // _ReferralCodeTile: IconButton(tooltip: '복사', icon: Icons.copy_outlined)
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      final iconBtn = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.copy_outlined),
+      );
+      expect(iconBtn.tooltip, '복사');
+    });
+
+    testWidgets('로그인 — 로그아웃 탭 → AlertDialog 표시', (tester) async {
+      // MyPageScreen._showLogoutDialog → AlertDialog
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      // ListTile '로그아웃' 탭 (초기 상태에서 '로그아웃' 텍스트는 1개)
+      await tester.tap(find.widgetWithText(ListTile, '로그아웃'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 로그아웃 다이얼로그 취소 탭 → 닫힘', (tester) async {
+      // '취소' → Navigator.pop(false) → confirmed != true → logout() 미호출
+      await tester.pumpWidget(_buildScreen(user: _fakeUser));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(ListTile, '로그아웃'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }
