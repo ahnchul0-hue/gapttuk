@@ -6,7 +6,7 @@
 > **최종 업데이트**: 2026-04-04 (Night-34 결과 통합)
 > **검증**: Rust 207건 ✅ / Flutter **344건** ✅ / analyze 0건 ✅ (2026-04-04 실측)
 > **Night-33 커밋**: `ecfd5e6`
-> **Night-34 커밋**: (미커밋 상태)
+> **Night-34 커밋**: `6f5c0b2`
 
 ---
 
@@ -37,7 +37,7 @@
 | **31** | **04-01** | **Phase 1 보안감사 + Phase 2/3 GAP 분석 + 테스트 +12건** | **D-58~D-60: default 간접검증, initState 에러, _formatTime 분기** | **`c8efba4`** |
 | **32** | **04-02** | **Phase 6 테스트 커버리지 확대 +12건 (308→320건)** | **D-61~D-63: 탭Badge/Semantics label/transactionLabel 분기 완성** | **`1f36f3c`** |
 | **33** | **04-03** | **Phase 6 테스트 커버리지 확대 +12건 (320→332건)** | **D-64~D-66: 출석완료/다이얼로그/formatTime전분기/탈퇴경고** | **`ecfd5e6`** |
-| **34** | **04-04** | **Phase 6 테스트 커버리지 확대 +12건 (332→344건)** | **D-67~D-69: Home default분기/ProductDetail neutral/Onboarding완료페이지** | **(미커밋)** |
+| **34** | **04-04** | **Phase 6 테스트 커버리지 확대 +12건 (332→344건)** | **D-67~D-69: Home default분기/ProductDetail neutral/Onboarding완료페이지** | **`6f5c0b2`** |
 
 ### 1.2 전략적 성숙도 곡선
 
