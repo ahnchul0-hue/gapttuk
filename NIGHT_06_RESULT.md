@@ -1,3 +1,58 @@
+# NIGHT_06_RESULT — 2026-04-04 (Night-34 추가)
+
+> **Night-34 결과**: Flutter **344건** ✅ (+12) | analyze 0건 ✅
+> **Night-33 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-34 (2026-04-04) — Phase 6 계속
+
+**브랜치**: `auto/night-01-20260404_0100`
+**베이스라인**: 332건 → **344건** (+12건)
+
+### D-67: HomeScreen +4건 (11 → 15건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| trend stable → trending_flat 아이콘 표시 | `_trendIcon`: `'stable' \|\| _` → `Icons.trending_flat` |
+| trend null → trailing 아이콘 없음 | `trailing: s.trend != null ? ... : null` → 3종 아이콘 모두 `findsNothing` |
+| rank 1 → CircleAvatar에 "1" 표시 | `ListTile leading: CircleAvatar(child: Text('${s.rank}'))` |
+| URL 다이얼로그 취소 탭 → 닫힘 | `TextButton('취소')` → `Navigator.pop()` → `AlertDialog findsNothing` |
+
+**패턴**: `find.byIcon(Icons.trending_flat)` — `'stable' || _` default 분기 커버. Night-34 신규 **D-67**.
+
+### D-68: ProductDetailScreen +4건 (15 → 19건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| 평균가 ₩30,000 통계 카드 표시 | `_StatColumn('평균가', '₩30,000')` — `averagePrice: 30000` 렌더링 |
+| AI 예측 neutral → "보합" 텍스트 표시 | `_PredictionCard`: `'neutral' \|\| _` → `actionText='보합'` |
+| "요일별 평균 가격" 섹션 타이틀 표시 | 차트 섹션 헤더 `Text('요일별 평균 가격')` |
+| buyTimingScore null → "매수 타이밍" 배지 없음 | `_TimingBadge` 조건부 렌더링 — `null` 시 `findsNothing` |
+
+**패턴**: `findsNothing` 로 조건부 렌더링 부재 검증 — buyTimingScore null 케이스. Night-34 신규 **D-68**.
+
+### D-69: OnboardingScreen +4건 (11 → 15건)
+
+| 테스트 | 검증 대상 |
+|--------|----------|
+| 환영 페이지: "가격 히스토리" 설명 표시 | `_FeatureItem.description: '상품의 가격 변화를 한눈에 확인하세요.'` |
+| 환영 페이지: "센트(¢) 보상" 설명 표시 | `_FeatureItem.description: '가격 제보와 활동으로 센트를 적립하세요.'` |
+| 이용약관만 탭 → "다음" 버튼 여전히 비활성 | `termsAgreed=true`, `privacyAgreed=false` → `_canProceedFromPage2=false` |
+| 완료 페이지: "준비 완료!" + "시작하기" 버튼 | 전체동의→Page 3 이동 → `_CompletePage` 렌더링 검증 |
+
+**패턴**: `_canProceedFromPage2 = _termsAgreed && _privacyAgreed` 의 AND 조건을 개별 탭으로 분리 검증. 완료 페이지는 `_finish()` 호출 없이 Page 3 렌더링만 확인. Night-34 신규 **D-69**.
+
+### Night-34 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter test --no-pub` | **344건 전체 통과** ✅ (+12건) |
+| `flutter analyze --no-pub` | 0건 ✅ |
+| Rust lib 변경 | 없음 (207건 유지) |
+
+---
+
 # NIGHT_06_RESULT — 2026-04-03 (Night-33 추가)
 
 > **Night-33 결과**: Flutter **332건** ✅ (+12) | analyze 0건 ✅

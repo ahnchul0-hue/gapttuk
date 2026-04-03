@@ -194,5 +194,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('대기'), findsOneWidget);
     });
+
+    // ── Night-34 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('평균가 ₩30,000 통계 카드 표시', (tester) async {
+      // fakeProduct.averagePrice = 30000 → _StatColumn('평균가', '₩30,000')
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('₩30,000'), findsOneWidget);
+    });
+
+    testWidgets('AI 예측 neutral → "보합" 텍스트 표시 (default 분기)', (tester) async {
+      // _PredictionCard: 'neutral' || _ → actionText='보합'
+      await tester.pumpWidget(buildScreen(
+        predictionFuture: Future.value({
+          'predicted_action': 'neutral',
+          'confidence': '0.60',
+        }),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('보합'), findsOneWidget);
+    });
+
+    testWidgets('"요일별 평균 가격" 섹션 타이틀 표시', (tester) async {
+      // Text('요일별 평균 가격') — 차트 섹션 헤더
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('요일별 평균 가격'), findsOneWidget);
+    });
+
+    testWidgets('buyTimingScore null → "매수 타이밍" 배지 없음', (tester) async {
+      // _TimingBadge는 buyTimingScore != null 일 때만 렌더링
+      await tester.pumpWidget(buildScreen(
+        productFuture: Future.value(const Product(
+          id: productId,
+          productName: '타이밍 없는 상품',
+          currentPrice: 20000,
+          // buyTimingScore 미설정 (null)
+        )),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('매수 타이밍'), findsNothing);
+    });
   });
 }

@@ -144,5 +144,68 @@ void main() {
 
       expect(find.text('인기 검색어가 없습니다'), findsOneWidget);
     });
+
+    // ── Night-34 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('trend stable → trending_flat 아이콘 표시 (default 분기)', (tester) async {
+      // _trendIcon: 'stable' || _ → Icon(Icons.trending_flat)
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '안정 상품', searchCount: 300, trend: 'stable'),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.trending_flat), findsOneWidget);
+    });
+
+    testWidgets('trend null → trailing 아이콘 없음', (tester) async {
+      // trend == null → ListTile trailing: null → 아이콘 없음
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '트렌드없음', searchCount: 200, trend: null),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      // trailing이 null이므로 trending 아이콘 없어야 함
+      expect(find.byIcon(Icons.trending_up), findsNothing);
+      expect(find.byIcon(Icons.trending_down), findsNothing);
+      expect(find.byIcon(Icons.trending_flat), findsNothing);
+    });
+
+    testWidgets('인기 검색어 rank 1 → CircleAvatar에 "1" 표시', (tester) async {
+      // ListTile leading: CircleAvatar(child: Text('${s.rank}')) → rank 번호 렌더링
+      final searches = [
+        PopularSearch(id: 1, rank: 1, keyword: '1위 상품', searchCount: 500, trend: 'up'),
+      ];
+      await tester.pumpWidget(ProviderScope(
+        overrides: [popularSearchesProvider.overrideWith((_) => Future.value(searches))],
+        child: MaterialApp(theme: AppTheme.light, home: const HomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsOneWidget);
+    });
+
+    testWidgets('URL 다이얼로그 취소 탭 → 다이얼로그 닫힘', (tester) async {
+      // _showAddByUrlDialog → TextButton('취소') → Navigator.pop(context)
+      await tester.pumpWidget(buildScreen());
+      await tester.tap(find.text('URL로 상품 추가'));
+      await tester.pumpAndSettle();
+
+      // 다이얼로그 열림 확인
+      expect(find.text('취소'), findsOneWidget);
+
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+
+      // 다이얼로그 닫힘 확인
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }
