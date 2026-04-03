@@ -1,12 +1,11 @@
-# MORNING BRIEFING — 2026-04-02 (Night-13 ~ Night-32 종합 분석)
+# MORNING BRIEFING — 2026-04-03 (Night-13 ~ Night-33 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-32 (2026-03-12 ~ 2026-04-02)
-> **현재 브랜치**: `auto/night-01-20260402_0100` (main + 48 commits)
+> **분석 대상**: Night-13 ~ Night-33 (2026-03-12 ~ 2026-04-03)
+> **현재 브랜치**: `auto/night-01-20260403_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-04-02 (Night-32 최종, 검증 완료)
-> **변경 규모**: 81파일 (+5,027 / -880)
-> **검증**: Rust 207건 ✅ / Flutter 320건 ✅ / analyze 0건 ✅ (2026-04-02 실측)
-> **총 커밋**: main + 48 commits
+> **최종 업데이트**: 2026-04-03 (Night-33 결과 통합)
+> **검증**: Rust 207건 ✅ / Flutter **332건** ✅ / analyze 0건 ✅ (2026-04-03 실측)
+> **Night-33 커밋**: `ecfd5e6`
 
 ---
 
@@ -36,6 +35,7 @@
 | 30 | 03-31 | PLAN_01.md 8-Phase 전략 수립 + 다이얼로그/접근성/다중알림 테스트 | D-56: Semantics properties.label 패턴 / D-57: 다중 family override | `63016a4` |
 | **31** | **04-01** | **Phase 1 보안감사 + Phase 2/3 GAP 분석 + 테스트 +12건** | **D-58~D-60: default 간접검증, initState 에러, _formatTime 분기** | **`c8efba4`** |
 | **32** | **04-02** | **Phase 6 테스트 커버리지 확대 +12건 (308→320건)** | **D-61~D-63: 탭Badge/Semantics label/transactionLabel 분기 완성** | **`1f36f3c`** |
+| **33** | **04-03** | **Phase 6 테스트 커버리지 확대 +12건 (320→332건)** | **D-64~D-66: 출석완료/다이얼로그/formatTime전분기/탈퇴경고** | **`ecfd5e6`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -64,9 +64,21 @@ Night 29:    ★★★★★★★★ 미확장 완성 ── Home/Login/Onboard
 Night 30:    ★★★★★★★★★ 전략 전환 ── PLAN_01.md 8-Phase 계획 + 다이얼로그/접근성 + 296건
 Night 31:    ★★★★★★★★★★ 체계적 실행 ── PLAN_01 Phase 1/2/3 완료 + 308건
 Night 32:    ★★★★★★★★★★★ 분기 완성 ── Alert/Login/PointHistory 분기 전량 + 320건
+Night 33:    ★★★★★★★★★★★★ 포화 도달 ── MyPage/Notification/Settings 다이얼로그+시간 전량 + 332건
 ```
 
-### 1.3 Night-31 전략적 의의: PLAN_01.md 본격 실행
+### 1.3 Night-33 전략적 의의: 단위 테스트 포화 도달
+
+Night-25~33 **9세션 연속** 테스트 전용 실행. 핵심 수치:
+- **Phase 6 누적**: +156건 (Night-22~33), +48건 (Night-30~33 PLAN_01 기준)
+- **11개 화면 전체** 확장 완료 — 미커버 분기 체계적 소진
+- **`_formatTime` 5개 분기 전량 커버** (D-65) — Night-31~33 누적 완성의 상징적 마일스톤
+- **다이얼로그 패턴 2종 완비** (로그아웃 + 회원탈퇴) — MyPage, Settings 양쪽 모두
+- **Opus 직접 실행 9세션** (Sonnet sub-agent 불필요) — 테스트 코딩 패턴 안정화
+
+**수확 체감 분석**: Night-27~33 매 세션 +12건 균일. 신규 분기 발견 난이도 상승 → Phase 6 목표 달성 근접.
+
+### 1.4 Night-31~32 전략적 의의: PLAN_01.md 본격 실행
 
 Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 본격 실행됨.
 핵심 성과: **Phase 1(보안감사) + Phase 2/3(GAP 분석) + Phase 6(테스트) 동시 진행**.
@@ -94,7 +106,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 2. **8개 ⏸️ GATE** — Phase 전환마다 사용자 승인 필수, 단방향 결정 금지
 3. **MCP 불가 시 degradation** — Sonatype 인증 실패 → WebSearch/RustSec/NVD 직접 조회로 대체
 
-### 1.4 Opus 4.6의 핵심 전략 패턴 (Night-13~31 누적)
+### 1.5 Opus 4.6의 핵심 전략 패턴 (Night-13~33 누적)
 
 1. **PLAN_01.md GATE 체계**: Phase 전환마다 사용자 승인 필수 (⏸️ 8개 확인점)
 2. **오탐 필터링**: 서브에이전트 발견 → Opus가 ~40% 필터링 → 실행 확정
@@ -102,17 +114,18 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 4. **serde 파급 누락 → CI 자동화** (Night-19→22): 3회 수동 반복 실패 후 구조적 종결
 5. **Silent Failure 생명주기**: 전수 조사(Night-22) → 수정(Night-23) → 재검증 = 3단계 완결
 6. **FakeService 패턴 3종 완비** (Night-23→24): 플랫폼 채널 없이 전체 비즈니스 화면 테스트
-7. **테스트 포화 인식** (Night-25~31): 매 세션 +12건 균일 패턴 → 미커버 분기 체계적 완성
+7. **테스트 포화 관리** (Night-25~33): 매 세션 +12건 균일 패턴 → 미커버 분기 체계적 소진 → Night-33 포화 도달
 8. **MCP degradation 전략** (Night-31): Sonatype 실패 시 WebSearch 대체 내재화
+9. **누적 패턴 완성** (Night-31~33): `_formatTime` 5분기를 3세션에 걸쳐 점진적 완성 — 장기 일관성 유지
 
-### 1.5 의사결정 일관성
+### 1.6 의사결정 일관성
 
-- **총 60개 결정** (D-1 ~ D-60)
+- **총 66개 결정** (D-1 ~ D-66)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 53건: IMPLEMENTED 유지**
+- **나머지 59건: IMPLEMENTED 유지** (Night-33에서 D-64~D-66 추가)
 
 ---
 
@@ -141,6 +154,8 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | 25~29 | 직접 실행 | 프로덕션 코드 변경 없음 | +22/+10/+12/+12/+12건 | Flutter only |
 | 30 | 직접 실행 | PLAN_01.md 작성 + pub outdated | +12건 테스트 | 계획 수립 + Flutter12 |
 | **31** | **Sonnet ×3 (병렬)** | **Rust 30개 CVE 청정** | **Dart 17개 CVE 청정** | **Phase 1/2/3 + Flutter12** |
+| **32** | **직접 실행** | **프로덕션 코드 변경 없음** | **+12건 테스트** | **Phase 6 Flutter only** |
+| **33** | **직접 실행** | **프로덕션 코드 변경 없음** | **+12건 테스트** | **Phase 6 Flutter only** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -184,15 +199,50 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 
 **프로덕션 코드 변경: 0건** — 테스트 전용 세션
 
-### 3.2 Night-31 신규 테스트 패턴 (D-58~D-60)
+---
+
+### 3.2 Night-32 코드 변경 (커밋 `1f36f3c`)
+
+| 파일 | 변경 | 내용 |
+|------|------|------|
+| `test/screens/alert_screen_test.dart` | +4건 | AppBar add 버튼, 에러 다시시도, 탭 Badge, CategoryAlert threshold |
+| `test/screens/login_screen_test.dart` | +4건 | Google 아이콘, Semantics 로고 레이블, TextButton, SafeArea |
+| `test/screens/point_history_screen_test.dart` | +4건 | referral_welcome_referrer, referral_purchase_referrer, admin_adjustment, description |
+
+**프로덕션 코드 변경: 0건** — 테스트 전용 세션 (Night-31과 동일 패턴)
+
+---
+
+### 3.3 Night-33 코드 변경 (미커밋 — 사용자 승인 대기)
+
+| 파일 | 변경 | 내용 |
+|------|------|------|
+| `test/screens/my_page_screen_test.dart` | +4건 | 출석완료 버튼, 복사 tooltip, 로그아웃 AlertDialog, 다이얼로그 취소 |
+| `test/screens/notification_list_screen_test.dart` | +4건 | 5분전, 2일전, M/D 날짜, system 아이콘 |
+| `test/screens/settings_screen_test.dart` | +4건 | 탈퇴 버튼, 탈퇴 취소, 로그아웃 확인, 탈퇴 경고 문구 |
+
+**프로덕션 코드 변경: 0건** — 테스트 전용 세션 (Night-31~32와 동일 패턴, 3세션 연속)
+
+**Night-33 실행 특성:**
+- **Opus 4.6 직접 실행** — Sonnet 서브에이전트 미사용 (Night-25~33, 9세션 연속)
+- **MCP/플러그인 미사용** — 순수 테스트 코딩 세션
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~33, **8회** 누적 감지)
+
+### 3.4 Night-31~33 신규 테스트 패턴 (D-58~D-66)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
 | **D-58** | `switch _` default 간접 검증 | 'stable' 주입 → `_TrendChip` switch `_` → '안정' 렌더링 | 미래 새 case 추가 시 regression guard |
 | **D-59** | initState 에러 분기 테스트 | `FakeRewardService(error:...)` → `_loadPoints` catch → "로드 실패" | 인라인 ProviderScope, 기존 `_buildScreen` 변경 불필요 |
 | **D-60** | `_formatTime` 동적 분기 검증 | `DateTime.now()` / `.subtract(Duration(hours:1))` → '방금'/'1시간 전' | static mock 불필요, 테스트 실행 1분 미만 전제 |
+| **D-61** | `find.byType(Badge)` 조건부 뱃지 | 알림 탭 Badge 존재 → `findsOneWidget` | 조건부 렌더링 위젯 타입 검증 |
+| **D-62** | D-56 패턴 재활용 (Semantics label) | `widget<Semantics>().properties.label` 재사용 | 접근성 레이블 안정적 검증 — 패턴 재활용 효율 |
+| **D-63** | `_transactionLabel` 8케이스 중 7개 완성 | referral_welcome_referrer / purchase_referrer / admin_adjustment | 미완성: `_` default — 추후 추가 가능 |
+| **D-64** | `find.widgetWithText(ListTile, ...)` 탭 | 중복 텍스트를 위젯 타입으로 좁혀 tap — 다이얼로그 내 동명 버튼 충돌 방지 | MyPage 로그아웃 ListTile vs AlertDialog 버튼 |
+| **D-65** | `_formatTime` 5개 분기 전량 커버 | 방금/N분전/N시간전/N일전/M·D — Night-31~33 누적 | M/D는 `DateTime.now().subtract(Duration(days:10))` 동적 계산 |
+| **D-66** | 회원 탈퇴 다이얼로그 검증 | `_showDeleteAccountDialog` → '탈퇴'/'취소' + 경고 문구 | SettingsScreen 다이얼로그 두 종류(로그아웃+탈퇴) 동시 커버 |
 
-### 3.3 Night-13~32 테스트 증가 추이
+### 3.5 Night-13~33 테스트 증가 추이
 
 ```
 Night-13: 176건 ──── 기준선
@@ -210,22 +260,24 @@ Night-31: 308건 ──── +12건 (default분기/initState에러/formatTime)
           ↑ 11개 전체 화면 확장 완료 — 단위 테스트 수확 체감 구간 진입
 Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/description)
           ↑ Alert/Login/PointHistory 미커버 분기 전량 소진 완료
+Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatTime전분기/탈퇴경고)
+          ↑ MyPage/Notification/Settings 다이얼로그+시간분기 전량 커버 완료 — 단위 테스트 포화 도달
 ```
 
-### 3.4 코드베이스 규모
+### 3.6 코드베이스 규모
 
-| 항목 | **Night-32** | Night-31 | 변화 |
+| 항목 | **Night-33** | Night-32 | 변화 |
 |------|-------------|----------|------|
 | DB 마이그레이션 (main) | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-63** | D-60 | **+3** |
+| DECISION_LOG 항목 | **D-66** | D-63 | **+3** |
 | 순수 함수 추출 누계 | 11개/54테스트 | 11개/54테스트 | — |
 | Silent Failure 수정 | 28건+ (잔존 0건) | 28건+ | — |
-| 커밋 (main 대비) | **48** | 47 | **+1** |
+| 커밋 (main 대비) | **48** (미커밋 +1 대기) | 48 | — |
 
-### 3.5 순수 함수 추출 목록
+### 3.7 순수 함수 추출 목록
 
 | 서비스 | 함수 | 테스트 수 | Night |
 |--------|------|----------|-------|
@@ -244,11 +296,11 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-04-01)
+### 4.1 활성 브랜치 (2026-04-03)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260401_0100`** ★ | **+47 commits** | Night-13~31 전체 + PLAN_01.md Phase 1/2/3 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260403_0100`** ★ | **+48 commits + 미커밋 1건** | Night-13~33 전체 + PLAN_01.md Phase 1/2/3 + Flutter 332건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -260,12 +312,12 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0331_0100` (19개) | **Night-31 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0402_0100` (21개+) | **Night-33 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260401_0100 → main (47커밋, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260403_0100 → main (48+1커밋, 충돌 없음) → Night-33 커밋 후 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -282,7 +334,7 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | **3** | 아키텍처 심층 분석 | ✅ 완료 | 31 | 구조적 개선 불필요 판정 |
 | **4** | 코드 품질 심층 리뷰 | ⏳ 미시작 | — | code-review + silent-failure-hunter + type-design |
 | **5** | Flutter UI/UX 개선 | ⏳ 미시작 | — | frontend-design + context7 |
-| **6** | 테스트 커버리지 확장 | ⚠️ 진행중 | 30-31 | 296→**308건** (+24) |
+| **6** | 테스트 커버리지 확장 | ⚠️ 진행중 | 30-33 | 296→**332건** (+48) |
 | **7** | 코드 간소화 | ⏳ 미시작 | — | code-simplifier |
 | **8** | 최종 검증 및 커밋 | ⏳ 미시작 | — | verification + commit |
 
@@ -306,7 +358,7 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~31 머지 방향 | `auto/night-01-20260401_0100` (78파일, 47커밋, audit 0건, Flutter 308건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~33 머지 방향 | `auto/night-01-20260403_0100` (81파일+, 48+1커밋, audit 0건, Flutter 332건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 | **U-37** | PLAN_01 Phase 4~8 진행 여부 | Phase 1/2/3 완료. Phase 4(코드 품질 리뷰)부터 순차 진행 또는 범위 조정 | A) 순차 진행 B) Phase 선택 C) 보류 |
 | **PD-58~61** | Phase 1 의존성 결정 4건 | minor 업그레이드, BREAKING 범위, riverpod, Sonatype 인증 | 상기 §5 참조 |
 
@@ -325,7 +377,7 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~31 4회 감지) |
+| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~33 **8회** 감지) |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-8** | Phase 5/6 로드맵 방향 | AI 예측 고도화 / E2E 테스트 / 인프라 중 우선순위 |
@@ -335,7 +387,25 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 
 ---
 
-## 7. Night-31에서 해결/생성된 항목
+## 7. Night-33에서 해결/생성된 항목
+
+### ✅ Night-33에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| MyPage 출석완료/로그아웃 다이얼로그 미커버 | MEDIUM | +4건 (출석완료 버튼, 복사tooltip, 로그아웃 다이얼로그, 취소닫힘) |
+| NotificationList `_formatTime` 미커버 분기 | MEDIUM | +4건 (5분전, 2일전, M/D날짜, system아이콘) — **5개 분기 전량 커버 완료** |
+| Settings 탈퇴/로그아웃 다이얼로그 미커버 | MEDIUM | +4건 (탈퇴 버튼, 탈퇴 취소, 로그아웃 확인, 경고 문구) |
+| `_formatTime` 5개 분기 전량 커버 | MEDIUM | D-65: Night-31~33 누적으로 방금/N분전/N시간전/N일전/M·D 완전 커버 |
+
+### ✅ Night-32에서 해결됨 (이전 세션)
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| Alert AppBar/에러/Badge 미커버 | MEDIUM | +4건 (add버튼, 다시시도, 탭Badge, threshold) |
+| Login Google아이콘/Semantics 미커버 | MEDIUM | +4건 (Google아이콘, 로고레이블, TextButton, SafeArea) |
+| PointHistory transactionLabel 미완 분기 | MEDIUM | +4건 (referral_welcome/purchase_referrer, admin_adjustment, description) |
+| `_transactionLabel` 8케이스 중 7개 완성 | MEDIUM | D-63: default(_) 1케이스만 잔존 |
 
 ### ✅ Night-31에서 해결됨
 
@@ -344,9 +414,6 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | PLAN_01 Phase 1 의존성 보안 감사 | HIGH | WebSearch 대체로 Rust 30개 + Dart 17개 CVE 검증 완료 |
 | PLAN_01 Phase 2 프레임워크 GAP 분석 | HIGH | 서버 정합 확인, Flutter minor GAP 2건 식별 |
 | PLAN_01 Phase 3 아키텍처 심층 분석 | HIGH | 구조적 개선 불필요 판정 |
-| ProductDetail default 분기 미커버 | MEDIUM | +4건 (rising/stable/최고가/wait) |
-| MyPage initState 에러 분기 미커버 | MEDIUM | +4건 (잔액/출석/스낵바/에러) |
-| NotificationList formatTime 분기 미커버 | MEDIUM | +4건 (에러텍스트/읽음/방금/1시간전) |
 
 ### ⏳ 잔존 항목 (다음 세션)
 
@@ -358,25 +425,26 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | sonatype-guide 인증 | MEDIUM | 자격증명 필요 (10세션 연속) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
+| `_transactionLabel` default 케이스 | LOW | D-63: 8케이스 중 1개 잔존 |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 19개+ 정리 | LOW | 사용자 승인 대기 |
-| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 |
+| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~33 **8회** 감지) |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
-| **Flutter 테스트 포화** | **INFO** | **11개 화면 확장 완료 — 추가 단위 테스트 수확 체감** |
+| **Flutter 테스트 포화 도달** | **INFO** | **11개 화면 전체 확장 + 분기 전량 소진 — 단위 테스트 수확 한계 도달 (332건)** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-04-01, Night-31 실측)
+### 8.1 현재 지표 (2026-04-03, Night-33 실측)
 
-| 지표 | **Night-31** | Night-30 | Night-29 | 변화 (vs 30) |
+| 지표 | **Night-33** | Night-32 | Night-31 | 변화 (vs 32) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
-| Flutter 테스트 | **308** ✅ | 296 | 284 | **+12** |
+| Flutter 테스트 | **332** ✅ | 320 | 308 | **+12** |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-60** | D-57 | D-55 | **+3** |
-| PLAN_01 Phase 완료 | **3/8** | 0/8 | — | **+3** |
+| DECISION_LOG | **D-66** | D-63 | D-60 | **+3** |
+| PLAN_01 Phase 완료 | **3/8** | 3/8 | 3/8 | — |
 | Silent Failure 수정 | **28건+** (잔존 0건) | 28건+ | 28건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
@@ -386,7 +454,7 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | 위젯 테스트 커버리지 | **4/4** ✅ | 4/4 | 4/4 | — |
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | 11개/54테스트 | 11개/54 | 11개/54 | — |
-| 커밋 (main 대비) | **47** | 44 | 37 | **+3** |
+| 커밋 (main 대비) | **48** (+1 미커밋) | 48 | 47 | — |
 
 ### 8.2 기술 부채 현황
 
@@ -402,7 +470,7 @@ Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/
 | serde 파급 누락 방지 | **해결됨** ✅ (CI 자동검사) |
 | TOCTOU 경쟁 조건 | **해결됨** ✅ |
 | 의존성 보안 | **해결됨** ✅ (Rust 0건, Dart 0건) |
-| Flutter 테스트 커버리지 | **포화** ✅ (308건) |
+| Flutter 테스트 커버리지 | **포화 도달** ✅ (332건) |
 | PLAN_01 Phase 1/2/3 | **완료** ✅ |
 | PLAN_01 Phase 4~8 | **미시작** ⏳ |
 | 미머지 브랜치 통합 | **적체** ⚠️ (4개) |
