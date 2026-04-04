@@ -151,7 +151,9 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
                 );
                 0
             });
-        tx.rollback().await?;
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, user_id, "daily_checkin 이미출석 rollback 실패");
+        }
         metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
             reward_amount: 0,

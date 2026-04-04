@@ -19,6 +19,7 @@ use crate::AppState;
 /// PaginationParams 필드를 직접 인라인.
 #[derive(Deserialize)]
 pub struct SearchQuery {
+    #[serde(default)]
     pub q: String,
     pub cursor: Option<String>,
     #[serde(default = "default_limit")]

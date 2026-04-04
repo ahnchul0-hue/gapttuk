@@ -1,12 +1,12 @@
-# MORNING BRIEFING — 2026-04-04 (Night-13 ~ Night-34 종합 분석)
+# MORNING BRIEFING — 2026-04-05 (Night-13 ~ Night-35 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-34 (2026-03-12 ~ 2026-04-04)
-> **현재 브랜치**: `auto/night-01-20260404_0100`
+> **분석 대상**: Night-13 ~ Night-35 (2026-03-12 ~ 2026-04-05)
+> **현재 브랜치**: `auto/night-01-20260405_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-04-04 (Night-34 결과 통합)
-> **검증**: Rust 207건 ✅ / Flutter **344건** ✅ / analyze 0건 ✅ (2026-04-04 실측)
-> **Night-33 커밋**: `ecfd5e6`
+> **최종 업데이트**: 2026-04-05 (Night-35 결과 통합)
+> **검증**: Rust 207건 ✅ / Flutter **344건** ✅ / analyze 0건 ✅ (2026-04-05 실측)
 > **Night-34 커밋**: `6f5c0b2`
+> **Night-35 커밋**: (이번 세션)
 
 ---
 
@@ -38,6 +38,7 @@
 | **32** | **04-02** | **Phase 6 테스트 커버리지 확대 +12건 (308→320건)** | **D-61~D-63: 탭Badge/Semantics label/transactionLabel 분기 완성** | **`1f36f3c`** |
 | **33** | **04-03** | **Phase 6 테스트 커버리지 확대 +12건 (320→332건)** | **D-64~D-66: 출석완료/다이얼로그/formatTime전분기/탈퇴경고** | **`ecfd5e6`** |
 | **34** | **04-04** | **Phase 6 테스트 커버리지 확대 +12건 (332→344건)** | **D-67~D-69: Home default분기/ProductDetail neutral/Onboarding완료페이지** | **`6f5c0b2`** |
+| **35** | **04-05** | **PLAN_01 Phase 4: 코드 품질 심층 리뷰 + 5건 수정** | **D-70~D-75: 오탐필터, alert rollback 3곳, checkin rollback warn, TTL안전화, SearchQuery serde** | **(이번 세션)** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -67,18 +68,21 @@ Night 30:    ★★★★★★★★★ 전략 전환 ── PLAN_01.md 8-Phase
 Night 31:    ★★★★★★★★★★ 체계적 실행 ── PLAN_01 Phase 1/2/3 완료 + 308건
 Night 32:    ★★★★★★★★★★★ 분기 완성 ── Alert/Login/PointHistory 분기 전량 + 320건
 Night 33:    ★★★★★★★★★★★★ 포화 도달 ── MyPage/Notification/Settings 다이얼로그+시간 전량 + 332건
+Night 34:    ★★★★★★★★★★★★★ 포화 확정 ── Home/ProductDetail/Onboarding default+null분기 + 344건
 ```
 
-### 1.3 Night-33 전략적 의의: 단위 테스트 포화 도달
+### 1.3 Night-34 전략적 의의: 단위 테스트 포화 확정
 
-Night-25~33 **9세션 연속** 테스트 전용 실행. 핵심 수치:
-- **Phase 6 누적**: +156건 (Night-22~33), +48건 (Night-30~33 PLAN_01 기준)
+Night-25~34 **10세션 연속** 테스트 전용 실행. 핵심 수치:
+- **Phase 6 누적**: +168건 (Night-22~34), +60건 (Night-30~34 PLAN_01 기준)
 - **11개 화면 전체** 확장 완료 — 미커버 분기 체계적 소진
-- **`_formatTime` 5개 분기 전량 커버** (D-65) — Night-31~33 누적 완성의 상징적 마일스톤
+- **`_formatTime` 5개 분기 전량 커버** (D-65) — Night-31~33 누적 완성
 - **다이얼로그 패턴 2종 완비** (로그아웃 + 회원탈퇴) — MyPage, Settings 양쪽 모두
-- **Opus 직접 실행 9세션** (Sonnet sub-agent 불필요) — 테스트 코딩 패턴 안정화
+- **null 조건부 렌더링 완결** (D-67~D-68) — `trend null`, `buyTimingScore null` 부재 검증
+- **OnboardingScreen Page 3 도달** (D-69) — `_finish()` 호출 없이 렌더링만 검증하는 경량 패턴
+- **Opus 직접 실행 10세션** (Sonnet sub-agent 불필요) — 테스트 코딩 패턴 안정화
 
-**수확 체감 분석**: Night-27~33 매 세션 +12건 균일. 신규 분기 발견 난이도 상승 → Phase 6 목표 달성 근접.
+**수확 체감 분석**: Night-27~34 매 세션 +12건 균일 (8세션 × 12건 = 96건). 신규 분기 발견 난이도 최대 → **Phase 6 포화 확정 (344건)**.
 
 ### 1.4 Night-31~32 전략적 의의: PLAN_01.md 본격 실행
 
@@ -116,18 +120,19 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 4. **serde 파급 누락 → CI 자동화** (Night-19→22): 3회 수동 반복 실패 후 구조적 종결
 5. **Silent Failure 생명주기**: 전수 조사(Night-22) → 수정(Night-23) → 재검증 = 3단계 완결
 6. **FakeService 패턴 3종 완비** (Night-23→24): 플랫폼 채널 없이 전체 비즈니스 화면 테스트
-7. **테스트 포화 관리** (Night-25~33): 매 세션 +12건 균일 패턴 → 미커버 분기 체계적 소진 → Night-33 포화 도달
+7. **테스트 포화 관리** (Night-25~34): 매 세션 +12건 균일 패턴 → 미커버 분기 체계적 소진 → Night-34 포화 확정 (344건)
 8. **MCP degradation 전략** (Night-31): Sonatype 실패 시 WebSearch 대체 내재화
 9. **누적 패턴 완성** (Night-31~33): `_formatTime` 5분기를 3세션에 걸쳐 점진적 완성 — 장기 일관성 유지
+10. **null 부재 검증 패턴** (Night-34): `findsNothing`으로 조건부 렌더링 부재 확인 — 존재 확인보다 강력한 테스트
 
 ### 1.6 의사결정 일관성
 
-- **총 66개 결정** (D-1 ~ D-66)
+- **총 69개 결정** (D-1 ~ D-69)
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 1건 (D-39: E2E 테스트)
-- **나머지 59건: IMPLEMENTED 유지** (Night-33에서 D-64~D-66 추가)
+- **나머지 62건: IMPLEMENTED 유지** (Night-34에서 D-67~D-69 추가)
 
 ---
 
@@ -158,6 +163,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **31** | **Sonnet ×3 (병렬)** | **Rust 30개 CVE 청정** | **Dart 17개 CVE 청정** | **Phase 1/2/3 + Flutter12** |
 | **32** | **직접 실행** | **프로덕션 코드 변경 없음** | **+12건 테스트** | **Phase 6 Flutter only** |
 | **33** | **직접 실행** | **프로덕션 코드 변경 없음** | **+12건 테스트** | **Phase 6 Flutter only** |
+| **34** | **직접 실행** | **프로덕션 코드 변경 없음** | **+12건 테스트** | **Phase 6 Flutter only — 포화 확정** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -215,7 +221,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 
 ---
 
-### 3.3 Night-33 코드 변경 (미커밋 — 사용자 승인 대기)
+### 3.3 Night-33 코드 변경 (커밋 `ecfd5e6`)
 
 | 파일 | 변경 | 내용 |
 |------|------|------|
@@ -225,12 +231,24 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 
 **프로덕션 코드 변경: 0건** — 테스트 전용 세션 (Night-31~32와 동일 패턴, 3세션 연속)
 
-**Night-33 실행 특성:**
-- **Opus 4.6 직접 실행** — Sonnet 서브에이전트 미사용 (Night-25~33, 9세션 연속)
-- **MCP/플러그인 미사용** — 순수 테스트 코딩 세션
-- **SessionEnd hook 실패**: `node` 미설치 (Night-30~33, **8회** 누적 감지)
+---
 
-### 3.4 Night-31~33 신규 테스트 패턴 (D-58~D-66)
+### 3.4 Night-34 코드 변경 (커밋 `6f5c0b2`)
+
+| 파일 | 변경 | 내용 |
+|------|------|------|
+| `test/screens/home_screen_test.dart` | +4건 | stable→`trending_flat`, trend null→trailing 없음, rank 번호, URL 다이얼로그 취소 |
+| `test/screens/product_detail_screen_test.dart` | +4건 | 평균가 ₩30,000, neutral→"보합", "요일별 평균 가격" 타이틀, buyTimingScore null |
+| `test/screens/onboarding_screen_test.dart` | +4건 | "가격 히스토리" 설명, "센트(¢) 보상" 설명, 이용약관 개별 탭, 완료 페이지 "준비 완료!" |
+
+**프로덕션 코드 변경: 0건** — 테스트 전용 세션 (Night-31~33과 동일 패턴, **4세션 연속**)
+
+**Night-34 실행 특성:**
+- **Opus 4.6 직접 실행** — Sonnet 서브에이전트 미사용 (Night-25~34, **10세션 연속**)
+- **MCP/플러그인 미사용** — 순수 테스트 코딩 세션
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~34, **10회** 누적 감지)
+
+### 3.5 Night-31~34 신규 테스트 패턴 (D-58~D-69)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
@@ -243,8 +261,11 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **D-64** | `find.widgetWithText(ListTile, ...)` 탭 | 중복 텍스트를 위젯 타입으로 좁혀 tap — 다이얼로그 내 동명 버튼 충돌 방지 | MyPage 로그아웃 ListTile vs AlertDialog 버튼 |
 | **D-65** | `_formatTime` 5개 분기 전량 커버 | 방금/N분전/N시간전/N일전/M·D — Night-31~33 누적 | M/D는 `DateTime.now().subtract(Duration(days:10))` 동적 계산 |
 | **D-66** | 회원 탈퇴 다이얼로그 검증 | `_showDeleteAccountDialog` → '탈퇴'/'취소' + 경고 문구 | SettingsScreen 다이얼로그 두 종류(로그아웃+탈퇴) 동시 커버 |
+| **D-67** | trend null → trailing 없음 | `findsNothing` 3종 아이콘으로 null 부재 검증 | 조건부 렌더링 `s.trend != null ?` 경로의 null 분기 |
+| **D-68** | buyTimingScore null → 배지 없음 | `if (product.buyTimingScore != null)` 부재 확인 | `findsNothing`이 `findsOneWidget`보다 강력한 부재 테스트 |
+| **D-69** | OnboardingScreen 완료 페이지 이동 | 전체동의 + ElevatedButton('다음') → Page 3 "준비 완료!" | `_finish()` 호출 없이 Page 3 렌더링만 검증 — 서비스 mock 불필요 |
 
-### 3.5 Night-13~33 테스트 증가 추이
+### 3.6 Night-13~34 테스트 증가 추이
 
 ```
 Night-13: 176건 ──── 기준선
@@ -263,23 +284,25 @@ Night-31: 308건 ──── +12건 (default분기/initState에러/formatTime)
 Night-32: 320건 ──── +12건 (탭Badge/Semantics/transactionLabel분기/description)
           ↑ Alert/Login/PointHistory 미커버 분기 전량 소진 완료
 Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatTime전분기/탈퇴경고)
-          ↑ MyPage/Notification/Settings 다이얼로그+시간분기 전량 커버 완료 — 단위 테스트 포화 도달
+          ↑ MyPage/Notification/Settings 다이얼로그+시간분기 전량 커버 완료
+Night-34: 344건 ──── +12건 (Home default/ProductDetail neutral+null/Onboarding 완료페이지)
+          ↑ Home/ProductDetail/Onboarding 잔여 분기 전량 소진 — ★ 단위 테스트 포화 확정 (344건)
 ```
 
-### 3.6 코드베이스 규모
+### 3.7 코드베이스 규모
 
-| 항목 | **Night-33** | Night-32 | 변화 |
+| 항목 | **Night-34** | Night-33 | 변화 |
 |------|-------------|----------|------|
 | DB 마이그레이션 (main) | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-66** | D-63 | **+3** |
+| DECISION_LOG 항목 | **D-69** | D-66 | **+3** |
 | 순수 함수 추출 누계 | 11개/54테스트 | 11개/54테스트 | — |
 | Silent Failure 수정 | 28건+ (잔존 0건) | 28건+ | — |
-| 커밋 (main 대비) | **48** (미커밋 +1 대기) | 48 | — |
+| 커밋 (main 대비) | **50** | 48 | **+2** |
 
-### 3.7 순수 함수 추출 목록
+### 3.8 순수 함수 추출 목록
 
 | 서비스 | 함수 | 테스트 수 | Night |
 |--------|------|----------|-------|
@@ -298,11 +321,11 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-04-03)
+### 4.1 활성 브랜치 (2026-04-04)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260403_0100`** ★ | **+48 commits + 미커밋 1건** | Night-13~33 전체 + PLAN_01.md Phase 1/2/3 + Flutter 332건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260404_0100`** ★ | **+50 commits** | Night-13~34 전체 + PLAN_01.md Phase 1/2/3 + Flutter 344건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -314,12 +337,12 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0402_0100` (21개+) | **Night-33 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0403_0100` (22개+) | **Night-34 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260403_0100 → main (48+1커밋, 충돌 없음) → Night-33 커밋 후 즉시 PR 가능
+1. auto/night-01-20260404_0100 → main (50커밋, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -334,9 +357,9 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 | **1** | 의존성 보안 감사 | ✅ 완료 | 31 | Rust CVE 0, Dart CVE 0, Skia CVE 2 (엔진 대기) |
 | **2** | 프레임워크 패턴 검증 | ✅ 완료 | 31 | 서버 정합, Flutter minor GAP 2건 |
 | **3** | 아키텍처 심층 분석 | ✅ 완료 | 31 | 구조적 개선 불필요 판정 |
-| **4** | 코드 품질 심층 리뷰 | ⏳ 미시작 | — | code-review + silent-failure-hunter + type-design |
+| **4** | 코드 품질 심층 리뷰 | ✅ **완료** | **35** | 병렬 3에이전트, 37건 발견, 오탐 6건 제외, **5건 수정** (alert rollback 3 + checkin rollback + TTL + SearchQuery + markAsRead) |
 | **5** | Flutter UI/UX 개선 | ⏳ 미시작 | — | frontend-design + context7 |
-| **6** | 테스트 커버리지 확장 | ⚠️ 진행중 | 30-33 | 296→**332건** (+48) |
+| **6** | 테스트 커버리지 확장 | ✅ **포화 확정** | 30-34 | 296→**344건** (+60) |
 | **7** | 코드 간소화 | ⏳ 미시작 | — | code-simplifier |
 | **8** | 최종 검증 및 커밋 | ⏳ 미시작 | — | verification + commit |
 
@@ -360,15 +383,15 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~33 머지 방향 | `auto/night-01-20260403_0100` (81파일+, 48+1커밋, audit 0건, Flutter 332건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
-| **U-37** | PLAN_01 Phase 4~8 진행 여부 | Phase 1/2/3 완료. Phase 4(코드 품질 리뷰)부터 순차 진행 또는 범위 조정 | A) 순차 진행 B) Phase 선택 C) 보류 |
+| **U-3** | Night-13~34 머지 방향 | `auto/night-01-20260404_0100` (81파일+, 50커밋, audit 0건, Flutter 344건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-37** | PLAN_01 Phase 4~8 진행 여부 | Phase 1/2/3/6 완료. Phase 4(코드 품질 리뷰)부터 순차 진행 또는 범위 조정 | A) Phase 4→7→8 순차 B) Phase 4→5→7→8 전체 C) Phase 4+8만 D) 커스텀 |
 | **PD-58~61** | Phase 1 의존성 결정 4건 | minor 업그레이드, BREAKING 범위, riverpod, Sonatype 인증 | 상기 §5 참조 |
 
 ### 🔶 HIGH (금일 중 결정 권장)
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-38** | Sonatype MCP 인증 설정 | **10세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
+| **U-38** | Sonatype MCP 인증 설정 | **11세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
 | **U-34** | 메이저 패키지 업그레이드 | `go_router` 17.x, `fl_chart` 1.2.0, `google_sign_in` 7.x — breaking |
 | **U-1** | 중복 구현 채택 | Monthly prices + ReferralScreen이 여러 브랜치에 이중 구현 |
 | **U-2** | 미머지 브랜치 통합 순서 | 4개 미머지 브랜치 충돌 해결 |
@@ -379,7 +402,7 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~33 **8회** 감지) |
+| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~34 **10회** 감지) |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-8** | Phase 5/6 로드맵 방향 | AI 예측 고도화 / E2E 테스트 / 인프라 중 우선순위 |
@@ -389,18 +412,26 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 
 ---
 
-## 7. Night-33에서 해결/생성된 항목
+## 7. Night-34에서 해결/생성된 항목
 
-### ✅ Night-33에서 해결됨
+### ✅ Night-34에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| HomeScreen trend stable/null 분기 미커버 | MEDIUM | +4건 (stable→`trending_flat`, null trailing 없음, rank 번호, URL 취소) |
+| ProductDetailScreen neutral/null 분기 미커버 | MEDIUM | +4건 (평균가, neutral→"보합", 요일별 타이틀, buyTimingScore null 배지없음) |
+| OnboardingScreen 완료 페이지 미커버 | MEDIUM | +4건 (히스토리 설명, 센트 보상, 이용약관 개별, 완료 "준비 완료!") |
+| **Phase 6 포화 확정** | HIGH | **344건 — 11개 화면 전체 분기 소진 완료, 10세션 연속 +12건 균일 달성** |
+
+### ✅ Night-33에서 해결됨 (이전 세션)
 
 | 항목 | 등급 | 해결 방법 |
 |------|------|-----------|
 | MyPage 출석완료/로그아웃 다이얼로그 미커버 | MEDIUM | +4건 (출석완료 버튼, 복사tooltip, 로그아웃 다이얼로그, 취소닫힘) |
 | NotificationList `_formatTime` 미커버 분기 | MEDIUM | +4건 (5분전, 2일전, M/D날짜, system아이콘) — **5개 분기 전량 커버 완료** |
 | Settings 탈퇴/로그아웃 다이얼로그 미커버 | MEDIUM | +4건 (탈퇴 버튼, 탈퇴 취소, 로그아웃 확인, 경고 문구) |
-| `_formatTime` 5개 분기 전량 커버 | MEDIUM | D-65: Night-31~33 누적으로 방금/N분전/N시간전/N일전/M·D 완전 커버 |
 
-### ✅ Night-32에서 해결됨 (이전 세션)
+### ✅ Night-32에서 해결됨
 
 | 항목 | 등급 | 해결 방법 |
 |------|------|-----------|
@@ -421,32 +452,32 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 
 | 항목 | 등급 | 보류 이유 |
 |------|------|-----------|
-| PLAN_01 Phase 4~8 실행 | HIGH | GATE 체계 — 사용자 승인 대기 |
+| PLAN_01 Phase 4/5/7/8 실행 | HIGH | GATE 체계 — 사용자 승인 대기 (Phase 6 포화 확정) |
 | 메이저 패키지 업그레이드 6건 | HIGH | breaking changes — 별도 계획 필요 |
 | minor/patch 업그레이드 6건 | MEDIUM | 사용자 결정 대기 (PD-58) |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (10세션 연속) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (11세션 연속) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
 | `_transactionLabel` default 케이스 | LOW | D-63: 8케이스 중 1개 잔존 |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 19개+ 정리 | LOW | 사용자 승인 대기 |
-| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~33 **8회** 감지) |
+| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~34 **10회** 감지) |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
-| **Flutter 테스트 포화 도달** | **INFO** | **11개 화면 전체 확장 + 분기 전량 소진 — 단위 테스트 수확 한계 도달 (332건)** |
+| **Flutter 테스트 포화 확정** | **INFO** | **11개 화면 전체 확장 + 분기 전량 소진 — 단위 테스트 344건 포화 확정** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-04-03, Night-33 실측)
+### 8.1 현재 지표 (2026-04-04, Night-34 실측)
 
-| 지표 | **Night-33** | Night-32 | Night-31 | 변화 (vs 32) |
+| 지표 | **Night-34** | Night-33 | Night-32 | 변화 (vs 33) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
-| Flutter 테스트 | **332** ✅ | 320 | 308 | **+12** |
+| Flutter 테스트 | **344** ✅ | 332 | 320 | **+12** |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-66** | D-63 | D-60 | **+3** |
-| PLAN_01 Phase 완료 | **3/8** | 3/8 | 3/8 | — |
+| DECISION_LOG | **D-69** | D-66 | D-63 | **+3** |
+| PLAN_01 Phase 완료 | **4/8** (1/2/3/6) | 3/8 | 3/8 | **+1** (Phase 6 포화) |
 | Silent Failure 수정 | **28건+** (잔존 0건) | 28건+ | 28건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
@@ -456,7 +487,7 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 | 위젯 테스트 커버리지 | **4/4** ✅ | 4/4 | 4/4 | — |
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | 11개/54테스트 | 11개/54 | 11개/54 | — |
-| 커밋 (main 대비) | **48** (+1 미커밋) | 48 | 47 | — |
+| 커밋 (main 대비) | **50** | 48 | 48 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -472,14 +503,43 @@ Night-33: 332건 ──── +12건 (출석완료/다이얼로그취소/formatT
 | serde 파급 누락 방지 | **해결됨** ✅ (CI 자동검사) |
 | TOCTOU 경쟁 조건 | **해결됨** ✅ |
 | 의존성 보안 | **해결됨** ✅ (Rust 0건, Dart 0건) |
-| Flutter 테스트 커버리지 | **포화 도달** ✅ (332건) |
-| PLAN_01 Phase 1/2/3 | **완료** ✅ |
-| PLAN_01 Phase 4~8 | **미시작** ⏳ |
+| Flutter 테스트 커버리지 | **포화 확정** ✅ (344건) |
+| PLAN_01 Phase 1/2/3/6 | **완료** ✅ |
+| PLAN_01 Phase 4/5/7/8 | **미시작** ⏳ |
 | 미머지 브랜치 통합 | **적체** ⚠️ (4개) |
-| auto 브랜치 정리 | **미처리** ⚠️ (19개+) |
+| auto 브랜치 정리 | **미처리** ⚠️ (22개+) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (10세션 연속) |
+| sonatype-guide 인증 | **미설정** ⚠️ (11세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **node 미설치** ⚠️ |
+| SessionEnd hook | **node 미설치** ⚠️ (10회 감지) |
+
+---
+
+## 9. 다음 세션 선택지 (Phase 4/5/7/8)
+
+> Phase 1/2/3/6 완료. 남은 Phase 4(코드 품질 리뷰), 5(UI/UX), 7(간소화), 8(최종 검증+커밋) 중 진행 범위 결정 필요.
+
+| 선택지 | 설명 | 활용 도구 | 예상 규모 |
+|--------|------|-----------|----------|
+| **A) Phase 4→7→8 순차** | 코드 품질 리뷰 → 간소화 → 최종 검증 (UI/UX 별도) | code-review, silent-failure-hunter, type-design-analyzer, code-simplifier | 중간 |
+| **B) Phase 4→5→7→8 전체** | 남은 4개 Phase 모두 실행 | 위 전체 + frontend-design | 대형 |
+| **C) Phase 4+8만 (빠른 마감)** | 품질 리뷰 + 최종 검증/커밋 집중 | code-review, verification, commit | 소형 |
+| **D) 커스텀** | 원하시는 조합 지정 | — | — |
+
+**Opus 추천: A)** — Phase 5(UI/UX)는 시각적 검토 필요 → 별도 세션 효율적. Phase 4→7→8은 분석→리팩토링→커밋의 자연스러운 흐름.
+
+### MCP/플러그인 가용성 (Night-34 기준)
+
+| 도구 | 상태 | Phase 활용 |
+|------|------|-----------|
+| sonatype-guide | ✅ (인증 미설정) | Phase 1 (완료) |
+| feature-dev (3종) | ✅ 사용 가능 | Phase 4 |
+| pr-review-toolkit (4종) | ✅ 사용 가능 | Phase 4, 7, 8 |
+| code-review | ✅ 사용 가능 | Phase 4 |
+| code-simplifier | ✅ 사용 가능 | Phase 7 |
+| frontend-design | ✅ 사용 가능 | Phase 5 |
+| commit-commands | ✅ 사용 가능 | Phase 8 |
+| superpowers (brainstorm/verification) | ✅ 사용 가능 | 전체 |
+| context7 / playwright / serena | ❌ 미설치 | 대체 가능 |

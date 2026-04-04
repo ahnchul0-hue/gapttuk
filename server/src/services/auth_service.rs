@@ -204,7 +204,10 @@ pub async fn create_token_pair(
     let token_hash = hash_refresh_token(&refresh_token);
 
     let expires_at = Utc::now()
-        + Duration::seconds(i64::try_from(config.jwt_refresh_ttl_secs).unwrap_or(i64::MAX));
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs)
+                .map_err(|_| AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string()))?,
+        );
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)
@@ -310,7 +313,10 @@ pub async fn rotate_refresh_token(
     let new_refresh = generate_refresh_token();
     let new_hash = hash_refresh_token(&new_refresh);
     let new_expires = Utc::now()
-        + Duration::seconds(i64::try_from(config.jwt_refresh_ttl_secs).unwrap_or(i64::MAX));
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs)
+                .map_err(|_| AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string()))?,
+        );
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)

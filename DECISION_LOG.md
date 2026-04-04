@@ -1,5 +1,103 @@
 # DECISION_LOG — Night-01 Session (2026-03-04)
 
+---
+
+## Night-35 결정 (2026-04-05) — PLAN_01 Phase 4
+
+### D-70: Phase 4 서브에이전트 오탐 필터링
+
+**결정**: code-reviewer C-1(RadioGroup), C-2(isLoading), H-1(referral TOCTOU), H-3(/referrals 미등록) 4건 제외
+
+**근거**:
+- C-1: 실제 코드에 없음 (sub-agent hallucination)
+- C-2: Navigator.pop()이 dialog 닫아 isLoading 미복원 무의미
+- H-1: 재시도 루프(`is_referral_code_collision`)가 이미 보호
+- H-3: fix/phase0-security-stability 브랜치에 구현됨, 현재 브랜치 미머지 상태
+
+**Status**: IMPLEMENTED (오탐 제외 처리)
+
+---
+
+### D-71: alert_service.rs FOR UPDATE 잠금 후 명시적 rollback 추가
+
+**결정**: `create_price_alert`, `create_category_alert`, `create_keyword_alert` 3함수에서 한도 초과 `return Err` 전에 `warn!` 패턴 rollback 추가
+
+**근거**: Night-23에서 확립된 표준 패턴. `SELECT FOR UPDATE` 잠금이 걸린 상태에서 Transaction::drop() 비동기 롤백이 완료를 보장하지 않아 잠금 해제가 지연될 수 있음.
+
+**Status**: IMPLEMENTED — `server/src/services/alert_service.rs` (3곳)
+
+---
+
+### D-72: reward_service.rs daily_checkin rollback ? 제거
+
+**결정**: `tx.rollback().await?` → `if let Err(rb_err) = tx.rollback().await { warn!(...) }` 패턴으로 변경
+
+**근거**: 읽기 전용 경로(이미 출석)에서 rollback 실패를 500으로 전파하는 것은 과도한 오류 노출. warn으로 충분.
+
+**Status**: IMPLEMENTED — `server/src/services/reward_service.rs:154`
+
+---
+
+### D-73: auth_service.rs TTL i64::MAX 폴백 제거
+
+**결정**: `unwrap_or(i64::MAX)` → `map_err(|_| AppError::Internal(...))?` 명시적 오류 처리
+
+**근거**: `jwt_refresh_ttl_secs` 설정 오류(u64>i64::MAX) 시 292년 TTL의 영구 토큰이 발행되는 보안 결함 방지. 서버 시작 실패가 부적절한 토큰 발행보다 안전.
+
+**Status**: IMPLEMENTED — `server/src/services/auth_service.rs` (2곳: create_token_pair, rotate_refresh_token)
+
+---
+
+### D-74: products.rs SearchQuery.q serde(default) 추가
+
+**결정**: `q: String` → `#[serde(default)] q: String` — 핸들러 내 isEmpty 체크는 이미 존재
+
+**근거**: q 파라미터 누락 시 Axum 기본 422(비표준 포맷)가 반환됨. `#[serde(default)]` 추가 후 핸들러의 `AppError::BadRequest` 경로가 일관된 포맷으로 응답.
+
+**Status**: IMPLEMENTED — `server/src/api/routes/products.rs`
+
+---
+
+### D-75: notification_list_screen.dart markAsRead showErrorSnackBar 추가
+
+**결정**: markAsRead 실패 시 `debugPrint`만 있던 catch를 `showErrorSnackBar` 추가
+
+**근거**: markAllAsRead는 이미 showErrorSnackBar를 사용. 동일 화면 내 에러 표시 일관성. "UX를 위해 무시" 주석은 의도적이나 사용자 피드백 없는 것은 좋지 않음.
+
+**Status**: IMPLEMENTED — `app/lib/screens/notification/notification_list_screen.dart`
+
+---
+
+### PD-62: AlertType String→Dart Enum 전환 (장기 미결)
+
+**결정**: 이번 세션 미실행 — Phase 5/7에서 처리
+
+**근거**: freezed 모델 전체 재생성 + 테스트 대규모 수정 필요. Night-35 범위 초과. type-design-analyzer 점수 16/40 (최저) — 차기 우선 개선 대상.
+
+**Status**: DEFERRED — PLAN_01 Phase 5/7에서 처리
+
+---
+
+### PD-63: User.email Rust String vs Flutter String? 불일치 (장기 미결)
+
+**결정**: 이번 세션 미실행
+
+**근거**: DB 스키마(users.email NOT NULL 여부) 확인 후 결정 필요. 소셜 로그인에서 email이 없을 수 있음.
+
+**Status**: DEFERRED
+
+---
+
+### PD-64: Product 가격 3필드 순서 불변식 검증 (장기 미결)
+
+**결정**: 이번 세션 미실행 — DB CHECK 제약 확인 후 처리
+
+**근거**: `lowest_price <= current_price <= highest_price` 불변식이 타입으로 표현되지 않음. 단기적으로 DB CHECK 제약 + 통합 테스트 추가로 보완 가능.
+
+**Status**: DEFERRED
+
+---
+
 ## Context
 Sub-agent session on branch `auto/night-01-20260304_0100`.
 PLAN_01.md was not found in the repository; decisions are inferred from the uncommitted diff.

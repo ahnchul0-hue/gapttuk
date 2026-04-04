@@ -103,7 +103,7 @@ class _NotificationListScreenState
       }
     } catch (e, st) {
       debugPrint('NotificationListScreen: markAsRead failed for ${notification.id} — $e\n$st');
-      // UX를 위해 UI는 읽음 상태 유지, 서버 동기화 실패는 무시
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 

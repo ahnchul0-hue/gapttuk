@@ -117,6 +117,9 @@ pub async fn create_price_alert(
 
     let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "create_price_alert 한도초과 rollback 실패");
+        }
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
         )));
@@ -248,6 +251,9 @@ pub async fn create_category_alert(
 
     let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "create_category_alert 한도초과 rollback 실패");
+        }
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
         )));
@@ -347,6 +353,9 @@ pub async fn create_keyword_alert(
 
     let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
     if count >= MAX_ALERTS_PER_USER {
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "create_keyword_alert 한도초과 rollback 실패");
+        }
         return Err(AppError::BadRequest(format!(
             "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
         )));

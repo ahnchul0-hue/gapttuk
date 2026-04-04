@@ -1,7 +1,114 @@
-# NIGHT_06_RESULT — 2026-04-04 (Night-34 추가)
+# NIGHT_06_RESULT — 2026-04-05 (Night-35 추가)
 
-> **Night-34 결과**: Flutter **344건** ✅ (+12) | analyze 0건 ✅
-> **Night-33 이전 결과** (이하 원본 보존)
+> **Night-35 결과**: Flutter **344건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-35**: PLAN_01 Phase 4 코드 품질 심층 리뷰 + 5건 수정
+> **Night-34 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-35 (2026-04-05) — PLAN_01 Phase 4 코드 품질 심층 리뷰
+
+**브랜치**: `auto/night-01-20260405_0100`
+**베이스라인**: Flutter 344건 (변동 없음) | Rust 207건 ✅
+
+### 실행 전략: Phase 4 병렬 서브에이전트 3개
+
+| 에이전트 | 역할 | 발견 건수 |
+|---------|------|---------|
+| `feature-dev:code-reviewer` | 버그/보안/로직 오류 | 14건 (CRITICAL 2, HIGH 4, MEDIUM 8) |
+| `pr-review-toolkit:silent-failure-hunter` | catch 블록, 에러 억제 패턴 | 15건 |
+| `pr-review-toolkit:type-design-analyzer` | 핵심 타입 설계 품질 분석 | 8개 타입 분석 |
+
+### D-70: 오탐 필터링 결과
+
+| 발견 | 판정 | 근거 |
+|------|------|------|
+| C-1 RadioGroup 위젯 미정의 | ✅ FALSE POSITIVE | 실제 코드에 없는 위젯 — sub-agent 오탐 |
+| C-2 isLoading 오류 시 미복원 | ✅ FALSE POSITIVE | Navigator.pop()이 dialog 닫아 isLoading 무의미 |
+| H-1 referral_code TOCTOU | ⏭️ 제외 | 재시도 루프로 이미 보호됨, 단순화는 별도 PR |
+| H-3 /rewards/referrals 미등록 | ⏭️ 제외 | fix/phase0-security-stability 브랜치에 구현됨 |
+| Silent #3 onboarding consent | ⏭️ 제외 | 의도적 설계 (주석에 근거 명시됨) |
+| Silent #14 unawaited Future | ⏭️ 제외 | PushService 내부 catch가 있음, 현재 패턴 충분 |
+
+### 실제 수정 5건
+
+#### 수정 1-3: alert_service.rs — FOR UPDATE 잠금 후 명시적 rollback 추가 (D-71)
+
+| 함수 | 수정 |
+|------|------|
+| `create_price_alert` | 한도 초과 return Err 전 `warn!` 패턴 rollback |
+| `create_category_alert` | 동일 |
+| `create_keyword_alert` | 동일 |
+
+**패턴**: `if let Err(rb_err) = tx.rollback().await { tracing::warn!(...) }` — Night-23에서 확립된 표준 패턴 적용
+
+#### 수정 4: reward_service.rs — daily_checkin rollback 500 노출 방지 (D-72)
+
+```rust
+// Before: tx.rollback().await?;  ← rollback 실패 시 500 Internal Error
+// After:
+if let Err(rb_err) = tx.rollback().await {
+    tracing::warn!(error = %rb_err, user_id, "daily_checkin 이미출석 rollback 실패");
+}
+```
+
+**영향**: 출석 중복 체크 중 DB 순간 불안정이 클라이언트 오류로 전파되지 않음
+
+#### 수정 5: auth_service.rs — TTL i64::MAX 폴백 제거 (D-73)
+
+```rust
+// Before: .unwrap_or(i64::MAX)  ← 설정 오류 시 토큰 사실상 영구화
+// After:  .map_err(|_| AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string()))?
+```
+
+**적용 위치**: `create_token_pair` (줄 208-209) + `rotate_refresh_token` (줄 317-318) — 2곳 동일 수정
+
+#### 수정 6: products.rs — SearchQuery.q 누락 시 AppError 반환 (D-74)
+
+```rust
+// Before: pub q: String  ← ?q= 없으면 Axum 기본 422 (포맷 불일치)
+// After:  #[serde(default)] pub q: String  ← 핸들러가 이미 isEmpty 체크 → 일관된 AppError::BadRequest
+```
+
+#### 수정 7: notification_list_screen.dart — markAsRead 실패 showErrorSnackBar 추가 (D-75)
+
+```dart
+// Before: debugPrint + 조용히 무시
+// After:  debugPrint + showErrorSnackBar(context, e)
+// 근거: markAllAsRead와 동일한 에러 표시 패턴으로 일관성 확보
+```
+
+### Night-35 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter test --no-pub` | **344건 전체 통과** ✅ (변동 없음) |
+| `cargo test --lib` | **207건 전체 통과** ✅ (변동 없음) |
+| `cargo check --lib` | **0 errors** ✅ |
+| 프로덕션 코드 변경 | **5개 파일** (Rust 4 + Flutter 1) |
+| Phase 4 코드 리뷰 실행 | ✅ 병렬 서브에이전트 3개 |
+
+### Phase 4 타입 설계 분석 요약
+
+| 타입 | 언어 | 총점(/40) | 주요 개선 제안 |
+|------|------|:---:|------|
+| `AppError` | Rust | **34** | NotFound 한국어 조사 처리 |
+| `Config` | Rust | **30** | TTL 0 검증 추가 → 일부 이번 세션 수정 |
+| `AppState` | Rust | **22** | `new()` 생성자 추가 (장기) |
+| `Product` | Rust | **18** | 가격 3필드 순서 불변식 DB CHECK로 보완 |
+| `User` | Rust | **19** | email String vs Option<String> 불일치 (장기) |
+| `Product` | Dart | **25** | priceTrend String→Enum 전환 (장기) |
+| `User` | Dart | **22** | expiresIn > 0 assert 추가 가능 |
+| `PriceAlert/AlertType` | Dart | **16** | alertType String→Enum 최우선 개선 |
+
+**Phase 4 미수정 잔여 항목** (장기 개선 대상, DECISION_LOG에 기록):
+- `AlertType` String→Dart Enum 전환 (PD-62)
+- `User.email` String vs Option<String> Rust/Dart 불일치 (PD-63)
+- `Product` 가격 3필드 순서 불변식 검증 (PD-64)
+
+---
+
+
 
 ---
 
