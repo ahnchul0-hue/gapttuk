@@ -6,7 +6,7 @@
 > **최종 업데이트**: 2026-04-05 (Night-35 결과 통합)
 > **검증**: Rust 207건 ✅ / Flutter **344건** ✅ / analyze 0건 ✅ (2026-04-05 실측)
 > **Night-34 커밋**: `6f5c0b2`
-> **Night-35 커밋**: (이번 세션)
+> **Night-35 커밋**: `68bfd6e`
 
 ---
 
@@ -38,7 +38,7 @@
 | **32** | **04-02** | **Phase 6 테스트 커버리지 확대 +12건 (308→320건)** | **D-61~D-63: 탭Badge/Semantics label/transactionLabel 분기 완성** | **`1f36f3c`** |
 | **33** | **04-03** | **Phase 6 테스트 커버리지 확대 +12건 (320→332건)** | **D-64~D-66: 출석완료/다이얼로그/formatTime전분기/탈퇴경고** | **`ecfd5e6`** |
 | **34** | **04-04** | **Phase 6 테스트 커버리지 확대 +12건 (332→344건)** | **D-67~D-69: Home default분기/ProductDetail neutral/Onboarding완료페이지** | **`6f5c0b2`** |
-| **35** | **04-05** | **PLAN_01 Phase 4: 코드 품질 심층 리뷰 + 5건 수정** | **D-70~D-75: 오탐필터, alert rollback 3곳, checkin rollback warn, TTL안전화, SearchQuery serde** | **(이번 세션)** |
+| **35** | **04-05** | **PLAN_01 Phase 4: 코드 품질 심층 리뷰 + 5건 수정** | **D-70~D-75: 오탐필터, alert rollback 3곳, checkin rollback warn, TTL안전화, SearchQuery serde** | **`68bfd6e`** |
 
 ### 1.2 전략적 성숙도 곡선
 
