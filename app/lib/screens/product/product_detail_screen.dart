@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/theme.dart';
+import '../../models/alert.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -165,7 +166,7 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _showAlertSetup(BuildContext context, WidgetRef ref) async {
-    String selectedType = 'target_price';
+    AlertType selectedType = AlertType.targetPrice;
     final priceController = TextEditingController();
     try {
 
@@ -187,31 +188,25 @@ class ProductDetailScreen extends ConsumerWidget {
               Text('가격 알림 설정',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
-              RadioGroup<String>(
+              RadioGroup<AlertType>(
                 groupValue: selectedType,
                 onChanged: (v) => setState(() => selectedType = v!),
                 child: Column(
-                  children: [
-                    'target_price',
-                    'below_average',
-                    'near_lowest',
-                    'all_time_low',
-                  ].map((type) {
+                  children: AlertType.values.map((type) {
                     final label = switch (type) {
-                      'target_price' => '목표 가격 도달',
-                      'below_average' => '평균 이하로 하락',
-                      'near_lowest' => '역대 최저가 근접',
-                      'all_time_low' => '역대 최저가 갱신',
-                      _ => type,
+                      AlertType.targetPrice => '목표 가격 도달',
+                      AlertType.belowAverage => '평균 이하로 하락',
+                      AlertType.nearLowest => '역대 최저가 근접',
+                      AlertType.allTimeLow => '역대 최저가 갱신',
                     };
-                    return RadioListTile<String>(
+                    return RadioListTile<AlertType>(
                       title: Text(label),
                       value: type,
                     );
                   }).toList(),
                 ),
               ),
-              if (selectedType == 'target_price') ...[
+              if (selectedType == AlertType.targetPrice) ...[
                 const SizedBox(height: 8),
                 TextField(
                   controller: priceController,
@@ -227,7 +222,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () async {
-                    if (selectedType == 'target_price') {
+                    if (selectedType == AlertType.targetPrice) {
                       final parsed = int.tryParse(
                           priceController.text.replaceAll(',', ''));
                       if (parsed == null || parsed <= 0) {
@@ -245,7 +240,7 @@ class ProductDetailScreen extends ConsumerWidget {
                       await alertService.createPriceAlert(
                         productId: productId,
                         alertType: selectedType,
-                        targetPrice: selectedType == 'target_price'
+                        targetPrice: selectedType == AlertType.targetPrice
                             ? int.tryParse(
                                 priceController.text.replaceAll(',', ''))
                             : null,

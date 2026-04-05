@@ -3,6 +3,28 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'alert.freezed.dart';
 part 'alert.g.dart';
 
+/// 가격 알림 유형 — 서버 AlertType enum과 1:1 대응.
+enum AlertType {
+  @JsonValue('target_price')
+  targetPrice,
+  @JsonValue('below_average')
+  belowAverage,
+  @JsonValue('near_lowest')
+  nearLowest,
+  @JsonValue('all_time_low')
+  allTimeLow,
+}
+
+/// AlertType → API 요청에 사용하는 snake_case 문자열 변환.
+extension AlertTypeX on AlertType {
+  String get value => switch (this) {
+        AlertType.targetPrice => 'target_price',
+        AlertType.belowAverage => 'below_average',
+        AlertType.nearLowest => 'near_lowest',
+        AlertType.allTimeLow => 'all_time_low',
+      };
+}
+
 /// 가격 알림 — target_price, below_average, near_lowest, all_time_low
 @freezed
 abstract class PriceAlert with _$PriceAlert {
@@ -10,7 +32,7 @@ abstract class PriceAlert with _$PriceAlert {
     required int id,
     @JsonKey(name: 'user_id') required int userId,
     @JsonKey(name: 'product_id') required int productId,
-    @JsonKey(name: 'alert_type') required String alertType,
+    @JsonKey(name: 'alert_type') required AlertType alertType,
     @JsonKey(name: 'target_price') int? targetPrice,
     @JsonKey(name: 'is_active') @Default(true) bool isActive,
     @JsonKey(name: 'last_triggered_at') DateTime? lastTriggeredAt,

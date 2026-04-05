@@ -2,6 +2,41 @@
 
 ---
 
+## Night-36 결정 (2026-04-06) — PLAN_01 Phase 5 + PD-62
+
+### D-76: AlertType String → Dart Enum 전환 (PD-62 해소)
+
+**결정**: `PriceAlert.alertType: String` → `AlertType enum` 전환. `@JsonValue` 어노테이션으로 JSON 역직렬화 자동 처리, `AlertTypeX extension`으로 API 직렬화.
+
+**근거**:
+- type-design-analyzer Night-35에서 PriceAlert/AlertType 점수 16/40 (최저) — DEFERRED PD-62
+- Exhaustive switch 강제로 새 값 추가 시 컴파일 오류 → 런타임 버그 방지
+- 서버 `AlertType` enum (TargetPrice/BelowAverage/NearLowest/AllTimeLow)과 1:1 대응
+- `alertTypeLabel`/`alertTypeColor` 함수의 `_ => type` 폴백 케이스 제거 (컴파일타임 완전성)
+
+**변경 파일**: `alert.dart`, `alert.freezed.dart`(재생성), `alert.g.dart`(재생성), `alert_type_badge.dart`, `alert_service.dart`, `product_detail_screen.dart`, 테스트 6파일
+
+**Status**: IMPLEMENTED — `test/widgets/alert_type_badge_test.dart` +3건 (344→347건)
+
+---
+
+### D-77: AppSpacing + AppTextStyles 테마 상수 추가 (Phase 5-B)
+
+**결정**: `app/lib/config/theme.dart`에 `AppSpacing` (6단계 간격) + `AppTextStyles` (4종 텍스트) 추가.
+
+**근거**:
+- PLAN_01.md Phase 5-B "간격/여백 상수화 + 타이포그래피 시스템 표준화" 요구사항
+- 현재 각 화면에서 `EdgeInsets.all(16)`, `SizedBox(height: 8)` 등 하드코딩 → 통일된 토큰으로 교체 가능
+- `abstract final class`로 인스턴스화/상속 방지, `static const`로 컴파일타임 상수 보장
+
+**구체적 값**:
+- `xs:4, sm:8, md:16, lg:24, xl:32, xxl:48` — Material Design 8pt 그리드 기반
+- `priceLabel(18,bold)`, `discountRate(13,w700,#D63031)`, `sectionHeader(14,w600)`, `caption(12,#757575)`
+
+**Status**: IMPLEMENTED — `test/config/theme_test.dart` +11건 (347→358건)
+
+---
+
 ## Night-35 결정 (2026-04-05) — PLAN_01 Phase 4
 
 ### D-70: Phase 4 서브에이전트 오탐 필터링

@@ -10,7 +10,7 @@ _PriceAlert _$PriceAlertFromJson(Map<String, dynamic> json) => _PriceAlert(
   id: (json['id'] as num).toInt(),
   userId: (json['user_id'] as num).toInt(),
   productId: (json['product_id'] as num).toInt(),
-  alertType: json['alert_type'] as String,
+  alertType: $enumDecode(_$AlertTypeEnumMap, json['alert_type']),
   targetPrice: (json['target_price'] as num?)?.toInt(),
   isActive: json['is_active'] as bool? ?? true,
   lastTriggeredAt: json['last_triggered_at'] == null
@@ -29,13 +29,20 @@ Map<String, dynamic> _$PriceAlertToJson(_PriceAlert instance) =>
       'id': instance.id,
       'user_id': instance.userId,
       'product_id': instance.productId,
-      'alert_type': instance.alertType,
+      'alert_type': _$AlertTypeEnumMap[instance.alertType]!,
       'target_price': instance.targetPrice,
       'is_active': instance.isActive,
       'last_triggered_at': instance.lastTriggeredAt?.toIso8601String(),
       'created_at': instance.createdAt?.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
     };
+
+const _$AlertTypeEnumMap = {
+  AlertType.targetPrice: 'target_price',
+  AlertType.belowAverage: 'below_average',
+  AlertType.nearLowest: 'near_lowest',
+  AlertType.allTimeLow: 'all_time_low',
+};
 
 _CategoryAlert _$CategoryAlertFromJson(Map<String, dynamic> json) =>
     _CategoryAlert(

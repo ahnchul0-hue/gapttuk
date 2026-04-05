@@ -1,8 +1,60 @@
-# NIGHT_06_RESULT — 2026-04-05 (Night-35 추가)
+# NIGHT_06_RESULT — 2026-04-06 (Night-36 추가)
 
-> **Night-35 결과**: Flutter **344건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-35**: PLAN_01 Phase 4 코드 품질 심층 리뷰 + 5건 수정
-> **Night-34 이전 결과** (이하 원본 보존)
+> **Night-36 결과**: Flutter **358건** ✅ (+14건) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-36**: PLAN_01 Phase 5 (UI/UX 개선) + PD-62 (AlertType Enum 전환) + 테스트 +14건
+> **Night-35 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-36 (2026-04-06) — PLAN_01 Phase 5 + PD-62
+
+**브랜치**: `auto/night-01-20260406_0100`
+**베이스라인**: 344건 → **358건** (+14건)
+
+### PD-62: AlertType String → Dart Enum 전환 (D-76)
+
+| 변경 항목 | 내용 |
+|---------|------|
+| `app/lib/models/alert.dart` | `AlertType` enum 신규 정의 (4값: targetPrice/belowAverage/nearLowest/allTimeLow) + `AlertTypeX` extension (`.value` → snake_case) |
+| `app/lib/models/alert.freezed.dart` + `.g.dart` | `build_runner` 재생성 — `PriceAlert.alertType: AlertType` |
+| `app/lib/widgets/alert_type_badge.dart` | `String` → `AlertType` 파라미터 (exhaustive switch) |
+| `app/lib/services/alert_service.dart` | `alertType: AlertType`, API 전송 시 `alertType.value` |
+| `app/lib/screens/product/product_detail_screen.dart` | `selectedType: AlertType`, `RadioGroup<AlertType>` |
+| 테스트 6파일 | `'target_price'` → `AlertType.targetPrice` 등 전체 업데이트 |
+
+**type-design-analyzer 개선 목표**: PriceAlert.alertType 점수 16/40 → enum 전환 후 예상 28+/40
+
+### Phase 5-B: AppSpacing + AppTextStyles 테마 상수 (D-77)
+
+| 추가 상수 | 내용 |
+|---------|------|
+| `AppSpacing.xs/sm/md/lg/xl/xxl` | 4/8/16/24/32/48dp 스페이싱 토큰 |
+| `AppTextStyles.priceLabel` | fontSize:18, bold, letterSpacing:-0.5 |
+| `AppTextStyles.discountRate` | fontSize:13, w700, color:#D63031 |
+| `AppTextStyles.sectionHeader` | fontSize:14, w600 |
+| `AppTextStyles.caption` | fontSize:12, color:#757575 |
+
+### 테스트 +14건 (344 → 358건)
+
+| 파일 | 이전 | 이후 | 변화 |
+|------|------|------|------|
+| `test/widgets/alert_type_badge_test.dart` | 13건 | 16건 | +3 (AlertType.value 4건 추가, unknown 3건 삭제) |
+| `test/config/theme_test.dart` | 8건 | 19건 | +11 (AppSpacing 7건 + AppTextStyles 4건) |
+| 기타 테스트 파일 | 323건 | 323건 | 0 (String→Enum 교체만) |
+| **합계** | **344건** | **358건** | **+14** |
+
+### Night-36 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter test --no-pub` | **358건 전체 통과** ✅ (+14건) |
+| `flutter analyze --no-pub` | 0건 ✅ |
+| `cargo test --lib` | **207건 전체 통과** ✅ (변동 없음) |
+| 프로덕션 코드 변경 | **6개 파일** (Flutter 6, Rust 0) |
+| Phase 5-B 완료 | ✅ AppSpacing + AppTextStyles 추가 |
+| PD-62 완료 | ✅ AlertType String→Enum 전환 |
+
+---
 
 ---
 

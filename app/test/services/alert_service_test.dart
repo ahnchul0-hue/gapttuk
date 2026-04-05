@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gapttuk_app/models/alert.dart';
 import 'package:gapttuk_app/services/alert_service.dart';
 import 'package:gapttuk_app/services/api_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -63,7 +64,7 @@ void main() {
       final result = await service.getAlerts();
 
       expect(result.priceAlerts.length, 1);
-      expect(result.priceAlerts.first.alertType, 'target_price');
+      expect(result.priceAlerts.first.alertType, AlertType.targetPrice);
       expect(result.priceAlerts.first.targetPrice, 50000);
       expect(result.categoryAlerts.length, 1);
       expect(result.categoryAlerts.first.categoryId, 5);
@@ -118,13 +119,13 @@ void main() {
 
       final alert = await service.createPriceAlert(
         productId: 42,
-        alertType: 'target_price',
+        alertType: AlertType.targetPrice,
         targetPrice: 30000,
       );
 
       expect(alert.id, 10);
       expect(alert.productId, 42);
-      expect(alert.alertType, 'target_price');
+      expect(alert.alertType, AlertType.targetPrice);
       expect(alert.targetPrice, 30000);
     });
 
@@ -149,10 +150,10 @@ void main() {
 
       final alert = await service.createPriceAlert(
         productId: 42,
-        alertType: 'all_time_low',
+        alertType: AlertType.allTimeLow,
       );
 
-      expect(alert.alertType, 'all_time_low');
+      expect(alert.alertType, AlertType.allTimeLow);
       expect(alert.targetPrice, isNull);
     });
   });

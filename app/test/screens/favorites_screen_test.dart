@@ -70,9 +70,9 @@ void main() {
     });
 
     testWidgets('alertTypeLabel 한글 변환 정확성', (tester) async {
-      expect(alertTypeLabel('target_price'), equals('목표 가격'));
-      expect(alertTypeLabel('all_time_low'), equals('최저가 갱신'));
-      expect(alertTypeLabel('unknown_type'), equals('unknown_type'));
+      expect(alertTypeLabel(AlertType.targetPrice), equals('목표 가격'));
+      expect(alertTypeLabel(AlertType.allTimeLow), equals('최저가 갱신'));
+      expect(alertTypeLabel(AlertType.nearLowest), equals('최저가 근접'));
     });
 
     // ── Night-27 신규 ──────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ void main() {
     testWidgets('알림 1개 있을 때 AppBar 카운트 배지 "1개" 표시', (tester) async {
       const alert = PriceAlert(
         id: 1, userId: 1, productId: 100,
-        alertType: 'target_price', targetPrice: 20000,
+        alertType: AlertType.targetPrice, targetPrice: 20000,
       );
       final service = FakeAlertService(
         response: const AlertListResponse(priceAlerts: [alert]),
@@ -112,7 +112,7 @@ void main() {
     testWidgets('알림 1개 있을 때 상품 폴백 텍스트 "상품 #100" 표시', (tester) async {
       const alert = PriceAlert(
         id: 1, userId: 1, productId: 100,
-        alertType: 'all_time_low',
+        alertType: AlertType.allTimeLow,
       );
       final service = FakeAlertService(
         response: const AlertListResponse(priceAlerts: [alert]),
@@ -130,7 +130,7 @@ void main() {
     testWidgets('알림 카드에 AlertTypeBadge 위젯 표시', (tester) async {
       const alert = PriceAlert(
         id: 1, userId: 1, productId: 100,
-        alertType: 'target_price', targetPrice: 20000,
+        alertType: AlertType.targetPrice, targetPrice: 20000,
       );
       final service = FakeAlertService(
         response: const AlertListResponse(priceAlerts: [alert]),
@@ -144,8 +144,8 @@ void main() {
     });
 
     testWidgets('알림 2개 있을 때 AppBar "2개" 배지 표시', (tester) async {
-      const alert1 = PriceAlert(id: 1, userId: 1, productId: 100, alertType: 'target_price');
-      const alert2 = PriceAlert(id: 2, userId: 1, productId: 200, alertType: 'all_time_low');
+      const alert1 = PriceAlert(id: 1, userId: 1, productId: 100, alertType: AlertType.targetPrice);
+      const alert2 = PriceAlert(id: 2, userId: 1, productId: 200, alertType: AlertType.allTimeLow);
       final service = FakeAlertService(
         response: const AlertListResponse(priceAlerts: [alert1, alert2]),
       );
@@ -164,7 +164,7 @@ void main() {
     testWidgets('비활성 알림(isActive: false) → "비활성" 오버레이 표시', (tester) async {
       const alert = PriceAlert(
         id: 1, userId: 1, productId: 100,
-        alertType: 'target_price',
+        alertType: AlertType.targetPrice,
         isActive: false,
       );
       final service = FakeAlertService(

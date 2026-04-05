@@ -33,7 +33,7 @@ class FakeAlertService implements AlertService {
   @override
   Future<PriceAlert> createPriceAlert({
     required int productId,
-    required String alertType,
+    required AlertType alertType,
     int? targetPrice,
   }) =>
       throw UnimplementedError();

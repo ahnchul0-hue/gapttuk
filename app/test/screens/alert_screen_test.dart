@@ -63,7 +63,7 @@ void main() {
         id: 1,
         userId: 1,
         productId: 100,
-        alertType: 'target_price',
+        alertType: AlertType.targetPrice,
         targetPrice: 20000,
         isActive: true,
       );
@@ -141,7 +141,7 @@ void main() {
     testWidgets('가격 알림 1건 로드 후 탭 Badge 표시', (tester) async {
       final alert = PriceAlert(
         id: 1, userId: 1, productId: 100,
-        alertType: 'all_time_low', isActive: true,
+        alertType: AlertType.allTimeLow, isActive: true,
       );
       final data = AlertListResponse(priceAlerts: [alert]);
       await tester.pumpWidget(_buildScreen(
