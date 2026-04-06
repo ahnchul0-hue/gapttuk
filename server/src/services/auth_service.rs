@@ -193,6 +193,17 @@ pub async fn upsert_user(
     }
 }
 
+/// refresh token 만료 시각 계산 — `jwt_refresh_ttl_secs`를 현재 시각에 더한다.
+/// i64 변환 실패 시 AppError::Internal 반환.
+fn refresh_token_expiry(config: &Config) -> Result<chrono::DateTime<Utc>, AppError> {
+    Ok(Utc::now()
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs).map_err(|_| {
+                AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string())
+            })?,
+        ))
+}
+
 /// 새 토큰 쌍 생성 + refresh token DB 저장.
 pub async fn create_token_pair(
     pool: &PgPool,
@@ -203,11 +214,7 @@ pub async fn create_token_pair(
     let refresh_token = generate_refresh_token();
     let token_hash = hash_refresh_token(&refresh_token);
 
-    let expires_at = Utc::now()
-        + Duration::seconds(
-            i64::try_from(config.jwt_refresh_ttl_secs)
-                .map_err(|_| AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string()))?,
-        );
+    let expires_at = refresh_token_expiry(config)?;
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)
@@ -312,11 +319,7 @@ pub async fn rotate_refresh_token(
     let (access_token, expires_in) = encode_access_token(user_id, config)?;
     let new_refresh = generate_refresh_token();
     let new_hash = hash_refresh_token(&new_refresh);
-    let new_expires = Utc::now()
-        + Duration::seconds(
-            i64::try_from(config.jwt_refresh_ttl_secs)
-                .map_err(|_| AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string()))?,
-        );
+    let new_expires = refresh_token_expiry(config)?;
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)

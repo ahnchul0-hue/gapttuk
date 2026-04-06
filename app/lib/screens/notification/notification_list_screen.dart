@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../models/notification.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/screen_error_widget.dart';
 
 /// 알림 내역 화면 — 커서 페이지네이션 + 무한 스크롤.
 class NotificationListScreen extends ConsumerStatefulWidget {
@@ -186,30 +187,10 @@ class _NotificationListScreenState
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: appColors.error),
-            const SizedBox(height: 12),
-            const Text(
-              '알림 내역을 불러오지 못했습니다.',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: appColors.neutral, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () => _loadNotifications(refresh: true),
-              icon: const Icon(Icons.refresh),
-              label: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return ScreenErrorWidget(
+        message: '알림 내역을 불러오지 못했습니다.',
+        detail: _error!,
+        onRetry: () => _loadNotifications(refresh: true),
       );
     }
 

@@ -1,10 +1,22 @@
 # PLAN_01: 값뚝(gapttuk) 종합 실무 최적화
 
-> 작성: 2026-03-31 | **실행: 2026-04-01** | 브랜치: `auto/night-01-20260401_0100`
+> 작성: 2026-03-31 | **실행: 2026-04-01 ~ 2026-04-07** | 브랜치: `auto/night-01-20260407_0100`
 > 베이스라인: Flutter 296건 ✅ | Rust 207건 ✅ | analyze 0 issues
-> **Night-31 진행**: Flutter **308건** ✅ (+12) | Phase 2/3 완료 | Phase 4/5/7/8 미시작
+> **Night-37 현재**: Flutter **358건** ✅ | Rust **207건** ✅ | Phase 1~6 완료 | **Phase 7~8 실행 대기**
 > 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/실행
 > Ralph-loop 한도: **10회**
+>
+> ### Phase 진행 현황
+> | Phase | 상태 | 완료 Night | 핵심 성과 |
+> |-------|------|-----------|----------|
+> | 1 | ✅ 완료 | Night-31 | Rust CVE 0건, Dart CVE 0건, Skia CVE 2건(Flutter팀 대기) |
+> | 2 | ✅ 완료 | Night-31 | axum/riverpod/sqlx/go_router 패턴 정합 확인 |
+> | 3 | ✅ 완료 | Night-31 | 아키텍처 개선 제안 도출 |
+> | 4 | ✅ 완료 | Night-35 | 37건 발견 → 오탐 6건 제외 → 5건 수정 |
+> | 5 | ✅ 완료 | Night-36 | PD-62 AlertType Enum + AppSpacing/TextStyles 테마 상수 |
+> | 6 | ✅ 완료 | Night-34 | 테스트 296→358건 (+62건) |
+> | **7** | **✅ 완료** | Night-37 | 코드 간소화 + 의존성 3건 업그레이드 |
+> | **8** | **✅ 완료** | Night-37 | 최종 검증 + 구조화된 커밋 |
 
 ---
 
@@ -26,13 +38,17 @@
 | **frontend-design** | Plugin | 5 | UI/UX 개선 설계 |
 | **figma** | Plugin | 5 | 디자인 시스템 규칙 |
 
-### 미설치/비해당 MCP (사유)
+### 미설치/비해당 MCP (Night-37 실측)
 | MCP | 상태 | 사유 |
 |-----|------|------|
 | mcp-tailwind-gemini | 비해당 | Flutter 프로젝트 — Tailwind CSS 미사용 |
 | shadcn | 비해당 | Flutter 프로젝트 — React/shadcn-ui 미사용 |
 | chatgpt-mcp | 미설치 | 환경에 미구성 |
 | sequential-thinking | 미설치 | 환경에 미구성 — superpowers:brainstorm으로 대체 |
+| context7 | 설치됨/미연결 | `.mcp.json` 존재하나 세션 미연결 — **WebSearch로 대체** |
+| playwright | 설치됨/미연결 | `.mcp.json` 존재하나 세션 미연결 — **feature-dev:code-architect로 대체** |
+| serena | 설치됨/미연결 | `.mcp.json` 존재하나 세션 미연결 — **feature-dev:code-explorer로 대체** |
+| sonatype-guide | 설치됨/인증필요 | 3개 도구 활성이나 **인증 미구성** — WebSearch 대체 유지 |
 
 ---
 
@@ -246,42 +262,96 @@
 
 ---
 
-## Phase 7: 코드 간소화 (code-simplifier + pr-review-toolkit)
+## Phase 7: 코드 간소화 + 프레임워크 정합 보완 (Night-37)
 
-> **목표**: 복잡도 감소, 중복 제거, 가독성 향상
-> **실행자**: Sonnet 4.6 Sub-agent (분석/실행) → Opus 4.6 (판단)
+> **목표**: 복잡도 감소, 중복 제거, 프레임워크 최신 패턴 정합, 의존성 minor 업그레이드
+> **실행자**: Sonnet 4.6 Sub-agent (분석/실행) → Opus 4.6 (판단/리뷰)
+> **도구**: code-simplifier, pr-review-toolkit:code-simplifier, feature-dev:code-reviewer, WebSearch
 
-### 7-A. 대상
-- Phase 4에서 식별된 복잡 코드
-- 중복 로직/패턴
-- 과도한 중첩
+### 7-A. 프레임워크 최신 패턴 정합 보완 (Night-37 WebSearch 결과 기반)
 
-### 7-B. 산출물
-- 리팩토링된 코드 (기능 보존 검증 포함)
+> Night-37에서 WebSearch로 조회한 프레임워크 최신 패턴 GAP 분석 결과:
 
-### ⏸️ 확인점 7: 리팩토링 결과 테스트 통과 확인
+| # | 대상 | 현재 | 최신 패턴 | 조치 | 영향도 |
+|---|------|------|----------|------|--------|
+| 7-A1 | **go_router** | 16.3.0 | 17.2.0 (Dart 3.9 필요) | ⏸️ pubspec `^16.0.0` → `^17.0.0` 업그레이드 검토 | MEDIUM |
+| 7-A2 | **Riverpod auto-retry** | 3.0.3 (기본 활성) | auto-retry 동작 확인 | ✅ 4개 `@riverpod` FutureProvider는 데이터 패칭 → 유익. 조치 불필요 | LOW |
+| 7-A3 | **Riverpod legacy 패턴** | 미사용 | StateProvider 등 제거 | ✅ 이미 `@riverpod` 코드젠 전용 → 조치 불필요 | — |
+| 7-A4 | **Axum `#[async_trait]`** | 미사용 | native async trait | ✅ 이미 정합 → 조치 불필요 | — |
+| 7-A5 | **SQLx 0.8.6** | 0.8.6 | 0.8.6 (최신) | ✅ RUSTSEC-2024-0363 이미 해결 → 조치 불필요 | — |
+| 7-A6 | **minor 의존성** | 현재 | 최신 patch/minor | cupertino_icons, intl, json_annotation, build_runner, freezed, json_serializable 업그레이드 | LOW |
+
+**사용자 결정 필요:**
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-78** | go_router 16→17 업그레이드? (ShellRoute observer 동작 변경) | A) 예 (테스트 후) / B) 보류 |
+| **D-79** | minor/patch 6건 즉시 업그레이드? | A) 전체 / B) 선택적 / C) 보류 |
+
+### 7-B. Rust 서버 코드 간소화 (Night-37 Explore Sub-agent 결과 기반)
+
+> **실행**: Sonnet Sub-agent (code-simplifier) → Opus (리뷰)
+
+| # | 파일 | 설명 | 예상 감소 | 영향도 |
+|---|------|------|----------|--------|
+| 7-B1 | `alert_service.rs:90-379` | `create_*_alert` 3함수 트랜잭션 보일러플레이트 → 공통 헬퍼 `begin_alert_tx_checked()` 추출 | ~60줄 | HIGH |
+| 7-B2 | `main.rs:202-363` | `archive_old_price_history` 162줄 → `build_aggregate_sql`/`build_verify_sql` 분리 | ~80줄 | HIGH |
+| 7-B3 | `alert_service.rs:504-640` | `evaluate_price_alerts` 5관심사 → 푸시 디스패치 `dispatch_push_for_claimed_alerts()` 추출 | ~35줄 | HIGH |
+| 7-B4 | `auth_service.rs:207,316` | `refresh_token_expiry` TTL 계산 중복 → 공통 함수 추출 | ~10줄 | MEDIUM |
+| 7-B5 | `main.rs:79-185` | `ensure_partitions` 파티션 접미사 검증 중복 → `is_safe_partition_suffix()` 추출 | ~15줄 | MEDIUM |
+| 7-B6 | `alert_service.rs:703-713` | `format_price` → `utils` 모듈로 이동 (재사용 대비) | ~5줄 | LOW |
+
+### 7-C. Flutter 코드 간소화 (Night-37 Explore Sub-agent 결과 기반)
+
+> **실행**: Sonnet Sub-agent (code-simplifier) → Opus (리뷰)
+
+| # | 파일 | 설명 | 예상 감소 | 영향도 |
+|---|------|------|----------|--------|
+| 7-C1 | `alert/favorites/notification` | 에러 상태 위젯 3화면 동일 → `ScreenErrorWidget` 공통 위젯 추출 | ~75줄 | HIGH |
+| 7-C2 | `alert_screen.dart:75-160` | `_toggle*Alert`/`_delete*Alert` 9메서드 → 제네릭 1-2메서드 통합 | ~60줄 | HIGH |
+| 7-C3 | `point_history/notification_list` | 무한스크롤 스켈레톤 (cursor+_hasMore+_isLoading+ScrollController) → 공통 mixin 검토 | ~50줄 | MEDIUM |
+| 7-C4 | `onboarding_screen.dart:175-253` | `_buildBottomButtons` 3 case 반복 ElevatedButton → `_primaryButton` 추출 | ~30줄 | LOW |
+
+### 7-D. 코드 리뷰 (Opus Main Agent)
+
+> Phase 7-B/C 완료 후 pr-review-toolkit 병렬 리뷰
+
+| # | 도구 | 검사 대상 |
+|---|------|----------|
+| 7-D1 | pr-review-toolkit:code-reviewer | 간소화 결과 전체 diff |
+| 7-D2 | pr-review-toolkit:silent-failure-hunter | 간소화 과정의 에러 억제 도입 여부 |
+
+### ⏸️ 확인점 7: 간소화 결과 + 테스트 통과 확인
+
+**검증 기준:**
+- [ ] Flutter analyze: 0 issues
+- [ ] Flutter test: ≥358건 통과
+- [ ] Rust test --lib: ≥207건 통과
+- [ ] 기능 회귀 없음 (diff 리뷰)
 
 ---
 
-## Phase 8: 최종 검증 및 커밋 (commit-commands + verification)
+## Phase 8: 최종 검증 및 커밋 (Night-37)
 
 > **목표**: 전체 변경 사항 통합 검증 및 구조화된 커밋
 > **실행자**: Opus 4.6 (최종 판단)
+> **도구**: Bash(flutter test/analyze, cargo test/clippy), pr-review-toolkit:code-reviewer, commit-commands
 
 ### 8-A. 검증 체크리스트
 - [ ] Flutter analyze: 0 issues
-- [ ] Flutter test: 전체 통과 (≥284건)
+- [ ] Flutter test: 전체 통과 (≥358건)
 - [ ] Rust test --lib: 전체 통과 (≥207건)
 - [ ] cargo clippy: 0 warnings
-- [ ] 기능 회귀 없음
+- [ ] 기능 회귀 없음 (전체 diff 리뷰)
 
 ### 8-B. 커밋 전략
-- Phase별 논리적 커밋 분리
-- 의미 있는 커밋 메시지 (feat/fix/refactor/perf)
+- Phase 7 간소화: `refactor(quality): Night-37 Phase 7 코드 간소화 + 프레임워크 정합`
+- Phase 8 문서: `docs: MORNING_BRIEFING.md Night-37 커밋 해시 업데이트`
 
 ### 8-C. 메모리 업데이트
-- MORNING_BRIEFING.md 결과 기록
-- 프로젝트 메모리 갱신
+- MORNING_BRIEFING.md Night-37 결과 기록
+- 프로젝트 메모리 갱신 (테스트 수, Phase 완료 상태)
+- PLAN_01.md Phase 7/8 완료 마킹
 
 ### ⏸️ 확인점 8: 최종 커밋 승인
 
@@ -301,13 +371,13 @@
 
 ## 예상 산출물 요약
 
-| Phase | 핵심 산출물 | 예상 영향 |
-|-------|-----------|----------|
-| 1 | 의존성 보안 보고서 | 취약점 0건 목표 |
-| 2 | 프레임워크 GAP 분석 | 최신 패턴 정합 |
-| 3 | 아키텍처 개선 제안 | 구조적 부채 감소 |
-| 4 | 코드 품질 이슈 목록 | 버그/보안 사전 차단 |
-| 5 | UI/UX 개선 코드 | 사용자 경험 향상 |
-| 6 | 테스트 추가 | 커버리지 ≥300건 |
-| 7 | 리팩토링 결과 | 코드 복잡도 감소 |
-| 8 | 구조화된 커밋 | 추적 가능한 변경 이력 |
+| Phase | 핵심 산출물 | 예상 영향 | 상태 |
+|-------|-----------|----------|------|
+| 1 | 의존성 보안 보고서 | 취약점 0건 달성 | ✅ Night-31 |
+| 2 | 프레임워크 GAP 분석 | 최신 패턴 정합 확인 | ✅ Night-31 |
+| 3 | 아키텍처 개선 제안 | 구조적 부채 식별 | ✅ Night-31 |
+| 4 | 코드 품질 이슈 목록 | 37건→5건 수정 | ✅ Night-35 |
+| 5 | UI/UX 개선 코드 | AlertType Enum + 테마 상수 | ✅ Night-36 |
+| 6 | 테스트 추가 | 296→358건 (+62건) | ✅ Night-34 |
+| 7 | 코드 간소화 + 정합 보완 | 복잡도 감소 + minor 업데이트 | ✅ Night-37 |
+| 8 | 구조화된 커밋 + 문서 | 추적 가능한 변경 이력 | ✅ Night-37 |

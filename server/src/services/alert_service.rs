@@ -107,23 +107,7 @@ pub async fn create_price_alert(
     }
 
     // 한도 체크 + INSERT를 단일 트랜잭션으로 묶어 TOCTOU 방지
-    let mut tx = pool.begin().await?;
-
-    // users 행 잠금 → 동일 user의 알림 생성 요청 직렬화
-    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-
-    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        if let Err(rb_err) = tx.rollback().await {
-            tracing::warn!(error = %rb_err, "create_price_alert 한도초과 rollback 실패");
-        }
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, PriceAlert>(
         r#"
@@ -221,6 +205,35 @@ async fn count_all_user_alerts_in_tx(
     Ok(count)
 }
 
+// ── 트랜잭션 헬퍼 ───────────────────────────────────────
+
+/// 알림 트랜잭션 시작 + users 행 잠금 + 한도 체크.
+/// 한도 초과 시 롤백 후 Err 반환; 정상 시 사용 가능한 트랜잭션을 반환.
+/// 반환된 트랜잭션은 호출자가 commit 또는 rollback 해야 한다.
+async fn begin_alert_tx_checked(
+    pool: &PgPool,
+    user_id: i64,
+) -> Result<sqlx::Transaction<'static, sqlx::Postgres>, AppError> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
+    if count >= MAX_ALERTS_PER_USER {
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "begin_alert_tx_checked 한도초과 rollback 실패");
+        }
+        return Err(AppError::BadRequest(format!(
+            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+        )));
+    }
+
+    Ok(tx)
+}
+
 // ── 카테고리 알림 CRUD ──────────────────────────────────
 
 /// 카테고리 알림 생성.
@@ -242,22 +255,7 @@ pub async fn create_category_alert(
         return Err(AppError::NotFound("카테고리".to_string()));
     }
 
-    let mut tx = pool.begin().await?;
-
-    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-
-    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        if let Err(rb_err) = tx.rollback().await {
-            tracing::warn!(error = %rb_err, "create_category_alert 한도초과 rollback 실패");
-        }
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, CategoryAlert>(
         r#"
@@ -344,22 +342,7 @@ pub async fn create_keyword_alert(
     // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
     let keyword = validate_keyword(&keyword)?;
 
-    let mut tx = pool.begin().await?;
-
-    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-
-    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        if let Err(rb_err) = tx.rollback().await {
-            tracing::warn!(error = %rb_err, "create_keyword_alert 한도초과 rollback 실패");
-        }
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, KeywordAlert>(
         r#"

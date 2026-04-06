@@ -73,6 +73,11 @@ async fn metrics_handler(
     }
 }
 
+/// 파티션/suffix 식별자가 안전한지 검증 — alphanumeric + '_' 만 허용 (SQL injection 방어).
+fn is_safe_partition_suffix(s: &str) -> bool {
+    s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
 /// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
 /// 개별 파티션 생성 실패 시 나머지를 계속 시도하고, 전체 실패 건수를 반환한다.
 /// api_access_logs 파티션은 90일(3개월) 초과분을 자동 삭제한다 (price_history는 영구 보존).
@@ -91,10 +96,7 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         for table in &["api_access_logs", "price_history"] {
             // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
             // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
-            if !suffix
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_')
-            {
+            if !is_safe_partition_suffix(&suffix) {
                 tracing::warn!(
                     table = %table,
                     suffix = %suffix,
@@ -139,10 +141,7 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
                     continue;
                 };
                 // SAFETY: suffix를 alphanumeric + '_' 로 검증
-                if !suffix
-                    .chars()
-                    .all(|c| c.is_ascii_alphanumeric() || c == '_')
-                {
+                if !is_safe_partition_suffix(suffix) {
                     tracing::warn!(partition = %partition_name, "Unexpected partition name format, skipping");
                     continue;
                 }
@@ -197,6 +196,41 @@ fn extract_partition_to_date(bound_expr: &str) -> Option<chrono::NaiveDate> {
     chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d").ok()
 }
 
+/// price_history 파티션 → price_history_monthly 집계 INSERT SQL 생성.
+fn build_aggregate_sql(partition_name: &str) -> String {
+    format!(
+        "INSERT INTO price_history_monthly \
+             (product_id, year_month, avg_price, min_price, max_price, \
+              first_price, last_price, record_count, had_stockout) \
+         SELECT \
+             product_id, \
+             DATE_TRUNC('month', recorded_at)::DATE, \
+             AVG(price)::INTEGER, \
+             MIN(price), \
+             MAX(price), \
+             (ARRAY_AGG(price ORDER BY recorded_at ASC))[1], \
+             (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
+             COUNT(*)::INTEGER, \
+             BOOL_OR(is_out_of_stock) \
+         FROM \"{}\" \
+         GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
+         ON CONFLICT (product_id, year_month) DO NOTHING",
+        partition_name
+    )
+}
+
+/// 집계 검증 SQL — 파티션 원본 행수와 price_history_monthly 합산 비교.
+fn build_verify_sql(partition_name: &str) -> String {
+    format!(
+        "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
+         FROM price_history_monthly \
+         WHERE product_id IN (SELECT DISTINCT product_id FROM \"{}\") \
+           AND year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\") \
+           AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
+        partition_name, partition_name, partition_name
+    )
+}
+
 /// 2년 이전 price_history 파티션을 price_history_monthly로 집계 후 DROP.
 /// 한 번에 1개 파티션만 처리하여 부하 분산.
 async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
@@ -230,10 +264,7 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
         }
 
         // 파티션 이름 안전성 검사 (SQL injection 방지)
-        if !partition_name
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_')
-        {
+        if !is_safe_partition_suffix(&partition_name) {
             tracing::warn!(partition = %partition_name, "Unexpected partition name format");
             continue;
         }
@@ -252,25 +283,7 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
             .map_err(|e| format!("BEGIN failed: {e}"))?;
 
         // 1. price_history_monthly로 집계 (멱등: ON CONFLICT DO NOTHING)
-        let aggregate_sql = format!(
-            "INSERT INTO price_history_monthly \
-                 (product_id, year_month, avg_price, min_price, max_price, \
-                  first_price, last_price, record_count, had_stockout) \
-             SELECT \
-                 product_id, \
-                 DATE_TRUNC('month', recorded_at)::DATE, \
-                 AVG(price)::INTEGER, \
-                 MIN(price), \
-                 MAX(price), \
-                 (ARRAY_AGG(price ORDER BY recorded_at ASC))[1], \
-                 (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
-                 COUNT(*)::INTEGER, \
-                 BOOL_OR(is_out_of_stock) \
-             FROM \"{}\" \
-             GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
-             ON CONFLICT (product_id, year_month) DO NOTHING",
-            partition_name
-        );
+        let aggregate_sql = build_aggregate_sql(&partition_name);
         if let Err(e) = sqlx::query(&aggregate_sql).execute(&mut *tx).await {
             tracing::warn!(partition = %partition_name, error = %e, "Aggregation failed, skipping DROP");
             if let Err(rb_err) = tx.rollback().await {
@@ -295,14 +308,7 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
             }
         };
 
-        let verify_sql = format!(
-            "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
-             FROM price_history_monthly \
-             WHERE product_id IN (SELECT DISTINCT product_id FROM \"{}\") \
-               AND year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\") \
-               AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
-            partition_name, partition_name, partition_name
-        );
+        let verify_sql = build_verify_sql(&partition_name);
         let aggregated_count: i64 = match sqlx::query_as::<_, (i64,)>(&verify_sql)
             .fetch_one(&mut *tx)
             .await

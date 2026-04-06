@@ -5,6 +5,7 @@ import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
 import '../../widgets/alert_type_badge.dart';
+import '../../widgets/screen_error_widget.dart';
 
 /// 알림 센터 화면 — 가격 알림 / 카테고리 알림 / 키워드 알림 3탭.
 class AlertScreen extends ConsumerStatefulWidget {
@@ -325,30 +326,10 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
       );
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: appColors.error),
-            const SizedBox(height: 12),
-            const Text(
-              '알림 목록을 불러오지 못했습니다',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: appColors.neutral, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _loadAlerts,
-              icon: const Icon(Icons.refresh),
-              label: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return ScreenErrorWidget(
+        message: '알림 목록을 불러오지 못했습니다',
+        detail: _error!,
+        onRetry: _loadAlerts,
       );
     }
 

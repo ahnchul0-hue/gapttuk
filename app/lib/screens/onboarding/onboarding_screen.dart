@@ -172,25 +172,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  /// 브랜드 컬러 ElevatedButton — 온보딩 공통 버튼 스타일.
+  Widget _primaryButton(String label, VoidCallback? onPressed) {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomButtons() {
     switch (_currentPage) {
       case 0:
         return SizedBox(
           width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _goToNextPage,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '다음',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
+          child: _primaryButton('다음', _goToNextPage),
         );
       case 1:
         return Row(
@@ -211,21 +218,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _canProceedFromPage2 ? _goToNextPage : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    '다음',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              child: _primaryButton(
+                '다음',
+                _canProceedFromPage2 ? _goToNextPage : null,
               ),
             ),
           ],
@@ -234,20 +229,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       default:
         return SizedBox(
           width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _finish,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '시작하기',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
+          child: _primaryButton('시작하기', _finish),
         );
     }
   }
