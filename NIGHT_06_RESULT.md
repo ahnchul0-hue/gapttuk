@@ -1,3 +1,68 @@
+# NIGHT_06_RESULT — 2026-04-07 (Night-37 추가)
+
+> **Night-37 결과**: Flutter **358건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-37**: PLAN_01 Phase 7 (코드 간소화) + Phase 8 (최종 검증 + 커밋) — PLAN_01 전체 완료 🎉
+> **Night-36 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-37 (2026-04-07) — PLAN_01 Phase 7 + Phase 8 완결
+
+**브랜치**: `auto/night-01-20260407_0100`
+**베이스라인**: 358건 (변동 없음)
+**커밋**: `044da3f` + `a971acc`
+
+### Phase 7-B: Rust 서버 코드 간소화
+
+| 헬퍼 | 파일 | 효과 |
+|------|------|------|
+| `refresh_token_expiry(config)` | `auth_service.rs` | TTL 계산 2중 제거 (~10줄) |
+| `is_safe_partition_suffix(s)` | `main.rs` | SQL injection 방어 3곳 통합 (~15줄) |
+| `begin_alert_tx_checked(pool, user_id)` | `alert_service.rs` | create_* 3함수 보일러플레이트 통합 (~60줄) |
+| `build_aggregate_sql(p)` + `build_verify_sql(p)` | `main.rs` | archive SQL 인라인 추출 (~40줄) |
+
+### Phase 7-C: Flutter 코드 간소화
+
+| 변경 | 파일 | 효과 |
+|------|------|------|
+| `ScreenErrorWidget` 신규 | `widgets/screen_error_widget.dart` | 3화면 에러 UI 공통화 (~75줄) |
+| `_primaryButton(label, onPressed)` | `onboarding_screen.dart` | ElevatedButton 반복 통합 (~30줄) |
+
+### Phase 7-A: 의존성 업그레이드 (3건 적용)
+
+| 패키지 | 이전 | 이후 |
+|--------|------|------|
+| `cupertino_icons` | ^1.0.8 | ^1.0.9 |
+| `intl` | ^0.19.0 | ^0.20.0 |
+| `build_runner` (dev) | ^2.4.0 | ^2.13.0 |
+
+**보류 (D-79)**: `json_annotation`/`json_serializable`/`freezed` — `riverpod_generator ^3.0.0`의 `analyzer <9.0.0` 요구 충돌.
+**해결 경로**: `riverpod_generator 4.x` + `flutter_riverpod 3.3.x` 동반 업그레이드 필요.
+
+### Night-37 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze` | ✅ 0 issues |
+| `flutter test` | ✅ **358건** (기존 동일) |
+| `cargo check --lib` | ✅ 컴파일 성공 |
+| `cargo test --lib` | ✅ **207건** (기존 동일) |
+
+### PLAN_01 완료 현황
+
+| Phase | 상태 | Night |
+|-------|------|-------|
+| 1 의존성 보안 감사 | ✅ | 31 |
+| 2 프레임워크 패턴 검증 | ✅ | 31 |
+| 3 아키텍처 분석 | ✅ | 31 |
+| 4 코드 품질 리뷰 | ✅ | 35 |
+| 5 Flutter UI/UX 개선 | ✅ | 36 |
+| 6 테스트 커버리지 확장 | ✅ | 34 |
+| **7 코드 간소화** | **✅** | **37** |
+| **8 최종 검증 + 커밋** | **✅** | **37** |
+
+---
+
 # NIGHT_06_RESULT — 2026-04-06 (Night-36 추가)
 
 > **Night-36 결과**: Flutter **358건** ✅ (+14건) | Rust **207건** ✅ | analyze 0건 ✅
