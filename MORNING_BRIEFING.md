@@ -40,7 +40,7 @@
 | **34** | **04-04** | **Phase 6 테스트 커버리지 확대 +12건 (332→344건)** | **D-67~D-69: Home default분기/ProductDetail neutral/Onboarding완료페이지** | **`6f5c0b2`** |
 | **35** | **04-05** | **PLAN_01 Phase 4: 코드 품질 심층 리뷰 + 5건 수정** | **D-70~D-75: 오탐필터, alert rollback 3곳, checkin rollback warn, TTL안전화, SearchQuery serde** | **`68bfd6e`** |
 | **36** | **04-06** | **PLAN_01 Phase 5: PD-62 AlertType Enum 전환 + AppSpacing/TextStyles + 테스트 +14건** | **D-76~D-77: AlertType String→Enum(PD-62 해소), AppSpacing/AppTextStyles 테마 상수** | **`aab5540`** |
-| **37** | **04-07** | **PLAN_01 Phase 7: 코드 간소화 + 의존성 3건 업그레이드** | **D-78~D-79: go_router 보류, minor 3건 적용(cupertino_icons/intl/build_runner)** | **`TBD`** |
+| **37** | **04-07** | **PLAN_01 Phase 7: 코드 간소화 + 의존성 3건 업그레이드** | **D-78~D-79: go_router 보류, minor 3건 적용(cupertino_icons/intl/build_runner)** | **`044da3f`** |
 
 ### 1.2 전략적 성숙도 곡선
 
