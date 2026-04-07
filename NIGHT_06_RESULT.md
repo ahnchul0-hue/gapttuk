@@ -1,8 +1,48 @@
-# NIGHT_06_RESULT — 2026-04-07 (Night-37 추가)
+# NIGHT_06_RESULT — 2026-04-08 (Night-38 추가)
 
-> **Night-37 결과**: Flutter **358건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-37**: PLAN_01 Phase 7 (코드 간소화) + Phase 8 (최종 검증 + 커밋) — PLAN_01 전체 완료 🎉
-> **Night-36 이전 결과** (이하 원본 보존)
+> **Night-38 결과**: Flutter **358건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-38**: 문서 완결 세션 — MORNING_BRIEFING.md Night-37 종합 업데이트 커밋 + 기준선 재검증
+> **Night-37 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-38 (2026-04-08) — 문서 완결 + 기준선 재검증
+
+**브랜치**: `auto/night-01-20260408_0100`
+**베이스라인**: 358건 (변동 없음)
+**커밋**: `2dd797f`
+
+### 배경
+
+Night-37에서 PLAN_01 전체 완료(8/8 Phase) 후, MORNING_BRIEFING.md의 종합 업데이트가
+커밋 해시 라인(`a971acc`)만 반영된 상태로 세션이 종료됨.
+Night-38에서 섹션 전체 추가(§1.3, §3.7-8, §8.2, §9 등)를 완결 커밋으로 마무리.
+
+### Night-38 작업 내역
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| 문서 종합 업데이트 | `MORNING_BRIEFING.md` | Night-37 전략 섹션 + Phase 완료 마킹 + §9 다음 세션 선택지 |
+| 기준선 재검증 | — | Flutter 358건 ✅ / Rust 207건 ✅ / analyze 0건 ✅ (변동 없음) |
+
+### Night-38 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze --no-pub` | ✅ **0건** |
+| `flutter test --no-pub` | ✅ **358건** (변동 없음) |
+| `cargo test --lib` | ✅ **207건** (변동 없음) |
+| 프로덕션 코드 변경 | **0건** — 문서 전용 세션 |
+
+### PLAN_01 이후 다음 선택지 (§9 요약)
+
+| 선택지 | 설명 | Opus 추천 |
+|--------|------|-----------|
+| **A) 브랜치 머지 → PLAN_02 수립** | `auto/night-01-20260408_0100` → main PR + 새 계획 | **★ 추천** |
+| B) BREAKING 업그레이드 | riverpod 4.x + json 체인 + go_router 17.x | A 이후 |
+| C) feat 브랜치 통합 | dark-mode + phase0-security + phase2-monthly | A 이후 |
+
+---
 
 ---
 
