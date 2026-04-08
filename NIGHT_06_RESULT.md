@@ -1,8 +1,73 @@
-# NIGHT_06_RESULT — 2026-04-08 (Night-38 추가)
+# NIGHT_06_RESULT — 2026-04-09 (Night-39 추가)
 
-> **Night-38 결과**: Flutter **358건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-38**: 문서 완결 세션 — MORNING_BRIEFING.md Night-37 종합 업데이트 커밋 + 기준선 재검증
-> **Night-37 이전 결과** (이하 원본 보존)
+> **Night-39 결과**: Flutter **360건** ✅ (+2건) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-39**: D-63 잔존 완전 해소 — `_transactionLabel` 전체 케이스 커버 (8/8 + default)
+> **Night-38 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-39 (2026-04-09) — D-63 완전 해소 + PLAN_01 이후 첫 소규모 개선
+
+**브랜치**: `auto/night-01-20260409_0100`
+**베이스라인**: 358건 → **360건** (+2건)
+**커밋**: `aebf3d5` (MORNING_BRIEFING 커밋) + 테스트 커밋 예정
+
+### 배경
+
+PLAN_01 8-Phase 전체 완료(Night-37) + 문서 완결(Night-38) 이후,
+Night-39는 잔존 항목 D-63을 완전 해소하는 세션.
+
+MORNING_BRIEFING.md에 Night-38 업데이트가 커밋되지 않은 채 세션 시작.
+이를 커밋(`aebf3d5`)하고, D-63 마지막 케이스 2개를 추가.
+
+### D-63 완전 해소: `_transactionLabel` 8/8 + default 전 케이스 커버
+
+| 추가된 테스트 | 검증 대상 |
+|-------------|----------|
+| `"referral_purchase_referred"` 타입 → "추천 구매 보상" 레이블 | case 4 (Night-32에서 누락됨) |
+| 알 수 없는 타입 `'unknown_future_type'` → 원문 타입명 그대로 표시 | `_ => type` default 케이스 |
+
+**패턴 (D-80)**: `'unknown_future_type'` 주입 → `_transactionLabel` switch default `_ => type` → 원문 그대로 렌더링 확인. 서버가 새 transactionType 추가 시 UI 크래시 없는 폴백 보장.
+
+**전체 `_transactionLabel` 케이스 커버 현황**:
+| 케이스 | 레이블 | 테스트 Night |
+|--------|--------|-------------|
+| `daily_checkin` | 일일 출석 룰렛 | Night-28 |
+| `referral_welcome` | 추천 가입 보상 | Night-28 |
+| `referral_welcome_referrer` | 추천인 웰컴 보상 | Night-32 |
+| `referral_purchase_referred` | 추천 구매 보상 | **Night-39** |
+| `referral_purchase_referrer` | 추천인 보상 | Night-32 |
+| `signup_bonus` | 가입 보너스 | Night-28 |
+| `gifticon_exchange` | 기프티콘 교환 | Night-28 |
+| `admin_adjustment` | 운영자 조정 | Night-32 |
+| `_` (default) | 원문 타입명 | **Night-39** |
+
+### 테스트 증감
+
+| 파일 | 이전 | 이후 | 변화 |
+|------|------|------|------|
+| `test/screens/point_history_screen_test.dart` | 14건 | 16건 | **+2** |
+| **합계** | **358건** | **360건** | **+2** |
+
+### Night-39 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze --no-pub` | ✅ **0건** |
+| `flutter test --no-pub` | ✅ **360건** (+2건) |
+| `cargo test --lib` | ✅ **207건** (변동 없음, 확인 생략) |
+| D-63 잔존 해소 | ✅ **완전 해소** — referral_purchase_referred + default 케이스 |
+| PLAN_01 이후 방향 | ⏳ **U-42 대기** — PLAN_02 방향 사용자 결정 필요 |
+
+### Night-39 PLAN_02 대기 상태
+
+| 선택지 | 설명 |
+|--------|------|
+| **A)** | BREAKING 의존성 대규모 업그레이드 (riverpod 4.x, go_router 17 등) |
+| **B)** | 기능 확장 — 미머지 PR 3개 통합 + 신규 기능 |
+| **C)** | E2E 테스트 + CI/CD 강화 |
+| **D)** | 프로덕션 준비 — 성능/모니터링/스케일링 |
+| **E)** | 위 항목의 조합 (우선순위 지정) |
 
 ---
 

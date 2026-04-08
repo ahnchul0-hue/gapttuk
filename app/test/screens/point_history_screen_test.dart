@@ -222,5 +222,40 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('3일 연속 출석 보너스'), findsOneWidget);
     });
+
+    // ── Night-39 신규 ──────────────────────────────────────────────────────
+
+    testWidgets('"referral_purchase_referred" 타입 → "추천 구매 보상" 레이블', (tester) async {
+      final item = PointHistoryItem(
+        id: 11,
+        amount: 1,
+        transactionType: 'referral_purchase_referred',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('추천 구매 보상'), findsOneWidget);
+    });
+
+    testWidgets('알 수 없는 transactionType → 원문 타입명 그대로 표시 (default 케이스)', (tester) async {
+      final item = PointHistoryItem(
+        id: 12,
+        amount: 1,
+        transactionType: 'unknown_future_type',
+        createdAt: DateTime(2026, 3, 24),
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          service: FakeRewardService(history: (items: [item], hasMore: false)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // _ => type : 미정의 타입은 원문 그대로 표시 (UI 크래시 방지)
+      expect(find.text('unknown_future_type'), findsOneWidget);
+    });
   });
 }
