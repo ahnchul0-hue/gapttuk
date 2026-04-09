@@ -1,8 +1,58 @@
-# NIGHT_06_RESULT — 2026-04-09 (Night-39 추가)
+# NIGHT_06_RESULT — 2026-04-10 (Night-40 추가)
 
-> **Night-39 결과**: Flutter **360건** ✅ (+2건) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-39**: D-63 잔존 완전 해소 — `_transactionLabel` 전체 케이스 커버 (8/8 + default)
-> **Night-38 이전 결과** (이하 원본 보존)
+> **Night-40 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-40**: PLAN_02.md 초안 작성 — A~E 5방향 구체화 + 브랜치 머지 전제 명시 (코드 변경 0건)
+> **Night-39 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-40 (2026-04-10) — PLAN_02 초안 작성 + U-42 해소 준비
+
+**브랜치**: `auto/night-01-20260410_0100`
+**베이스라인**: 360건 (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent
+
+### 배경
+
+PLAN_01 8-Phase 전체 완료(Night-37) + D-63 해소(Night-39) 이후,
+**U-42(PLAN_02 방향 결정)가 3세션 연속 대기** 중.
+Night-40에서 `docs/plans/PLAN_02.md` 초안을 작성하여 사용자 결정을 지원.
+
+### Night-40 작업 내역
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| Night-39 MORNING_BRIEFING 커밋 | `MORNING_BRIEFING.md` | 미커밋 Night-39 업데이트 반영 — 커밋 `222f935` |
+| PLAN_02 초안 작성 | `docs/plans/PLAN_02.md` | A~E 5가지 방향 × 세부 실행 단계 + 위험 관리 + 체크포인트 |
+| MORNING_BRIEFING Night-40 업데이트 | `MORNING_BRIEFING.md` | Night-40 세션 전략 섹션 + §7 생성 항목 + §9 다음 세션 갱신 |
+| NIGHT_06_RESULT Night-40 추가 | `NIGHT_06_RESULT.md` | 이 섹션 |
+
+### PLAN_02.md 핵심 내용
+
+| 방향 | 설명 | 예상 규모 | Opus 권장도 |
+|------|------|-----------|------------|
+| **A) BREAKING 업그레이드** | riverpod 4.x + go_router 17.x + fl_chart 1.x + google_sign_in 7.x | 3~5 세션 | ⭐⭐⭐ |
+| **B) 기능 확장** | 미머지 PR 3개 통합 + 신규 기능 | 2~4 세션 | ⭐⭐⭐⭐⭐ |
+| **C) E2E + CI/CD** | 통합 테스트 250건 + playwright 20건 | 4~6 세션 | ⭐⭐⭐ |
+| **D) 프로덕션 준비** | Grafana + SLO + 그레이스풀 셧다운 | 4~6 세션 | ⭐⭐⭐⭐ |
+| **E) 조합 (추천)** | B → A → D 순서 | 8~12 세션 | ⭐⭐⭐⭐⭐ |
+
+### Night-40 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze --no-pub` | ✅ **0건** (Night-39 기준, 코드 변경 없음) |
+| `flutter test --no-pub` | ✅ **360건** (변동 없음) |
+| `cargo test --lib` | ✅ **207건** (변동 없음) |
+| PLAN_02.md 작성 | ✅ **완료** — `docs/plans/PLAN_02.md` 신규 생성 |
+| U-42 상태 | ⏳ **사용자 방향 선택 대기** — 선택지 준비 완료 |
+
+### Night-40 PLAN_02 결정 대기 항목
+
+| # | 항목 | 선택지 |
+|---|------|--------|
+| **U-3** | 브랜치 머지 방향 | A) Push + PR / B) 로컬 머지 / C) 유지 |
+| **U-42** | PLAN_02 방향 | A) BREAKING / B) 기능확장 / C) E2E+CI/CD / D) 프로덕션 / E) 조합 |
 
 ---
 

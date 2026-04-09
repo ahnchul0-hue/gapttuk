@@ -1,19 +1,20 @@
-# MORNING BRIEFING — 2026-04-09 (Night-13 ~ Night-39 종합 분석)
+# MORNING BRIEFING — 2026-04-10 (Night-13 ~ Night-40 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-39 (2026-03-12 ~ 2026-04-09)
-> **현재 브랜치**: `auto/night-01-20260409_0100`
+> **분석 대상**: Night-13 ~ Night-40 (2026-03-12 ~ 2026-04-10)
+> **현재 브랜치**: `auto/night-01-20260410_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-04-09 (Night-39 결과 통합 — **D-63 완전 해소 + Flutter 360건 + PLAN_02 방향 대기**)
-> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-09 실측)
+> **최종 업데이트**: 2026-04-10 (Night-40 결과 통합 — **PLAN_02 초안 작성 + U-42 해소 준비**)
+> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-09 실측, Night-40 코드 변경 없음)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
+> **Night-40 커밋**: `222f935` (MORNING_BRIEFING Night-39) + TBD (PLAN_02 초안 + Night-40 결과)
 
 ---
 
 ## 1. Opus 4.6 전략 분석
 
-### 1.1 Night-13 ~ Night-39 세션별 전략
+### 1.1 Night-13 ~ Night-40 세션별 전략
 
 | Night | 날짜 | 전략 | 핵심 결정 | 커밋 |
 |-------|------|------|-----------|------|
@@ -44,6 +45,7 @@
 | **37** | **04-07** | **PLAN_01 Phase 7: 코드 간소화 + 의존성 3건 업그레이드** | **D-78~D-79: go_router 보류, minor 3건 적용(cupertino_icons/intl/build_runner)** | **`044da3f`** |
 | **38** | **04-08** | **문서 완결 + PLAN_02 방향 제시** | **MORNING_BRIEFING 종합 업데이트, 기준선 재검증, PLAN_02 선택지(A~E) 질의** | **`22a115e`** |
 | **39** | **04-09** | **D-63 완전 해소 + 잔존 항목 소진** | **D-80: _transactionLabel default 폴백 테스트, +2건 (360건)** | **`8811c00`** |
+| **40** | **04-10** | **PLAN_02 초안 작성 + U-42 해소 준비** | **docs/plans/PLAN_02.md 생성 — A/B/C/D/E 5가지 방향 구체화, 브랜치 머지 전제 조건 명시** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -79,9 +81,30 @@ Night 36:    ★★★★★★★★★★★★★★★ Phase 5 진입 ──
 Night 37:    ★★★★★★★★★★★★★★★★ Phase 7 완결 ── 코드 간소화 (Rust 4헬퍼 + Flutter ScreenErrorWidget) + 의존성 3건
 Night 38:    ★★★★★★★★★★★★★★★★★ 문서 완결 ── PLAN_01 종합 문서화 + PLAN_02 방향 제시 (코드 변경 0건)
 Night 39:    ★★★★★★★★★★★★★★★★★★ 잔존 소진 ── D-63 완전 해소 (360건) + PLAN_02 방향 대기 지속
+Night 40:    ★★★★★★★★★★★★★★★★★★★ PLAN_02 초안 ── A~E 5방향 구체화 + 브랜치 머지 전제 명시 (코드 변경 0건)
 ```
 
-### 1.3 Night-39 전략적 의의: D-63 완전 해소 + 잔존 항목 소진
+### 1.3 Night-40 전략적 의의: PLAN_02 초안 작성 + 방향 결정 준비
+
+Night-39에서 2세션 연속 U-42(PLAN_02 방향) 대기가 지속됨.
+Night-40은 **PLAN_02 초안 문서화 세션** — Sonnet 4.6 Sub-agent가 직접 실행.
+
+**실행 전략:**
+- Night-39 미커밋 MORNING_BRIEFING.md 업데이트 먼저 커밋 (`222f935`)
+- `docs/plans/PLAN_02.md` 신규 생성 — A~E 5가지 방향 각각의 구체적 실행 계획 포함
+- NIGHT_06_RESULT.md Night-40 섹션 추가
+
+**Night-40 핵심 성과:**
+1. **PLAN_02.md 초안 완성**: 5가지 방향 × 세부 실행 단계 — 사용자 방향 결정 즉시 실행 가능한 blueprint
+2. **U-42 해소 준비**: 구체적 선택지 명시로 의사결정 비용 최소화
+3. **Opus 추천 E-방향(B→A→D)**: 기능 확장 → BREAKING 업그레이드 → 프로덕션 준비 순서 근거 문서화
+
+**전략적 의의:**
+1. **방향 결정 병목 해소**: U-42 3세션 연속 대기 → 구체적 실행 계획으로 사용자 결정 지원
+2. **브랜치 머지 전제 명시**: PLAN_02 어떤 방향이든 `auto/night-01-20260410_0100` → main 머지가 선행 필요
+3. **기술 부채 vs 기능 확장 트레이드오프**: PLAN_02.md §방향 A/B 비교 — B 먼저가 충돌 최소화
+
+### 1.4 Night-39 전략적 의의: D-63 완전 해소 + 잔존 항목 소진
 
 Night-38 문서 완결 후, **Night-39는 PLAN_01 이후 첫 소규모 코드 개선 세션**으로 실행됨.
 
@@ -316,6 +339,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **37** | **Sonnet ×3 (병렬 탐색) + Opus 실행** | **4헬퍼 + 2위젯 추출 + 의존성 3건** | **358건 유지** | **Phase 7: 간소화 (~230줄 감소) + Phase 8: 검증/커밋 — PLAN_01 전체 완료** |
 | **38** | **Opus 직접 실행 (문서)** | **프로덕션 코드 변경 0건** | **358건 유지** | **문서 완결: MORNING_BRIEFING §전체 + PLAN_02 방향 제시 + MCP 실측 점검** |
 | **39** | **Opus 직접 실행 (테스트)** | **프로덕션 코드 변경 0건** | **+2건 (360건)** | **D-63 완전 해소: _transactionLabel 8/8+default — PLAN_02 대기 지속** |
+| **40** | **Sonnet 4.6 Sub-agent (문서)** | **프로덕션 코드 변경 0건** | **360건 유지** | **PLAN_02 초안: docs/plans/PLAN_02.md 생성 — A~E 5방향 + 브랜치 머지 전제 명시** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -699,7 +723,7 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 |---|------|------|--------|
 | **U-3** | Night-13~39 머지 방향 | `auto/night-01-20260409_0100` (64커밋, PLAN_01 완료 + D-63 해소, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 | **U-40** | PLAN_01 완결 후 다음 방향 | PLAN_01 8-Phase 전체 완료 + 잔존 D-63 해소. 다음 단계 결정 필요 | A) 브랜치 머지 → 새 계획 수립 B) BREAKING 업그레이드 착수 C) feat 브랜치 통합 D) 커스텀 |
-| **U-42** | PLAN_02 방향 선택 | Night-38~39 **2세션 연속 대기 중**. 사용자 우선순위 필요 | A) BREAKING 업그레이드 B) 기능 확장 C) E2E+CI/CD D) 프로덕션 준비 E) 조합 |
+| **U-42** | PLAN_02 방향 선택 | Night-38~40 **3세션 대기 중**. `docs/plans/PLAN_02.md` 준비 완료 — 사용자 선택만 남음 | A) BREAKING 업그레이드 B) 기능 확장 C) E2E+CI/CD D) 프로덕션 준비 E) 조합(Opus 추천) |
 
 ### 🔶 HIGH (금일 중 결정 권장)
 
@@ -716,8 +740,8 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~39 **20회** 감지) |
-| **U-38** | Sonatype MCP 인증 설정 | **15세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
+| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~40 **21회** 감지) |
+| **U-38** | Sonatype MCP 인증 설정 | **16세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-8** | 다음 로드맵 방향 | AI 예측 고도화 / E2E 테스트 / 인프라 / BREAKING 업그레이드 중 우선순위 |
@@ -727,7 +751,24 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 ---
 
-## 7. Night-39에서 해결/생성된 항목
+## 7. Night-40에서 해결/생성된 항목
+
+### ✅ Night-40에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| **MORNING_BRIEFING Night-39 미커밋** | **MEDIUM** | **커밋 `222f935`로 Night-39 업데이트 반영 완료** |
+| **PLAN_02 초안 작성** | **HIGH** | **`docs/plans/PLAN_02.md` 신규 생성 — A~E 5방향 × 세부 실행 단계 + 브랜치 머지 전제 조건** |
+
+### 🆕 Night-40에서 생성됨
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **docs/plans/PLAN_02.md** | **HIGH** | 5가지 방향(A~E) 각각의 구체적 실행 계획 + 위험 관리 + 체크포인트 |
+
+---
+
+## Night-39에서 해결/생성된 항목
 
 ### ✅ Night-39에서 해결됨
 
@@ -895,30 +936,33 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 ---
 
-## 9. 다음 세션 선택지 (PLAN_01 이후 — Night-39 업데이트)
+## 9. 다음 세션 선택지 (PLAN_02 준비 완료 — Night-40 업데이트)
 
-> **PLAN_01 전체 완료 (8/8 Phase) + D-63 완전 해소.** 64커밋 브랜치 머지 방향 + PLAN_02 계획 결정 필요.
-> **⚠️ U-42 PLAN_02 방향: 2세션 연속 대기 중 — 사용자 결정이 프로젝트 진행의 최대 병목**
+> **PLAN_01 전체 완료 (8/8 Phase) + D-63 완전 해소 + PLAN_02.md 초안 작성.**
+> **Night-40에서 `docs/plans/PLAN_02.md` 생성 → U-42 해소 준비 완료.**
+> **⚠️ 다음 결정 사항**: (1) 브랜치 머지 방향 (U-3), (2) PLAN_02 방향 선택 (U-42)
 
 ### 9.1 즉시 실행 가능 (전제: 브랜치 머지)
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) 브랜치 머지 → PLAN_02 수립** | `auto/night-01-20260409_0100` → main PR + PLAN_02 설계 | commit-commands, superpowers:brainstorm | 중간 |
+| **A) 브랜치 Push + PR 생성** | `auto/night-01-20260410_0100` push → GitHub PR → code review → main 머지 | commit-commands | 소형 |
 
-### 9.2 PLAN_02 방향 선택지 (A 이후, U-42)
+### 9.2 PLAN_02 방향 선택지 (브랜치 머지 이후, U-42)
+
+> **상세 실행 계획**: `docs/plans/PLAN_02.md` 참조
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) BREAKING 의존성 대규모 업그레이드** | riverpod_generator 4.x + flutter_riverpod 3.3.x 동반 → json 체인 해소 → go_router 17.x + fl_chart 1.x + google_sign_in 7 + flutter_secure_storage 10 | WebSearch, superpowers | 대형 |
-| **B) 기능 확장** | 미머지 PR 3개(monthly-prices/dark-mode/phase0-security) 통합 + 신규 기능 | git, code-reviewer | 중간 |
-| **C) E2E 테스트 + CI/CD 강화** | 통합 테스트 인프라, playwright E2E, 배포 파이프라인 성숙 | playwright, serena | 대형 |
-| **D) 프로덕션 준비** | 성능 최적화, 모니터링 대시보드, 스케일링, 운영 안정성 | vercel, posthog | 대형 |
-| **E) 위 항목의 조합** | 사용자 우선순위와 함께 지정 | — | — |
+| **A) BREAKING 의존성 대규모 업그레이드** | riverpod_generator 4.x + flutter_riverpod 3.3.x → go_router 17.x + fl_chart 1.x + google_sign_in 7.x + flutter_secure_storage 10.x | WebSearch, superpowers | 대형 (3~5 세션) |
+| **B) 기능 확장** | 미머지 PR 3개(monthly-prices/dark-mode/phase0-security) 통합 + 신규 기능 | git, code-reviewer | 중형 (2~4 세션) |
+| **C) E2E 테스트 + CI/CD 강화** | 통합 테스트 43건 활성화, playwright E2E 20건, CD 파이프라인 | playwright, serena | 대형 (4~6 세션) |
+| **D) 프로덕션 준비** | 성능 측정, Grafana 대시보드, SLO 정의, 그레이스풀 셧다운 | vercel, posthog | 대형 (4~6 세션) |
+| **E) 조합 (Opus 추천)** | B → A → D 순서 — 기능 확장 후 기술 부채 해소 후 운영 성숙 | 전체 | 대형 (8~12 세션) |
 
-**Opus 추천:**
-1. **즉시**: A) 62커밋 안전 머지 (PR 생성)
-2. **PLAN_02**: E) 조합 — `B(기능 통합) → A(BREAKING) → D(프로덕션)` 순서 추천
+**Opus 추천 (PLAN_02.md §방향 E):**
+1. **즉시**: 브랜치 Push + PR 생성 (U-3 해소)
+2. **PLAN_02**: E) 조합 — `B(기능 통합) → A(BREAKING) → D(프로덕션)` 순서
    - B를 먼저 실행하면 기능 베이스라인이 확장됨
    - A의 BREAKING 업그레이드는 B 이후가 충돌 최소화
    - D의 프로덕션 준비는 전체 기능이 확정된 후 최적
