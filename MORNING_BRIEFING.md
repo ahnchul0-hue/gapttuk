@@ -4,11 +4,11 @@
 > **현재 브랜치**: `auto/night-01-20260410_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
 > **최종 업데이트**: 2026-04-10 (Night-40 결과 통합 — **PLAN_02 초안 작성 + U-42 해소 준비**)
-> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-09 실측, Night-40 코드 변경 없음)
+> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-10 실측, Night-40 코드 변경 없음)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
-> **Night-40 커밋**: `222f935` (MORNING_BRIEFING Night-39) + `26394e3` (PLAN_02 초안 + Night-40 결과)
+> **Night-40 커밋**: `222f935` (MORNING_BRIEFING Night-39) + `26394e3` (PLAN_02 초안 + Night-40 결과) + `73ad4c5` (MORNING_BRIEFING Night-40 해시)
 
 ---
 
@@ -45,7 +45,7 @@
 | **37** | **04-07** | **PLAN_01 Phase 7: 코드 간소화 + 의존성 3건 업그레이드** | **D-78~D-79: go_router 보류, minor 3건 적용(cupertino_icons/intl/build_runner)** | **`044da3f`** |
 | **38** | **04-08** | **문서 완결 + PLAN_02 방향 제시** | **MORNING_BRIEFING 종합 업데이트, 기준선 재검증, PLAN_02 선택지(A~E) 질의** | **`22a115e`** |
 | **39** | **04-09** | **D-63 완전 해소 + 잔존 항목 소진** | **D-80: _transactionLabel default 폴백 테스트, +2건 (360건)** | **`8811c00`** |
-| **40** | **04-10** | **PLAN_02 초안 작성 + U-42 해소 준비** | **docs/plans/PLAN_02.md 생성 — A/B/C/D/E 5가지 방향 구체화, 브랜치 머지 전제 조건 명시** | **TBD** |
+| **40** | **04-10** | **PLAN_02 초안 작성 + U-42 해소 준비** | **docs/plans/PLAN_02.md 생성 — A/B/C/D/E 5가지 방향 구체화, 브랜치 머지 전제 조건 명시** | **`222f935`, `26394e3`, `73ad4c5`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -352,7 +352,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | Silent failure | `pr-review-toolkit:silent-failure-hunter` | Night-35 Phase 4 (15건 발견) | ✅ 완료 (Night-22+35) |
 | 타입 설계 | `pr-review-toolkit:type-design-analyzer` | Night-35 Phase 4 (8개 타입) | ✅ 활성 |
 | 의존성 감사 | `cargo audit` + `cargo update` | Night-24: 7→0건 | ✅ 완료 |
-| 의존성 보안 | Sonatype MCP | Night-31: 인증 실패 | ❌ 11세션 연속 실패 |
+| 의존성 보안 | Sonatype MCP | Night-31: 인증 실패 | ❌ 19세션 연속 실패 |
 | 코드 간소화 | `pr-review-toolkit:code-reviewer` + `pr-review-toolkit:silent-failure-hunter` | Night-37 Phase 7-D 리뷰 | ✅ 활성 |
 | 대체 전략 | WebSearch + RustSec DB + NVD | Night-31~37: 대체 성공 | ✅ 활성 |
 | 외부 참조 | WebSearch + WebFetch | MCP 대체 (D-36:C) | ✅ 활성 |
@@ -542,27 +542,44 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 - **MCP/플러그인 미사용** — 순수 테스트 코딩 세션
 - **SessionEnd hook 실패**: `node` 미설치 (Night-30~39, **20회** 누적 감지)
 
-### 3.10 Night-39 결정 패턴 (D-80)
+### 3.10 Night-40 작업 내역 (커밋 `222f935`, `26394e3`, `73ad4c5`)
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| MORNING_BRIEFING Night-39 반영 | `MORNING_BRIEFING.md` | Night-39 미커밋 업데이트 반영 (D-63 해소, 360건 달성) |
+| PLAN_02 초안 작성 | `docs/plans/PLAN_02.md` | A~E 5방향 × 세부 실행 단계 + 위험 관리 + 체크포인트 |
+| MORNING_BRIEFING Night-40 반영 | `MORNING_BRIEFING.md` | Night-40 커밋 해시 업데이트 |
+
+**프로덕션 코드 변경: 0건** — 순수 문서화 세션 (Night-38과 동일 패턴, 2세션 연속)
+**테스트 변경: 0건** — 360건 유지
+
+**Night-40 실행 특성:**
+- **Sonnet 4.6 Sub-agent (문서)** — Opus 위임 문서화 세션
+- **MCP/플러그인 미사용** — 문서 전용 세션
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~40, **22회** 누적 감지)
+- **핵심 산출물**: `docs/plans/PLAN_02.md` — PLAN_01 완결 후 다음 방향 5가지 구체적 blueprint
+
+### 3.11 Night-39 결정 패턴 (D-80)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
 | **D-80** | default 폴백 원문 반환 테스트 | 미정의 타입 주입 → `_ => type` 폴백 원문 반환 검증 | `'unknown_future_type'` 입력 → 원문 그대로 렌더링 — 서버 신규 타입 추가 시 UI 크래시 방지 |
 
-### 3.11 Night-37 결정 패턴 (D-78~D-79)
+### 3.12 Night-37 결정 패턴 (D-78~D-79)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
 | **D-78** | go_router 메이저 업그레이드 보류 | ShellRoute observer 변경 리스크 + Dart 3.9 요구 | 16→17 보류, 기존 패턴 유지 |
 | **D-79** | 의존성 부분 적용 (충돌 회피) | analyzer 충돌 범위를 식별하고 안전한 것만 적용 | cupertino_icons/intl/build_runner 적용, json 체인 보류 |
 
-### 3.12 Night-36 결정 패턴 (D-76~D-77)
+### 3.13 Night-36 결정 패턴 (D-76~D-77)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
 | **D-76** | AlertType String→Dart Enum | `@JsonValue` + exhaustive switch로 컴파일타임 안전성 | PD-62 해소 — type-design-analyzer 16/40→완전 해소 |
 | **D-77** | `abstract final class` 테마 상수 | ThemeExtension 불필요한 값에 경량 패턴 | AppSpacing/AppTextStyles — const 컨텍스트 호환 |
 
-### 3.13 Night-35 결정 패턴 (D-70~D-75)
+### 3.14 Night-35 결정 패턴 (D-70~D-75)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
@@ -573,7 +590,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **D-74** | serde(default) 일관성 | 422→400 응답 표준화 | products.rs SearchQuery.q 파라미터 누락 |
 | **D-75** | UX 에러 피드백 일관성 | debugPrint → showErrorSnackBar 추가 | notification_list_screen markAsRead 실패 |
 
-### 3.14 Night-31~34 신규 테스트 패턴 (D-58~D-69)
+### 3.15 Night-31~34 신규 테스트 패턴 (D-58~D-69)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
@@ -590,7 +607,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **D-68** | buyTimingScore null → 배지 없음 | `if (product.buyTimingScore != null)` 부재 확인 | `findsNothing`이 `findsOneWidget`보다 강력한 부재 테스트 |
 | **D-69** | OnboardingScreen 완료 페이지 이동 | 전체동의 + ElevatedButton('다음') → Page 3 "준비 완료!" | `_finish()` 호출 없이 Page 3 렌더링만 검증 — 서비스 mock 불필요 |
 
-### 3.15 Night-13~39 테스트 증가 추이
+### 3.16 Night-13~40 테스트 증가 추이
 
 ```
 Night-13: 176건 ──── 기준선
@@ -622,25 +639,28 @@ Night-38: 358건 ──── +0건 (문서 완결 + PLAN_02 방향 제시 — �
           ↑ ★★★★★★★★★★★★★★★★★★ PLAN_01 문서화 완결 + PLAN_02 교차점 (사용자 결정 대기)
 Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+default 전량 커버)
           ↑ ★★★★★★★★★★★★★★★★★★★ 잔존 항목 소진 + PLAN_02 방향 2세션 연속 대기
+Night-40: 360건 ──── +0건 (PLAN_02.md 초안 작성 — 코드 변경 0건, 문서 전용)
+          ↑ ★★★★★★★★★★★★★★★★★★★★ PLAN_02 초안 완성 + U-42 해소 준비 (사용자 결정 3세션 대기)
 ```
 
-### 3.16 코드베이스 규모
+### 3.17 코드베이스 규모
 
-| 항목 | **Night-39** | Night-38 | 변화 (vs 38) |
+| 항목 | **Night-40** | Night-39 | 변화 (vs 39) |
 |------|-------------|----------|------|
 | DB 마이그레이션 (main) | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-80** | D-79 | **+1** (D-80 default 폴백) |
+| DECISION_LOG 항목 | **D-80** | D-80 | — |
 | 순수 함수 추출 누계 | **15개**/54테스트 | 15개/54테스트 | — |
 | Silent Failure 수정 | 33건+ (잔존 0건) | 33건+ | — |
-| 프로덕션 코드 수정 (Night-39) | **0건** | 0건 | — (테스트+문서 전용) |
-| Flutter 테스트 | **360건** | 358건 | **+2** (D-63 해소) |
-| 커밋 (main 대비) | **64** | 62 | **+2** (MORNING_BRIEFING + 테스트) |
+| 프로덕션 코드 수정 (Night-40) | **0건** | 0건 | — (문서 전용) |
+| Flutter 테스트 | **360건** | 360건 | — |
+| 커밋 (main 대비) | **67** | 64 | **+3** (MORNING_BRIEFING + PLAN_02 + 해시업데이트) |
 | PLAN_01 Phase 완료 | **8/8 ✅** | 8/8 ✅ | — |
+| PLAN_02 초안 | **✅ 완성** | — | **신규** (docs/plans/PLAN_02.md) |
 
-### 3.17 순수 함수 추출 목록
+### 3.18 순수 함수 추출 목록
 
 | 서비스 | 함수 | 테스트 수 | Night |
 |--------|------|----------|-------|
@@ -663,7 +683,7 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260409_0100`** ★ | **+64 commits** | Night-13~39 전체 + **PLAN_01 8/8 Phase 완료** + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260410_0100`** ★ | **+67 commits** | Night-13~40 전체 + **PLAN_01 8/8 Phase 완료** + PLAN_02 초안 + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -675,12 +695,12 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0408_0100` (27개+) | **Night-39 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0409_0100` (28개+) | **Night-40 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260409_0100 → main (64커밋, PLAN_01 완료 + D-63 해소, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260410_0100 → main (67커밋, PLAN_01 완료 + D-63 해소 + PLAN_02 초안, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -721,7 +741,7 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~39 머지 방향 | `auto/night-01-20260409_0100` (64커밋, PLAN_01 완료 + D-63 해소, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~40 머지 방향 | `auto/night-01-20260410_0100` (67커밋, PLAN_01 완료 + D-63 해소 + PLAN_02 초안, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
 | **U-40** | PLAN_01 완결 후 다음 방향 | PLAN_01 8-Phase 전체 완료 + 잔존 D-63 해소. 다음 단계 결정 필요 | A) 브랜치 머지 → 새 계획 수립 B) BREAKING 업그레이드 착수 C) feat 브랜치 통합 D) 커스텀 |
 | **U-42** | PLAN_02 방향 선택 | Night-38~40 **3세션 대기 중**. `docs/plans/PLAN_02.md` 준비 완료 — 사용자 선택만 남음 | A) BREAKING 업그레이드 B) 기능 확장 C) E2E+CI/CD D) 프로덕션 준비 E) 조합(Opus 추천) |
 
@@ -740,8 +760,8 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~40 **21회** 감지) |
-| **U-38** | Sonatype MCP 인증 설정 | **16세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
+| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~40 **22회** 감지) |
+| **U-38** | Sonatype MCP 인증 설정 | **19세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-8** | 다음 로드맵 방향 | AI 예측 고도화 / E2E 테스트 / 인프라 / BREAKING 업그레이드 중 우선순위 |
@@ -868,13 +888,13 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 | ~~PLAN_01 Phase 5/7/8~~ | ~~HIGH~~ | ~~**✅ Night-36~37에서 전체 완료**~~ |
 | ~~AlertType String→Enum~~ | ~~HIGH~~ | ~~**PD-62: ✅ Night-36에서 해소**~~ |
 | 미머지 브랜치 4개 통합 | MEDIUM | 충돌 해결 + 머지 순서 결정 필요 |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (17세션 연속) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (19세션 연속) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
 | ~~`_transactionLabel` default 케이스~~ | ~~LOW~~ | ~~D-63: **✅ Night-39에서 완전 해소** (8/8 + default)~~ |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 27개+ 정리 | LOW | 사용자 승인 대기 |
-| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~38 **18회** 감지) |
+| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~40 **22회** 감지) |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
 | **PLAN_01 전체 완료** | **INFO** | **8/8 Phase 완결 — Night-30 수립 → Night-37 완결** |
 | **PLAN_02 방향 대기** | **CRITICAL** | **사용자 결정 대기 (A~E 선택지, U-42)** |
@@ -883,15 +903,16 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-04-09, Night-39 실측)
+### 8.1 현재 지표 (2026-04-10, Night-40 실측)
 
-| 지표 | **Night-39** | Night-38 | Night-37 | 변화 (vs 38) |
+| 지표 | **Night-40** | Night-39 | Night-38 | 변화 (vs 39) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
-| Flutter 테스트 | **360** ✅ | 358 | 358 | **+2** (D-63 해소) |
+| Flutter 테스트 | **360** ✅ | 360 | 358 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-80** | D-79 | D-79 | **+1** (D-80) |
+| DECISION_LOG | **D-80** | D-80 | D-79 | — |
 | PLAN_01 Phase 완료 | **8/8** ✅ | 8/8 ✅ | 8/8 ✅ | — |
+| PLAN_02 초안 | **✅ 완성** | — | — | **신규** |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
@@ -902,7 +923,7 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | rollback warn 패턴 | **8곳** | 8곳 | 8곳 | — |
-| 커밋 (main 대비) | **64** | 62 | 57 | **+2** (Night-39) |
+| 커밋 (main 대비) | **67** | 64 | 62 | **+3** (Night-40) |
 
 ### 8.2 기술 부채 현황
 
@@ -928,10 +949,10 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 | auto 브랜치 정리 | **미처리** ⚠️ (26개+) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (18세션 연속) |
+| sonatype-guide 인증 | **미설정** ⚠️ (19세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **node 미설치** ⚠️ (20회 감지) |
+| SessionEnd hook | **node 미설치** ⚠️ (22회 감지) |
 | **PLAN_02 방향** | **대기 중** ⚠️ **(U-42: 사용자 선택 필요)** |
 
 ---
@@ -946,7 +967,7 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) 브랜치 Push + PR 생성** | `auto/night-01-20260410_0100` push → GitHub PR → code review → main 머지 | commit-commands | 소형 |
+| **A) 브랜치 Push + PR 생성** | `auto/night-01-20260410_0100` (67커밋) push → GitHub PR → code review → main 머지 | commit-commands | 소형 |
 
 ### 9.2 PLAN_02 방향 선택지 (브랜치 머지 이후, U-42)
 
@@ -967,18 +988,18 @@ Night-39: 360건 ──── +2건 (D-63 완전 해소: _transactionLabel 8/8+d
    - A의 BREAKING 업그레이드는 B 이후가 충돌 최소화
    - D의 프로덕션 준비는 전체 기능이 확정된 후 최적
 
-### 9.3 MCP/플러그인 가용성 (Night-39 실측)
+### 9.3 MCP/플러그인 가용성 (Night-40 실측)
 
 | 도구 | 상태 | 활용 이력 | PLAN_02 활용 가능성 |
 |------|------|-----------|-------------------|
-| sonatype-guide | ✅ (인증 미설정, 18세션) | Phase 1 (WebSearch 대체) | 의존성 업그레이드 시 유용 |
+| sonatype-guide | ✅ (인증 미설정, 19세션) | Phase 1 (WebSearch 대체) | 의존성 업그레이드 시 유용 |
 | feature-dev (3종) | ✅ 활성 | Phase 4/5/7 탐색 | 모든 방향에서 활용 |
 | pr-review-toolkit (4종) | ✅ 활성 | Phase 4 리뷰 + Phase 7 검증 | 코드 리뷰/PR 생성 |
 | code-simplifier | ✅ 활성 | Phase 7 간소화 | 지속적 간소화 |
 | frontend-design | ✅ 활성 | Phase 5 UI/UX | B 기능 확장 시 |
 | commit-commands | ✅ 활성 | Phase 8 커밋 | 모든 방향 |
 | superpowers (brainstorm/verification) | ✅ 활성 | 전체 | 모든 방향 |
-| context7 | ✅ 설치됨 (**미연결**, 12세션) | WebSearch로 대체 | 연결 시 문서 조회 효율화 |
+| context7 | ✅ 설치됨 (**미연결**, 13세션) | WebSearch로 대체 | 연결 시 문서 조회 효율화 |
 | playwright / serena | ✅ 설치됨 (**미연결**) | E2E / 코드 분석 (이연) | C 선택 시 필수 — 연결 필요 |
 | mcp-tailwind-gemini / shadcn | **비해당** | — | Flutter 프로젝트 (미사용) |
 | chatgpt-mcp / sequential-thinking | **미설치** | brainstorm/WebSearch로 대체 | 설치 불필요 |
