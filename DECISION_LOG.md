@@ -2,6 +2,35 @@
 
 ---
 
+## Night-41 결정 (2026-04-11) — U-39 분석 + 베이스라인 검증
+
+### D-81: SessionEnd hook 실패 원인 규명 (U-39)
+
+**결정**: U-39 원인 확인. 즉각 수정 보류 — 전역 설정 변경으로 사용자 승인 필요.
+
+**근거**:
+- **원인**: `vercel@claude-plugins-official` 플러그인이 전역 활성화됨
+  - `~/.claude/settings.json`: `"vercel@claude-plugins-official": true`
+  - Vercel 플러그인의 `SessionEnd` 훅: `node "${CLAUDE_PLUGIN_ROOT}/hooks/session-end-cleanup.mjs"` 실행
+  - 이 프로젝트 환경에는 `node` 미설치 → 훅 실패 22회 누적
+- **영향**: 비차단(non-blocking) — 세션 종료 자체는 정상 진행됨
+- **Flutter/Rust 프로젝트와 관계**: Vercel 플러그인은 이 프로젝트에서 불필요
+
+**수정 옵션**:
+| 옵션 | 방법 | 영향 범위 | 위험도 |
+|------|------|-----------|--------|
+| A) Vercel 플러그인 전역 비활성화 | `~/.claude/settings.json` `"vercel@..."` → `false` | 모든 프로젝트 | LOW (Vercel 미사용 시 영향 없음) |
+| B) Node.js 설치 | `sudo apt-get install -y nodejs` | 시스템 전체 | MEDIUM (시스템 변경) |
+| C) 현 상태 유지 | 아무것도 안 함 | 없음 | 없음 (비차단이므로) |
+
+**권장**: 옵션 A — `vercel@claude-plugins-official: false` 전역 설정. 이 프로젝트(Flutter/Rust)에서 Vercel 플러그인이 필요한 순간이 없음.
+
+**다음 단계**: 사용자가 옵션 A/B/C 중 선택 후 실행.
+
+**Status**: DIAGNOSED — 사용자 방향 결정 대기
+
+---
+
 ## Night-36 결정 (2026-04-06) — PLAN_01 Phase 5 + PD-62
 
 ### D-76: AlertType String → Dart Enum 전환 (PD-62 해소)

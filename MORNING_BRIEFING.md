@@ -46,6 +46,7 @@
 | **38** | **04-08** | **문서 완결 + PLAN_02 방향 제시** | **MORNING_BRIEFING 종합 업데이트, 기준선 재검증, PLAN_02 선택지(A~E) 질의** | **`22a115e`** |
 | **39** | **04-09** | **D-63 완전 해소 + 잔존 항목 소진** | **D-80: _transactionLabel default 폴백 테스트, +2건 (360건)** | **`8811c00`** |
 | **40** | **04-10** | **PLAN_02 초안 작성 + U-42 해소 준비** | **docs/plans/PLAN_02.md 생성 — A/B/C/D/E 5가지 방향 구체화, 브랜치 머지 전제 조건 명시** | **`222f935`, `26394e3`, `73ad4c5`** |
+| **41** | **04-11** | **U-39 원인 규명 + 베이스라인 재검증** | **D-81: Vercel SessionEnd hook → node 미설치 원인 확인 + 3가지 수정 옵션 문서화** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -82,6 +83,7 @@ Night 37:    ★★★★★★★★★★★★★★★★ Phase 7 완결 ─
 Night 38:    ★★★★★★★★★★★★★★★★★ 문서 완결 ── PLAN_01 종합 문서화 + PLAN_02 방향 제시 (코드 변경 0건)
 Night 39:    ★★★★★★★★★★★★★★★★★★ 잔존 소진 ── D-63 완전 해소 (360건) + PLAN_02 방향 대기 지속
 Night 40:    ★★★★★★★★★★★★★★★★★★★ PLAN_02 초안 ── A~E 5방향 구체화 + 브랜치 머지 전제 명시 (코드 변경 0건)
+Night 41:    ★★★★★★★★★★★★★★★★★★★★ 분석 심화 ── U-39 원인 규명(Vercel hook) + 베이스라인 재검증 + D-81 문서화
 ```
 
 ### 1.3 Night-40 전략적 의의: PLAN_02 초안 작성 + 방향 결정 준비
@@ -542,7 +544,25 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 - **MCP/플러그인 미사용** — 순수 테스트 코딩 세션
 - **SessionEnd hook 실패**: `node` 미설치 (Night-30~39, **20회** 누적 감지)
 
-### 3.10 Night-40 작업 내역 (커밋 `222f935`, `26394e3`, `73ad4c5`)
+### 3.10 Night-41 작업 내역 (커밋 `e051bb5`, TBD)
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| MORNING_BRIEFING Night-40 반영 | `MORNING_BRIEFING.md` | Night-40 미커밋 업데이트 반영 (날짜 수정 + 커밋 해시 보완) |
+| U-39 분석 | - | Vercel 플러그인 SessionEnd hook → node 미설치 원인 규명 |
+| D-81 기록 | `DECISION_LOG.md` | 3가지 수정 옵션 문서화 — 사용자 선택 대기 |
+| NIGHT_06_RESULT Night-41 추가 | `NIGHT_06_RESULT.md` | Night-41 분석 결과 섹션 |
+
+**프로덕션 코드 변경: 0건** — 분석+문서화 세션
+**테스트 변경: 0건** — 360건 유지
+
+**Night-41 실행 특성:**
+- **Sonnet 4.6 Sub-agent** — PLAN_01.md 참조로 실행
+- **핵심 성과**: U-39 원인 규명 — Vercel 플러그인 `session-end-cleanup.mjs` + node 미설치 조합
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~41, **24회** 누적) — **D-81로 원인 명확히 규명됨**
+- **베이스라인 재검증**: Flutter 360건 ✅ / Rust 207건 ✅ / analyze 0건 ✅ (Night-41 실측)
+
+### 3.11 Night-40 작업 내역 (커밋 `222f935`, `26394e3`, `73ad4c5`)
 
 | 작업 | 파일 | 내용 |
 |------|------|------|
@@ -559,7 +579,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 - **SessionEnd hook 실패**: `node` 미설치 (Night-30~40, **22회** 누적 감지)
 - **핵심 산출물**: `docs/plans/PLAN_02.md` — PLAN_01 완결 후 다음 방향 5가지 구체적 blueprint
 
-### 3.11 Night-39 결정 패턴 (D-80)
+### 3.12 Night-39 결정 패턴 (D-80)
 
 | ID | 패턴 | 설명 | 활용 예시 |
 |----|------|------|-----------|
@@ -760,7 +780,7 @@ Night-40: 360건 ──── +0건 (PLAN_02.md 초안 작성 — 코드 변경 
 
 | # | 항목 | 설명 |
 |---|------|------|
-| **U-39** | SessionEnd hook 수정 | `node` 미설치로 `session-end-cleanup.mjs` 실행 실패 (Night-30~40 **22회** 감지) |
+| **U-39** | SessionEnd hook 수정 | ⚡ **Night-41 원인 규명 완료** — Vercel 플러그인 `session-end-cleanup.mjs` + node 미설치. D-81로 3가지 수정 옵션 문서화. **사용자 선택 대기**: A)Vercel비활성화 B)node설치 C)유지 |
 | **U-38** | Sonatype MCP 인증 설정 | **19세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
@@ -894,7 +914,7 @@ Night-40: 360건 ──── +0건 (PLAN_02.md 초안 작성 — 코드 변경 
 | ~~`_transactionLabel` default 케이스~~ | ~~LOW~~ | ~~D-63: **✅ Night-39에서 완전 해소** (8/8 + default)~~ |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 27개+ 정리 | LOW | 사용자 승인 대기 |
-| SessionEnd hook `node` 미설치 | LOW | 환경 설정 필요 (Night-30~40 **22회** 감지) |
+| SessionEnd hook `node` 미설치 | LOW | ⚡ **Night-41 원인 규명** — Vercel 플러그인 hook. D-81 옵션 A(비활성화)/B(설치)/C(유지) 사용자 결정 대기 |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
 | **PLAN_01 전체 완료** | **INFO** | **8/8 Phase 완결 — Night-30 수립 → Night-37 완결** |
 | **PLAN_02 방향 대기** | **CRITICAL** | **사용자 결정 대기 (A~E 선택지, U-42)** |
@@ -952,7 +972,7 @@ Night-40: 360건 ──── +0건 (PLAN_02.md 초안 작성 — 코드 변경 
 | sonatype-guide 인증 | **미설정** ⚠️ (19세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **node 미설치** ⚠️ (22회 감지) |
+| SessionEnd hook | **원인 규명 완료** ⚡ (D-81: Vercel플러그인. 24회 감지. A/B/C 옵션 대기) |
 | **PLAN_02 방향** | **대기 중** ⚠️ **(U-42: 사용자 선택 필요)** |
 
 ---

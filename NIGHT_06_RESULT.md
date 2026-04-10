@@ -1,8 +1,64 @@
-# NIGHT_06_RESULT — 2026-04-10 (Night-40 추가)
+# NIGHT_06_RESULT — 2026-04-11 (Night-41 추가)
 
-> **Night-40 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-40**: PLAN_02.md 초안 작성 — A~E 5방향 구체화 + 브랜치 머지 전제 명시 (코드 변경 0건)
-> **Night-39 이전 결과** (이하 원본 보존)
+> **Night-41 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-41**: U-39 원인 분석(Vercel 플러그인 SessionEnd hook) + D-81 문서화 + 베이스라인 재검증
+> **Night-40 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-41 (2026-04-11) — U-39 분석 + 베이스라인 재검증
+
+**브랜치**: `auto/night-01-20260411_0100`
+**베이스라인**: 360건 (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent
+
+### 배경
+
+PLAN_01 8-Phase 전체 완료(Night-37) + PLAN_02 초안 작성(Night-40) 이후,
+**U-42(PLAN_02 방향 결정)가 4세션 연속 대기** 중.
+Night-41에서 독립적 항목 U-39(SessionEnd hook 실패) 원인을 분석하고 베이스라인을 재검증.
+
+### Night-41 작업 내역
+
+| 작업 | 결과 |
+|------|------|
+| Night-40 MORNING_BRIEFING.md 커밋 | ✅ 커밋 `e051bb5` — 날짜 수정 + 커밋 해시 보완 |
+| U-39 SessionEnd hook 원인 분석 | ✅ **원인 확인**: Vercel 플러그인 SessionEnd hook → `node` 미설치 |
+| D-81 DECISION_LOG 기록 | ✅ 3가지 수정 옵션 문서화 (A:비활성화/B:node설치/C:유지) |
+| Flutter analyze | ✅ **0건** |
+| Flutter test | ✅ **360건** |
+| Rust cargo test --lib | ✅ **207건** |
+
+### U-39 분석 결과 (D-81)
+
+**원인**: `vercel@claude-plugins-official` 플러그인이 전역 활성화됨
+- 파일: `~/.claude/plugins/cache/claude-plugins-official/vercel/eb3b6f19e9ca/hooks/hooks.json`
+- `SessionEnd` 훅 커맨드: `node "${CLAUDE_PLUGIN_ROOT}/hooks/session-end-cleanup.mjs"`
+- Node.js 미설치 (`which node` → not found) → 훅 실패 22회 → Night-41 이후 24회
+
+**진단 근거**:
+- `python3` ✅ 설치됨 — hookify, ralph-loop 훅 정상
+- `jq` ✅ 설치됨 — ralph-loop stop-hook.sh 정상
+- `node` ❌ 미설치 — Vercel 플러그인 모든 훅 실패
+- 이 프로젝트는 Flutter/Rust — Vercel 플러그인 필요 없음
+
+**권장 조치** (사용자 결정 대기):
+| 옵션 | 커맨드 | 위험도 |
+|------|--------|--------|
+| **A) Vercel 플러그인 비활성화** (권장) | `~/.claude/settings.json`에서 `"vercel@claude-plugins-official": false` | LOW |
+| B) Node.js 설치 | `sudo apt-get install -y nodejs` | MEDIUM |
+| C) 유지 (비차단이므로 허용) | 아무것도 안 함 | 없음 |
+
+### Night-41 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze --no-pub` | ✅ **0건** |
+| `flutter test --no-pub` | ✅ **360건** (변동 없음) |
+| `cargo test --lib` | ✅ **207건** (변동 없음) |
+| U-39 분석 | ✅ **완료** — D-81 DECISION_LOG 기록 완료 |
+| U-42 상태 | ⏳ **사용자 방향 선택 대기** (4세션 연속) |
+| D-81 상태 | ⏳ **사용자 수정 방향 선택 대기** (A/B/C) |
 
 ---
 
