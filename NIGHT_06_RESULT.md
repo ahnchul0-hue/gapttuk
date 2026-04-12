@@ -1,8 +1,52 @@
-# NIGHT_06_RESULT — 2026-04-12 (Night-42 추가)
+# NIGHT_06_RESULT — 2026-04-13 (Night-43 추가)
 
-> **Night-42 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-42**: PLAN_01 완전 완료 확인 + PLAN_02 U-42 5세션 대기 + 베이스라인 재검증 (코드 변경 0건)
-> **Night-41 이전 결과** (이하 원본 보존)
+> **Night-43 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-43**: MORNING_BRIEFING Night-42 커밋 해시 갱신 + PLAN_02 U-42 6세션 대기 + 베이스라인 재검증 (코드 변경 0건)
+> **Night-42 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-43 (2026-04-13) — PLAN_02 U-42 대기 + 베이스라인 재검증
+
+**브랜치**: `auto/night-01-20260413_0100`
+**베이스라인**: 360건 (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent
+
+### 배경
+
+PLAN_01 8-Phase 전체 완료(Night-37) → PLAN_02 초안 작성(Night-40) → U-39 분석(Night-41) → 베이스라인 재검증(Night-42) 이후,
+**U-42(PLAN_02 방향 결정)가 6세션 연속 대기** 중.
+
+PLAN_02 "단방향 결정 금지" 원칙 준수 → 사용자 방향 미결정 상태에서 주요 코드 변경 없음.
+Night-43은 Night-42 MORNING_BRIEFING.md 커밋 해시 반영 + 베이스라인 재검증 커밋으로 구성.
+
+### Night-43 작업 내역
+
+| 작업 | 결과 |
+|------|------|
+| Night-42 MORNING_BRIEFING.md 커밋 | ✅ Night-42 커밋 해시(TBD → `ed1b2b8`, `579b0e8`) + §1.3/§3.10 갱신 |
+| Flutter analyze | ✅ **0건** |
+| Flutter test | ✅ **360건** (변동 없음) |
+| Rust cargo test --lib | ✅ **207건** (변동 없음) |
+| U-42 상태 | ⏳ **사용자 방향 선택 대기 (6세션 연속)** |
+
+### Night-43 미결 사항
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| U-42: PLAN_02 방향 선택 (A/B/C/D/E) | CRITICAL | ⏳ 6세션 대기 — 사용자 결정 필요 |
+| U-3: 브랜치 머지 (PR 생성) | CRITICAL | ⏳ 브랜치 65+ 커밋 앞, main PR 미생성 |
+| U-39: Vercel SessionEnd hook 수정 | MEDIUM | ⏳ D-81 3옵션 문서화, 사용자 결정 대기 |
+
+### Night-43 최종 검증
+
+| 검증 | 결과 |
+|------|------|
+| `flutter analyze --no-pub` | ✅ **0건** |
+| `flutter test --no-pub` | ✅ **360건** (변동 없음) |
+| `cargo test --lib` | ✅ **207건** (변동 없음) |
+| PLAN_01 상태 | ✅ **8-Phase 전체 완료** (Night-37 완결) |
+| PLAN_02 상태 | ⏳ **U-42 방향 결정 대기 (6세션)** |
 
 ---
 
