@@ -11,7 +11,7 @@
 > **Night-40 커밋**: `222f935` (MORNING_BRIEFING Night-39) + `26394e3` (PLAN_02 초안 + Night-40 결과) + `73ad4c5` (MORNING_BRIEFING Night-40 해시)
 > **Night-41 커밋**: `e051bb5` (MORNING_BRIEFING Night-40 반영) + `d655baf` (U-39 분석 + D-81 + 베이스라인 재검증)
 > **Night-42 커밋**: `ed1b2b8` (MORNING_BRIEFING Night-41 반영) + `579b0e8` (Night-42 결과)
-> **Night-43 커밋**: TBD (MORNING_BRIEFING Night-42 반영 + Night-43 결과)
+> **Night-43 커밋**: `4f07c41` (MORNING_BRIEFING Night-42 반영 + Night-43 결과)
 
 ---
 
@@ -51,7 +51,7 @@
 | **40** | **04-10** | **PLAN_02 초안 작성 + U-42 해소 준비** | **docs/plans/PLAN_02.md 생성 — A/B/C/D/E 5가지 방향 구체화, 브랜치 머지 전제 조건 명시** | **`222f935`, `26394e3`, `73ad4c5`** |
 | **41** | **04-11** | **U-39 원인 규명 + 베이스라인 재검증** | **D-81: Vercel SessionEnd hook → node 미설치 원인 확인 + 3가지 수정 옵션 문서화** | **`e051bb5`, `d655baf`** |
 | **42** | **04-12** | **PLAN_02 U-42 5세션 대기 + 베이스라인 재검증** | **코드 변경 0건 — PLAN_01 완전 완료 확인, PLAN_02 방향 결정 대기 지속** | **`ed1b2b8`, `579b0e8`** |
-| **43** | **04-13** | **PLAN_02 U-42 6세션 대기 + 베이스라인 재검증** | **코드 변경 0건 — MORNING_BRIEFING Night-42 커밋 해시 반영, PLAN_02 방향 결정 대기 지속** | **TBD** |
+| **43** | **04-13** | **PLAN_02 U-42 6세션 대기 + 베이스라인 재검증** | **코드 변경 0건 — MORNING_BRIEFING Night-42 커밋 해시 반영, PLAN_02 방향 결정 대기 지속** | **`4f07c41`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -641,7 +641,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 - **핵심 발견: 자율 실행 한계(autonomy ceiling)**: PLAN_01 완결 + 잔존 항목 소진 → 사용자 방향 없이는 코드 진전 불가. 이는 올바른 동작 — "단방향 결정 금지" 원칙 준수
 - **SessionEnd hook 실패**: `node` 미설치 (Night-30~42, **26회** 누적) — D-81로 원인 규명됨, 사용자 옵션 선택 대기
 
-### 3.10a Night-43 작업 내역 (커밋 TBD)
+### 3.10a Night-43 작업 내역 (커밋 `4f07c41`)
 
 | 작업 | 파일 | 내용 |
 |------|------|------|
