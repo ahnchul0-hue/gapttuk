@@ -13,7 +13,7 @@
 > **Night-42 커밋**: `ed1b2b8` (MORNING_BRIEFING Night-41 반영) + `579b0e8` (Night-42 결과)
 > **Night-43 커밋**: `4f07c41` (MORNING_BRIEFING Night-42 반영 + Night-43 결과) + `c79dad5` (해시 갱신)
 > **Night-44 커밋**: N/A (코드 변경 없음 — 종합 분석 세션)
-> **Night-45 커밋**: TBD (MORNING_BRIEFING Night-44 반영 + Night-45 결과)
+> **Night-45 커밋**: `b1786bf` (MORNING_BRIEFING Night-44 반영 + Night-45 결과)
 
 ---
 

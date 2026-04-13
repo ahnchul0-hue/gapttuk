@@ -1,4 +1,4 @@
-# NIGHT_06_RESULT — 2026-04-14 (Night-45 추가)
+# NIGHT_06_RESULT — 2026-04-14 (Night-45 추가, 커밋 `b1786bf`)
 
 > **Night-45 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
 > **Night-45**: PLAN_02 U-42 8세션 대기 + 베이스라인 재검증 (코드 변경 0건)
