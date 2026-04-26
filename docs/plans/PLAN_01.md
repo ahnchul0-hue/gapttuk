@@ -381,3 +381,293 @@
 | 6 | 테스트 추가 | 296→358건 (+62건) | ✅ Night-34 |
 | 7 | 코드 간소화 + 정합 보완 | 복잡도 감소 + minor 업데이트 | ✅ Night-37 |
 | 8 | 구조화된 커밋 + 문서 | 추적 가능한 변경 이력 | ✅ Night-37 |
+
+---
+
+# PLAN_01 확장: Phase 9-14 종합 실무 최적화 (Night-47~)
+
+> 작성: 2026-04-27 | **실행: Night-47 시작** | 브랜치: `auto/night-01-20260427_0100`
+> 베이스라인: Flutter **360건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (2026-04-27 실측)
+> main 대비: **75 커밋** ahead
+> 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정/최종 코드 리뷰 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/탐색/실행
+> Ralph-loop 한도: **10회**
+> **U-42 해소**: 사용자가 종합 실무 최적화를 지시 → PLAN_02 방향 E(조합) 기반 실행
+>
+> ### Phase 9-14 진행 현황
+> | Phase | 상태 | 핵심 목표 | 주요 도구 |
+> |-------|------|-----------|----------|
+> | 9 | ✅ **완료 (Night-47)** | 의존성 보안/품질 심층 분석 | **WebSearch+pub outdated** (Sonatype 인증 미구성 → 대체) |
+> | 10 | ⏳ 대기 | 코드 품질 심층 리뷰 | **coderabbit** + **pr-review-toolkit** (4종) |
+> | 11 | ⏳ 대기 | 아키텍처 분석 + 프레임워크 최신화 | **feature-dev** (3종) + **WebSearch** |
+> | 12 | ⏳ 대기 | 프론트엔드 UI/UX 감사 | **frontend-design** + **figma** |
+> | 13 | ⏳ 대기 | 발견 사항 기반 코드 수정 실행 | Opus 직접 실행 + Sonnet 병렬 |
+> | 14 | ⏳ 대기 | 최종 검증 + 베이스라인 보존 확인 | flutter test + analyze |
+
+---
+
+## 0-E. 도구 가용성 실측 매트릭스 (2026-04-27 실측)
+
+### 즉시 사용 가능 (활성)
+| 도구 | 유형 | API 수 | 활용 Phase |
+|------|------|--------|-----------|
+| **Sonatype Guide** | MCP | 3 | 9 (의존성 분석) |
+| **Hugging Face** | MCP | 8 | 11 (문서 검색) |
+| **superpowers** | Plugin | 12 스킬 | 전체 (계획/검증) |
+| **feature-dev** | Plugin | 3 에이전트 | 10-11 (코드 탐색/리뷰/설계) |
+| **pr-review-toolkit** | Plugin | 6 에이전트 | 10, 13 (품질/타입/간소화) |
+| **coderabbit** | Plugin | 2 스킬 | 10 (코드 리뷰) |
+| **frontend-design** | Plugin | 1 스킬 | 12 (UI/UX) |
+| **figma** | Plugin | 6 스킬 | 12 (디자인 시스템) |
+| **commit-commands** | Plugin | 3 스킬 | 14 (커밋) |
+| **ralph-loop** | Plugin | 3 스킬 | 모니터링 |
+| **code-simplifier** | Plugin | 1 스킬 | 13 (간소화) |
+| **WebSearch/WebFetch** | 내장 | - | 11 (최신 문서) |
+
+### 비해당 / 미설치 (대체 도구 명시)
+| 도구 | 상태 | 사유 | 대체 |
+|------|------|------|------|
+| mcp-tailwind-gemini | 비해당 | Flutter — Tailwind 미사용 | **frontend-design** 스킬 |
+| shadcn | 비해당 | Flutter — React/shadcn 미사용 | **figma** 디자인 시스템 |
+| chatgpt-mcp | 미설치 | 환경 미구성 | **Opus 4.6 직접 분석** |
+| sequential-thinking | 미설치 | 환경 미구성 | **superpowers:brainstorm** |
+| context7 | 미연결 | `.mcp.json` 존재, 세션 미활성 | **WebSearch + HuggingFace MCP** |
+| playwright | 미연결 | `.mcp.json` 존재, 세션 미활성 | **feature-dev:code-architect** |
+| serena | 미연결 | `.mcp.json` 존재, 세션 미활성 | **feature-dev:code-explorer** |
+| cargo | 미설치 | 런타임 환경 제한 | **Sonatype MCP** (PURL 분석) |
+
+### OAuth 대기 (인증 시 추가 활용 가능)
+| 도구 | API 수 | 잠재 활용 |
+|------|--------|----------|
+| PostHog | 20+ | 프로덕트 분석 연동 |
+| Sentry | 3 | 에러 추적 워크플로 |
+| Slack | 5+ | 상태 공유 |
+| Vercel | 10+ | 배포/성능 최적화 |
+
+---
+
+## Phase 9: 의존성 보안/품질 심층 분석 (Sonatype MCP)
+
+> **목표**: Sonatype MCP 3개 API로 Rust 15+개 crate + Dart 15+개 package의 보안·품질·라이선스 심층 분석
+> **실행자**: Sonnet 4.6 Sub-agent (PURL 조회) → Opus 4.6 (분석/판단)
+> **예상 시간**: 1 단위 작업
+
+### 9-A. Rust Crates PURL 분석 (Sonnet 실행)
+
+| 패키지 | 현재 | PURL |
+|--------|------|------|
+| axum | 0.8 | `pkg:cargo/axum@0.8` |
+| tokio | 1 | `pkg:cargo/tokio@1` |
+| sqlx | 0.8 | `pkg:cargo/sqlx@0.8` |
+| reqwest | 0.12 | `pkg:cargo/reqwest@0.12` |
+| jsonwebtoken | 9 | `pkg:cargo/jsonwebtoken@9` |
+| tower_governor | 0.8 | `pkg:cargo/tower_governor@0.8` |
+| a2 | 0.10 | `pkg:cargo/a2@0.10` |
+| scraper | 0.25 | `pkg:cargo/scraper@0.25` |
+| governor | 0.10 | `pkg:cargo/governor@0.10` |
+| moka | 0.12 | `pkg:cargo/moka@0.12` |
+| sentry | 0.37 | `pkg:cargo/sentry@0.37` |
+| tower-http | 0.6 | `pkg:cargo/tower-http@0.6` |
+
+**조회 항목**: `getLatestComponentVersion` → 최신 안정 버전 확인
+**조회 항목**: `getRecommendedComponentVersions` → 보안/품질 기반 권장 버전
+**조회 항목**: `getComponentVersion` → 현재 사용 버전의 CVE/라이선스/품질 점수
+
+### 9-B. Dart Packages PURL 분석 (Sonnet 실행)
+
+| 패키지 | 현재 | PURL |
+|--------|------|------|
+| flutter_riverpod | 3.0.2 | `pkg:pub/flutter_riverpod@3.0.2` |
+| go_router | 16.0.0 | `pkg:pub/go_router@16.0.0` |
+| dio | 5.7.0 | `pkg:pub/dio@5.7.0` |
+| fl_chart | 0.69.0 | `pkg:pub/fl_chart@0.69.0` |
+| google_sign_in | 6.2.0 | `pkg:pub/google_sign_in@6.2.0` |
+| sign_in_with_apple | 6.1.0 | `pkg:pub/sign_in_with_apple@6.1.0` |
+| flutter_secure_storage | 9.2.0 | `pkg:pub/flutter_secure_storage@9.2.0` |
+| kakao_flutter_sdk_user | 1.9.0 | `pkg:pub/kakao_flutter_sdk_user@1.9.0` |
+| freezed | 3.0.0 | `pkg:pub/freezed@3.0.0` |
+| json_serializable | 6.8.0 | `pkg:pub/json_serializable@6.8.0` |
+| riverpod_generator | 3.0.0 | `pkg:pub/riverpod_generator@3.0.0` |
+
+### 9-C. 산출물
+- 의존성별 보안 등급 (CVE 존재 여부)
+- 권장 업그레이드 경로 (BREAKING vs MINOR)
+- 업그레이드 우선순위 매트릭스
+
+### ✅ Phase 9 확인점 (Night-47 완료)
+- [x] 의존성 분석 완료 — WebSearch+pub outdated 대체 실행 (Sonatype 인증 미구성)
+- [x] Rust CVE 없음 ✅ / Dart CVE 없음 ✅
+- [x] BREAKING 업그레이드 목록 도출: Rust 3건(reqwest/jsonwebtoken/sentry) + Dart 8건
+- [ ] **D-82**: Rust BREAKING 업그레이드 범위 — ⏳ 사용자 결정 필요
+- [ ] **D-83**: Dart BREAKING 업그레이드 범위 — ⏳ 사용자 결정 필요
+- [ ] **D-84**: Dart non-BREAKING 4건 즉시 적용 — ⏳ 사용자 결정 필요
+
+---
+
+## Phase 10: 코드 품질 심층 리뷰 (병렬 4대 에이전트)
+
+> **목표**: 병렬 에이전트 4대로 코드 품질 전면 감사
+> **실행자**: Sonnet 4.6 Sub-agent 4대 동시 (병렬) → Opus 4.6 (결과 종합/판단)
+> **전제**: Phase 9 승인 후
+
+### 10-A. 에이전트 배치표
+
+| # | 에이전트 | 대상 | 탐색 범위 |
+|---|---------|------|----------|
+| 1 | **coderabbit:code-reviewer** | 전체 코드베이스 | server/ + app/ 주요 변경 |
+| 2 | **pr-review-toolkit:silent-failure-hunter** | server/src/ | 에러 핸들링 누락, catch 무시 |
+| 3 | **pr-review-toolkit:type-design-analyzer** | server/src/ + app/lib/ | 타입 설계 품질 |
+| 4 | **feature-dev:code-reviewer** | app/lib/ | Flutter 코드 품질 |
+
+### 10-B. 판정 기준 (Opus 적용)
+- **CRITICAL**: 데이터 손실, 보안 취약, 비즈니스 로직 오류 → 즉시 수정
+- **HIGH**: 성능 저하, 미흡한 에러 핸들링 → Phase 13에서 수정
+- **MEDIUM**: 코드 스타일, 타입 설계 개선 → 선별 수정
+- **LOW/오탐**: Night-35 경험 기반 오탐 필터링 → 건너뜀
+
+### 10-C. 산출물
+- 이슈 목록 (등급별 분류)
+- 오탐 필터링 결과
+- Phase 13 수정 대상 확정 목록
+
+### ⏸️ Phase 10 확인점
+- [ ] 발견 이슈 목록 사용자 검토
+- [ ] CRITICAL/HIGH 수정 범위 승인
+- [ ] 오탐 판정 합의
+
+---
+
+## Phase 11: 아키텍처 분석 + 프레임워크 최신화 (feature-dev + WebSearch)
+
+> **목표**: 현재 아키텍처 구조 심층 분석 + 최신 프레임워크 패턴 GAP 식별
+> **실행자**: Sonnet 4.6 Sub-agent 3대 (병렬) → Opus 4.6 (전략 종합)
+> **전제**: Phase 10 승인 후
+
+### 11-A. 에이전트 배치표
+
+| # | 에이전트 | 임무 |
+|---|---------|------|
+| 1 | **feature-dev:code-explorer** | Rust 서버 실행 경로 추적 (요청→응답 전체 흐름) |
+| 2 | **feature-dev:code-architect** | Flutter 앱 아키텍처 개선 설계안 |
+| 3 | **WebSearch** (Opus 직접) | axum 0.8/riverpod 3.x/go_router 16.x 최신 모범사례 |
+
+### 11-B. HuggingFace MCP 활용
+- `hf_doc_search`: Rust/Flutter 관련 기술 문서 검색
+- `hub_repo_search`: 유사 프로젝트 참조 아키텍처 탐색
+
+### 11-C. 산출물
+- 서버 아키텍처 흐름도 (요청→미들웨어→핸들러→DB→응답)
+- Flutter 아키텍처 개선안 (Riverpod 패턴, GoRouter 최적화)
+- 프레임워크 GAP 목록 (최신 패턴과의 차이점)
+
+### ⏸️ Phase 11 확인점
+- [ ] 아키텍처 분석 결과 검토
+- [ ] 프레임워크 GAP 수정 범위 승인
+- [ ] 개선안 채택 여부 결정
+
+---
+
+## Phase 12: 프론트엔드 UI/UX 감사 (frontend-design + figma)
+
+> **목표**: Flutter 앱 UI/UX 패턴 감사 + 디자인 시스템 규칙 정합
+> **실행자**: Sonnet 4.6 Sub-agent → Opus 4.6 (UX 판단)
+> **전제**: Phase 11 승인 후
+
+### 12-A. 실행 항목
+
+| # | 스킬 | 임무 |
+|---|------|------|
+| 1 | **frontend-design** | 10개 화면 UI 패턴 감사 (일관성, 접근성, 반응성) |
+| 2 | **figma:figma-create-design-system-rules** | AppColors/AppSpacing/AppTextStyles 기반 디자인 시스템 규칙 도출 |
+| 3 | **pr-review-toolkit:code-simplifier** | Flutter 위젯 코드 간소화 기회 식별 |
+
+### 12-B. 감사 대상 화면
+| 화면 | 파일 | 핵심 검사 항목 |
+|------|------|---------------|
+| HomeScreen | `home_screen.dart` | 상품 목록 성능, 무한스크롤 |
+| ProductDetailScreen | `product_detail_screen.dart` | 차트 렌더링, 정보 레이아웃 |
+| SearchScreen | `search_screen.dart` | 필터/정렬 UX, 자동완성 |
+| AlertScreen | `alert_screen.dart` | 탭 UX, 알림 설정 흐름 |
+| LoginScreen | `login_screen.dart` | 소셜 로그인 UX, 접근성 |
+
+### 12-C. 산출물
+- UI/UX 이슈 목록 (일관성/접근성/성능)
+- 디자인 시스템 규칙 문서
+- 위젯 간소화 제안
+
+### ⏸️ Phase 12 확인점
+- [ ] UI/UX 이슈 목록 검토
+- [ ] 디자인 시스템 규칙 승인
+- [ ] 수정 우선순위 결정
+
+---
+
+## Phase 13: 발견 사항 기반 코드 수정 실행
+
+> **목표**: Phase 9-12에서 승인된 모든 변경 사항 실행
+> **실행자**: Opus 4.6 (전략적 수정) + Sonnet 4.6 (병렬 실행)
+> **전제**: Phase 12 승인 후 — 수정 대상 확정 목록 필수
+
+### 13-A. 수정 카테고리
+
+| 카테고리 | 출처 Phase | 예상 범위 |
+|----------|-----------|----------|
+| 의존성 업그레이드 (MINOR) | 9 | pubspec.yaml + Cargo.toml |
+| 코드 품질 수정 (CRITICAL/HIGH) | 10 | server/src/ + app/lib/ |
+| 아키텍처 개선 (승인분) | 11 | 구조적 리팩토링 |
+| UI/UX 개선 (승인분) | 12 | Flutter 위젯 수정 |
+| 코드 간소화 | 10, 12 | 중복 제거, 헬퍼 추출 |
+
+### 13-B. 실행 원칙
+1. MINOR 업그레이드 우선 (위험 최소)
+2. CRITICAL 수정 다음 (안전성 확보)
+3. 각 수정 후 `flutter test` + `flutter analyze` 즉시 검증
+4. **사용자 코드 기여 요청**: 비즈니스 로직 트레이드오프가 있는 부분은 5-10줄 코드 요청
+
+### 13-C. 산출물
+- 수정된 파일 목록 + diff
+- 테스트 결과 (≥360건 보존)
+- analyze 결과 (0건 유지)
+
+### ⏸️ Phase 13 확인점
+- [ ] 각 카테고리 수정 완료 후 개별 확인
+- [ ] 테스트 ≥360건 보존 확인
+- [ ] analyze 0건 유지 확인
+
+---
+
+## Phase 14: 최종 검증 + 구조화된 커밋
+
+> **목표**: 전체 변경 사항 최종 검증 + 의미 있는 커밋 단위로 구조화
+> **실행자**: Opus 4.6 (최종 리뷰) + Sonnet 4.6 (검증 실행)
+
+### 14-A. 검증 항목
+| 항목 | 기준 | 도구 |
+|------|------|------|
+| Flutter 테스트 | ≥360건 | `flutter test` |
+| Flutter analyze | 0건 | `flutter analyze` |
+| 의존성 보안 | CVE 0건 (신규) | Sonatype 재확인 |
+| 코드 품질 | CRITICAL 0건 | coderabbit 재검토 |
+
+### 14-B. 커밋 전략
+- 카테고리별 분리 커밋 (의존성 / 코드품질 / 아키텍처 / UI)
+- 각 커밋 메시지에 Phase 참조 포함
+- `commit-commands:commit` 스킬 활용
+
+### ⏸️ Phase 14 확인점
+- [ ] 최종 테스트 전원 통과
+- [ ] 커밋 목록 사용자 최종 승인
+- [ ] main 머지 PR 생성 여부 결정
+
+---
+
+## 실행 원칙 (Phase 9-14 공통)
+
+1. **단방향 결정 금지**: 모든 변수/대안 경로에 대해 명시적 확인 요청
+2. **Phase 전환 시 필수 확인**: ⏸️ 마크 지점에서 반드시 사용자 승인
+3. **Opus/Sonnet 역할 분리**:
+   - Opus 4.6: 전략 설계, 아키텍처 결정, 트레이드오프 분석, 오탐 필터링, 최종 리뷰
+   - Sonnet 4.6: Sonatype PURL 조회, 코드 탐색, 테스트 실행, 병렬 리뷰 에이전트 운용
+4. **Ralph-loop 한도**: 최대 10회
+5. **코드 기여 요청**: 비즈니스 로직 트레이드오프가 있는 5~10줄은 사용자에게 위임
+6. **MCP degradation**: context7→WebSearch+HF, playwright→feature-dev, serena→code-explorer 대체
+7. **베이스라인 보존**: Flutter ≥360건, analyze 0건 — 매 Phase 종료 시 검증

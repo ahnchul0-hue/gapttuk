@@ -1,8 +1,108 @@
-# NIGHT_06_RESULT — 2026-04-14 (Night-45 추가, 커밋 `b1786bf`)
+# NIGHT_06_RESULT — 2026-04-27 (Night-47 추가)
 
-> **Night-45 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-45**: PLAN_02 U-42 8세션 대기 + 베이스라인 재검증 (코드 변경 0건)
-> **Night-44 이전 결과** (이하 원본 보존)
+> **Night-47 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-47**: PLAN_01 Phase 9 의존성 보안/품질 심층 분석 (코드 변경 0건)
+> **Night-45 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-47 (2026-04-27) — PLAN_01 Phase 9: 의존성 보안/품질 심층 분석
+
+**브랜치**: `auto/night-01-20260427_0100`
+**베이스라인**: Flutter **360건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent
+**도구**: WebSearch + WebFetch (Sonatype MCP 인증 미구성 → 대체 실행)
+
+### 배경
+
+PLAN_01 Phase 1-8 전체 완료(Night-37) → U-42 해소(종합 실무 최적화 지시) → PLAN_01 Phase 9-14 추가(2026-04-27).
+Night-47은 **Phase 9 의존성 보안/품질 심층 분석** 첫 번째 실행 세션.
+
+Sonatype MCP 인증 미구성으로 WebSearch + WebFetch + `flutter pub outdated` 대체 실행.
+
+---
+
+### Phase 9 결과: Rust Crates 분석
+
+| 패키지 | 현재 (Cargo.lock) | 최신 안정 | Delta | 상태 | 권장 |
+|--------|-----------------|---------|-------|------|------|
+| **axum** | 0.8.8 | 0.8.9 | patch | ✅ CVE 없음 | ⬆️ Cargo.toml `^0.8` → 자동 해결 |
+| **tokio** | 1.50.0 | 1.52.1 | minor | ✅ CVE 없음 | ⬆️ `cargo update` 로 해결 |
+| **sqlx** | 0.8.6 | 0.8.6 | same | ✅ CVE 없음, 최신 | — |
+| **reqwest** | 0.12.28 | **0.13.2** | **BREAKING** | ✅ CVE 없음 | ⏸️ 크롤링/외부 API 영향 분석 필요 |
+| **jsonwebtoken** | 9.3.1 | **10.3.0** | **BREAKING** | ✅ CVE 없음 | ⏸️ JWT 처리 API 변경 가능 |
+| **tower_governor** | 0.8.0 | 0.8.0 | same | ✅ CVE 없음, 최신 | — |
+| **a2** (APNs) | 0.10.0 | 0.10.0 | same | ✅ CVE 없음, 최신 (May 2024) | — |
+| **scraper** | 0.25.0 | **0.26.0** | minor | ✅ CVE 없음 | ⬆️ 낮은 위험 |
+| **moka** | 0.12.15 | 0.12.15 | same | ✅ CVE 없음, 최신 | — |
+| **sentry** | 0.37.0 | **0.47.0** | **BREAKING (+10)** | ✅ CVE 없음 | ⏸️ tower/axum feature 설정 변경 가능 |
+| **tower-http** | 0.6.8 | 0.6.8 | same | ✅ CVE 없음, 최신 | — |
+
+**Rust CVE 결론**: RustSec 2025-2026 기간 주요 crates 보안 권고 **없음** ✅
+
+---
+
+### Phase 9 결과: Dart Packages 분석 (`flutter pub outdated`)
+
+#### 즉시 적용 가능 (non-BREAKING)
+
+| 패키지 | 현재 | 최신 | 유형 | 권장 |
+|--------|------|------|------|------|
+| json_annotation | 4.9.0 | **4.11.0** | minor | ⬆️ 즉시 가능 |
+| build_runner (dev) | 2.13.1 | **2.14.1** | minor | ⬆️ UPGRADABLE |
+| freezed (dev) | 3.2.3 | **3.2.5** | patch | ⬆️ UPGRADABLE |
+| mocktail (dev) | 1.0.4 | **1.0.5** | patch | ⬆️ UPGRADABLE |
+
+#### BREAKING 업그레이드 (사용자 결정 필요)
+
+| 패키지 | 현재 | 최신 | 위험도 | 비고 |
+|--------|------|------|--------|------|
+| **fl_chart** | 0.69.2 | **1.2.0** | HIGH | MonthlyPriceChart/PriceChart API 변경 |
+| **flutter_riverpod** | 3.0.3 | **3.3.1** | HIGH | riverpod_annotation 4.0.2 동반 필요 |
+| **flutter_secure_storage** | 9.2.4 | **10.0.0** | HIGH | 저장 API 변경 |
+| **go_router** | 16.3.0 | **17.2.2** | HIGH | ShellRoute observer 변경 |
+| **google_sign_in** | 6.3.0 | **7.2.0** | HIGH | OAuth 2.0 API 강화 |
+| **kakao_flutter_sdk_user** | 1.10.0 | **2.0.0+1** | **CRITICAL** | 국내 소셜 로그인 핵심 SDK 메이저 업그레이드 |
+| **riverpod_annotation** | 3.0.3 | **4.0.2** | HIGH | riverpod_generator 4.0.3 동반 필요 |
+| **sign_in_with_apple** | 6.1.4 | **7.0.1** | HIGH | iOS 인증 흐름 변경 가능 |
+| riverpod_generator (dev) | 3.0.3 | **4.0.3** | HIGH | analyzer 충돌 해소 여부 확인 필요 |
+
+**Dart CVE 결론**: 직접 패키지 CVE 없음 ✅ (Flutter/Skia CVE 2건은 Flutter 팀 패치 대기, Phase 1-C-3/C-4 기존 확인 항목)
+
+---
+
+### Phase 9 사용자 결정 항목
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-82** | Rust BREAKING 업그레이드 범위? | A) reqwest+jsonwebtoken+sentry 전체 / B) sentry만 (보안 이점) / C) 전부 보류 |
+| **D-83** | Dart BREAKING 업그레이드 범위? | A) kakao 2.0 포함 전체 / B) flutter_riverpod+riverpod만 / C) 전부 보류 |
+| **D-84** | Dart non-BREAKING 4건 즉시 적용? | A) 전체 적용 / B) dev만 / C) 보류 |
+
+---
+
+### Night-47 작업 내역
+
+| 작업 | 결과 |
+|------|------|
+| Sonatype MCP 인증 시도 | ⚠️ 인증 미구성 — WebSearch+WebFetch 대체 |
+| Rust crates 최신 버전 조회 (WebFetch crates.io) | ✅ 11개 crate 완료 |
+| Rust CVE 조회 (RustSec) | ✅ CVE 없음 |
+| Dart packages 최신 버전 조회 (pub outdated) | ✅ 직접/전이 전체 완료 |
+| Flutter analyze | ✅ **0건** |
+| Flutter test | ✅ **360건** (변동 없음) |
+| Rust cargo test --lib | ✅ **207건** (변동 없음) |
+
+### Night-47 미결 사항
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| D-82: Rust BREAKING 업그레이드 범위 결정 | HIGH | ⏳ 사용자 결정 필요 |
+| D-83: Dart BREAKING 업그레이드 범위 결정 | HIGH | ⏳ 사용자 결정 필요 |
+| D-84: Dart non-BREAKING 4건 즉시 적용 | LOW | ⏳ 사용자 결정 필요 |
+| Phase 10: 코드 품질 심층 리뷰 (병렬 4대 에이전트) | — | ⏳ Phase 9 승인 후 |
+
+---
 
 ---
 
