@@ -15,7 +15,7 @@
 > **Night-44 커밋**: N/A (코드 변경 없음 — 종합 분석 세션)
 > **Night-45 커밋**: `b1786bf` (MORNING_BRIEFING Night-44 반영 + Night-45 결과) + `0157f99` (해시 갱신)
 > **Night-46 커밋**: TBD (Night-13~45 종합 분석 + MORNING_BRIEFING Night-46 반영)
-> **Night-47 커밋**: TBD (Phase 9 의존성 분석 + MORNING_BRIEFING Night-47 반영)
+> **Night-47 커밋**: `f605793` (Phase 9 의존성 분석 + MORNING_BRIEFING Night-47 반영)
 
 ---
 
