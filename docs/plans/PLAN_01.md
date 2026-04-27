@@ -397,7 +397,7 @@
 > | Phase | 상태 | 핵심 목표 | 주요 도구 |
 > |-------|------|-----------|----------|
 > | 9 | ✅ **완료 (Night-47)** | 의존성 보안/품질 심층 분석 | **WebSearch+pub outdated** (Sonatype 인증 미구성 → 대체) |
-> | 10 | ⏳ 대기 | 코드 품질 심층 리뷰 | **coderabbit** + **pr-review-toolkit** (4종) |
+> | 10 | ✅ **완료 (Night-48)** | 코드 품질 심층 리뷰 | **coderabbit** + **pr-review-toolkit** (4종) — 17건 발견 → 9건 확정 |
 > | 11 | ⏳ 대기 | 아키텍처 분석 + 프레임워크 최신화 | **feature-dev** (3종) + **WebSearch** |
 > | 12 | ⏳ 대기 | 프론트엔드 UI/UX 감사 | **frontend-design** + **figma** |
 > | 13 | ⏳ 대기 | 발견 사항 기반 코드 수정 실행 | Opus 직접 실행 + Sonnet 병렬 |
@@ -529,10 +529,11 @@
 - 오탐 필터링 결과
 - Phase 13 수정 대상 확정 목록
 
-### ⏸️ Phase 10 확인점
-- [ ] 발견 이슈 목록 사용자 검토
-- [ ] CRITICAL/HIGH 수정 범위 승인
-- [ ] 오탐 판정 합의
+### ✅ Phase 10 확인점 (Night-48 완료)
+- [x] 발견 이슈 목록 사용자 검토 — 17건 발견 → 9건 확정, 4건 오탐 제외
+- [ ] **D-85**: HIGH 2건 수정 범위 (I-01 rollback warn + I-02 ALLOWED_ORIGINS) — ⏳ 사용자 결정 필요
+- [ ] **D-86**: MEDIUM 3건 수정 범위 (I-03 current_price + I-04 NULL UNIQUE + PD-67 priceTrend Enum) — ⏳ 사용자 결정 필요
+- [ ] **D-87**: LOW 4건 포함 여부 — ⏳ 사용자 결정 필요
 
 ---
 

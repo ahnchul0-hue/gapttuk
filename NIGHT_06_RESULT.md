@@ -1,3 +1,99 @@
+# NIGHT_06_RESULT — 2026-04-28 (Night-48 추가)
+
+> **Night-48 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-48**: PLAN_01 Phase 10 코드 품질 심층 리뷰 (병렬 4대 에이전트) — 17건 발견 → 오탐 4건 제외 → 9건 확정
+> **Night-47 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-48 (2026-04-28) — PLAN_01 Phase 10: 코드 품질 심층 리뷰
+
+**브랜치**: `auto/night-01-20260428_0100`
+**베이스라인**: Flutter **360건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent (Phase 10 병렬 에이전트 운용)
+**코드 변경**: **0건** — 분석 전용 세션 (Phase 13에서 수정 예정)
+
+### 배경
+
+Phase 9 (의존성 분석, Night-47) 완료 후, Phase 10 (코드 품질 심층 리뷰)를 실행.
+병렬 4대 에이전트를 동시 배치하여 독립적 관점에서 전체 코드베이스를 감사.
+Night-35 Phase 4 경험(37건 → 5건 수정) 기반으로 오탐 필터링 적용.
+
+---
+
+### Phase 10 에이전트 배치 결과
+
+| 에이전트 | 탐색 범위 | 발견 건수 | 오탐 |
+|---------|---------|---------|------|
+| `pr-review-toolkit:silent-failure-hunter` | `server/src/` 에러 핸들링 | 4건 | 0건 |
+| `pr-review-toolkit:type-design-analyzer` | `server/src/` + `app/lib/` 타입 설계 | 3건 | 0건 |
+| `feature-dev:code-reviewer` | `app/lib/` Flutter 코드 품질 | 5건 | **2건** |
+| `coderabbit:code-reviewer` | 전체 코드베이스 종합 | 5건 | **2건** |
+| **합계** | — | **17건** | **4건** |
+
+---
+
+### Phase 10 이슈 전체 목록 (분류 후)
+
+#### ✅ 실제 수정 대상 (9건)
+
+| # | ID | 파일:라인 | 이슈 | 심각도 | 출처 |
+|---|-----|---------|------|--------|------|
+| 1 | I-01 | `reward_service.rs:381,390` | `tx.rollback().await?` → 표준 warn 패턴 불일치. 정상 no-op 경로에서 rollback 네트워크 오류가 호출자 500으로 전파 | HIGH | Agent1+4 (교차 검증) |
+| 2 | I-02 | `main.rs:486-490` | `ALLOWED_ORIGINS` 잘못된 항목 `filter_map().ok()` 조용히 skip → CORS 설정 오류 운영 중 감지 불가 | HIGH | Agent1 |
+| 3 | I-03 | `ai_prediction_service.rs:63` | `current_price.unwrap_or(0)` → 미크롤링 상품에 0원 예측이 생성·24h 캐시되어 UI 노출 | MEDIUM | Agent1 |
+| 4 | I-04 | `migrations/` products UNIQUE | PostgreSQL NULL ≠ NULL → `ON CONFLICT (mall, ext_id, vendor_item_id)` NULL 포함 시 중복 삽입 허용. `NULLS NOT DISTINCT` 마이그레이션 필요 | MEDIUM | Agent4 |
+| 5 | PD-67 | `app/lib/models/product.dart:20` | `priceTrend: String?` → `PriceTrend` Enum 전환 필요. AlertType(PD-62) 동일 패턴 미적용. 하드코딩 문자열 비교 `product_card.dart` 등 다수 | MEDIUM | Agent2 |
+| 6 | I-06 | `product_service.rs:119-122` | 캐시 에러 `AppError::Internal`로 다운그레이드 → Sentry 스택트레이스 손실 | LOW | Agent1 |
+| 7 | I-07 | `price_chart.dart:33-38` | `avgPrice==null` 필터 후 x 인덱스 연속성 깨짐 → 하단 날짜 레이블 표시 어색 | LOW | Agent3 |
+| 8 | PD-65 | `reward_service.rs:67-74` | `CheckinResult.reward_amount: i16` 도메인 제약(0/1) 타입 미표현. `bool rewarded`로 단순화 고려 | LOW | Agent2 |
+| 9 | PD-66 | `reward_service.rs:77-83` | `PointsInfo` `balance == total_earned - total_spent` 수학적 불변식 미강제 (pub 필드 무방비) | LOW | Agent2 |
+
+#### ❌ 오탐 (4건) — Phase 13 수정 대상 제외
+
+| # | 항목 | 오탐 근거 |
+|---|------|---------|
+| FP-1 | `product_detail_screen.dart` `RadioGroup` 미정의 | Flutter 표준 위젯 (`flutter 3.27+` `radio_group.dart`) — `flutter analyze` 통과 확인 |
+| FP-2 | `my_page_screen.dart:303` `new_balance:0` 잔액 오염 | 서버가 `already_checked_in=true` 시에도 실제 잔액 반환 (`reward_service.rs:161`) — 정상 동작 |
+| FP-3 | `auth_service.rs` referral_code TOCTOU | Night-22에서 재시도 루프(`is_referral_code_collision`) 보호 완료 — 이미 알려진 완료 항목 |
+| FP-4 | `product_service.rs:270` `is_new` 리터럴 비교 | 의도된 구현 (`"가격 추적 대기 중"` placeholder 패턴), 낮은 위험 |
+
+---
+
+### Phase 10 ⏸️ 확인점 — 사용자 검토 필요
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-85** | I-01/I-02 HIGH 이슈 Phase 13에서 즉시 수정? | A) 예 (2건) / B) 보류 |
+| **D-86** | I-03/I-04/PD-67 MEDIUM 3건 Phase 13 선별 수정? | A) 전체 / B) 선택적 / C) 보류 |
+| **D-87** | I-06/I-07/PD-65/PD-66 LOW 4건 Phase 13 포함? | A) 일부 / B) 전부 보류 |
+
+---
+
+### Night-48 작업 내역
+
+| 작업 | 결과 |
+|------|------|
+| 베이스라인 검증 | ✅ Flutter 360건 / Rust 207건 / analyze 0건 |
+| silent-failure-hunter (server/src/) | ✅ 4건 발견 (오탐 0) |
+| type-design-analyzer (server + Flutter) | ✅ 3건 발견 (오탐 0) — PD-65/66/67 |
+| feature-dev:code-reviewer (app/lib/) | ✅ 5건 발견 → 오탐 2건 필터링 |
+| coderabbit:code-reviewer (전체) | ✅ 5건 발견 → 오탐 2건 필터링 |
+| 오탐 교차 검증 | ✅ 4건 오탐 확정 제외 |
+| 코드 변경 | **0건** (Phase 10은 분석 전용) |
+
+### Night-48 미결 사항 → Phase 13 전환 조건
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| D-85: I-01+I-02 HIGH 수정 범위 | HIGH | ⏳ 사용자 결정 필요 |
+| D-86: I-03+I-04+PD-67 MEDIUM 수정 범위 | MEDIUM | ⏳ 사용자 결정 필요 |
+| D-87: LOW 4건 포함 여부 | LOW | ⏳ 사용자 결정 필요 |
+| D-82~D-84: Phase 9 업그레이드 범위 | HIGH | ⏳ 지속 대기 |
+| Phase 11 진입 조건 | — | ⏳ Phase 10 확인점 승인 후 |
+
+---
+
 # NIGHT_06_RESULT — 2026-04-27 (Night-47 추가)
 
 > **Night-47 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
