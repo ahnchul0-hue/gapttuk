@@ -2,6 +2,81 @@
 
 ---
 
+## Night-49 결정 (2026-04-29) — PLAN_01 Phase 11 아키텍처 분석
+
+### D-88: Phase 11 신규 HIGH 이슈 F-08 + Phase 10 HIGH I-01/I-02 수정 범위
+
+**현황**: Phase 11에서 발견된 F-08(401 갱신 실패 시 AuthState 미통보)과 Phase 10의 I-01(rollback warn 패턴), I-02(ALLOWED_ORIGINS 조용한 skip)가 Phase 13 즉시 수정 후보.
+
+**선택지**:
+- A) 전체 즉시 수정 (F-08 + I-01 + I-02 — 3건, 모두 LOW 난이도)
+- B) I-01/I-02만 수정 (F-08은 auth 흐름 변경으로 별도 검토)
+- C) 보류
+
+**권장**: A — 3건 모두 난이도 LOW, 안전성·UX 개선 효과 명확.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-89: F-04 AppSpacing/AppTextStyles 적용 범위
+
+**현황**: Night-36에서 도입된 `AppSpacing`/`AppTextStyles` 상수가 **어떤 화면에서도 사용되지 않음**. 87개 raw 매직넘버(SizedBox, EdgeInsets, TextStyle) 잔존. 설계 드리프트 진행 중.
+
+**선택지**:
+- A) 전체 화면 일괄 적용 (대규모, 테스트 영향 없음)
+- B) 3개 화면 시범 적용 (HomeScreen/ProductDetailScreen/LoginScreen)
+- C) 보류
+
+**권장**: B — 시범 적용으로 패턴 확인 후 나머지 화면 확대.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-90: F-06 productPredictionProvider 타입 안전화
+
+**현황**: `productPredictionProvider` 반환 타입이 `Map<String,dynamic>` — 다른 모든 provider는 강타입 freezed 모델 사용. 타입 안전성 불일치.
+
+**선택지**:
+- A) `PredictionResult` freezed 모델 신규 생성 + provider 타입 변경
+- B) 보류 (기능 정상 동작 중)
+
+**권장**: A — AlertType(PD-62) 패턴과 동일, 타입 안전성 완성.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-91: PD-67 priceTrend String? → PriceTrend Enum 전환
+
+**현황**: `Product.priceTrend: String?` — AlertType(PD-62)에서 동일 패턴이 Night-36에 완료됨. `product_card.dart` 등 다수에서 하드코딩 문자열 비교 잔존.
+
+**선택지**:
+- A) PriceTrend Enum 신규 정의 + Product 모델 재생성 (AlertType PD-62 동일 방식)
+- B) 보류
+
+**권장**: A — Phase 10 확정 이슈(PD-67), AlertType 패턴 재사용으로 난이도 낮음.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-92: Phase 12 (UI/UX 감사) vs Phase 13 (수정 실행) 순서
+
+**현황**: Phase 10+11 합산 18건 이슈(HIGH 3 + MEDIUM 7 + LOW 8). Phase 12 UI/UX 감사를 먼저 하면 더 많은 수정 대상이 도출될 수 있음. Phase 13 먼저 하면 이미 확정된 이슈를 빠르게 해소 가능.
+
+**선택지**:
+- A) Phase 12(UI/UX 감사) 먼저 → 종합 수정 목록 확정 후 Phase 13
+- B) Phase 13(수정 실행) 먼저 → HIGH/MEDIUM 확정 이슈 즉시 해소, Phase 12는 그 다음
+- C) Phase 12+13 병렬 실행 (다른 파일 영역 — 충돌 없음)
+
+**권장**: B — 이미 확정된 HIGH 3건(F-08/I-01/I-02)을 먼저 해소해 안전성 확보. Phase 12는 추가 분석이므로 순서 유연.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
 ## Night-41 결정 (2026-04-11) — U-39 분석 + 베이스라인 검증
 
 ### D-81: SessionEnd hook 실패 원인 규명 (U-39)

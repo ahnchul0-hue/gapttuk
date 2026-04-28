@@ -398,7 +398,7 @@
 > |-------|------|-----------|----------|
 > | 9 | ✅ **완료 (Night-47)** | 의존성 보안/품질 심층 분석 | **WebSearch+pub outdated** (Sonatype 인증 미구성 → 대체) |
 > | 10 | ✅ **완료 (Night-48)** | 코드 품질 심층 리뷰 | **coderabbit** + **pr-review-toolkit** (4종) — 17건 발견 → 9건 확정 |
-> | 11 | ⏳ 대기 | 아키텍처 분석 + 프레임워크 최신화 | **feature-dev** (3종) + **WebSearch** |
+> | 11 | ✅ **완료 (Night-49)** | 아키텍처 분석 + 프레임워크 최신화 | **feature-dev** (3종) + **WebSearch** — Rust 5건+Flutter 8건 신규 GAP, Axum GAP 없음 |
 > | 12 | ⏳ 대기 | 프론트엔드 UI/UX 감사 | **frontend-design** + **figma** |
 > | 13 | ⏳ 대기 | 발견 사항 기반 코드 수정 실행 | Opus 직접 실행 + Sonnet 병렬 |
 > | 14 | ⏳ 대기 | 최종 검증 + 베이스라인 보존 확인 | flutter test + analyze |
@@ -560,10 +560,14 @@
 - Flutter 아키텍처 개선안 (Riverpod 패턴, GoRouter 최적화)
 - 프레임워크 GAP 목록 (최신 패턴과의 차이점)
 
-### ⏸️ Phase 11 확인점
-- [ ] 아키텍처 분석 결과 검토
-- [ ] 프레임워크 GAP 수정 범위 승인
-- [ ] 개선안 채택 여부 결정
+### ✅ Phase 11 확인점 (Night-49 완료)
+- [x] 아키텍처 분석 결과 검토 — Rust 5건 + Flutter 8건 신규 GAP 발견
+- [x] 프레임워크 GAP 분석 — Axum 0.8 GAP 없음 ✅ / Riverpod 3.x AsyncNotifier GAP 확인 ⚠️
+- [ ] **D-88**: F-08(HIGH 401 미리다이렉트) + I-01/I-02 Phase 13 즉시 수정 — ⏳ 사용자 결정 필요
+- [ ] **D-89**: F-04 AppSpacing/AppTextStyles 적용 범위 — ⏳ 사용자 결정 필요
+- [ ] **D-90**: F-06 productPredictionProvider 타입 안전화 — ⏳ 사용자 결정 필요
+- [ ] **D-91**: PD-67 priceTrend String→Enum 전환 — ⏳ 사용자 결정 필요
+- [ ] **D-92**: Phase 12/13 실행 순서 결정 — ⏳ 사용자 결정 필요
 
 ---
 

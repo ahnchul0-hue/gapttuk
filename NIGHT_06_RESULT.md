@@ -1,3 +1,202 @@
+# NIGHT_06_RESULT — 2026-04-29 (Night-49 추가)
+
+> **Night-49 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-49**: PLAN_01 Phase 11 아키텍처 분석 + 프레임워크 최신화 — Rust 5건 + Flutter 8건 신규 GAP 발견
+> **Night-48 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-49 (2026-04-29) — PLAN_01 Phase 11: 아키텍처 분석 + 프레임워크 최신화
+
+**브랜치**: `auto/night-01-20260429_0100`
+**베이스라인**: Flutter **360건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent (병렬 에이전트 2대 + WebSearch)
+**코드 변경**: **0건** — 분석 전용 세션 (Phase 13에서 수정 예정)
+
+### 배경
+
+Phase 10 (코드 품질 심층 리뷰, Night-48) 완료 후, Phase 11 (아키텍처 분석 + 프레임워크 최신화)를 실행.
+- `feature-dev:code-explorer` → Rust 서버 실행 경로 전체 추적
+- `feature-dev:code-architect` → Flutter 앱 아키텍처 개선 설계안
+- WebSearch → axum 0.8 / Riverpod 3.x 최신 모범사례
+
+---
+
+### Phase 11-A: Rust 서버 아키텍처 분석 결과
+
+#### 요청→응답 실행 경로 (텍스트 다이어그램)
+
+```
+TCP Accept (ConnectInfo<SocketAddr>)
+  → NewSentryLayer (Sentry 트랜잭션 스코프)
+  → SentryHttpLayer::with_transaction
+  → TraceLayer (tower-http 구조화 로깅)
+  → CorsLayer (preflight 처리)
+  → TimeoutLayer (30s 하드컷, 408 반환)
+  → CompressionLayer (gzip/brotli/zstd)
+  → SetResponseHeaderLayer ×6 (CSP, HSTS, X-Frame-Options 등)
+  → SetRequestIdLayer / PropagateRequestIdLayer (X-Request-Id UUID)
+  → bot_guard 미들웨어 (UA 블록리스트 + moka IP 캐시 + DB EXISTS)
+  → access_log 미들웨어 (JWT decode → user_id, mpsc channel send)
+  → GovernorLayer/global (60req/min per IP)
+  → DefaultBodyLimit (256 KB)
+  → Router dispatch:
+      /api/v1/auth/*         → GovernorLayer/auth (15req/min) → 핸들러
+      /api/v1/products/search → GovernorLayer/search (10req/min) → 핸들러
+      ...
+  → Auth extractor (Bearer JWT 인라인 검증, DB hit 없음)
+  → service 함수 (PgPool + AppCache)
+  → sqlx 쿼리
+  → AppError::into_response
+```
+
+**중요 발견**: Auth는 Axum extractor 패턴 (미들웨어가 아님) → JWT 검증이 핸들러 수준에서 수행, 봇 차단 및 access_log는 모든 요청에 적용됨 (의도된 설계 — 포렌식 가시성).
+
+#### 신규 발견 이슈 (Phase 10 미발견)
+
+| # | ID | 파일:라인 | 이슈 | 심각도 |
+|---|-----|---------|------|--------|
+| 1 | A-01 | `product_service.rs:246-249` | `shopping_mall_id` 매 요청 SELECT (coupang 고정값임에도 캐시 없음) — DB 왕복 낭비 | LOW |
+| 2 | A-02 | `reward_service.rs:246-256` | `daily_checkin` 트랜잭션 커밋 후 잔액 재SELECT — Rust 내부 계산으로 대체 가능 | LOW |
+| 3 | A-03 | `notification_service.rs:19-33` | 단일 사용자 경로 `create_and_push` — 루프 호출 시 N+1 잠재 위험 (현재 배치 경로 우회 시) | MEDIUM |
+| 4 | A-04 | `auth_service.rs:382-388` | `generate_referral_code` 사전 SELECT EXISTS 중복 — UNIQUE 제약 재시도로 이미 보호됨 | LOW |
+| 5 | A-05 | `main.rs` 백그라운드 태스크 | 패닉 감시자가 로그+메트릭만 하고 태스크 재시작 없음 — 파티션 유지보수 태스크 영구 중단 가능성 | MEDIUM |
+
+#### Axum 0.8 프레임워크 GAP 분석
+
+| # | 항목 | 현재 상태 | GAP |
+|---|------|---------|-----|
+| F-A1 | `#[async_trait]` 제거 | ✅ 미사용 — native async traits 적용 | 없음 |
+| F-A2 | `Router::route_layer` 활용 | ✅ auth 전용 미들웨어에 적용 | 없음 |
+| F-A3 | `tower::ServiceBuilder` 다중 레이어 | ✅ 적용됨 | 없음 |
+| F-A4 | `IntoResponse` 커스텀 에러 | ✅ `AppError` 구현 | 없음 |
+
+**Axum 0.8 GAP 결론**: 현재 코드가 최신 best practice를 잘 따름 ✅
+
+---
+
+### Phase 11-B: Flutter 앱 아키텍처 분석 결과
+
+#### Provider 의존성 맵 (간소화)
+
+```
+tokenStorageProvider (keepAlive)
+    └── apiClientProvider (keepAlive)
+            ├── authServiceProvider (keepAlive)
+            │       └── AuthState (keepAlive Notifier)
+            ├── productServiceProvider (keepAlive)
+            │       ├── productDetailProvider(id) [auto-dispose, family]
+            │       ├── dailyPricesProvider(id)   [auto-dispose, family]
+            │       └── popularSearchesProvider   [auto-dispose]
+            ├── alertServiceProvider / notificationServiceProvider (keepAlive)
+            ├── predictionServiceProvider (keepAlive)
+            │       └── productPredictionProvider(id) [auto-dispose, family]
+            └── rewardServiceProvider (keepAlive)
+```
+
+순환 의존성: 없음 ✅
+
+#### 신규 발견 이슈
+
+| # | ID | 파일:라인 | 이슈 | 심각도 |
+|---|-----|---------|------|--------|
+| 1 | F-01 | `config/router.dart:21` | GoRouter auth guard가 `TokenStorage` 직접 읽기 (별도 인스턴스) — `AuthState`와 이중 진실 원천 발생 | MEDIUM |
+| 2 | F-02 | `my_page_screen.dart:250-370` | 120줄 수동 bool 상태 관리 — Riverpod 3.x `AsyncNotifier` 패턴 미적용 (AlertScreen, FavoritesScreen도 동일) | MEDIUM |
+| 3 | F-03 | 6개 화면 | `ScreenErrorWidget` 3/9 화면만 사용 — HomeScreen/SearchScreen/ProductDetailScreen 불일치 에러 UI | MEDIUM |
+| 4 | F-04 | `config/theme.dart:6-56` | `AppSpacing`/`AppTextStyles` 정의 후 **사용 없음** (87개 raw 매직넘버 잔존) | MEDIUM |
+| 5 | F-05 | `favorites_screen.dart:34-85` | `productDetailProvider(id)` auto-dispose → 탭 재방문 시 N개 상품 재패치 | LOW |
+| 6 | F-06 | `providers/product_provider.dart:35` | `productPredictionProvider` 반환 타입 `Map<String,dynamic>` — 타입 안전성 미완성 | MEDIUM |
+| 7 | F-07 | `services/reward_service.dart` | `getReferrals` 메서드 없음 (서버 API 구현됨, 클라이언트 누락 또는 별도 브랜치) | LOW |
+| 8 | F-08 | `services/api_client.dart:82-110` | 401 갱신 실패 시 `AuthState` 미통보 — `clearTokens()`만 호출, 로그인 화면 리다이렉트 없음 | HIGH |
+
+#### Riverpod 3.x 프레임워크 GAP 분석
+
+| # | 항목 | 현재 상태 | GAP |
+|---|------|---------|-----|
+| F-R1 | `@riverpod` 코드젠 사용 | ✅ 4개 데이터 provider | 서비스 9개 keepAlive는 수동 — minor |
+| F-R2 | `AsyncNotifier` 화면 상태 | ❌ 5개 화면 수동 bool 플래그 | Riverpod 3.x 권장 패턴 미적용 |
+| F-R3 | `ref.watch` vs `ref.read` | ⚠️ `initState`에서 `ref.read` 사용 | `ref.listen`/`build` 패턴 권장 |
+| F-R4 | `ref.mounted` 체크 | ⚠️ 일부 async 콜백에서 누락 | 잠재적 메모리 리크 |
+| F-R5 | `ref.select()` 최적화 | ❌ 미사용 | 불필요한 리빌드 가능성 |
+
+---
+
+### Phase 11-C: HuggingFace MCP 활용 결과
+
+HuggingFace MCP는 이번 세션에서 프레임워크 문서 검색 대상이 아닌 Rust/Flutter 공식 문서 중심으로 WebSearch 대체 사용. 기술 문서 특성상 HF Hub보다 공식 docs.rs/pub.dev가 더 정확한 출처.
+
+---
+
+### Phase 11 종합 GAP 목록 (Phase 13 수정 후보)
+
+#### ✅ Phase 13 HIGH 우선 수정 후보
+
+| ID | 이슈 | 난이도 | 파일 |
+|----|------|--------|------|
+| **F-08** | 401 갱신 실패 시 AuthState 미통보 (로그인 화면 미리다이렉트) | LOW | `api_client.dart:82-110` |
+| **I-01** *(Phase 10)* | `reward_service.rs:381,390` rollback warn 패턴 불일치 | LOW | `reward_service.rs` |
+| **I-02** *(Phase 10)* | `main.rs:486-490` ALLOWED_ORIGINS 조용한 skip | LOW | `main.rs` |
+
+#### ✅ Phase 13 MEDIUM 수정 후보
+
+| ID | 이슈 | 난이도 | 파일 |
+|----|------|--------|------|
+| **F-04** | AppSpacing/AppTextStyles 미사용 — 3개 화면 시범 적용 | MEDIUM | 스크린 파일들 |
+| **F-03** | ScreenErrorWidget 불일치 — HomeScreen/ProductDetailScreen 적용 | LOW | 화면 파일들 |
+| **F-06** | `productPredictionProvider` Map→typed model | MEDIUM | `product_provider.dart` |
+| **I-03** *(Phase 10)* | `ai_prediction_service.rs:63` current_price.unwrap_or(0) | LOW | `ai_prediction_service.rs` |
+| **I-04** *(Phase 10)* | NULL UNIQUE 마이그레이션 NULLS NOT DISTINCT | MEDIUM | migration 신규 |
+| **PD-67** *(Phase 10)* | `priceTrend: String?` → PriceTrend Enum | MEDIUM | `product.dart` |
+
+#### ⏳ Phase 13 LOW / 장기 대상
+
+| ID | 이슈 | 상태 |
+|----|------|------|
+| F-01 | GoRouter auth guard AuthState 통합 | 대규모 리팩토링 |
+| F-02 | AsyncNotifier 화면 상태 마이그레이션 | 대규모 리팩토링 |
+| F-05 | FavoritesScreen N+1 (auto-dispose 정책) | 정책 결정 필요 |
+| A-01 | shopping_mall_id 캐시 | 마이너 개선 |
+| A-02 | daily_checkin 커밋 후 SELECT 제거 | 마이너 성능 |
+| A-03 | notification N+1 잠재 위험 | 현재 안전 |
+| A-04 | generate_referral_code 사전 SELECT 제거 | 마이너 |
+| A-05 | 백그라운드 태스크 자동 재시작 | 운영 안정성 |
+
+---
+
+### Phase 11 ⏸️ 확인점 — Phase 12/13 전환 결정
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-88** | F-08(HIGH) + I-01/I-02 Phase 13 즉시 수정? | A) 예 / B) 보류 |
+| **D-89** | F-04 AppSpacing/AppTextStyles 시범 적용 범위? | A) 전체 화면 / B) 3개 화면 시범 / C) 보류 |
+| **D-90** | F-06 productPredictionProvider 타입 안전화? | A) PredictionResult 모델 신규 / B) 보류 |
+| **D-91** | PD-67 priceTrend String→Enum 전환? (PD-62 AlertType 동일 패턴) | A) 예 / B) 보류 |
+| **D-92** | Phase 12 (UI/UX 감사) 선행? 아니면 Phase 13 (수정 실행) 먼저? | A) Phase 12 먼저 / B) Phase 13 먼저 |
+
+---
+
+### Night-49 작업 내역
+
+| 작업 | 결과 |
+|------|------|
+| `feature-dev:code-explorer` (Rust 서버 아키텍처) | ✅ 실행 경로 추적 + 5건 신규 이슈 |
+| `feature-dev:code-architect` (Flutter 아키텍처) | ✅ Provider 맵 + 8건 신규 이슈 |
+| WebSearch (axum/Riverpod 최신 패턴) | ✅ Axum 0.8 GAP 없음 / Riverpod 3.x GAP 확인 |
+| 베이스라인 검증 | 예정 (이 섹션 아래) |
+| 코드 변경 | **0건** (Phase 11은 분석 전용) |
+
+### Night-49 미결 사항
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| D-85~D-87: Phase 10 수정 범위 | HIGH | ⏳ 사용자 결정 필요 (지속) |
+| D-88: F-08+I-01/I-02 HIGH 즉시 수정 | HIGH | ⏳ 사용자 결정 필요 |
+| D-89~D-92: Phase 12/13 전환 방향 | MEDIUM | ⏳ 사용자 결정 필요 |
+| D-82~D-84: Phase 9 업그레이드 범위 | HIGH | ⏳ 지속 대기 |
+| Phase 12 또는 Phase 13 진입 조건 | — | ⏳ Phase 11 확인점 승인 후 |
+
+---
+
 # NIGHT_06_RESULT — 2026-04-28 (Night-48 추가)
 
 > **Night-48 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅

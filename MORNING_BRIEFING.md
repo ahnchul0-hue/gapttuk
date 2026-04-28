@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-04-27 (Night-13 ~ Night-47 종합 분석)
+# MORNING BRIEFING — 2026-04-29 (Night-13 ~ Night-49 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-47 (2026-03-12 ~ 2026-04-27)
-> **현재 브랜치**: `auto/night-01-20260427_0100`
+> **분석 대상**: Night-13 ~ Night-49 (2026-03-12 ~ 2026-04-29)
+> **현재 브랜치**: `auto/night-01-20260429_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-04-27 (Night-47 결과 통합 — **PLAN_01 Phase 9 의존성 분석 완료 + U-42 해소 + D-82~D-84 사용자 결정 대기**)
-> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-27 실측, Night-47 코드 변경 없음)
+> **최종 업데이트**: 2026-04-29 (Night-49 결과 통합 — **PLAN_01 Phase 11 아키텍처 분석 완료 + D-88~D-92 사용자 결정 대기**)
+> **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-29 실측, Night-49 코드 변경 없음)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -16,6 +16,8 @@
 > **Night-45 커밋**: `b1786bf` (MORNING_BRIEFING Night-44 반영 + Night-45 결과) + `0157f99` (해시 갱신)
 > **Night-46 커밋**: TBD (Night-13~45 종합 분석 + MORNING_BRIEFING Night-46 반영)
 > **Night-47 커밋**: `f605793` (Phase 9 의존성 분석 + MORNING_BRIEFING Night-47 반영) + `e84089b` (해시 갱신)
+> **Night-48 커밋**: `f2319d5` (Phase 10 코드 품질 심층 리뷰 + MORNING_BRIEFING Night-48 반영) + `0315310` (해시 갱신)
+> **Night-49 커밋**: TBD (Phase 11 아키텍처 분석 + MORNING_BRIEFING Night-49 반영)
 
 ---
 
@@ -510,16 +512,19 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 25. **재기동(Restart) 패턴** (Night-47): Autonomy Ceiling 9세션 후 사용자 지시로 Phase 9 즉시 실행 — 정체 세션의 축적된 분석(도구 매트릭스, PLAN_02 초안)이 재기동 즉시 활용됨
 26. **Phase 확장(9-14) 계획 수립** (Night-47): 기존 PLAN_01 8-Phase 구조를 계승하되, Phase 9-14로 신규 6개 Phase 추가 — 도구 가용성 실측 기반 현실적 계획
 27. **Sonatype MCP 25세션 대체 패턴 안정화** (Night-47): 인증 미구성 상태로도 WebSearch+pub outdated+cargo metadata 조합이 보안/버전 분석에 충분 — MCP 의존도를 낮추는 전략적 유연성
+28. **4대 병렬 에이전트 코드 품질 감사** (Night-48): Phase 4(3대, Night-35) → Phase 10(4대, Night-48) — 동일 코드베이스에 대한 2차 감사로 잔존 이슈 발굴. Night-35 오탐률 ~16% → Night-48 ~24% (코드베이스 성숙에 따른 오탐 비율 자연 상승)
+29. **Phase 간 연계 발견 추적** (Night-48): PD-67(priceTrend Enum)은 Night-36 PD-62(AlertType Enum) 선례 존재 — Phase 4→5에서 발견→해소된 패턴을 Phase 10→13에서 반복 적용 가능
+30. **10세션 연속 코드 변경 0건** (Night-40~48): 분석/문서/리뷰 세션이 코드 변경 세션과 분리 — Phase 13(수정 실행)까지 축적된 분석이 한꺼번에 실행되는 "축적→폭발" 패턴
 
 ### 1.13 의사결정 일관성
 
-- **총 84개 결정** (D-1 ~ D-84) — Night-47에서 D-82(Rust BREAKING 범위), D-83(Dart BREAKING 범위), D-84(Dart non-BREAKING 즉시 적용) 추가
+- **총 87개 결정** (D-1 ~ D-87) — Night-48에서 D-85(Phase 10 HIGH 수정), D-86(MEDIUM 수정 범위), D-87(LOW 포함 여부) 추가
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
 - DEFERRED: 2건 (D-39: E2E 테스트, D-78: go_router 16→17 보류) — ~~PD-62: Night-36에서 해소~~
 - DIAGNOSED: 1건 (D-81: SessionEnd hook — 사용자 방향 결정 대기)
-- **PENDING (사용자 결정 대기)**: 3건 (D-82: Rust BREAKING 범위, D-83: Dart BREAKING 범위, D-84: Dart non-BREAKING 즉시 적용)
+- **PENDING (사용자 결정 대기)**: 6건 (D-82~D-84: 업그레이드 범위, D-85~D-87: Phase 10 수정 범위)
 - **나머지 71건: IMPLEMENTED 유지** (Night-37에서 D-78~D-79 추가)
 
 ---
@@ -565,6 +570,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **45** | **Sonnet 4.6 Sub-agent (문서)** | **프로덕션 코드 변경 0건** | **360건 유지** | **PLAN_02 U-42 8세션 대기 + 베이스라인 재검증 — Night-44 커밋 해시 갱신** |
 | **46** | **Opus 4.6 직접 실행 (종합 분석)** | **프로덕션 코드 변경 0건** | **360건 유지** | **Night-13~45 종합 분석 + MCP 가용성 재점검 + 베이스라인 재검증 — PLAN_02 U-42 9세션 대기** |
 | **47** | **Opus 4.6 (Phase 9 실행) + Sonnet 대체 분석** | **프로덕션 코드 변경 0건** | **360건 유지** | **U-42 해소 → Phase 9 실행: Sonatype MCP 인증 실패(25세션) → WebSearch+pub outdated 대체, Rust 11 crates + Dart 9 packages 분석, CVE 0건, BREAKING Rust 3+Dart 8건, D-82~D-84 도출** |
+| **48** | **Opus 4.6 (Phase 10 실행) + Sonnet ×4 병렬** | **프로덕션 코드 변경 0건** | **360건 유지** | **Phase 10: silent-failure-hunter + type-design-analyzer + feature-dev:code-reviewer + coderabbit:code-reviewer 4대 병렬 → 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 도출** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -577,7 +583,11 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | Silent failure | `pr-review-toolkit:silent-failure-hunter` | Night-35 Phase 4 (15건 발견) | ✅ 완료 (Night-22+35) |
 | 타입 설계 | `pr-review-toolkit:type-design-analyzer` | Night-35 Phase 4 (8개 타입) | ✅ 활성 |
 | 의존성 감사 | `cargo audit` + `cargo update` | Night-24: 7→0건 | ✅ 완료 |
-| 의존성 보안 | Sonatype MCP | Night-31~47: 인증 실패 | ❌ **25세션** 연속 실패 |
+| 코드 리뷰 | `coderabbit:code-reviewer` | Night-48 Phase 10 (4대 병렬 1번째) | ✅ 활성 |
+| 코드 리뷰 | `feature-dev:code-reviewer` | Night-48 Phase 10 (4대 병렬 2번째) | ✅ 활성 |
+| Silent failure | `pr-review-toolkit:silent-failure-hunter` | Night-48 Phase 10 (4대 병렬 3번째) | ✅ 완료 (Night-22+35+48) |
+| 타입 설계 | `pr-review-toolkit:type-design-analyzer` | Night-48 Phase 10 (4대 병렬 4번째) | ✅ 활성 |
+| 의존성 보안 | Sonatype MCP | Night-31~48: 인증 실패 | ❌ **26세션** 연속 실패 |
 | 코드 간소화 | `pr-review-toolkit:code-reviewer` + `pr-review-toolkit:silent-failure-hunter` | Night-37 Phase 7-D 리뷰 | ✅ 활성 |
 | 대체 전략 | WebSearch + RustSec DB + NVD | Night-31~37: 대체 성공 | ✅ 활성 |
 | 외부 참조 | WebSearch + WebFetch | MCP 대체 (D-36:C) | ✅ 활성 |
@@ -811,6 +821,27 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **Rust** | ✅ 0건 | 3건 (reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47) | 3건 (axum 0.8.9, scraper 0.26, tokio 1.52.1) |
 | **Dart** | ✅ 0건 | 8건 (kakao 2.0, riverpod_gen 4.x, go_router 17, fl_chart 1.2, google_sign_in 7.x, sign_in_with_apple 7.x, flutter_secure_storage 10.x, dio 6.x) | 4건 (build_runner, freezed, mocktail, json_annotation) |
 
+### 3.10b Night-48 작업 내역 (커밋 `f2319d5`, `0315310`)
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| Phase 10 코드 품질 심층 리뷰 | `docs/plans/PLAN_01.md` | Phase 10 완료 마킹 + 확인점 업데이트 |
+| 4대 에이전트 병렬 실행 | — | silent-failure-hunter + type-design-analyzer + feature-dev:code-reviewer + coderabbit → 17건 발견 |
+| 오탐 필터링 | — | 4건 제외 (RadioGroup/new_balance/TOCTOU/is_new) → 9건 확정 |
+| MORNING_BRIEFING Night-48 반영 | `MORNING_BRIEFING.md` | Night-48 전략 §1.3 + 성숙도 곡선 갱신 + §2.2 + §3 추가 |
+| NIGHT_06_RESULT Night-48 기록 | `NIGHT_06_RESULT.md` | Night-48 섹션 96줄 추가 — Phase 10 결과 + D-85~D-87 |
+| 베이스라인 재검증 | — | Flutter 360건 ✅ / Rust 207건 ✅ / analyze 0건 ✅ |
+
+**프로덕션 코드 변경: 0건** — Phase 10은 분석 전용 (Night-40~48, **10세션 연속 코드 변경 0건**)
+**테스트 변경: 0건** — 360건 유지
+
+**Night-48 실행 특성:**
+- **Opus 4.6 전략 + Sonnet 4.6 ×4 병렬 에이전트** — Phase 10 계획 수립(Opus) + 코드 리뷰(Sonnet ×4)
+- **MCP/플러그인 활용**: `coderabbit:code-reviewer` + `feature-dev:code-reviewer` + `pr-review-toolkit:silent-failure-hunter` + `pr-review-toolkit:type-design-analyzer` (4대 병렬)
+- **핵심 산출물**: Phase 10 완료 + D-85~D-87 결정 항목 + 9건 확정 이슈 목록
+- **Night-35 Phase 4 대비**: 37건→5건 수정(Night-35) vs 17건→9건 확정(Night-48) — 오탐률 개선 (16%→24%)
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~48, **38회** 누적) — D-81로 원인 규명됨, 사용자 옵션 선택 대기
+
 ### 3.10b Night-46 작업 내역 (커밋 TBD)
 
 | 작업 | 파일 | 내용 |
@@ -1009,23 +1040,27 @@ Night-46: 360건 ──── +0건 (Night-13~45 종합 분석 + MCP 재점검 �
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★ 정체 심화: U-42 9세션 대기 (Night-38~46), 코드 변경 0건 8세션 연속
 Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 0건, 분석 전용. U-42 해소!)
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★ 재기동: U-42 해소 → Phase 9 실행, Rust 3+Dart 8 BREAKING 식별, D-82~D-84 도출
+Night-48: 360건 ──── +0건 (Phase 10 코드 품질 심층 리뷰 — 코드 변경 0건, 4대 병렬 에이전트 분석 전용)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 10 완료: 17건→9건 확정, HIGH 2+MEDIUM 3+LOW 4, D-85~D-87 도출
+Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변경 0건, Rust 서버 실행경로+Flutter Provider맵 분석)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 11 완료: Rust 5건+Flutter 8건 신규 GAP, Axum GAP없음/Riverpod AsyncNotifier GAP, D-88~D-92 도출
 ```
 
 ### 3.17 코드베이스 규모
 
-| 항목 | **Night-47** | Night-46 | Night-45 | 변화 (vs 46) |
+| 항목 | **Night-48** | Night-47 | Night-46 | 변화 (vs 47) |
 |------|-------------|----------|----------|-------------|
 | DB 마이그레이션 (main) | 018 | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-84** | D-81 | D-81 | **+3** (D-82~D-84) |
+| DECISION_LOG 항목 | **D-87** | D-84 | D-81 | **+3** (D-85~D-87) |
 | 순수 함수 추출 누계 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | Silent Failure 수정 | 33건+ (잔존 0건) | 33건+ | 33건+ | — |
-| 프로덕션 코드 수정 (Night-47) | **0건** | 0건 | 0건 | — (분석 전용) |
+| 프로덕션 코드 수정 (Night-48) | **0건** | 0건 | 0건 | — (분석 전용) |
 | Flutter 테스트 | **360건** | 360건 | 360건 | — |
-| 커밋 (main 대비) | **77** | 75+ | 75 | **+2** (`f605793`, `e84089b`) |
-| PLAN_01 Phase 완료 | **8/8 + Phase 9/14** ✅ | 8/8 ✅ | 8/8 ✅ | **Phase 9 완료** |
+| 커밋 (main 대비) | **79** | 77 | 75+ | **+2** (`f2319d5`, `0315310`) |
+| PLAN_01 Phase 완료 | **10/14** (Phase 1-10 ✅) | 9/14 | 8/8 ✅ | **Phase 10 완료** |
 | PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
 
 ### 3.18 순수 함수 추출 목록
@@ -1047,11 +1082,11 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-04-27, Night-47)
+### 4.1 활성 브랜치 (2026-04-28, Night-48)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260427_0100`** ★ | **+77 commits** | Night-13~47 전체 + **PLAN_01 8/8 Phase + Phase 9 완료** + PLAN_02 초안 + D-81 U-39 규명 + Phase 9 의존성 분석 + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260428_0100`** ★ | **+79 commits** | Night-13~48 전체 + **PLAN_01 Phase 1-10 완료** + PLAN_02 초안 + D-81 U-39 규명 + Phase 9 의존성 분석 + Phase 10 코드 품질 리뷰 + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -1063,12 +1098,12 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0414_0100` (30개+) | **Night-46 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0428_0100` (32개+) | **Night-48 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260427_0100 → main (77커밋, PLAN_01 완료 + Phase 9 의존성 분석 + D-63 해소 + PLAN_02 초안 + D-81 + D-82~D-84, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260428_0100 → main (79커밋, PLAN_01 Phase 1-10 완료 + D-63 해소 + PLAN_02 초안 + D-81~D-87, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -1089,7 +1124,7 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | **7** | 코드 간소화 | ✅ **완료** | **37** | **Rust 4헬퍼 + Flutter 2위젯 (~230줄 감소) + 의존성 3건** |
 | **8** | 최종 검증 및 커밋 | ✅ **완료** | **37** | **Flutter 358건 + Rust 207건 + analyze 0 + 구조화된 커밋** |
 | **9** | 의존성 보안/품질 심층 분석 | ✅ **완료** | **47** | **Rust CVE 0/Dart CVE 0 + BREAKING 3+8건 식별 + D-82~D-84 결정 도출** |
-| **10** | 코드 품질 심층 리뷰 | ⏳ 대기 | — | coderabbit + pr-review-toolkit 4대 병렬 예정 |
+| **10** | 코드 품질 심층 리뷰 | ✅ **완료** | **48** | **병렬 4대 에이전트: 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 도출** |
 | **11** | 아키텍처 + 프레임워크 최신화 | ⏳ 대기 | — | feature-dev + WebSearch 예정 |
 | **12** | 프론트엔드 UI/UX 감사 | ⏳ 대기 | — | frontend-design + figma 예정 |
 | **13** | 발견 사항 기반 코드 수정 | ⏳ 대기 | — | Opus 직접 + Sonnet 병렬 예정 |
@@ -1102,6 +1137,30 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | **D-82** | Rust BREAKING 업그레이드 범위? | A) 전체(reqwest/jwt/sentry) B) sentry만 C) 전부 보류 | ⏳ **사용자 결정 대기** |
 | **D-83** | Dart BREAKING 업그레이드 범위? | A) kakao 2.0 포함 전체 B) riverpod만 C) 전부 보류 | ⏳ **사용자 결정 대기** |
 | **D-84** | Dart non-BREAKING 4건 즉시 적용? | A) 전체 B) dev만 C) 보류 | ⏳ **사용자 결정 대기** |
+
+### Phase 10 결정 사항 (D-85~D-87, Night-48)
+
+| ID | 질문 | 선택지 | 상태 |
+|----|------|--------|------|
+| **D-85** | I-01+I-02 HIGH 2건 즉시 수정? | A) Phase 13에서 수정 B) 보류 | ⏳ **사용자 결정 대기** |
+| **D-86** | I-03+I-04+PD-67 MEDIUM 3건 수정 범위? | A) 전체 B) PD-67만 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-87** | LOW 4건 Phase 13 포함? | A) 포함 B) 제외 | ⏳ **사용자 결정 대기** |
+
+### Phase 10 발견 이슈 상세 (Night-48)
+
+| # | ID | 이슈 | 파일:위치 | 심각도 |
+|---|-----|------|----------|--------|
+| 1 | I-01 | `tx.rollback().await?` — rollback warn 표준 패턴 불일치 (2곳) | `reward_service.rs:381,390` | **HIGH** |
+| 2 | I-02 | ALLOWED_ORIGINS 잘못된 항목 조용히 skip | `main.rs:486-490` | **HIGH** |
+| 3 | I-03 | current_price 0원 예측 24h 캐시 노출 | `ai_prediction_service.rs:63` | MEDIUM |
+| 4 | I-04 | NULL 포함 복합 UNIQUE — NULLS NOT DISTINCT 필요 | `products` migration | MEDIUM |
+| 5 | PD-67 | `product.dart:20` priceTrend String? → PriceTrend Enum 전환 필요 | `app/lib/models/product.dart` | MEDIUM |
+| 6 | I-06 | 캐시 에러 다운그레이드 | server | LOW |
+| 7 | I-07 | 차트 x-인덱스 | app | LOW |
+| 8 | PD-65 | 타입 설계 개선 | app | LOW |
+| 9 | PD-66 | 타입 설계 개선 | app | LOW |
+
+**오탐 4건 (제외됨)**: RadioGroup(Flutter 표준 위젯), new_balance 0 덮어쓰기(서버 정상 반환), TOCTOU(Night-22 완료), is_new 리터럴(의도적 설계)
 
 ### Phase 1 미해결 결정 (PD-58~PD-61)
 
@@ -1123,7 +1182,10 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~47 머지 방향 | `auto/night-01-20260427_0100` (77커밋, PLAN_01 Phase 1-9 완료 + D-63 해소 + PLAN_02 초안 + D-81 + Phase 9 의존성 분석, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~48 머지 방향 | `auto/night-01-20260428_0100` (79커밋, PLAN_01 Phase 1-10 완료 + D-63 해소 + PLAN_02 초안 + D-81 + Phase 9-10 분석, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **D-85** | Phase 10 HIGH 2건 수정 | I-01(rollback warn 불일치 2곳) + I-02(ALLOWED_ORIGINS 조용한 실패) | A) Phase 13 수정 B) 보류 |
+| **D-86** | Phase 10 MEDIUM 3건 수정 범위 | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) + PD-67(priceTrend Enum) | A) 전체 B) PD-67만 C) 보류 |
+| **D-87** | Phase 10 LOW 4건 포함 여부 | I-06/I-07/PD-65/PD-66 (캐시 에러/차트 인덱스/타입 설계) | A) 포함 B) 제외 |
 | **D-82** | Rust BREAKING 업그레이드 범위 | Phase 9 발견: reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47 (3건 모두 메이저 API 변경) | A) 전체 B) sentry만 C) 전부 보류 |
 | **D-83** | Dart BREAKING 업그레이드 범위 | Phase 9 발견: kakao 2.0, riverpod_gen 4.x, go_router 17, fl_chart 1.2 외 4건 (인증 플로우 변경 리스크 포함) | A) kakao 2.0 포함 전체 B) riverpod만 C) 전부 보류 |
 | **D-84** | Dart non-BREAKING 4건 즉시 적용 | build_runner, freezed, mocktail, json_annotation (dev dependency 포함) | A) 전체 B) dev만 C) 보류 |
@@ -1145,13 +1207,35 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | # | 항목 | 설명 |
 |---|------|------|
 | **U-39** | SessionEnd hook 수정 | ⚡ **Night-41 원인 규명 완료** — Vercel 플러그인 `session-end-cleanup.mjs` + node 미설치. D-81로 3가지 수정 옵션 문서화. **사용자 선택 대기**: A)Vercel비활성화 B)node설치 C)유지 |
-| **U-38** | Sonatype MCP 인증 설정 | **24세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
+| **U-38** | Sonatype MCP 인증 설정 | **26세션 연속 실패** — 인증 설정하거나 영구 스킵 결정 필요 |
 | **U-35** | RUSTSEC-2026-0049 모니터링 | a2 upstream rustls 0.23 전환 시 audit.toml ignore 제거 필요 |
 | **U-14** | 보류 결정 3건 | D-32(CheckinResult 열거형), D-33(keepAlive), D-35(build_runner) |
 | **U-8** | 다음 로드맵 방향 | AI 예측 고도화 / E2E 테스트 / 인프라 / BREAKING 업그레이드 중 우선순위 |
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | | Flutter 엔진 Skia CVE 모니터링 | CVE-2025-27363 + CVE-2026-3909 — Flutter stable 업데이트 시 즉시 적용 |
+
+---
+
+## 7. Night-48에서 해결/생성된 항목
+
+### ✅ Night-48에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| **PLAN_01 Phase 10 코드 품질 심층 리뷰** | **HIGH** | **병렬 4대 에이전트(silent-failure-hunter + type-design-analyzer + feature-dev:code-reviewer + coderabbit) → 17건 발견 → 오탐 4건 제외 → 9건 확정** |
+| **Night-48 결과 문서화** | **MEDIUM** | **MORNING_BRIEFING + NIGHT_06_RESULT + PLAN_01.md Phase 10 완료 마킹 (커밋 `f2319d5`)** |
+| **베이스라인 재검증** | **LOW** | **Flutter 360건 / Rust 207건 / analyze 0건 — Night-48 실측 확인** |
+
+### 🆕 Night-48에서 생성됨
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **D-85 Phase 10 HIGH 수정** | **CRITICAL** | I-01(rollback warn 불일치 2곳) + I-02(ALLOWED_ORIGINS 조용한 실패) — Phase 13 수정 범위 |
+| **D-86 Phase 10 MEDIUM 수정** | **HIGH** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) + PD-67(priceTrend Enum) — 수정 범위 결정 필요 |
+| **D-87 Phase 10 LOW 포함** | **MEDIUM** | I-06/I-07/PD-65/PD-66 — Phase 13 포함 여부 |
+| **PD-67 priceTrend Enum 전환** | **MEDIUM** | `Product.priceTrend` String? → PriceTrend Enum — AlertType PD-62 선례 존재, Phase 13에서 실행 가능 |
+| **Phase 11~14 실행 대기** | **HIGH** | Phase 10 완료 → D-85~D-87 결정 후 Phase 11(아키텍처) 또는 Phase 13(수정 실행)으로 진행 |
 
 ---
 
@@ -1404,31 +1488,32 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | ~~PLAN_01 Phase 5/7/8~~ | ~~HIGH~~ | ~~**✅ Night-36~37에서 전체 완료**~~ |
 | ~~AlertType String→Enum~~ | ~~HIGH~~ | ~~**PD-62: ✅ Night-36에서 해소**~~ |
 | 미머지 브랜치 4개 통합 | MEDIUM | 충돌 해결 + 머지 순서 결정 필요 |
-| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (24세션 연속) |
+| sonatype-guide 인증 | MEDIUM | 자격증명 필요 (26세션 연속) |
 | RUSTSEC-2026-0049 모니터링 | MEDIUM | a2 upstream 전환 대기 |
 | 통합 테스트 43건 | MEDIUM | 환경 제약 (DB 필요) |
 | ~~`_transactionLabel` default 케이스~~ | ~~LOW~~ | ~~D-63: **✅ Night-39에서 완전 해소** (8/8 + default)~~ |
 | E2E 테스트 | LOW | D-39:B 이연 |
 | auto 브랜치 27개+ 정리 | LOW | 사용자 승인 대기 |
-| SessionEnd hook `node` 미설치 | LOW | **Night-41 원인 규명 완료** — D-81: Vercel plugin hook, **36회** 누적. 옵션 A(비활성화, 권장)/B(설치)/C(유지) **사용자 결정 대기** |
+| SessionEnd hook `node` 미설치 | LOW | **Night-41 원인 규명 완료** — D-81: Vercel plugin hook, **38회** 누적. 옵션 A(비활성화, 권장)/B(설치)/C(유지) **사용자 결정 대기** |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
-| **PLAN_01 Phase 1-9 완료** | **INFO** | **8/8 + Phase 9 완결 — Night-30 수립 → Night-37 Phase 1-8 → Night-47 Phase 9** |
+| **PLAN_01 Phase 1-10 완료** | **INFO** | **8/8 + Phase 9~10 완결 — Night-30 수립 → Night-37 Phase 1-8 → Night-47 Phase 9 → Night-48 Phase 10** |
 | ~~PLAN_02 방향 대기~~ | ~~CRITICAL~~ | ~~사용자 결정 9세션 연속 대기~~ → **✅ Night-47 U-42 해소** |
-| **D-82~D-84 결정 대기** | **CRITICAL** | **Phase 9 → Phase 10 전환 조건 — Rust/Dart BREAKING 업그레이드 범위 사용자 결정 필요** |
+| **D-82~D-84 결정 대기** | **CRITICAL** | **Phase 9 업그레이드 범위 — Rust/Dart BREAKING 범위 사용자 결정 필요** |
+| **D-85~D-87 결정 대기** | **CRITICAL** | **Phase 10 수정 범위 — HIGH 2건 + MEDIUM 3건 + LOW 4건 실행 범위 사용자 결정 필요** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-04-27, Night-47 실측)
+### 8.1 현재 지표 (2026-04-28, Night-48 실측)
 
-| 지표 | **Night-47** | Night-46 | Night-45 | 변화 (vs 46) |
+| 지표 | **Night-48** | Night-47 | Night-46 | 변화 (vs 47) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
 | Flutter 테스트 | **360** ✅ | 360 | 360 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-84** | D-81 | D-81 | **+3** (D-82~D-84) |
-| PLAN_01 Phase 완료 | **9/14** (Phase 1-9 ✅) | 8/8 ✅ | 8/8 ✅ | **Phase 9 완료** |
+| DECISION_LOG | **D-87** | D-84 | D-81 | **+3** (D-85~D-87) |
+| PLAN_01 Phase 완료 | **10/14** (Phase 1-10 ✅) | 9/14 | 8/8 ✅ | **Phase 10 완료** |
 | PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
@@ -1440,7 +1525,7 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | rollback warn 패턴 | **8곳** | 8곳 | 8곳 | — |
-| 커밋 (main 대비) | **77** | 75+ | 75 | **+2** |
+| 커밋 (main 대비) | **79** | 77 | 75+ | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -1469,52 +1554,53 @@ Night-47: 360건 ──── +0건 (Phase 9 의존성 분석 — 코드 변경 
 | sonatype-guide 인증 | **미설정** ⚠️ (25세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **36회** 감지. A/B/C 옵션 대기) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **38회** 감지. A/B/C 옵션 대기) |
 | ~~PLAN_02 방향~~ | **✅ 해소** (U-42: Night-47에서 사용자 지시 → Phase 9 실행) |
-| **Phase 9 → Phase 10 전환** | **대기 중** ⚠️ **(D-82~D-84: BREAKING 업그레이드 범위 사용자 결정 필요)** |
+| **Phase 10 코드 품질 심층 리뷰** | **✅ 완료** (9건 확정: HIGH 2 + MEDIUM 3 + LOW 4) |
+| **Phase 10 → Phase 11/13 전환** | **대기 중** ⚠️ **(D-85~D-87: 수정 범위 + D-82~D-84: BREAKING 업그레이드 범위 사용자 결정 필요)** |
 
 ---
 
-## 9. 다음 세션 선택지 (Phase 9 완료, Phase 10 대기 — Night-47 업데이트)
+## 9. 다음 세션 선택지 (Phase 10 완료, Phase 11 대기 — Night-48 업데이트)
 
-> **PLAN_01 Phase 1-9 완료 + D-63 해소 + U-42 해소 + Phase 9 의존성 분석 완료.**
-> **Night-47: 코드 변경 0건, D-82~D-84 사용자 결정 대기 → Phase 10 전환 조건.**
-> **⚠️ 다음 결정 사항**: (1) D-82~D-84 업그레이드 범위, (2) 브랜치 머지 방향 (U-3), (3) SessionEnd hook 수정 (D-81)
+> **PLAN_01 Phase 1-10 완료 + D-63 해소 + U-42 해소 + Phase 9 의존성 + Phase 10 코드 품질 완료.**
+> **Night-48: 코드 변경 0건, D-85~D-87(Phase 10 수정 범위) + D-82~D-84(업그레이드 범위) 사용자 결정 대기.**
+> **⚠️ 다음 결정 사항**: (1) D-85~D-87 Phase 10 수정 범위, (2) D-82~D-84 업그레이드 범위, (3) 브랜치 머지 방향 (U-3), (4) SessionEnd hook 수정 (D-81)
 
 ### 9.1 즉시 실행 가능
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) D-82~D-84 결정 → Phase 10 진입** | 업그레이드 범위 확정 후 코드 품질 리뷰 4대 에이전트 병렬 실행 | coderabbit + pr-review-toolkit | 중형 |
-| **B) 브랜치 Push + PR 생성** | `auto/night-01-20260427_0100` (77커밋) push → GitHub PR → main 머지 | commit-commands | 소형 |
+| **A) D-85~D-87 결정 → Phase 11 또는 Phase 13 진입** | Phase 10 수정 범위 확정 후: Phase 11(아키텍처 분석) 또는 Phase 13(수정 즉시 실행) | feature-dev / Opus 직접 | 중형 |
+| **B) 브랜치 Push + PR 생성** | `auto/night-01-20260428_0100` (79커밋) push → GitHub PR → main 머지 | commit-commands | 소형 |
 | **C) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
 | **D) Dart non-BREAKING 4건 즉시 적용** | D-84 A) 선택 시 — build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
 
-### 9.2 Phase 10~14 실행 로드맵 (D-82~D-84 결정 후)
+### 9.2 Phase 11~14 실행 로드맵 (D-85~D-87 + D-82~D-84 결정 후)
 
 > **상세 실행 계획**: `docs/plans/PLAN_01.md` Phase 9-14 참조
 
-| Phase | 목표 | 주요 도구 | 예상 규모 |
-|-------|------|-----------|----------|
-| **10** | 코드 품질 심층 리뷰 | coderabbit + silent-failure-hunter + type-design-analyzer + code-reviewer 4대 병렬 | 중형 (1~2 세션) |
-| **11** | 아키텍처 + 프레임워크 최신화 | feature-dev:code-explorer + code-architect + WebSearch | 중형 (1~2 세션) |
-| **12** | 프론트엔드 UI/UX 감사 | frontend-design + figma + code-simplifier | 중형 (1~2 세션) |
-| **13** | 승인된 수정 실행 | Opus 직접 + Sonnet 병렬 | 대형 (2~3 세션) |
-| **14** | 최종 검증 + 구조화된 커밋 | flutter test/analyze + commit-commands | 소형 (1 세션) |
+| Phase | 목표 | 주요 도구 | 예상 규모 | 상태 |
+|-------|------|-----------|----------|------|
+| ~~**10**~~ | ~~코드 품질 심층 리뷰~~ | ~~4대 병렬~~ | ~~중형~~ | **✅ Night-48 완료** |
+| **11** | 아키텍처 + 프레임워크 최신화 | feature-dev:code-explorer + code-architect + WebSearch | 중형 (1~2 세션) | ⏳ 대기 |
+| **12** | 프론트엔드 UI/UX 감사 | frontend-design + figma + code-simplifier | 중형 (1~2 세션) | ⏳ 대기 |
+| **13** | 승인된 수정 실행 (Phase 9+10 확정분) | Opus 직접 + Sonnet 병렬 | 대형 (2~3 세션) | ⏳ 대기 |
+| **14** | 최종 검증 + 구조화된 커밋 | flutter test/analyze + commit-commands | 소형 (1 세션) | ⏳ 대기 |
 
-**Opus 추천:**
-1. **즉시**: D-84 A(non-BREAKING 4건 적용) + D-81 옵션 A(Vercel 비활성화)
-2. **Phase 10 진입**: D-82/D-83은 Phase 10(코드 품질 리뷰) 결과와 함께 결정 가능
+**Opus 추천 (Night-48 기준):**
+1. **즉시**: D-85 A(HIGH 2건 수정) + D-84 A(non-BREAKING 4건 적용) + D-81 옵션 A(Vercel 비활성화)
+2. **Phase 13 빠른 진입**: D-85~D-87 + D-82~D-84 일괄 결정 → Phase 11/12 스킵하고 Phase 13 수정 즉시 실행 가능 (Phase 9+10 확정분 충분)
 3. **브랜치 머지**: Phase 14 완료 후 통합 PR이 효율적 (중간 커밋 적체 방지)
 
-### 9.3 MCP/플러그인 가용성 (Night-47 실측)
+### 9.3 MCP/플러그인 가용성 (Night-48 실측)
 
-| 도구 | 상태 | 활용 이력 | Phase 10~14 활용 |
+| 도구 | 상태 | 활용 이력 | Phase 11~14 활용 |
 |------|------|-----------|-----------------|
-| sonatype-guide | ✅ (인증 미설정, **25세션**) | Phase 1/9 (WebSearch 대체) | Phase 13 업그레이드 시 |
-| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9 탐색 | Phase 10~11 탐색 |
-| pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7 리뷰 | Phase 10 리뷰 핵심 |
-| coderabbit | ✅ 활성 | Night-23 종합 리뷰 | Phase 10 코드 리뷰 |
+| sonatype-guide | ✅ (인증 미설정, **26세션**) | Phase 1/9 (WebSearch 대체) | Phase 13 업그레이드 시 |
+| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9 탐색 | Phase 11 탐색 |
+| pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10 리뷰 | Phase 13 수정 리뷰 |
+| coderabbit | ✅ 활성 | Night-23 + Night-48 Phase 10 | Phase 13 코드 리뷰 |
 | frontend-design | ✅ 활성 | Phase 5 UI/UX | Phase 12 감사 |
 | figma (6종) | ✅ 활성 | 미사용 | Phase 12 디자인 시스템 |
 | code-simplifier | ✅ 활성 | Phase 7 간소화 | Phase 12~13 간소화 |
