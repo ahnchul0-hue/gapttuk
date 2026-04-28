@@ -17,7 +17,7 @@
 > **Night-46 커밋**: TBD (Night-13~45 종합 분석 + MORNING_BRIEFING Night-46 반영)
 > **Night-47 커밋**: `f605793` (Phase 9 의존성 분석 + MORNING_BRIEFING Night-47 반영) + `e84089b` (해시 갱신)
 > **Night-48 커밋**: `f2319d5` (Phase 10 코드 품질 심층 리뷰 + MORNING_BRIEFING Night-48 반영) + `0315310` (해시 갱신)
-> **Night-49 커밋**: TBD (Phase 11 아키텍처 분석 + MORNING_BRIEFING Night-49 반영)
+> **Night-49 커밋**: `090dc8d` (Phase 11 아키텍처 분석 + MORNING_BRIEFING Night-49 반영)
 
 ---
 
