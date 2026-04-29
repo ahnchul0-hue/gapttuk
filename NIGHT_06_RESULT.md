@@ -1,8 +1,112 @@
-# NIGHT_06_RESULT — 2026-04-29 (Night-49 추가)
+# NIGHT_06_RESULT — 2026-04-30 (Night-50 추가)
 
-> **Night-49 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-49**: PLAN_01 Phase 11 아키텍처 분석 + 프레임워크 최신화 — Rust 5건 + Flutter 8건 신규 GAP 발견
-> **Night-48 이전 결과** (이하 원본 보존)
+> **Night-50 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
+> **Night-50**: PLAN_01 Phase 12 프론트엔드 UI/UX 감사 — 7건 이슈 발견 (HIGH 1 + MEDIUM 3 + LOW 3), 코드 변경 0건
+> **Night-49 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-50 (2026-04-30) — PLAN_01 Phase 12: 프론트엔드 UI/UX 감사
+
+**브랜치**: `auto/night-01-20260430_0100`
+**베이스라인**: Flutter **360건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (변동 없음)
+**실행자**: Sonnet 4.6 Sub-agent (코드 직접 분석 — frontend-design 스킬 감사 대상 아닌 코드베이스 분석)
+**코드 변경**: **0건** — 감사 전용 세션 (Phase 13에서 수정 예정)
+
+### 배경
+
+Phase 11 (아키텍처 분석 + 프레임워크 최신화, Night-49) 완료 후, Phase 12 (프론트엔드 UI/UX 감사)를 실행.
+감사 대상: HomeScreen, ProductDetailScreen, SearchScreen, AlertScreen, LoginScreen, ProductCard, AppTheme.
+
+---
+
+### Phase 12-A: UI 패턴 일관성 감사
+
+#### 🔴 HIGH 발견 사항
+
+| # | ID | 파일:라인 | 설명 | 권장 조치 |
+|---|-----|---------|------|----------|
+| 1 | **U-01** | theme.dart:6~56 (미사용) | **AppSpacing/AppTextStyles 전체 미적용** — Night-36에서 정의된 상수가 어떤 화면에도 import되지 않음. 전체 코드베이스에 매직넘버 87개 잔존 (SizedBox, EdgeInsets, TextStyle 직접 사용) | Phase 13에서 D-89 결정에 따라 3개 화면 시범 적용 |
+
+#### 🟠 MEDIUM 발견 사항
+
+| # | ID | 파일:라인 | 설명 | 권장 조치 |
+|---|-----|---------|------|----------|
+| 2 | **U-02** | home_screen.dart:94-95 | **HomeScreen 에러상태 ScreenErrorWidget 미사용** — `Center(child: Text(friendlyErrorMessage(e)))` 직접 사용. AlertScreen/FavoritesScreen의 `ScreenErrorWidget` 패턴과 불일치 (Night-37에서 도입된 공통 위젯) | ScreenErrorWidget으로 교체 (4줄 → 5줄, 난이도 LOW) |
+| 3 | **U-03** | login_screen.dart:171,183,193 home_screen.dart:52,69 product_card.dart:39 | **AppSpacing 12dp 값 누락** — AppSpacing.sm(8)과 AppSpacing.md(16) 사이 12dp가 6개소에서 반복 사용. 기존 상수로 대체 불가능한 중간값 | A) AppSpacing.smMd=12 추가 / B) sm(8) 또는 md(16)으로 통일 — D-94 결정 필요 |
+| 4 | **U-07** | search_screen.dart:65-70 | **SearchScreen 검색 필터/정렬 파라미터 미전달** — `service.search(query, cursor, cancelToken)` 호출 시 `filter`/`sort` 파라미터 누락. MEMORY에 "Flutter UI 연결 완료" 기록이 있으나 현재 코드에 필터 UI/파라미터 없음. 백엔드 기능이 프론트엔드에 노출되지 않는 상태 | ProductService.search() 시그니처 확인 후 필터 칩 UI 재연결 — D-96 결정 필요 |
+
+#### 🟡 LOW 발견 사항
+
+| # | ID | 파일:라인 | 설명 | 권장 조치 |
+|---|-----|---------|------|----------|
+| 5 | **U-04** | login_screen.dart:196 | **Naver 아이콘 의미론 부적절** — `Icons.north_east` (↗ 화살표) 사용. 네이버 브랜드와 무관. `Icons.login` 또는 SVG 커스텀 아이콘 권장 | Icons.login으로 교체 (1줄, 시각적 영향 있음) |
+| 6 | **U-05** | alert_screen.dart:432 | **키워드 알림 탭 아이콘 의미론** — `Icons.key` (물리적 열쇠) 사용. `Icons.label_outline` 또는 `Icons.text_fields`가 "키워드"의 맥락에 더 부합 | Icons.label_outline으로 교체 (1줄) |
+| 7 | **U-06** | theme.dart:32-36 | **AppTextStyles.discountRate 색상 하드코딩** — `color: Color(0xFFD63031)` 는 AppColors.light.error와 동일값이나, 다크모드 전환 시 AppColors.dark.error(0xFFFF7675)와 불일치. BuildContext 없는 const TextStyle의 제약이지만, 사용처에서 `appColors.error`로 색상을 지정하는 패턴으로 개선 가능 | AppTextStyles.discountRate에서 color 제거, 사용처에서 `.copyWith(color: appColors.error)` 적용 — D-95 결정 필요 |
+
+---
+
+### Phase 12-B: Material 3 준수도 검토
+
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| `useMaterial3: true` | ✅ | AppTheme.light/dark 모두 설정 |
+| ColorScheme.fromSeed | ✅ | primary(0xFF6C5CE7) 시드 기반 |
+| FilledButton 사용 | ✅ | 다이얼로그 기본 액션에 적용 |
+| ElevatedButton.icon (LoginScreen) | ⚠️ | M3에서는 FilledButton.icon 또는 OutlinedButton.icon 권장 |
+| CardTheme elevation=1 | ✅ | M3 Tonal elevation 패턴 |
+| AppBar centerTitle=true | ✅ | M3 표준 |
+
+#### U-08 (LOW): LoginScreen 소셜 버튼 M3 불일치
+
+LoginScreen의 `_SocialLoginButton`이 `ElevatedButton.icon` 사용 — Material 3에서는:
+- 카카오/네이버(브랜드 색상 배경) → `FilledButton.icon` + `style.backgroundColor` 패턴
+- Google(흰 배경) → `OutlinedButton.icon` 패턴이 M3 가이드라인에 더 부합.
+현재 구현은 동작에 문제없으나, M3 시맨틱 일관성 측면에서 낮은 우선순위 개선 사항.
+
+---
+
+### Phase 12-C: 접근성(Semantics) 커버리지 평가
+
+| 화면 | Semantics 적용 | 평가 |
+|------|-------------|------|
+| HomeScreen | ✅ 인기 검색어 `label` + trend 설명 포함 | 양호 |
+| LoginScreen | ✅ 로고 `image+label`, CircularProgressIndicator `semanticsLabel` | 양호 |
+| SearchScreen | ✅ 빈 상태 label, 로딩 상태 label | 양호 |
+| AlertScreen | ✅ 삭제 배경 label, 로딩 label | 양호 |
+| ProductCard | ✅ 상품명+가격+트렌드 조합 label | 양호 |
+| ProductDetailScreen | ⚠️ 품절 배지, 가격 변화 아이콘 Semantics 미적용 | 개선 여지 |
+
+#### U-09 (LOW): ProductDetailScreen 접근성 gap
+
+품절 배지(`Icons.remove_shopping_cart`)와 가격 트렌드 아이콘에 `ExcludeSemantics` 또는 `Semantics.label` 미적용.
+스크린 리더 사용자가 아이콘 의미를 파악하기 어려움.
+
+---
+
+### Phase 12-D: 코드 간소화 기회 (pr-review-toolkit:code-simplifier 대리 분석)
+
+| # | 대상 | 현재 | 개선안 | 예상 감소 |
+|---|------|------|-------|----------|
+| S-01 | alert_screen.dart: `_toggle*Alert` × 3 | 3개 별도 메서드 (각 ~12줄) | 제네릭 타입 파라미터로 통합 가능하나 타입 제약으로 어려움 → `_handleAlertAction` 래퍼로 충분히 DRY됨 | 이미 충분히 간소화됨 ✅ |
+| S-02 | product_card.dart:23-28 | `priceTrend` String switch + trendLabel | D-91(PriceTrend Enum 전환) 결정 시 타입 안전하게 개선 가능 | Phase 13 D-91 연계 |
+| S-03 | home_screen.dart:165-169 | `_trendIcon` switch | D-91 전환 시 같이 개선 가능 | Phase 13 D-91 연계 |
+
+---
+
+### Phase 12 종합 판정
+
+| 등급 | 건수 | 주요 사항 |
+|------|------|----------|
+| **HIGH** | 1건 | U-01: AppSpacing/AppTextStyles 전체 미적용 (87개 매직넘버) |
+| **MEDIUM** | 3건 | U-02: HomeScreen 에러 위젯 불일치 / U-03: 12dp 상수 갭 / U-07: 검색 필터 미연결 |
+| **LOW** | 5건 | U-04~U-09: 아이콘 의미론, 다크모드 색상, M3 불일치, 접근성 gap |
+
+**신규 결정 항목**: D-93(U-02 HomeScreen ScreenErrorWidget) / D-94(U-03 AppSpacing 12dp 처리) / D-95(U-06 TextStyles 색상) / D-96(U-07 검색 필터 재연결) 추가 → DECISION_LOG.md 참조
+
+---
+
+## Night-49 (2026-04-29) — PLAN_01 Phase 11: 아키텍처 분석 + 프레임워크 최신화
 
 ---
 

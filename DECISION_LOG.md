@@ -2,6 +2,66 @@
 
 ---
 
+## Night-50 결정 (2026-04-30) — PLAN_01 Phase 12 UI/UX 감사
+
+### D-93: U-02 HomeScreen 에러상태 ScreenErrorWidget 교체
+
+**현황**: `home_screen.dart:94-95`에서 인기 검색어 에러 상태를 `Center(child: Text(friendlyErrorMessage(e)))` 직접 표시. Night-37에서 도입된 `ScreenErrorWidget`(AlertScreen/FavoritesScreen/NotificationListScreen에서 사용)과 불일치.
+
+**선택지**:
+- A) ScreenErrorWidget으로 교체 (4줄 변경, 재시도 기능 자동 추가, 난이도 MINIMAL)
+- B) 보류 (기능상 문제없음)
+
+**권장**: A — 코드 4줄, 화면 일관성 + 재시도 UX 개선. Phase 13에 포함 권장.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-94: U-03 AppSpacing 12dp 갭 처리 방식
+
+**현황**: `AppSpacing`에 12dp 상수가 없으나 `login_screen.dart`(3곳), `home_screen.dart`(2곳), `product_card.dart`(1곳)에서 `SizedBox(height: 12)` / `EdgeInsets.symmetric(vertical: 6)` 등으로 12dp가 반복 사용됨. D-89(AppSpacing 적용) 결정 시 함께 해결 필요.
+
+**선택지**:
+- A) `AppSpacing.smMd = 12` 추가 후 6개소 교체 (theme.dart +1줄, 사용처 교체)
+- B) 기존 sm(8) 또는 md(16)으로 통일 (시각적 변화 있음)
+- C) D-89가 보류면 현행 유지
+
+**권장**: A — 매직넘버 12가 6곳에서 일관되게 사용됨, 별도 상수 값어치 있음. D-89(B 이상) 결정과 연동.
+
+**Status**: ⏳ 사용자 결정 대기 (D-89 결정에 종속)
+
+---
+
+### D-95: U-06 AppTextStyles.discountRate 색상 제거 여부
+
+**현황**: `theme.dart:35`에서 `AppTextStyles.discountRate`가 `color: Color(0xFFD63031)`를 하드코딩. `AppColors.light.error`와 동일값이나, 다크모드 전환 시 `AppColors.dark.error(0xFFFF7675)`와 불일치 → 다크모드에서 할인율 텍스트 색상이 잘못 표시됨.
+
+**선택지**:
+- A) `AppTextStyles.discountRate`에서 `color` 필드 제거 → 사용처에서 `.copyWith(color: appColors.error)` 적용 (BuildContext 필요)
+- B) 보류 (현재 다크모드 미활성 상태, 실질 영향 없음)
+
+**권장**: A — 다크모드 브랜치(`feat/dark-mode`)가 있으므로 조기 수정이 병합 충돌 방지. 단, 사용처 확인 후 적용.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-96: U-07 SearchScreen 검색 필터/정렬 파라미터 재연결
+
+**현황**: `search_screen.dart:65-70`에서 `service.search()` 호출 시 백엔드 지원 필터(near_stockout/all_time_low/declining/under_10k)와 정렬(ranking/discount_rate/discount_amount/lowest_price) 파라미터가 전달되지 않음. MEMORY에 "Phase 1E: 검색 필터 Flutter UI 연결 완료" 기록과 실제 코드 불일치 — 필터 UI가 없거나 다른 브랜치에 존재.
+
+**선택지**:
+- A) SearchScreen에 FilterChip(4종) + DropdownButton(4종) 재추가 + service.search() 파라미터 연결 (Phase 1E 작업 재현)
+- B) fix/phase0-security-stability 브랜치에서 해당 변경 cherry-pick 검토
+- C) 보류 (기능 사용 빈도 미검증)
+
+**권장**: B → A 순서로 확인. cherry-pick 가능하면 B, 그 외 A 신규 구현. 필터는 UX 핵심 기능.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
 ## Night-49 결정 (2026-04-29) — PLAN_01 Phase 11 아키텍처 분석
 
 ### D-88: Phase 11 신규 HIGH 이슈 F-08 + Phase 10 HIGH I-01/I-02 수정 범위

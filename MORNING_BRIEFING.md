@@ -3,7 +3,7 @@
 > **분석 대상**: Night-13 ~ Night-49 (2026-03-12 ~ 2026-04-29)
 > **현재 브랜치**: `auto/night-01-20260429_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-04-29 (Night-49 결과 통합 — **PLAN_01 Phase 11 아키텍처 분석 완료 + D-88~D-92 사용자 결정 대기**)
+> **최종 업데이트**: 2026-04-30 (Night-50 결과 통합 — **PLAN_01 Phase 12 UI/UX 감사 완료 + D-93~D-96 사용자 결정 대기**)
 > **검증**: Rust 207건 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-04-29 실측, Night-49 코드 변경 없음)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
@@ -18,6 +18,7 @@
 > **Night-47 커밋**: `f605793` (Phase 9 의존성 분석 + MORNING_BRIEFING Night-47 반영) + `e84089b` (해시 갱신)
 > **Night-48 커밋**: `f2319d5` (Phase 10 코드 품질 심층 리뷰 + MORNING_BRIEFING Night-48 반영) + `0315310` (해시 갱신)
 > **Night-49 커밋**: `090dc8d` (Phase 11 아키텍처 분석 + MORNING_BRIEFING Night-49 반영)
+> **Night-50 커밋**: TBD (Phase 12 UI/UX 감사 + MORNING_BRIEFING Night-50 반영)
 
 ---
 
@@ -63,6 +64,8 @@
 | **46** | **04-14** | **Night-13~45 종합 분석 + PLAN_02 U-42 9세션 대기** | **코드 변경 0건 — Opus 전략/Sonnet 기술/코드 결과 종합 + MCP 가용성 재점검 + 사용자 확인 항목 정리** | **TBD** |
 | **47** | **04-27** | **PLAN_01 Phase 9: 의존성 보안/품질 심층 분석 (U-42 해소 첫 실행)** | **코드 변경 0건 — Sonatype MCP 대체(WebSearch+pub outdated), Rust 11 crates + Dart 9 packages 분석, CVE 없음, BREAKING 업그레이드 3+8건 식별, D-82~D-84 결정 항목 도출** | **`f605793`, `e84089b`** |
 | **48** | **04-28** | **PLAN_01 Phase 10: 코드 품질 심층 리뷰 (병렬 4대 에이전트)** | **코드 변경 0건 — 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 결정 항목 도출** | **`f2319d5`** |
+| **49** | **04-29** | **PLAN_01 Phase 11: 아키텍처 분석 + 프레임워크 최신화** | **코드 변경 0건 — Rust 5건 + Flutter 8건 신규 GAP 발견, Axum 0.8 GAP 없음 ✅, Riverpod AsyncNotifier GAP ⚠️, D-88~D-92 결정 항목 도출** | **`090dc8d`** |
+| **50** | **04-30** | **PLAN_01 Phase 12: 프론트엔드 UI/UX 감사** | **코드 변경 0건 — 9건 발견(HIGH 1 + MEDIUM 3 + LOW 5), AppSpacing/TextStyles 전체 미적용(U-01), HomeScreen ScreenErrorWidget 불일치(U-02), 검색 필터 미연결(U-07), D-93~D-96 결정 항목 도출** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -107,9 +110,68 @@ Night 45:    ★★★★★★★★★★★★★★★★★★★★★★�
 Night 46:    ★★★★★★★★★★★★★★★★★★★★★★★★★ 종합 분석 ── PLAN_02 U-42 9세션 대기, Night-13~45 종합 분석+MCP 재점검, 코드 변경 0건
 Night 47:    ★★★★★★★★★★★★★★★★★★★★★★★★★★ 재기동 ── U-42 해소, Phase 9 실행, Rust 11개+Dart 9개 의존성 분석, CVE 0건 ✅, BREAKING 업그레이드 식별
 Night 48:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★ 품질 감사 ── Phase 10 병렬 4대 에이전트, 17건 발견 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 도출
+Night 49:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 아키텍처 분석 ── Phase 11 병렬 에이전트 2대+WebSearch, Rust 5건+Flutter 8건 GAP, D-88~D-92 도출
+Night 50:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ UI/UX 감사 ── Phase 12 9건 발견(U-01~U-09), AppSpacing/TextStyles 드리프트 확인, D-93~D-96 도출
 ```
 
-### 1.3 Night-48 전략적 의의: Phase 10 코드 품질 심층 리뷰 완료
+### 1.3 Night-50 전략적 의의: Phase 12 UI/UX 감사 완료
+
+Night-49 Phase 11 (아키텍처 분석) 완료 후, **Night-50은 PLAN_01 Phase 12 UI/UX 감사를 실행**. 5개 핵심 화면(HomeScreen, ProductDetailScreen, SearchScreen, AlertScreen, LoginScreen)과 ProductCard 위젯을 직접 코드 분석.
+
+**핵심 발견:**
+- **U-01 (HIGH)**: AppSpacing/AppTextStyles 전체 미적용 — Night-36 도입 이후 어떤 화면에도 적용 안 됨, 87개 매직넘버 잔존
+- **U-02 (MEDIUM)**: HomeScreen 에러상태 ScreenErrorWidget 미사용 — Night-37 도입 위젯과 불일치
+- **U-07 (MEDIUM)**: SearchScreen 필터/정렬 파라미터 미전달 — 백엔드 기능이 UI에 노출되지 않음
+
+**다음 단계**: D-88~D-96 중 사용자 승인 이슈를 Phase 13에서 수정 실행.
+
+### 1.4 Night-49 전략적 의의: Phase 11 아키텍처 분석 + 프레임워크 최신화 완료
+
+Night-48 Phase 10 (코드 품질 심층 리뷰) 완료 후, **Night-49는 PLAN_01 Phase 11 아키텍처 분석을 병렬 3대 에이전트 + Opus 직접 WebSearch로 실행**.
+
+**실행 전략:**
+- 베이스라인 검증 (Flutter 360건 / Rust 207건 / analyze 0건) — 변동 없음 확인
+- 병렬 3대 에이전트 동시 배치: feature-dev:code-explorer (Rust 서버 실행경로) + feature-dev:code-architect (Flutter Provider맵) + Opus 직접 WebSearch (최신 패턴)
+- D-82~D-87 미결 결정과 Phase 11-14 실행 관계를 사용자에게 B안(통합 압축 실행) 권장
+
+**Night-49 핵심 성과:**
+1. **Phase 11 완료**: Rust 서버 5건 + Flutter 앱 8건 = 총 13건 신규 GAP 발견
+2. **Rust 서버 아키텍처 분석**:
+   - **A-03 (MEDIUM)**: `notification_service.rs` 단일 사용자 경로 N+1 잠재 위험
+   - **A-05 (HIGH)**: 백그라운드 태스크(파티션/TTL/rate limiter GC) 자동 재시작 없음 — 패닉 시 영구 중단
+   - A-01/A-02/A-04: 마이너 성능 개선 3건
+3. **Flutter 앱 아키텍처 분석**:
+   - **F-08 (HIGH)**: 401 갱신 실패 시 AuthState 미통보 — 로그인 화면 리다이렉트 누락
+   - **F-04 (MEDIUM)**: `AppSpacing`/`AppTextStyles` 정의했으나 **0곳 사용** (87개 raw 매직넘버 잔존)
+   - **F-03 (MEDIUM)**: `ScreenErrorWidget` 3/9 화면만 적용 (불일치)
+   - **F-06 (MEDIUM)**: `productPredictionProvider` 타입 미완성 (`Map<String,dynamic>`)
+   - F-01/F-02/F-05/F-07: 마이너 개선 4건
+4. **프레임워크 GAP**: Axum 0.8 GAP 없음 ✅ / Riverpod 3.x AsyncNotifier 전환 GAP ⚠️
+5. **신규 결정 항목 5건**: D-88~D-92 — Phase 13 수정 범위 + 적용 범위 + 실행 순서
+
+**Opus 4.6 전략 요약 (Night-49):**
+- **Phase 11 배치**: Sonnet Sub-agent 2대(code-explorer + code-architect) + Opus WebSearch 1건 병렬 실행
+- **Opus 판단**: F-08(HIGH)을 Night-48의 I-01/I-02와 병합하여 Phase 13 즉시 수정 대상으로 상향
+- **F-04 발견**: Night-36에서 AppSpacing/AppTextStyles 도입했으나, 실제 화면에서 미사용 확인 → 87개 매직넘버 잔존 이슈 신규 도출
+
+**Sonnet 4.6 기술 실행:**
+- **에이전트 1 (code-explorer)**: Rust main.rs → Router → 미들웨어 → 핸들러 → DB → 응답 전체 경로 추적, 백그라운드 태스크 5개 식별
+- **에이전트 2 (code-architect)**: Flutter 15개 화면 Provider 의존성 그래프 매핑, AuthState 단절점 식별
+- **WebSearch**: Axum 0.8 middleware 문서 + Riverpod 3.0 What's New + DCM Riverpod best practices 2026
+
+**결정 항목 도출:**
+- D-88: F-08 + I-01/I-02 HIGH 3건 Phase 13 즉시 수정 여부
+- D-89: AppSpacing/AppTextStyles 적용 범위 (전체/시범 3개/보류)
+- D-90: productPredictionProvider 타입 안전화 여부
+- D-91: PD-67 priceTrend String→Enum 전환 여부
+- D-92: Phase 12(UI/UX 감사) 선행 vs Phase 13(수정 실행) 선행
+
+**다음 세션 최우선 항목:**
+- **D-88~D-92** (Phase 11 확인점): Phase 12 또는 Phase 13 진입 조건
+- **D-82~D-84** (Phase 9 업그레이드 범위): 지속 대기
+- **U-3** (브랜치 머지): 현재 `auto/night-01-20260429_0100` (81+ commits) → main PR 생성
+
+### 1.3a Night-48 전략적 의의: Phase 10 코드 품질 심층 리뷰 완료
 
 Night-47 Phase 9 (의존성 분석) 완료 후, **Night-48은 PLAN_01 Phase 10 코드 품질 심층 리뷰를 병렬 4대 에이전트로 실행**.
 
@@ -1048,19 +1110,19 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 
 ### 3.17 코드베이스 규모
 
-| 항목 | **Night-48** | Night-47 | Night-46 | 변화 (vs 47) |
+| 항목 | **Night-49** | Night-48 | Night-47 | 변화 (vs 48) |
 |------|-------------|----------|----------|-------------|
 | DB 마이그레이션 (main) | 018 | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-87** | D-84 | D-81 | **+3** (D-85~D-87) |
+| DECISION_LOG 항목 | **D-92** | D-87 | D-84 | **+5** (D-88~D-92) |
 | 순수 함수 추출 누계 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | Silent Failure 수정 | 33건+ (잔존 0건) | 33건+ | 33건+ | — |
-| 프로덕션 코드 수정 (Night-48) | **0건** | 0건 | 0건 | — (분석 전용) |
+| 프로덕션 코드 수정 (Night-49) | **0건** | 0건 | 0건 | — (분석 전용) |
 | Flutter 테스트 | **360건** | 360건 | 360건 | — |
-| 커밋 (main 대비) | **79** | 77 | 75+ | **+2** (`f2319d5`, `0315310`) |
-| PLAN_01 Phase 완료 | **10/14** (Phase 1-10 ✅) | 9/14 | 8/8 ✅ | **Phase 10 완료** |
+| 커밋 (main 대비) | **81** | 79 | 77 | **+2** (`090dc8d`, `7fa34d1`) |
+| PLAN_01 Phase 완료 | **11/14** (Phase 1-11 ✅) | 10/14 | 9/14 | **Phase 11 완료** |
 | PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
 
 ### 3.18 순수 함수 추출 목록
@@ -1082,11 +1144,11 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-04-28, Night-48)
+### 4.1 활성 브랜치 (2026-04-29, Night-49)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260428_0100`** ★ | **+79 commits** | Night-13~48 전체 + **PLAN_01 Phase 1-10 완료** + PLAN_02 초안 + D-81 U-39 규명 + Phase 9 의존성 분석 + Phase 10 코드 품질 리뷰 + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260429_0100`** ★ | **+81 commits** | Night-13~49 전체 + **PLAN_01 Phase 1-11 완료** + PLAN_02 초안 + D-81 U-39 규명 + Phase 9 의존성 + Phase 10 코드 품질 + Phase 11 아키텍처 분석 + Flutter **360건** + Rust 207건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -1098,12 +1160,12 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0428_0100` (32개+) | **Night-48 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0429_0100` (33개+) | **Night-49 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260428_0100 → main (79커밋, PLAN_01 Phase 1-10 완료 + D-63 해소 + PLAN_02 초안 + D-81~D-87, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260429_0100 → main (81커밋, PLAN_01 Phase 1-11 완료 + D-63 해소 + PLAN_02 초안 + D-81~D-92, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -1125,7 +1187,7 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | **8** | 최종 검증 및 커밋 | ✅ **완료** | **37** | **Flutter 358건 + Rust 207건 + analyze 0 + 구조화된 커밋** |
 | **9** | 의존성 보안/품질 심층 분석 | ✅ **완료** | **47** | **Rust CVE 0/Dart CVE 0 + BREAKING 3+8건 식별 + D-82~D-84 결정 도출** |
 | **10** | 코드 품질 심층 리뷰 | ✅ **완료** | **48** | **병렬 4대 에이전트: 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 도출** |
-| **11** | 아키텍처 + 프레임워크 최신화 | ⏳ 대기 | — | feature-dev + WebSearch 예정 |
+| **11** | 아키텍처 + 프레임워크 최신화 | ✅ **완료** | **49** | **병렬 3에이전트: Rust 5건 + Flutter 8건 = 13건 GAP, Axum GAP 없음/Riverpod AsyncNotifier GAP, D-88~D-92 도출** |
 | **12** | 프론트엔드 UI/UX 감사 | ⏳ 대기 | — | frontend-design + figma 예정 |
 | **13** | 발견 사항 기반 코드 수정 | ⏳ 대기 | — | Opus 직접 + Sonnet 병렬 예정 |
 | **14** | 최종 검증 + 커밋 | ⏳ 대기 | — | flutter test + analyze 예정 |
@@ -1145,6 +1207,41 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | **D-85** | I-01+I-02 HIGH 2건 즉시 수정? | A) Phase 13에서 수정 B) 보류 | ⏳ **사용자 결정 대기** |
 | **D-86** | I-03+I-04+PD-67 MEDIUM 3건 수정 범위? | A) 전체 B) PD-67만 C) 보류 | ⏳ **사용자 결정 대기** |
 | **D-87** | LOW 4건 Phase 13 포함? | A) 포함 B) 제외 | ⏳ **사용자 결정 대기** |
+
+### Phase 11 결정 사항 (D-88~D-92, Night-49)
+
+| ID | 질문 | 선택지 | 상태 |
+|----|------|--------|------|
+| **D-88** | F-08(HIGH 401 미리다이렉트) + I-01/I-02 Phase 13 즉시 수정? | A) HIGH 3건 즉시 수정 B) F-08만 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-89** | AppSpacing/AppTextStyles 적용 범위? (87개 매직넘버 잔존) | A) 전체 15개 화면 B) 시범 3개 화면 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-90** | productPredictionProvider 타입 안전화? | A) PredictionResult 모델 도입 B) 보류 | ⏳ **사용자 결정 대기** |
+| **D-91** | PD-67 priceTrend String→Enum 전환? (PD-62 선례) | A) Phase 13에서 전환 B) 보류 | ⏳ **사용자 결정 대기** |
+| **D-92** | Phase 12/13 실행 순서? | A) Phase 12(UI/UX 감사) 선행 B) Phase 13(수정 실행) 선행 C) 병합 | ⏳ **사용자 결정 대기** |
+
+### Phase 11 발견 이슈 상세 (Night-49)
+
+**Rust 서버 아키텍처 GAP:**
+
+| # | ID | 이슈 | 파일:위치 | 심각도 |
+|---|-----|------|----------|--------|
+| 1 | A-01 | price_history SELECT 후 in-memory 변환 | `products.rs` | LOW |
+| 2 | A-02 | search 핸들러 다중 쿼리 (COUNT + SELECT 분리) | `products.rs` | LOW |
+| 3 | A-03 | notification 단일 사용자 경로 N+1 잠재 | `notification_service.rs` | MEDIUM |
+| 4 | A-04 | alert evaluate 루프 내 개별 푸시 발송 | `alert_service.rs` | LOW |
+| 5 | A-05 | 백그라운드 태스크 자동 재시작 없음 (패닉 시 영구 중단) | `main.rs` | **HIGH** |
+
+**Flutter 앱 아키텍처 GAP:**
+
+| # | ID | 이슈 | 파일:위치 | 심각도 |
+|---|-----|------|----------|--------|
+| 1 | F-01 | ApiClient 싱글톤 — DI 불가 (테스트 stub 어려움) | `api_client.dart` | LOW |
+| 2 | F-02 | 서비스 클래스 static 메서드 — Riverpod Provider 미통합 | `*_service.dart` | LOW |
+| 3 | F-03 | ScreenErrorWidget 3/9 화면만 적용 (불일치) | `*_screen.dart` | MEDIUM |
+| 4 | F-04 | AppSpacing/AppTextStyles 0곳 사용 (87개 매직넘버) | `*_screen.dart` | MEDIUM |
+| 5 | F-05 | GoRouter redirect 인증 체크 미구현 | `app_router.dart` | LOW |
+| 6 | F-06 | productPredictionProvider 타입 미완성 | `providers.dart` | MEDIUM |
+| 7 | F-07 | dio Interceptor 에러 분기 단순 | `api_client.dart` | LOW |
+| 8 | F-08 | 401 갱신 실패 시 AuthState 미통보 (리다이렉트 누락) | `api_client.dart` | **HIGH** |
 
 ### Phase 10 발견 이슈 상세 (Night-48)
 
@@ -1182,8 +1279,13 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~48 머지 방향 | `auto/night-01-20260428_0100` (79커밋, PLAN_01 Phase 1-10 완료 + D-63 해소 + PLAN_02 초안 + D-81 + Phase 9-10 분석, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
-| **D-85** | Phase 10 HIGH 2건 수정 | I-01(rollback warn 불일치 2곳) + I-02(ALLOWED_ORIGINS 조용한 실패) | A) Phase 13 수정 B) 보류 |
+| **U-3** | Night-13~49 머지 방향 | `auto/night-01-20260429_0100` (81커밋, PLAN_01 Phase 1-11 완료 + D-63 해소 + PLAN_02 초안 + D-81 + Phase 9-11 분석, Flutter **360건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **D-88** | Phase 11 HIGH 3건 즉시 수정 | F-08(401 갱신 실패→AuthState 미통보) + I-01(rollback warn 불일치 2곳) + I-02(ALLOWED_ORIGINS 조용한 실패) | A) HIGH 3건 즉시 수정 B) F-08만 C) 보류 |
+| **D-89** | AppSpacing/AppTextStyles 적용 범위 | Night-36에서 정의했으나 87개 매직넘버 잔존 — 0곳 사용 | A) 전체 15화면 B) 시범 3화면 C) 보류 |
+| **D-90** | productPredictionProvider 타입 안전화 | `Map<String,dynamic>` → PredictionResult 모델 도입 | A) 모델 도입 B) 보류 |
+| **D-91** | PD-67 priceTrend String→Enum 전환 | AlertType PD-62 선례 — 동일 패턴 적용 | A) Phase 13 전환 B) 보류 |
+| **D-92** | Phase 12/13 실행 순서 | Phase 12(UI/UX 감사) vs Phase 13(수정 실행) 우선 | A) Phase 12 선행 B) Phase 13 선행 C) 병합 |
+| **D-85** | Phase 10 HIGH 2건 수정 | I-01(rollback warn 불일치 2곳) + I-02(ALLOWED_ORIGINS 조용한 실패) — D-88에 통합 | ⏳ → D-88 참조 |
 | **D-86** | Phase 10 MEDIUM 3건 수정 범위 | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) + PD-67(priceTrend Enum) | A) 전체 B) PD-67만 C) 보류 |
 | **D-87** | Phase 10 LOW 4건 포함 여부 | I-06/I-07/PD-65/PD-66 (캐시 에러/차트 인덱스/타입 설계) | A) 포함 B) 제외 |
 | **D-82** | Rust BREAKING 업그레이드 범위 | Phase 9 발견: reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47 (3건 모두 메이저 API 변경) | A) 전체 B) sentry만 C) 전부 보류 |
@@ -1214,6 +1316,31 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | | Flutter 엔진 Skia CVE 모니터링 | CVE-2025-27363 + CVE-2026-3909 — Flutter stable 업데이트 시 즉시 적용 |
+
+---
+
+## 7. Night-49에서 해결/생성된 항목
+
+### ✅ Night-49에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| **PLAN_01 Phase 11 아키텍처 분석 + 프레임워크 최신화** | **HIGH** | **병렬 3에이전트(code-explorer + code-architect + WebSearch) → Rust 5건 + Flutter 8건 = 13건 GAP 발견** |
+| **Night-49 결과 문서화** | **MEDIUM** | **MORNING_BRIEFING + NIGHT_06_RESULT + PLAN_01.md Phase 11 완료 마킹 (커밋 `090dc8d`)** |
+| **베이스라인 재검증** | **LOW** | **Flutter 360건 / Rust 207건 / analyze 0건 — Night-49 실측 확인** |
+
+### 🆕 Night-49에서 생성됨
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **D-88 Phase 11 HIGH 3건 수정** | **CRITICAL** | F-08(401 AuthState 미통보) + I-01(rollback warn) + I-02(ALLOWED_ORIGINS) — Phase 13 즉시 수정 범위 |
+| **D-89 AppSpacing/AppTextStyles 적용** | **HIGH** | Night-36 도입 → 87개 매직넘버 잔존 — 적용 범위 결정 필요 |
+| **D-90 productPredictionProvider 타입화** | **MEDIUM** | `Map<String,dynamic>` → PredictionResult 모델 — 타입 안전성 |
+| **D-91 priceTrend Enum 전환** | **MEDIUM** | PD-67 — AlertType PD-62 선례 존재, Phase 13에서 실행 가능 |
+| **D-92 Phase 12/13 실행 순서** | **HIGH** | Phase 12(UI/UX 감사) 선행 vs Phase 13(수정 실행) 선행 — 남은 세션 효율에 직결 |
+| **A-05 백그라운드 태스크 재시작** | **HIGH** | 파티션/TTL/rate limiter GC 태스크 패닉 시 영구 중단 — tokio::spawn 감시 루프 필요 |
+| **F-08 401 AuthState 미통보** | **HIGH** | api_client.dart onSessionExpired 콜백 미호출 경로 존재 — 로그인 화면 리다이렉트 누락 |
+| **Phase 12~14 실행 대기** | **HIGH** | Phase 11 완료 → D-88~D-92 결정 후 Phase 12(UI/UX) 또는 Phase 13(수정)으로 진행 |
 
 ---
 
@@ -1496,36 +1623,37 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | auto 브랜치 27개+ 정리 | LOW | 사용자 승인 대기 |
 | SessionEnd hook `node` 미설치 | LOW | **Night-41 원인 규명 완료** — D-81: Vercel plugin hook, **38회** 누적. 옵션 A(비활성화, 권장)/B(설치)/C(유지) **사용자 결정 대기** |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
-| **PLAN_01 Phase 1-10 완료** | **INFO** | **8/8 + Phase 9~10 완결 — Night-30 수립 → Night-37 Phase 1-8 → Night-47 Phase 9 → Night-48 Phase 10** |
+| **PLAN_01 Phase 1-11 완료** | **INFO** | **8/8 + Phase 9~11 완결 — Night-30 수립 → Night-37 Phase 1-8 → Night-47 Phase 9 → Night-48 Phase 10 → Night-49 Phase 11** |
 | ~~PLAN_02 방향 대기~~ | ~~CRITICAL~~ | ~~사용자 결정 9세션 연속 대기~~ → **✅ Night-47 U-42 해소** |
 | **D-82~D-84 결정 대기** | **CRITICAL** | **Phase 9 업그레이드 범위 — Rust/Dart BREAKING 범위 사용자 결정 필요** |
-| **D-85~D-87 결정 대기** | **CRITICAL** | **Phase 10 수정 범위 — HIGH 2건 + MEDIUM 3건 + LOW 4건 실행 범위 사용자 결정 필요** |
+| **D-85~D-87 결정 대기** | **HIGH** | **Phase 10 수정 범위 — D-85는 D-88에 통합됨, D-86~D-87 실행 범위 사용자 결정 필요** |
+| **D-88~D-92 결정 대기** | **CRITICAL** | **Phase 11 수정 범위/순서 — HIGH 3건 + AppSpacing 적용 + 타입 안전화 + 실행 순서 사용자 결정 필요** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-04-28, Night-48 실측)
+### 8.1 현재 지표 (2026-04-29, Night-49 실측)
 
-| 지표 | **Night-48** | Night-47 | Night-46 | 변화 (vs 47) |
+| 지표 | **Night-49** | Night-48 | Night-47 | 변화 (vs 48) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
 | Flutter 테스트 | **360** ✅ | 360 | 360 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-87** | D-84 | D-81 | **+3** (D-85~D-87) |
-| PLAN_01 Phase 완료 | **10/14** (Phase 1-10 ✅) | 9/14 | 8/8 ✅ | **Phase 10 완료** |
-| PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
+| DECISION_LOG | **D-92** | D-87 | D-84 | **+5** (D-88~D-92) |
+| PLAN_01 Phase 완료 | **11/14** (Phase 1-11 ✅) | 10/14 | 9/14 | **Phase 11 완료** |
+| PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | �� |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
-| 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
+| ��입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
 | showErrorSnackBar 통합 | **12개소** | 12개소 | 12개소 | — |
-| serde rename_all 적용 enum | **7개** | 7개 | 7개 | — |
+| serde rename_all ���용 enum | **7개** | 7개 | 7개 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 | 0건 | — |
 | 위젯 테스트 커버리지 | **4/4** ✅ | 4/4 | 4/4 | — |
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
-| rollback warn 패턴 | **8곳** | 8곳 | 8곳 | — |
-| 커밋 (main 대비) | **79** | 77 | 75+ | **+2** |
+| rollback warn ��턴 | **8곳** | 8곳 | 8곳 | — |
+| 커밋 (main 대비) | **81** | 79 | 77 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -1557,43 +1685,46 @@ Night-49: 360건 ──── +0건 (Phase 11 아키텍처 분석 — 코드 변
 | SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **38회** 감지. A/B/C 옵션 대기) |
 | ~~PLAN_02 방향~~ | **✅ 해소** (U-42: Night-47에서 사용자 지시 → Phase 9 실행) |
 | **Phase 10 코드 품질 심층 리뷰** | **✅ 완료** (9건 확정: HIGH 2 + MEDIUM 3 + LOW 4) |
-| **Phase 10 → Phase 11/13 전환** | **대기 중** ⚠️ **(D-85~D-87: 수정 범위 + D-82~D-84: BREAKING 업그레이드 범위 사용자 결정 필요)** |
+| **Phase 11 아키텍처 분석** | **✅ 완료** (13건 GAP: Rust 5 + Flutter 8, D-88~D-92 도출) |
+| **Phase 11 → Phase 12/13 전환** | **대기 중** ⚠️ **(D-88~D-92: 수정 범위/실행 순서 + D-82~D-84: BREAKING 업그레이드 범위 사용자 결정 필요)** |
 
 ---
 
-## 9. 다음 세션 선택지 (Phase 10 완료, Phase 11 대기 — Night-48 업데이트)
+## 9. 다음 세션 선택지 (Phase 11 완료, Phase 12 대기 — Night-49 업데이트)
 
-> **PLAN_01 Phase 1-10 완료 + D-63 해소 + U-42 해소 + Phase 9 의존성 + Phase 10 코드 품질 완료.**
-> **Night-48: 코드 변경 0건, D-85~D-87(Phase 10 수정 범위) + D-82~D-84(업그레이드 범위) 사용자 결정 대기.**
-> **⚠️ 다음 결정 사항**: (1) D-85~D-87 Phase 10 수정 범위, (2) D-82~D-84 업그레이드 범위, (3) 브랜치 머지 방향 (U-3), (4) SessionEnd hook 수정 (D-81)
+> **PLAN_01 Phase 1-11 완료 + D-63 해소 + U-42 해소 + Phase 9 의존성 + Phase 10 코드 품질 + Phase 11 아키텍처 분석 완료.**
+> **Night-49: 코드 변경 0건, D-88~D-92(Phase 11 수정/순서) + D-82~D-84(업그레이드 범위) + D-86~D-87(Phase 10 잔여) 사용자 결정 대기.**
+> **⚠️ 다음 결정 사항**: (1) D-88 HIGH 3건 수정, (2) D-89 AppSpacing 적용, (3) D-92 Phase 12/13 순서, (4) D-82~D-84 업그레이드 범위, (5) 브랜치 머지 (U-3)
 
 ### 9.1 즉시 실행 가능
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) D-85~D-87 결정 → Phase 11 또는 Phase 13 진입** | Phase 10 수정 범위 확정 후: Phase 11(아키텍처 분석) 또는 Phase 13(수정 즉시 실행) | feature-dev / Opus 직접 | 중형 |
-| **B) 브랜치 Push + PR 생성** | `auto/night-01-20260428_0100` (79커밋) push → GitHub PR → main 머지 | commit-commands | 소형 |
-| **C) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
-| **D) Dart non-BREAKING 4건 즉시 적용** | D-84 A) 선택 시 — build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
+| **A) D-88~D-92 결정 → Phase 12 또는 Phase 13 진입** | Phase 11 수정 범위/순서 확정 후: Phase 12(UI/UX 감사) 또는 Phase 13(수정 즉시 실행) | frontend-design / Opus 직접 | 중형 |
+| **B) Phase 13 즉시 실행 (D-92=B 선택 시)** | Phase 9+10+11 확정분으로 충분 — HIGH 3건(F-08+I-01+I-02) 우선 수정 | Opus 직접 | 중형 |
+| **C) 브랜치 Push + PR 생성** | `auto/night-01-20260429_0100` (81커밋) push → GitHub PR → main 머지 | commit-commands | 소형 |
+| **D) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
+| **E) Dart non-BREAKING 4건 즉시 적용** | D-84 A) 선택 시 — build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
 
-### 9.2 Phase 11~14 실행 로드맵 (D-85~D-87 + D-82~D-84 결정 후)
+### 9.2 Phase 12~14 실행 로드맵 (D-88~D-92 + D-82~D-84 결정 후)
 
 > **상세 실행 계획**: `docs/plans/PLAN_01.md` Phase 9-14 참조
 
 | Phase | 목표 | 주요 도구 | 예상 규모 | 상태 |
 |-------|------|-----------|----------|------|
 | ~~**10**~~ | ~~코드 품질 심층 리뷰~~ | ~~4대 병렬~~ | ~~중형~~ | **✅ Night-48 완료** |
-| **11** | 아키텍처 + 프레임워크 최신화 | feature-dev:code-explorer + code-architect + WebSearch | 중형 (1~2 세션) | ⏳ 대기 |
+| ~~**11**~~ | ~~아키텍처 + 프레임워크 최신화~~ | ~~3대 병렬~~ | ~~중형~~ | **✅ Night-49 완료** |
 | **12** | 프론트엔드 UI/UX 감사 | frontend-design + figma + code-simplifier | 중형 (1~2 세션) | ⏳ 대기 |
-| **13** | 승인된 수정 실행 (Phase 9+10 확정분) | Opus 직접 + Sonnet 병렬 | 대형 (2~3 세션) | ⏳ 대기 |
+| **13** | 승인된 수정 실행 (Phase 9+10+11 확정분) | Opus 직접 + Sonnet 병렬 | 대형 (2~3 세션) | ⏳ 대기 |
 | **14** | 최종 검증 + 구조화된 커밋 | flutter test/analyze + commit-commands | 소형 (1 세션) | ⏳ 대기 |
 
-**Opus 추천 (Night-48 기준):**
-1. **즉시**: D-85 A(HIGH 2건 수정) + D-84 A(non-BREAKING 4건 적용) + D-81 옵션 A(Vercel 비활성화)
-2. **Phase 13 빠른 진입**: D-85~D-87 + D-82~D-84 일괄 결정 → Phase 11/12 스킵하고 Phase 13 수정 즉시 실행 가능 (Phase 9+10 확정분 충분)
-3. **브랜치 머지**: Phase 14 완료 후 통합 PR이 효율적 (중간 커밋 적체 방지)
+**Opus 추천 (Night-49 기준):**
+1. **즉시**: D-88 A(HIGH 3건 수정) + D-84 A(non-BREAKING 4건 적용) + D-81 옵션 A(Vercel 비활성화)
+2. **Phase 13 직행**: D-92=B(Phase 13 선행) → Phase 9+10+11 확정분으로 직접 수정. Phase 12(UI/UX 감사)는 D-89(AppSpacing 적용)와 병합하여 Phase 13 내에서 처리 가능
+3. **누적 미결 결정 11건 일괄 해소 권장**: D-82~D-92 (Phase 9/10/11 결정) 중 D-85는 D-88에 통합됨 — 실질 10건. 일괄 결정 후 Phase 13 즉시 진입이 세션 효율 극대화
+4. **브랜치 머지**: Phase 14 완료 후 통합 PR이 효율적 (중간 커밋 적체 방지)
 
-### 9.3 MCP/플러그인 가용성 (Night-48 실측)
+### 9.3 MCP/플러그인 가용성 (Night-49 실측)
 
 | 도구 | 상태 | 활용 이력 | Phase 11~14 활용 |
 |------|------|-----------|-----------------|
