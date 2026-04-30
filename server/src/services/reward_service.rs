@@ -378,7 +378,9 @@ pub async fn process_referral_purchase(
     let (referral_id, referrer_id, reward_stage) = match referral {
         Some(r) => r,
         None => {
-            tx.rollback().await?;
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(error = %rb_err, "rollback failed after referral-not-found");
+            }
             return Ok(()); // 추천인 없음
         }
     };
@@ -387,7 +389,9 @@ pub async fn process_referral_purchase(
         match compute_referral_rewards(reward_stage) {
             Some(r) => r,
             None => {
-                tx.rollback().await?;
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(error = %rb_err, "rollback failed after stage-2-complete");
+                }
                 return Ok(()); // 이미 Stage 2 완료
             }
         };

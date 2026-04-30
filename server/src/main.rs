@@ -488,6 +488,11 @@ async fn main() {
                 }).ok()
             })
             .collect();
+        if origins.is_empty() {
+            tracing::warn!(
+                "All ALLOWED_ORIGINS entries are invalid — cross-origin requests will be blocked"
+            );
+        }
         CorsLayer::new()
             .allow_origin(origins)
             .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])

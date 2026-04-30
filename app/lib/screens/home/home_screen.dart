@@ -7,6 +7,7 @@ import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
 import '../../widgets/loading_skeleton.dart';
+import '../../widgets/screen_error_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -91,8 +92,11 @@ class HomeScreen extends ConsumerWidget {
                           .toList(),
                     ),
               loading: () => const LoadingSkeleton(itemCount: 5),
-              error: (e, st) =>
-                  Center(child: Text(friendlyErrorMessage(e))),
+              error: (e, st) => ScreenErrorWidget(
+                message: '인기 검색어를 불러오지 못했습니다',
+                detail: friendlyErrorMessage(e),
+                onRetry: () => ref.refresh(popularSearchesProvider),
+              ),
             ),
           ],
         ),

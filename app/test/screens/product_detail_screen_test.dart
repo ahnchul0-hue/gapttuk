@@ -21,7 +21,7 @@ void main() {
     highestPrice: 35000,
     averagePrice: 30000,
     isOutOfStock: false,
-    priceTrend: 'falling',
+    priceTrend: PriceTrend.falling,
     buyTimingScore: 85,
     reviewCount: 120,
   );
@@ -156,7 +156,7 @@ void main() {
           id: productId,
           productName: '상승 중 상품',
           currentPrice: 30000,
-          priceTrend: 'rising',
+          priceTrend: PriceTrend.rising,
         )),
       ));
       await tester.pumpAndSettle();
@@ -170,7 +170,7 @@ void main() {
           id: productId,
           productName: '안정 상품',
           currentPrice: 30000,
-          priceTrend: 'stable',
+          priceTrend: PriceTrend.stable,
         )),
       ));
       await tester.pumpAndSettle();

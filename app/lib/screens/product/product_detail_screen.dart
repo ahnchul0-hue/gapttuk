@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../config/theme.dart';
 import '../../models/alert.dart';
+import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
@@ -271,16 +272,16 @@ class ProductDetailScreen extends ConsumerWidget {
 }
 
 class _TrendChip extends StatelessWidget {
-  final String trend;
+  final PriceTrend trend;
   const _TrendChip({required this.trend});
 
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final (icon, color, label) = switch (trend) {
-      'rising' => (Icons.trending_up, AppTheme.priceUp, '상승'),
-      'falling' => (Icons.trending_down, AppTheme.priceDown, '하락'),
-      _ => (Icons.trending_flat, appColors.neutral, '안정'),
+      PriceTrend.rising => (Icons.trending_up, AppTheme.priceUp, '상승'),
+      PriceTrend.falling => (Icons.trending_down, AppTheme.priceDown, '하락'),
+      PriceTrend.stable => (Icons.trending_flat, appColors.neutral, '안정'),
     };
     return Chip(
       avatar: Icon(icon, color: color, size: 18),

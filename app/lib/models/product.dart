@@ -3,6 +3,25 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'product.freezed.dart';
 part 'product.g.dart';
 
+/// 가격 추세 — 서버 PriceTrend enum과 1:1 대응.
+enum PriceTrend {
+  @JsonValue('rising')
+  rising,
+  @JsonValue('falling')
+  falling,
+  @JsonValue('stable')
+  stable,
+}
+
+/// PriceTrend → API 요청에 사용하는 snake_case 문자열 변환.
+extension PriceTrendX on PriceTrend {
+  String get value => switch (this) {
+        PriceTrend.rising => 'rising',
+        PriceTrend.falling => 'falling',
+        PriceTrend.stable => 'stable',
+      };
+}
+
 /// 서버 Product — 상품 상세 + 검색 결과 공용
 @freezed
 abstract class Product with _$Product {
@@ -17,7 +36,7 @@ abstract class Product with _$Product {
     @JsonKey(name: 'lowest_price') int? lowestPrice,
     @JsonKey(name: 'highest_price') int? highestPrice,
     @JsonKey(name: 'average_price') int? averagePrice,
-    @JsonKey(name: 'price_trend') String? priceTrend,
+    @JsonKey(name: 'price_trend') PriceTrend? priceTrend,
     @JsonKey(name: 'buy_timing_score') int? buyTimingScore,
     @JsonKey(name: 'days_since_lowest') int? daysSinceLowest,
     @JsonKey(name: 'drop_from_average') int? dropFromAverage,

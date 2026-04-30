@@ -46,7 +46,7 @@ void main() {
     testWidgets('하락 트렌드 아이콘 표시', (tester) async {
       await mockNetworkImagesFor(() async {
         await tester.pumpWidget(buildCard(
-          Product(id: 1, productName: '상품', priceTrend: 'falling'),
+          Product(id: 1, productName: '상품', priceTrend: PriceTrend.falling),
         ));
         expect(find.byIcon(Icons.trending_down), findsOneWidget);
       });
@@ -55,7 +55,7 @@ void main() {
     testWidgets('상승 트렌드 아이콘 표시', (tester) async {
       await mockNetworkImagesFor(() async {
         await tester.pumpWidget(buildCard(
-          Product(id: 1, productName: '상품', priceTrend: 'rising'),
+          Product(id: 1, productName: '상품', priceTrend: PriceTrend.rising),
         ));
         expect(find.byIcon(Icons.trending_up), findsOneWidget);
       });
@@ -64,7 +64,7 @@ void main() {
     testWidgets('보합 트렌드 아이콘 표시', (tester) async {
       await mockNetworkImagesFor(() async {
         await tester.pumpWidget(buildCard(
-          Product(id: 1, productName: '상품', priceTrend: 'stable'),
+          Product(id: 1, productName: '상품', priceTrend: PriceTrend.stable),
         ));
         expect(find.byIcon(Icons.trending_flat), findsOneWidget);
       });

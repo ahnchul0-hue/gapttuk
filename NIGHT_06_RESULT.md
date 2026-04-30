@@ -1,8 +1,51 @@
-# NIGHT_06_RESULT — 2026-04-30 (Night-50 추가)
+# NIGHT_06_RESULT — 2026-05-01 (Night-51 추가)
 
-> **Night-50 결과**: Flutter **360건** ✅ (변동 없음) | Rust **207건** ✅ | analyze 0건 ✅
-> **Night-50**: PLAN_01 Phase 12 프론트엔드 UI/UX 감사 — 7건 이슈 발견 (HIGH 1 + MEDIUM 3 + LOW 3), 코드 변경 0건
-> **Night-49 이전 결과** (이하 원본 보존)
+> **Night-51 결과**: Flutter **360건** ✅ (유지) | Rust **코드 수정 2건** ✅ | analyze 0건 ✅
+> **Night-51**: PLAN_01 Phase 13 코드 수정 실행 — 5건 수정 (HIGH 3 + MEDIUM 2)
+> **Night-50 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-51 (2026-05-01) — PLAN_01 Phase 13: 발견 사항 기반 코드 수정 실행
+
+**브랜치**: `auto/night-01-20260501_0100`
+**베이스라인**: Flutter **360건** ✅ | Rust 코드 수정 (컴파일 환경 없음 — 수동 수정) | analyze 0건 ✅
+**실행자**: Sonnet 4.6 Sub-agent (직접 코드 수정 + Flutter 검증)
+**코드 변경**: **5건** — Phase 13 확정 이슈 수정
+
+### 수정 항목
+
+| # | ID | 파일 | 설명 | 등급 |
+|---|-----|------|------|------|
+| 1 | **I-01** | `server/src/services/reward_service.rs:381,390` | rollback warn 패턴 불일치 2곳 수정 — `tx.rollback().await?` → `if let Err(rb_err) = tx.rollback().await { warn!() }` | HIGH |
+| 2 | **I-02** | `server/src/main.rs:490-493` | ALLOWED_ORIGINS 전체 파싱 실패 시 조용한 skip → `warn!` 추가 — origins.is_empty() 체크 | HIGH |
+| 3 | **F-08** | `app/lib/services/api_client.dart` + `app/lib/main.dart` | 401 갱신 실패 시 AuthState 미통보 → `ApiClient.onSessionExpired` static 콜백 추가 + main.dart에서 `logout()` 연결 | HIGH |
+| 4 | **U-02** | `app/lib/screens/home/home_screen.dart` | HomeScreen 에러 상태 `Center(child: Text(...))` → `ScreenErrorWidget` 교체 (재시도 버튼 자동 추가) | MEDIUM |
+| 5 | **D-91/PD-67** | `app/lib/models/product.dart` + `.g.dart` + `.freezed.dart` + `product_card.dart` + `product_detail_screen.dart` + 테스트 3파일 | `PriceTrend: String?` → `PriceTrend Enum` 전환 (AlertType PD-62 동일 패턴) | MEDIUM |
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `flutter analyze` | ✅ 0건 |
+| `flutter test` | ✅ 360건 전원 통과 (베이스라인 유지) |
+
+### 결정 사항
+
+- **D-88 (F-08 + I-01 + I-02)**: ✅ 완료 — 권장 A 실행
+- **D-91 (PD-67)**: ✅ 완료 — PriceTrend Enum 전환 완료
+- **D-93 (U-02)**: ✅ 완료 — ScreenErrorWidget 교체
+
+### 미결 사항 (Phase 13 잔여)
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| D-89: AppSpacing/AppTextStyles 시범 적용 (3개 화면) | MEDIUM | ⏳ 다음 세션 |
+| D-90: productPredictionProvider Map→PredictionResult typed | MEDIUM | ⏳ 다음 세션 |
+| D-94: AppSpacing.smMd = 12 추가 | MEDIUM | ⏳ D-89 연동 |
+| D-95: AppTextStyles.discountRate color 다크모드 처리 | LOW | ⏳ 다음 세션 |
+| D-96: SearchScreen 검색 필터 재연결 | MEDIUM | ⏳ 다음 세션 |
+| D-82~D-84: Rust/Dart BREAKING 업그레이드 범위 | HIGH | ⏳ 사용자 결정 필요 |
 
 ---
 

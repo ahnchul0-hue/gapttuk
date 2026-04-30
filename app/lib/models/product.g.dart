@@ -17,7 +17,7 @@ _Product _$ProductFromJson(Map<String, dynamic> json) => _Product(
   lowestPrice: (json['lowest_price'] as num?)?.toInt(),
   highestPrice: (json['highest_price'] as num?)?.toInt(),
   averagePrice: (json['average_price'] as num?)?.toInt(),
-  priceTrend: json['price_trend'] as String?,
+  priceTrend: $enumDecodeNullable(_$PriceTrendEnumMap, json['price_trend']),
   buyTimingScore: (json['buy_timing_score'] as num?)?.toInt(),
   daysSinceLowest: (json['days_since_lowest'] as num?)?.toInt(),
   dropFromAverage: (json['drop_from_average'] as num?)?.toInt(),
@@ -42,7 +42,7 @@ Map<String, dynamic> _$ProductToJson(_Product instance) => <String, dynamic>{
   'lowest_price': instance.lowestPrice,
   'highest_price': instance.highestPrice,
   'average_price': instance.averagePrice,
-  'price_trend': instance.priceTrend,
+  'price_trend': _$PriceTrendEnumMap[instance.priceTrend],
   'buy_timing_score': instance.buyTimingScore,
   'days_since_lowest': instance.daysSinceLowest,
   'drop_from_average': instance.dropFromAverage,
@@ -50,6 +50,12 @@ Map<String, dynamic> _$ProductToJson(_Product instance) => <String, dynamic>{
   'review_count': instance.reviewCount,
   'price_updated_at': instance.priceUpdatedAt?.toIso8601String(),
   'created_at': instance.createdAt?.toIso8601String(),
+};
+
+const _$PriceTrendEnumMap = {
+  PriceTrend.rising: 'rising',
+  PriceTrend.falling: 'falling',
+  PriceTrend.stable: 'stable',
 };
 
 _AddProductResponse _$AddProductResponseFromJson(Map<String, dynamic> json) =>
