@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../config/theme.dart';
 import '../../models/alert.dart';
+import '../../models/prediction_result.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
@@ -33,7 +34,7 @@ class ProductDetailScreen extends ConsumerWidget {
       ),
       body: productAsync.when(
         data: (product) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             // 상품 이미지
             if (product.imageUrl != null)
@@ -51,12 +52,12 @@ class ProductDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             // 상품명
             Text(product.productName,
                 style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
 
             // 품절 배지 + 현재 가격
             if (product.isOutOfStock)
@@ -96,7 +97,7 @@ class ProductDetailScreen extends ConsumerWidget {
                       color: product.isOutOfStock ? appColors.neutral : null,
                     ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
             ],
 
             // 가격 트렌드 + 매수 타이밍
@@ -104,17 +105,17 @@ class ProductDetailScreen extends ConsumerWidget {
               children: [
                 if (product.priceTrend != null)
                   _TrendChip(trend: product.priceTrend!),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 if (product.buyTimingScore != null)
                   _TimingBadge(score: product.buyTimingScore!),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             // 가격 통계
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -142,16 +143,16 @@ class ProductDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             // AI 가격 예측
             _PredictionCard(productId: productId),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
             // 가격 차트
             Text('요일별 평균 가격',
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smMd),
             SizedBox(
               height: 250,
               child: PriceChart(productId: productId),
@@ -177,10 +178,10 @@ class ProductDetailScreen extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Padding(
           padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.lg,
+            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -188,7 +189,7 @@ class ProductDetailScreen extends ConsumerWidget {
             children: [
               Text('가격 알림 설정',
                   style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               RadioGroup<AlertType>(
                 groupValue: selectedType,
                 onChanged: (v) => setState(() => selectedType = v!),
@@ -208,7 +209,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 ),
               ),
               if (selectedType == AlertType.targetPrice) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: priceController,
                   keyboardType: TextInputType.number,
@@ -218,7 +219,7 @@ class ProductDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -352,32 +353,24 @@ class _PredictionCard extends ConsumerWidget {
     final predictionAsync = ref.watch(productPredictionProvider(productId));
 
     return predictionAsync.when(
-      data: (data) {
-        if (data.isEmpty) return const SizedBox.shrink();
-        final action =
-            (data['predicted_action'] as String?) ?? 'neutral';
-        // confidence는 rust_decimal serde-with-str 특성으로 JSON String으로 직렬화됨
-        final confidence = switch (data['confidence']) {
-          num n => n.toDouble(),
-          String s => double.tryParse(s) ?? 0.0,
-          _ => 0.0,
-        };
-        final confidencePct = (confidence * 100).round();
+      data: (result) {
+        if (result == null) return const SizedBox.shrink();
+        final confidencePct = (result.confidence * 100).round();
 
         final appColors = Theme.of(context).extension<AppColors>()!;
-        final (icon, iconColor, actionText) = switch (action) {
-          'buy_now' => (Icons.shopping_cart, AppTheme.priceDown, '지금 구매'),
-          'wait' => (Icons.hourglass_top, AppTheme.priceUp, '대기'),
-          'neutral' || _ => (Icons.trending_flat, appColors.neutral, '보합'),
+        final (icon, iconColor, actionText) = switch (result.predictedAction) {
+          PredictionAction.buyNow => (Icons.shopping_cart, AppTheme.priceDown, '지금 구매'),
+          PredictionAction.wait => (Icons.hourglass_top, AppTheme.priceUp, '대기'),
+          PredictionAction.neutral => (Icons.trending_flat, appColors.neutral, '보합'),
         };
 
         return Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 Icon(icon, color: iconColor, size: 32),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.smMd),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +382,7 @@ class _PredictionCard extends ConsumerWidget {
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         'AI 추천: $actionText (신뢰도 $confidencePct%)',
                         style: Theme.of(context).textTheme.bodyMedium,

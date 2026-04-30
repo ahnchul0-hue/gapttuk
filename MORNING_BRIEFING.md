@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-01 (Night-13 ~ Night-51 종합 분석)
+# MORNING BRIEFING — 2026-05-01 (Night-13 ~ Night-52 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-51 (2026-03-12 ~ 2026-05-01)
+> **분석 대상**: Night-13 ~ Night-52 (2026-03-12 ~ 2026-05-01)
 > **현재 브랜치**: `auto/night-01-20260501_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-01 (Night-51 결과 통합 — **PLAN_01 Phase 13 코드 수정 5건 완료 (I-01/I-02/F-08/U-02/D-91) + Flutter 360건 유지 + analyze 0건**)
-> **검증**: Rust 수정 완료 ✅ / Flutter **360건** ✅ / analyze 0건 ✅ (2026-05-01 실측, Night-51 코드 변경 5건)
+> **최종 업데이트**: 2026-05-01 (Night-52 결과 통합 — **Phase 13 잔여 3건 완료 (D-89/D-94/D-90) + Flutter 361건 + analyze 0건**)
+> **검증**: Rust 수정 완료 ✅ / Flutter **361건** ✅ / analyze 0건 ✅ (2026-05-01 실측, Night-52 코드 변경 3건)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -19,7 +19,8 @@
 > **Night-48 커밋**: `f2319d5` (Phase 10 코드 품질 심층 리뷰 + MORNING_BRIEFING Night-48 반영) + `0315310` (해시 갱신)
 > **Night-49 커밋**: `090dc8d` (Phase 11 아키텍처 분석 + MORNING_BRIEFING Night-49 반영)
 > **Night-50 커밋**: `81dcf6f` (Phase 12 UI/UX 감사 완료 + MORNING_BRIEFING Night-50 반영) + `7fa34d1` (Night-49 해시 갱신)
-> **Night-51 커밋**: TBD (Phase 13 코드 수정 5건 + MORNING_BRIEFING Night-51 반영)
+> **Night-51 커밋**: `13975b9` (Phase 13 코드 수정 5건 I-01/I-02/F-08/U-02/D-91 + MORNING_BRIEFING Night-51)
+> **Night-52 커밋**: TBD (Phase 13 잔여 D-89/D-94/D-90 + MORNING_BRIEFING Night-52 반영)
 
 ---
 
@@ -67,6 +68,8 @@
 | **48** | **04-28** | **PLAN_01 Phase 10: 코드 품질 심층 리뷰 (병렬 4대 에이전트)** | **코드 변경 0건 — 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 결정 항목 도출** | **`f2319d5`** |
 | **49** | **04-29** | **PLAN_01 Phase 11: 아키텍처 분석 + 프레임워크 최신화** | **코드 변경 0건 — Rust 5건 + Flutter 8건 신규 GAP 발견, Axum 0.8 GAP 없음 ✅, Riverpod AsyncNotifier GAP ⚠️, D-88~D-92 결정 항목 도출** | **`090dc8d`** |
 | **50** | **04-30** | **PLAN_01 Phase 12: 프론트엔드 UI/UX 감사** | **코드 변경 0건 — 9건 발견(HIGH 1 + MEDIUM 3 + LOW 5), AppSpacing/TextStyles 전체 미적용(U-01), HomeScreen ScreenErrorWidget 불일치(U-02), 검색 필터 미연결(U-07), D-93~D-96 결정 항목 도출** | **TBD** |
+| **51** | **05-01** | **Phase 13 코드 수정 실행 (1차 — 5건)** | **I-01: reward_service rollback warn / I-02: ORIGINS warn / F-08: onSessionExpired / U-02: ScreenErrorWidget / D-91: PriceTrend Enum** | **`13975b9`** |
+| **52** | **05-01** | **Phase 13 코드 수정 실행 (2차 — 3건)** | **D-89+D-94: AppSpacing smMd + 3화면 pilot / D-90: PredictionResult freezed model + 타입 안전 예측 파싱** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 

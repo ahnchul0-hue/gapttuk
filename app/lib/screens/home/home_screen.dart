@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(popularSearchesProvider.future),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             // 검색 바
             GestureDetector(
@@ -38,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     Icon(Icons.search,
                         color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.smMd),
                     Text(
                       '상품명 또는 URL을 검색하세요',
                       style: TextStyle(
@@ -50,7 +50,7 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smMd),
 
             // URL로 상품 추가 카드
             Card(
@@ -62,12 +62,12 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
             // 인기 검색어
             Text('인기 검색어',
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smMd),
             popularAsync.when(
               data: (searches) => searches.isEmpty
                   ? const Center(child: Text('인기 검색어가 없습니다'))

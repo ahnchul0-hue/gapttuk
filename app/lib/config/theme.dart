@@ -10,6 +10,9 @@ abstract final class AppSpacing {
   /// 8dp — 인접 요소 간 간격
   static const double sm = 8;
 
+  /// 12dp — sm과 md 중간 (버튼 간격, 소제목 하단 등)
+  static const double smMd = 12;
+
   /// 16dp — 섹션 내부 여백, 기본 패딩
   static const double md = 16;
 

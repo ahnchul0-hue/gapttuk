@@ -1,8 +1,49 @@
-# NIGHT_06_RESULT — 2026-05-01 (Night-51 추가)
+# NIGHT_06_RESULT — 2026-05-01 (Night-52 추가)
 
-> **Night-51 결과**: Flutter **360건** ✅ (유지) | Rust **코드 수정 2건** ✅ | analyze 0건 ✅
-> **Night-51**: PLAN_01 Phase 13 코드 수정 실행 — 5건 수정 (HIGH 3 + MEDIUM 2)
+> **Night-52 결과**: Flutter **361건** ✅ (+1) | analyze 0건 ✅
+> **Night-52**: Phase 13 잔여 3건 실행 — D-89/D-94(AppSpacing 3화면 pilot + smMd) + D-90(PredictionResult freezed model)
+> **Night-51 결과**: Flutter **360건** ✅ | Rust 코드 수정 2건 ✅ | analyze 0건 ✅
 > **Night-50 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-52 (2026-05-01) — Phase 13 잔여: AppSpacing 시범 적용 + PredictionResult 모델 전환
+
+**브랜치**: `auto/night-01-20260501_0100`
+**베이스라인**: Flutter **360건** ✅ | analyze 0건 ✅
+**실행자**: Sonnet 4.6 Sub-agent
+**코드 변경**: **3건** — D-89/D-94/D-90
+
+### 수정 항목
+
+| # | ID | 파일 | 설명 | 등급 |
+|---|-----|------|------|------|
+| 1 | **D-94** | `app/lib/config/theme.dart` | `AppSpacing.smMd = 12` 상수 추가 — sm(8)과 md(16) 사이 중간값, 소셜 버튼 간격 등에 반복 사용 | MEDIUM |
+| 2 | **D-89** | `home_screen.dart` + `auth/login_screen.dart` + `product/product_detail_screen.dart` | AppSpacing/AppTextStyles 3화면 시범 적용 — 26개 매직 넘버(8/12/16/24/32/48) → 상수 치환 | MEDIUM |
+| 3 | **D-90** | `models/prediction_result.dart` + `.freezed.dart` + `.g.dart` + `prediction_service.dart` + `product_provider.dart/.g.dart` + `product_detail_screen.dart` + 테스트 3파일 | `Map<String,dynamic>` → `PredictionResult` freezed model + `PredictionAction` enum + `_confidenceFromJson` 방어 파싱 | MEDIUM |
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| `flutter analyze` | ✅ 0건 |
+| `flutter test` | ✅ 361건 전원 통과 (+1: prediction null 반환 케이스 추가) |
+
+### 결정 사항
+
+- **D-89**: ✅ 완료 — 3화면 pilot 적용 완료 (추후 나머지 화면으로 확장 가능)
+- **D-94**: ✅ 완료 — smMd = 12 상수 추가
+- **D-90**: ✅ 완료 — PredictionResult freezed model 전환 완료
+
+### 미결 사항 (Phase 13 최종 잔여)
+
+| 항목 | 등급 | 상태 |
+|------|------|------|
+| D-95: AppTextStyles.discountRate color 다크모드 처리 | LOW | ⏳ 보류 가능 |
+| D-96: SearchScreen 검색 필터 파라미터 재연결 | MEDIUM | ⏳ 다음 세션 |
+| D-82~D-84: Rust/Dart BREAKING 업그레이드 범위 | HIGH | ⏳ 사용자 결정 필요 |
+
+---
 
 ---
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gapttuk_app/models/prediction_result.dart';
 import 'package:gapttuk_app/models/price_history.dart';
 import 'package:gapttuk_app/models/product.dart';
 import 'package:gapttuk_app/providers/product_provider.dart';
@@ -154,8 +155,11 @@ void main() {
       reset(mockPrediction);
     });
 
-    test('getPrediction 성공 시 Map 반환', () async {
-      final data = {'action': 'buy', 'confidence': 0.85};
+    test('getPrediction 성공 시 PredictionResult 반환', () async {
+      const data = PredictionResult(
+        predictedAction: PredictionAction.buyNow,
+        confidence: 0.85,
+      );
       when(() => mockPrediction.getPrediction(10))
           .thenAnswer((_) async => data);
 
@@ -163,34 +167,42 @@ void main() {
       addTearDown(container.dispose);
 
       final result = await container.read(productPredictionProvider(10).future);
-      expect(result['action'], 'buy');
-      expect(result['confidence'], 0.85);
+      expect(result?.predictedAction, PredictionAction.buyNow);
+      expect(result?.confidence, 0.85);
     });
 
-    test('getPrediction 빈 Map 반환', () async {
+    test('getPrediction 데이터 없으면 null 반환', () async {
       when(() => mockPrediction.getPrediction(11))
-          .thenAnswer((_) async => {});
+          .thenAnswer((_) async => null);
 
       final container = buildContainerWithPrediction(mockPrediction);
       addTearDown(container.dispose);
 
       final result = await container.read(productPredictionProvider(11).future);
-      expect(result, isEmpty);
+      expect(result, isNull);
     });
 
     test('productId별 독립 캐시 — 다른 ID는 각각 호출', () async {
-      when(() => mockPrediction.getPrediction(10))
-          .thenAnswer((_) async => {'action': 'buy'});
-      when(() => mockPrediction.getPrediction(20))
-          .thenAnswer((_) async => {'action': 'wait'});
+      when(() => mockPrediction.getPrediction(10)).thenAnswer(
+        (_) async => const PredictionResult(
+          predictedAction: PredictionAction.buyNow,
+          confidence: 0.9,
+        ),
+      );
+      when(() => mockPrediction.getPrediction(20)).thenAnswer(
+        (_) async => const PredictionResult(
+          predictedAction: PredictionAction.wait,
+          confidence: 0.7,
+        ),
+      );
 
       final container = buildContainerWithPrediction(mockPrediction);
       addTearDown(container.dispose);
 
       final r1 = await container.read(productPredictionProvider(10).future);
       final r2 = await container.read(productPredictionProvider(20).future);
-      expect(r1['action'], 'buy');
-      expect(r2['action'], 'wait');
+      expect(r1?.predictedAction, PredictionAction.buyNow);
+      expect(r2?.predictedAction, PredictionAction.wait);
       verify(() => mockPrediction.getPrediction(10)).called(1);
       verify(() => mockPrediction.getPrediction(20)).called(1);
     });

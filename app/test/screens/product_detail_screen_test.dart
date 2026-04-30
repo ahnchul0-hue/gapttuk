@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gapttuk_app/config/theme.dart';
+import 'package:gapttuk_app/models/prediction_result.dart';
 import 'package:gapttuk_app/models/price_history.dart';
 import 'package:gapttuk_app/models/product.dart';
 import 'package:gapttuk_app/providers/product_provider.dart';
@@ -29,7 +30,7 @@ void main() {
   Widget buildScreen({
     Future<Product>? productFuture,
     Future<List<DailyPriceAggregate>>? dailyFuture,
-    Future<Map<String, dynamic>>? predictionFuture,
+    Future<PredictionResult?>? predictionFuture,
   }) {
     return ProviderScope(
       overrides: [
@@ -40,7 +41,7 @@ void main() {
           (ref) => dailyFuture ?? Future.value([]),
         ),
         productPredictionProvider(productId).overrideWith(
-          (ref) => predictionFuture ?? Future.value({}),
+          (ref) => predictionFuture ?? Future.value(null),
         ),
       ],
       child: MaterialApp(
@@ -90,7 +91,7 @@ void main() {
             (ref) async { throw Exception('네트워크 오류'); },
           ),
           dailyPricesProvider(productId).overrideWith((ref) => Future.value([])),
-          productPredictionProvider(productId).overrideWith((ref) => Future.value({})),
+          productPredictionProvider(productId).overrideWith((ref) => Future.value(null)),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -138,10 +139,10 @@ void main() {
 
     testWidgets('AI 예측 buy_now → "지금 구매" 텍스트 표시', (tester) async {
       await tester.pumpWidget(buildScreen(
-        predictionFuture: Future.value({
-          'predicted_action': 'buy_now',
-          'confidence': '0.92',
-        }),
+        predictionFuture: Future.value(const PredictionResult(
+          predictedAction: PredictionAction.buyNow,
+          confidence: 0.92,
+        )),
       ));
       await tester.pumpAndSettle();
       // _PredictionCard: action='buy_now' → actionText='지금 구매'
@@ -186,10 +187,10 @@ void main() {
 
     testWidgets('AI 예측 wait → "대기" 텍스트 표시', (tester) async {
       await tester.pumpWidget(buildScreen(
-        predictionFuture: Future.value({
-          'predicted_action': 'wait',
-          'confidence': '0.75',
-        }),
+        predictionFuture: Future.value(const PredictionResult(
+          predictedAction: PredictionAction.wait,
+          confidence: 0.75,
+        )),
       ));
       await tester.pumpAndSettle();
       expect(find.textContaining('대기'), findsOneWidget);
@@ -204,13 +205,12 @@ void main() {
       expect(find.text('₩30,000'), findsOneWidget);
     });
 
-    testWidgets('AI 예측 neutral → "보합" 텍스트 표시 (default 분기)', (tester) async {
-      // _PredictionCard: 'neutral' || _ → actionText='보합'
+    testWidgets('AI 예측 neutral → "보합" 텍스트 표시', (tester) async {
       await tester.pumpWidget(buildScreen(
-        predictionFuture: Future.value({
-          'predicted_action': 'neutral',
-          'confidence': '0.60',
-        }),
+        predictionFuture: Future.value(const PredictionResult(
+          predictedAction: PredictionAction.neutral,
+          confidence: 0.60,
+        )),
       ));
       await tester.pumpAndSettle();
       expect(find.textContaining('보합'), findsOneWidget);
