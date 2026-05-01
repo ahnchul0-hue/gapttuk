@@ -400,8 +400,8 @@
 > | 10 | ✅ **완료 (Night-48)** | 코드 품질 심층 리뷰 | **coderabbit** + **pr-review-toolkit** (4종) — 17건 발견 → 9건 확정 |
 > | 11 | ✅ **완료 (Night-49)** | 아키텍처 분석 + 프레임워크 최신화 | **feature-dev** (3종) + **WebSearch** — Rust 5건+Flutter 8건 신규 GAP, Axum GAP 없음 |
 > | 12 | ⏳ 대기 | 프론트엔드 UI/UX 감사 | **frontend-design** + **figma** |
-> | 13 | ⏳ 대기 | 발견 사항 기반 코드 수정 실행 | Opus 직접 실행 + Sonnet 병렬 |
-> | 14 | ⏳ 대기 | 최종 검증 + 베이스라인 보존 확인 | flutter test + analyze |
+> | 13 | ✅ **완료 (Night-51/52)** | 발견 사항 기반 코드 수정 실행 (8건) | Opus 직접 실행 + Sonnet 병렬 |
+> | 14 | ✅ **완료 (Night-53)** | 최종 검증 + 베이스라인 보존 확인 | Flutter 361건 / Rust 207건 / analyze 0건 |
 
 ---
 
