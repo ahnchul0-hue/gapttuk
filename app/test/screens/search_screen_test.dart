@@ -91,5 +91,53 @@ void main() {
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
+
+    // ── Night-55 신규 — D-96 필터/정렬 재연결 ──────────────────────────────
+
+    testWidgets('필터 칩 4개 표시 — near_stockout/all_time_low/declining/under_10k',
+        (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+      expect(find.byType(FilterChip), findsNWidgets(4));
+    });
+
+    testWidgets('\'품절 임박\' 필터 칩 탭 → selected 상태로 전환', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+      final chipBefore =
+          tester.widget<FilterChip>(find.widgetWithText(FilterChip, '품절 임박'));
+      expect(chipBefore.selected, false);
+
+      await tester.tap(find.widgetWithText(FilterChip, '품절 임박'));
+      await tester.pump();
+
+      final chipAfter =
+          tester.widget<FilterChip>(find.widgetWithText(FilterChip, '품절 임박'));
+      expect(chipAfter.selected, true);
+    });
+
+    testWidgets('정렬 드롭다운 Icons.sort 아이콘 표시', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      expect(find.byIcon(Icons.sort), findsOneWidget);
+    });
+
+    testWidgets('선택된 필터 칩 재탭 → 해제(deselect)', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+
+      // 1차 탭: 선택
+      await tester.tap(find.widgetWithText(FilterChip, '역대 최저가'));
+      await tester.pump();
+      final selected =
+          tester.widget<FilterChip>(find.widgetWithText(FilterChip, '역대 최저가'));
+      expect(selected.selected, true);
+
+      // 2차 탭: 해제
+      await tester.tap(find.widgetWithText(FilterChip, '역대 최저가'));
+      await tester.pump();
+      final deselected =
+          tester.widget<FilterChip>(find.widgetWithText(FilterChip, '역대 최저가'));
+      expect(deselected.selected, false);
+    });
   });
 }

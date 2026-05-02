@@ -1,10 +1,60 @@
-# NIGHT_06_RESULT — 2026-05-02 (Night-53 추가)
+# NIGHT_06_RESULT — 2026-05-03 (Night-55 추가)
 
+> **Night-55 결과**: Flutter **365건** ✅ (+4) | analyze 0건 ✅ — D-96 해소 (커밋 TBD)
 > **Night-53 결과**: Flutter **361건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ — Phase 14 최종 검증 완료 (커밋 `193ba3d`)
 > **Night-52 결과**: Flutter **361건** ✅ (+1) | analyze 0건 ✅
 > **Night-52**: Phase 13 잔여 3건 실행 — D-89/D-94(AppSpacing 3화면 pilot + smMd) + D-90(PredictionResult freezed model)
 > **Night-51 결과**: Flutter **360건** ✅ | Rust 코드 수정 2건 ✅ | analyze 0건 ✅
 > **Night-50 이전 결과** (이하 원본 보존)
+
+---
+
+## Night-55 (2026-05-03) — D-96 SearchScreen 필터/정렬 재연결
+
+**브랜치**: `auto/night-01-20260503_0100`
+**베이스라인**: Flutter **361건** → **365건** ✅ (+4) | analyze 0건 ✅
+**실행자**: Sonnet 4.6 Sub-agent
+**코드 변경**: **2파일** — `search_screen.dart` + `search_screen_test.dart`
+
+### 변경 요약
+
+| 항목 | 내용 |
+|------|------|
+| **D-96 해소** | SearchScreen 필터 칩 4개 + 정렬 드롭다운 추가 |
+| **Night-54 커밋** | `86c8628` — MORNING_BRIEFING Night-54 반영 (커밋 누락 해소) |
+| **신규 테스트** | SearchScreen 필터 4건 (361→365) |
+
+### 구현 세부
+
+**`search_screen.dart`:**
+- `_filter` / `_sortBy` 상태 변수 추가
+- `_FilterChipRow` 위젯 분리 (4종 필터: near_stockout/all_time_low/declining/under_10k)
+- `DropdownButton<String?>` 정렬 UI (4종: ranking/discount_rate/discount_amount/lowest_price)
+- `service.search(filter: _filter, sort: _sortBy, ...)` 연결 완료
+- `_applyFilter()` / `_applySort()` — 검색 후 상태이면 즉시 재검색 트리거
+
+**`search_screen_test.dart` 신규 4건:**
+- 필터 칩 4개 표시 확인
+- '품절 임박' 칩 탭 → selected 상태 전환
+- 정렬 Icons.sort 아이콘 표시
+- 선택된 칩 재탭 → deselect 토글
+
+### 검증 결과
+
+| 항목 | 기준 | 결과 |
+|------|------|------|
+| `flutter analyze` | 0건 | ✅ No issues found |
+| `flutter test` | ≥361건 | ✅ **365건** 전원 통과 |
+| D-96 미결 | MEDIUM | ✅ **해소** |
+
+### 잔여 미결 항목
+
+| 항목 | 등급 | 이연 사유 |
+|------|------|----------|
+| D-95: discountRate 색상 다크모드 처리 | LOW | 다크모드 브랜치 미머지 상태 — 병합 후 처리 권장 |
+| D-82~D-84: BREAKING 업그레이드 범위 | HIGH | 사용자 결정 필요 |
+| D-86: MEDIUM 2건 코드 수정 | MEDIUM | 사용자 결정 대기 |
+| D-87: LOW 4건 코드 수정 | LOW | 사용자 결정 대기 |
 
 ---
 
