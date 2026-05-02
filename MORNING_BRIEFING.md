@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-02 (Night-13 ~ Night-53 종합 분석)
+# MORNING BRIEFING — 2026-05-02 (Night-13 ~ Night-54 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-53 (2026-03-12 ~ 2026-05-02)
+> **분석 대상**: Night-13 ~ Night-54 (2026-03-12 ~ 2026-05-02)
 > **현재 브랜치**: `auto/night-01-20260502_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-02 (Night-53 MORNING_BRIEFING 반영 — **Phase 14 최종 검증 완료: Flutter 361건 / Rust 207건 / analyze 0건 — PLAN_01 Phase 9-14 전체 완료**)
-> **검증**: Flutter **361건** ✅ / Rust **207건** ✅ / analyze 0건 ✅ (2026-05-02 실측, Phase 14 최종 검증 통과)
+> **최종 업데이트**: 2026-05-02 (Night-54 MORNING_BRIEFING 반영 — **PLAN_01 Phase 9-14 전체 완료 확인 + NaverSearch MCP 발견 + 84커밋 종합 분석**)
+> **검증**: Flutter **361건** ✅ / Rust **207건** ✅ / analyze 0건 ✅ (2026-05-02 Night-53 실측, Phase 14 최종 검증 통과)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -21,7 +21,8 @@
 > **Night-50 커밋**: `81dcf6f` (Phase 12 UI/UX 감사 완료 + MORNING_BRIEFING Night-50 반영) + `7fa34d1` (Night-49 해시 갱신)
 > **Night-51 커밋**: `13975b9` (Phase 13 코드 수정 5건 I-01/I-02/F-08/U-02/D-91 + MORNING_BRIEFING Night-51)
 > **Night-52 커밋**: `f1e699b` (Phase 13 잔여 D-89/D-94/D-90 + MORNING_BRIEFING Night-52 반영)
-> **Night-53 커밋**: `193ba3d` (Phase 14 최종 검증 완료 + MORNING_BRIEFING Night-53 반영)
+> **Night-53 커밋**: `193ba3d` (Phase 14 최종 검증 완료 + MORNING_BRIEFING Night-53 반영) + `666c4cf` (해시 갱신)
+> **Night-54 커밋**: TBD (Night-54 종합 분석 + NaverSearch MCP 발견 + MORNING_BRIEFING Night-54 반영)
 
 ---
 
@@ -71,7 +72,8 @@
 | **50** | **04-30** | **PLAN_01 Phase 12: 프론트엔드 UI/UX 감사** | **코드 변경 0건 — 9건 발견(HIGH 1 + MEDIUM 3 + LOW 5), AppSpacing/TextStyles 전체 미적용(U-01), HomeScreen ScreenErrorWidget 불일치(U-02), 검색 필터 미연결(U-07), D-93~D-96 결정 항목 도출** | **TBD** |
 | **51** | **05-01** | **Phase 13 코드 수정 실행 (1차 — 5건)** | **I-01: reward_service rollback warn / I-02: ORIGINS warn / F-08: onSessionExpired / U-02: ScreenErrorWidget / D-91: PriceTrend Enum** | **`13975b9`** |
 | **52** | **05-01** | **Phase 13 코드 수정 실행 (2차 — 3건)** | **D-89+D-94: AppSpacing smMd + 3화면 pilot / D-90: PredictionResult freezed model + 타입 안전 예측 파싱** | **`f1e699b`** |
-| **53** | **05-02** | **PLAN_01 Phase 14: 최종 검증 + 구조화된 커밋** | **코드 변경 0건 — Flutter 361건 / Rust 207건 / analyze 0건 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료. D-95/D-96 이연 결정.** | **TBD** |
+| **53** | **05-02** | **PLAN_01 Phase 14: 최종 검증 + 구조화된 커밋** | **코드 변경 0건 — Flutter 361건 / Rust 207건 / analyze 0건 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료. D-95/D-96 이연 결정.** | **`193ba3d`, `666c4cf`** |
+| **54** | **05-02** | **Night-13~53 종합 분석 + NaverSearch MCP 발견** | **코드 변경 0건 — NaverSearch 18+ API 신규 발견(search_shop/datalab), PLAN_01 Phase 9-14 완전 완료 재확인, 84커밋 종합 분석, 사용자 방향 결정 대기** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -121,9 +123,46 @@ Night 50:    ★★★★★★★★★★★★★★★★★★★★★★�
 Night 51:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ★축적→폭발★ ── Phase 13 실행 개시: HIGH 3건(F-08+I-01+I-02) + MEDIUM 2건(U-02+D-91) = 5건 코드 수정
 Night 52:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 13 가속 ── AppSpacing 3화면 pilot(26개 매직넘버 제거) + PredictionResult freezed model + 361건
 Night 53:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 14 완결 ── PLAN_01 Phase 9-14 전체 완료 선언: Flutter 361건 / Rust 207건 / analyze 0건 3중 검증 통과
+Night 54:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ MCP 확장 ── NaverSearch 18+ API 신규 발견(search_shop/datalab_shopping), 84커밋 종합 분석, PLAN_01 완전 완결 + PLAN_02 진입 방향 제시
 ```
 
-### 1.3 Night-51/52 전략적 의의: Phase 13 "축적→폭발" 실현 — 12세션 분석 정체 해소
+### 1.3 Night-54 전략적 의의: NaverSearch MCP 발견 + PLAN_01 완전 완결 + 84커밋 종합 분석
+
+Night-53 Phase 14(최종 검증) 완료 후, **Night-54는 Night-13~53 전체 종합 분석 + 신규 MCP 도구 발견 세션**.
+
+**Night-54 핵심 발견 — NaverSearch MCP (★★★★★ 최고 관련성):**
+
+| MCP | API 수 | 값뚝 관련성 | 핵심 API |
+|-----|--------|------------|----------|
+| **NaverSearch** | 18+ | **★★★★★** | `search_shop`(쇼핑 검색), `datalab_shopping_category`(카테고리 트렌드), `datalab_shopping_keywords`(키워드 트렌드), `datalab_shopping_by_age/gender/device`(인구 분석) |
+| **KakaoMap** | 4 | ★★ | `SearchPlaceByKeywordOpen`(매장 위치) — 오프라인 가격 비교 가능성 |
+| **KakaotalkChat** | 1 | ★ | `MemoChat` — 사용자 알림 대안 채널 |
+| **opendart** | 14 | ★★ | `get_financial_statement`(리테일러 재무) — 대형마트 가격 전략 분석 가능성 |
+| **UsStockInfo** | 9 | ★ | 미국 주식 — 비해당 (한국 리테일 서비스) |
+
+**NaverSearch의 값뚝 활용 시나리오:**
+1. **`search_shop`**: 네이버 쇼핑 실시간 가격 조회 → 기존 크롤러 보완/대체 가능
+2. **`datalab_shopping_category`**: 카테고리별 쇼핑 트렌드 → 인기검색어/추천 상품 정밀화
+3. **`datalab_shopping_keywords`**: 키워드 클릭 트렌드 → 가격 변동 예측 모델 피처
+4. **`datalab_shopping_by_age/gender`**: 사용자 세그먼트별 트렌드 → 개인화 알림 고도화
+
+**Night-54 종합 분석 결과:**
+- **PLAN_01 Phase 9-14 완전 완료 재확인**: Night-47~53 (7세션), 코드 수정 8건, 3중 검증 통과
+- **84커밋 main 미머지**: Night-13~53 전체 성과 — 통합 PR 생성이 최우선 과제
+- **잔여 미결 7건**: D-82~D-84(BREAKING), D-86(MEDIUM 2), D-87(LOW 4), D-95(색상), D-96(필터)
+- **NaverSearch MCP**: 값뚝 핵심 기능(가격 추적)과 직접 연관 — PLAN_02 방향 B(기능 확장)의 킬러 도구
+
+**Opus 4.6 전략 요약 (Night-54):**
+- PLAN_01 완전 종결 후 다음 단계 방향 제시: A) Phase 13 잔여 완결 B) NaverSearch 통합 우선 C) 조합(권장) D) 기타
+- NaverSearch MCP를 PLAN_02 방향 B(기능 확장)의 핵심 도구로 위치
+- 84커밋 브랜치 머지(U-3)를 모든 방향의 전제 조건으로 재강조
+
+**사용자 결정 대기 항목:**
+- **U-43 (방향 선택)**: A/B/C/D 중 Night-54 이후 실행 방향
+- **U-3 (브랜치 머지)**: 84커밋 → main PR 생성
+- **D-82~D-84** (BREAKING): Rust/Dart 메이저 업그레이드 범위
+
+### 1.3a Night-51/52 전략적 의의: Phase 13 "축적→폭발" 실현 — 12세션 분석 정체 해소
 
 Night-50 Phase 12 (UI/UX 감사) 완료 후, **Night-51/52는 PLAN_01 Phase 13 코드 수정 실행의 첫 2세션**. Night-39~50까지 **12세션 연속 코드 변경 0건**이었던 분석/감사 축적이 드디어 코드 변경으로 전환된 전략적 전환점.
 
@@ -666,10 +705,13 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 30. **10세션 연속 코드 변경 0건** (Night-40~48): 분석/문서/리뷰 세션이 코드 변경 세션과 분리 — Phase 13(수정 실행)까지 축적된 분석이 한꺼번에 실행되는 "축적→폭발" 패턴
 31. **"축적→폭발" 패턴 실증** (Night-51/52): 12세션 분석 축적(Night-39~50) → Night-51/52에서 8건 코드 수정 일거 실행 — Phase 9~12 도출 이슈를 2세션 만에 Phase 13으로 전환. 축적된 분석이 실행 품질과 속도를 동시에 높이는 패턴 확인
 32. **HIGH 우선 → MEDIUM 순차 실행** (Night-51→52): Night-51에서 HIGH 3건(F-08+I-01+I-02) 먼저 수정 → Night-52에서 MEDIUM 3건(AppSpacing+PredictionResult) 순차 — 위험도 기반 실행 순서로 regression 위험 최소화
+33. **3중 검증 게이트 패턴** (Night-53): Phase 14에서 `flutter test` + `flutter analyze` + `cargo test --lib` 3중 검증으로 Phase 13 코드 수정 8건의 안정성 최종 확인 — 코드 변경 없이 순수 검증 세션
+34. **MCP 도구 사전 탐색 패턴** (Night-54): 새 세션 시작 시 사용 가능한 MCP 도구 전수 점검 → NaverSearch 18+ API 발견 — 이전 세션에서 미확인된 도구가 프로젝트 핵심 가치(가격 추적)와 직접 연관
+35. **PLAN 완전 종결 후 방향 전환 패턴** (Night-54): PLAN_01 Phase 1-14 완전 완료 → NaverSearch 발견으로 PLAN_02 방향 B(기능 확장)에 킬러 도구 추가 — 계획 종결과 신규 발견의 교차점에서 방향 재설정
 
 ### 1.13 의사결정 일관성
 
-- **총 96개 결정** (D-1 ~ D-96) — Night-50에서 D-93~D-96 추가, Night-51/52에서 8건 해소, Night-53에서 D-95/D-96 이연 확정
+- **총 96개 결정** (D-1 ~ D-96) — Night-50에서 D-93~D-96 추가, Night-51/52에서 8건 해소, Night-53에서 D-95/D-96 이연 확정, Night-54에서 U-43 신규 추가
 - REVERSED: 1건 (D-2: utoipa 제거)
 - 보류: 3건 (D-32: CheckinResult 열거형, D-33: keepAlive, D-35: build_runner)
 - SKIPPED: 2건 (D-36: MCP 마이그레이션, D-40: Ralph Loop)
@@ -727,6 +769,8 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **50** | **Opus 4.6 (Phase 12 실행) 직접 코드 분석** | **프로덕션 코드 변경 0건** | **360건 유지** | **Phase 12: 5개 핵심 화면 + ProductCard 직접 UI/UX 감사 → 9건 발견(HIGH 1 + MEDIUM 3 + LOW 5), AppSpacing/TextStyles 전체 미적용(U-01), 검색 필터 미연결(U-07), D-93~D-96 도출** |
 | **51** | **Sonnet 4.6 Sub-agent (Phase 13 직접 코드 수정)** | **Rust 2파일 수정 + Flutter 9파일 수정** | **360건 유지** | **Phase 13 1차: I-01(rollback warn 2곳) + I-02(ORIGINS warn) + F-08(onSessionExpired) + U-02(ScreenErrorWidget) + D-91(PriceTrend Enum 9파일) — HIGH 3건 + MEDIUM 2건 = 5건 코드 수정** |
 | **52** | **Sonnet 4.6 Sub-agent (Phase 13 직접 코드 수정)** | **Flutter 16파일 수정 (freezed 재생성 포함)** | **+1건 (361건)** | **Phase 13 2차: D-94(AppSpacing.smMd=12) + D-89(3화면 AppSpacing pilot, 26매직넘버 치환) + D-90(PredictionResult freezed model + PredictionAction enum + _confidenceFromJson 방어파싱) — MEDIUM 3건 코드 수정** |
+| **53** | **Opus 4.6 직접 실행 (Phase 14 검증)** | **프로덕션 코드 변경 0건** | **361건 유지** | **Phase 14: Flutter 361건 + Rust 207건 + analyze 0건 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료 선언. D-95/D-96 이연 확정** |
+| **54** | **Opus 4.6 직접 실행 (종합 분석 + MCP 발견)** | **프로덕션 코드 변경 0건** | **361건 유지** | **Night-13~53 종합 분석: NaverSearch MCP 18+ API 신규 발견(search_shop/datalab_shopping), PLAN_01 완전 완결 재확인, 84커밋 종합 분석, 사용자 방향 결정 대기** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -747,6 +791,40 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | 코드 간소화 | `pr-review-toolkit:code-reviewer` + `pr-review-toolkit:silent-failure-hunter` | Night-37 Phase 7-D 리뷰 | ✅ 활성 |
 | 대체 전략 | WebSearch + RustSec DB + NVD | Night-31~37: 대체 성공 | ✅ 활성 |
 | 외부 참조 | WebSearch + WebFetch | MCP 대체 (D-36:C) | ✅ 활성 |
+
+### 2.3a Night-54 신규 MCP 발견 — PlayMCP 도구 매트릭스
+
+> Night-54에서 **PlayMCP** 플러그인 내 5개 서비스 신규 발견. 이전 세션에서 미확인.
+
+| MCP 서비스 | API 수 | 값뚝 관련성 | 핵심 API | 현재 상태 |
+|-----------|--------|------------|----------|----------|
+| **NaverSearch** | **18+** | **★★★★★** | `search_shop` (쇼핑 검색), `datalab_shopping_category/keywords` (트렌드), `datalab_shopping_by_age/gender/device` (인구 분석), `search_blog/news` | ✅ **즉시 사용 가능** (익명, rate limit 적용) |
+| **KakaoMap** | 4 | ★★ | `SearchPlaceByKeywordOpen` (장소 검색), `GetPublicTransitDirections` | ✅ 사용 가능 |
+| **KakaotalkChat** | 1 | ★ | `MemoChat` (메모/알림) | ✅ 사용 가능 |
+| **opendart** | 14 | ★★ | `find_company`, `get_financial_statement`, `get_full_financial_statement` | ✅ 사용 가능 |
+| **UsStockInfo** | 9 | ★ | 미국 주식 전용 — 값뚝 비해당 | ✅ 사용 가능 (비활용) |
+| **CoinInfo** | 7 | ★ | 암호화폐 — 값뚝 비해당 | ✅ 사용 가능 (비활용) |
+
+**NaverSearch 값뚝 활용 시나리오 (PLAN_02 연계):**
+
+| API | 활용 방안 | PLAN_02 방향 |
+|-----|----------|-------------|
+| `search_shop` | 네이버 쇼핑 실시간 가격 조회 → 서버 크롤러 보완/대체 | B(기능 확장) |
+| `datalab_shopping_category` | 카테고리별 쇼핑 트렌드 → 인기검색어 정밀화 | B(기능 확장) |
+| `datalab_shopping_keywords` | 키워드 클릭 트렌드 → 가격 변동 예측 피처 | B(기능 확장) |
+| `datalab_shopping_by_age/gender` | 사용자 세그먼트별 트렌드 → 개인화 알림 | B(기능 확장) |
+| `find_category` | 네이버 쇼핑 카테고리 ID 조회 → API 호출 전제 | 인프라 |
+
+**MCP 가용성 종합 (Night-54 실측):**
+
+| 구분 | 도구 | 상태 |
+|------|------|------|
+| **즉시 활성** | feature-dev(3종), pr-review-toolkit(6종), superpowers(12종), coderabbit, code-simplifier, commit-commands, frontend-design | ✅ |
+| **신규 발견** | PlayMCP — NaverSearch(18+), KakaoMap(4), KakaotalkChat(1), opendart(14), UsStockInfo(9), CoinInfo(7) | ✅ (rate limit) |
+| **OAuth 대기** | Gmail, Google Calendar, Google Drive, Zapier, Slack, Figma, Stripe, Supabase, Linear, Sentry, PostHog, Asana, Atlassian, GitLab, CircleBack | ⏳ 인증 필요 |
+| **설치됨/미연결** | context7, playwright, serena | ⚠️ WebSearch/feature-dev 대체 |
+| **인증 미구성** | sonatype-guide | ⚠️ **29세션** 연속 |
+| **비해당** | mcp-tailwind-gemini, shadcn | ❌ Flutter 프로젝트 |
 
 ### 2.4 Night-31 MCP 실행 상세
 
@@ -977,7 +1055,40 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **Rust** | ✅ 0건 | 3건 (reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47) | 3건 (axum 0.8.9, scraper 0.26, tokio 1.52.1) |
 | **Dart** | ✅ 0건 | 8건 (kakao 2.0, riverpod_gen 4.x, go_router 17, fl_chart 1.2, google_sign_in 7.x, sign_in_with_apple 7.x, flutter_secure_storage 10.x, dio 6.x) | 4건 (build_runner, freezed, mocktail, json_annotation) |
 
-### 3.10 Night-51/52 작업 내역 (커밋 `13975b9`, `f1e699b`)
+### 3.10 Night-53/54 작업 내역
+
+#### Night-53 (Phase 14 — 최종 검증, 커밋 `193ba3d`, `666c4cf`)
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| Phase 14 3중 검증 | — | `flutter test` 361건 ✅ + `flutter analyze` 0건 ✅ + `cargo test --lib` 207건 ✅ |
+| PLAN_01 Phase 9-14 완료 선언 | `MORNING_BRIEFING.md` | Night-53 전략 §1.3b + Phase 완료 마킹 |
+| D-95/D-96 이연 확정 | `MORNING_BRIEFING.md` | Phase 14 범위 초과 → PLAN_02 방향 결정 후 실행 |
+
+**프로덕션 코드 변경: 0건** — 순수 검증 세션
+**테스트 변경: 0건** — 361건 유지
+
+#### Night-54 (종합 분석 + NaverSearch MCP 발견, 커밋 TBD)
+
+| 작업 | 파일 | 내용 |
+|------|------|------|
+| Night-13~53 종합 분석 | `MORNING_BRIEFING.md` | §1~§9 전체 Night-54 반영 — 42세션 전략/기술/코드 종합 + PlayMCP 신규 발견 |
+| PlayMCP 도구 매트릭스 | `MORNING_BRIEFING.md` | §2.3a 신규 — NaverSearch(18+)/KakaoMap(4)/opendart(14)/CoinInfo(7) 관련성 분류 |
+| NaverSearch 활용 시나리오 | `MORNING_BRIEFING.md` | search_shop(실시간 가격) + datalab_shopping(트렌드) → PLAN_02 방향 B 연계 |
+| U-43 방향 선택 제시 | `MORNING_BRIEFING.md` | A/B/C/D 4선택지 — 사용자 결정 대기 |
+
+**프로덕션 코드 변경: 0건** — 분석 + MCP 발견 세션
+**테스트 변경: 0건** — 361건 유지
+
+**Night-53/54 실행 특성:**
+- **Night-53**: Opus 4.6 직접 실행 (Phase 14 검증) — Sonnet 미사용, 순수 검증 게이트
+- **Night-54**: Opus 4.6 직접 실행 (종합 분석) — PlayMCP NaverSearch 18+ API 신규 발견, MCP 도구 전수 점검
+- **MCP/플러그인**: Night-54에서 PlayMCP 도구 5개 서비스 신규 발견 (NaverSearch ★★★★★ 최고 관련성)
+- **SessionEnd hook 실패**: `node` 미설치 (Night-30~54, **46회+** 누적) — D-81로 원인 규명됨, 사용자 옵션 선택 대기
+
+---
+
+### 3.10a Night-51/52 작업 내역 (커밋 `13975b9`, `f1e699b`)
 
 #### Night-51 (Phase 13 1차 — 5건 코드 수정)
 
@@ -1277,11 +1388,15 @@ Night-51: 360건 ──── +0건 테스트, +5건 프로덕션 수정 (Phase 
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ★축적→폭발★ Phase 13 실행 개시: HIGH 3건(F-08+I-01+I-02) + MEDIUM 2건(U-02+D-91). 12세션 분석 정체 종료!
 Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, prediction null 테스트 추가)
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 13 가속: AppSpacing 3화면 pilot(26매직넘버) + PredictionResult freezed model. 8건/15건 결정 해소
+Night-53: 361건 ──── +0건 (Phase 14 최종 검증 — 코드 변경 0건, 3중 검증 게이트 통과)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ PLAN_01 Phase 9-14 전체 완료 선언: Flutter 361건/Rust 207건/analyze 0건 — D-95/D-96 이연 확정
+Night-54: 361건 ──── +0건 (Night-13~53 종합 분석 + NaverSearch MCP 18+ API 발견 — 코드 변경 0건, 분석 전용)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ NaverSearch MCP 발견: search_shop/datalab 18+API — PLAN_02 방향 B(기능 확장) 핵심 도구. 84커밋 종합 분석
 ```
 
 ### 3.17 코드베이스 규모
 
-| 항목 | **Night-52** | Night-51 | Night-50 | 변화 (vs 51) |
+| 항목 | **Night-54** | Night-53 | Night-52 | 변화 (vs 53) |
 |------|-------------|----------|----------|-------------|
 | DB 마이그레이션 (main) | 018 | 018 | 018 | — |
 | 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
@@ -1290,12 +1405,13 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | DECISION_LOG 항목 | **D-96** | D-96 | D-96 | — |
 | 순수 함수 추출 누계 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | Silent Failure 수정 | 33건+ (잔존 0건) | 33건+ | 33건+ | — |
-| 프로덕션 코드 수정 (Night-52) | **3건** (D-89/D-94/D-90) | 5건 | 0건 | **Phase 13 가속** |
-| Flutter 테스트 | **361건** (+1) | 360건 | 360건 | **+1** (prediction null) |
-| 커밋 (main 대비) | **84** | 83 | 82 | **+1** (`f1e699b`) |
-| PLAN_01 Phase 완료 | **13/14** (Phase 1-13 진행중) | 13/14 | 12/14 | **Phase 13 진행 중** |
+| 프로덕션 코드 수정 (Night-54) | **0건** (종합 분석) | 0건 | 3건 | — |
+| Flutter 테스트 | **361건** | 361건 | 361건 | — |
+| 커밋 (main 대비) | **85+** | 85 | 84 | **+1** (`666c4cf`) |
+| PLAN_01 Phase 완료 | **14/14** ✅ 전체 완료 | 14/14 | 13/14 | **Phase 14 완료 (Night-53)** |
 | PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
-| Phase 13 결정 해소 | **8/15** | 6/15 | 0/15 | **+2** (D-89/D-90/D-94) |
+| Phase 13 결정 해소 | **8/15** (잔여 7건 사용자 결정) | 8/15 | 8/15 | — |
+| NaverSearch MCP | **✅ 18+ API 발견** | — | — | **Night-54 신규 발견** |
 
 ### 3.18 순수 함수 추출 목록
 
@@ -1316,11 +1432,11 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-05-01, Night-52)
+### 4.1 활성 브랜치 (2026-05-02, Night-54)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260501_0100`** ★ | **+84 commits** | Night-13~52 전체 + **PLAN_01 Phase 1-12 완료 + Phase 13 진행 중 (8/15건 해소)** + PLAN_02 초안 + D-81~D-96 + Flutter **361건** + Rust 207건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260502_0100`** ★ | **+85 commits** | Night-13~54 전체 + **PLAN_01 Phase 1-14 전체 완료** + PLAN_02 초안 + D-81~D-96 + Flutter **361건** + Rust 207건 | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -1332,12 +1448,12 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0501_0100` (36개+) | **Night-52 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0502_0100` (37개+) | **Night-54 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260501_0100 → main (84커밋, Phase 1-12 완료 + Phase 13 진행(8건 수정) + PLAN_02 초안 + Flutter 361건, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260502_0100 → main (85+커밋, PLAN_01 Phase 1-14 전체 완료 + PLAN_02 초안 + Flutter 361건, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -1361,8 +1477,8 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | **10** | 코드 품질 심층 리뷰 | ✅ **완료** | **48** | **병렬 4대 에이전트: 17건 발견 → 오탐 4건 제외 → 9건 확정 (HIGH 2 + MEDIUM 3 + LOW 4), D-85~D-87 도출** |
 | **11** | 아키텍처 + 프레임워크 최신화 | ✅ **완료** | **49** | **병렬 3에이전트: Rust 5건 + Flutter 8건 = 13건 GAP, Axum GAP 없음/Riverpod AsyncNotifier GAP, D-88~D-92 도출** |
 | **12** | 프론트엔드 UI/UX 감사 | ✅ **완료** | **50** | **Opus 직접 코드 분석: 5개 화면+ProductCard → 9건(HIGH 1+MEDIUM 3+LOW 5), AppSpacing 드리프트 확인, D-93~D-96 도출** |
-| **13** | 발견 사항 기반 코드 수정 | 🔄 **진행 중** | **51-52** | **Night-51: 5건(I-01/I-02/F-08/U-02/D-91) + Night-52: 3건(D-89/D-94/D-90) = 8건/15건 해소. 잔여: D-82~D-84/D-86/D-87/D-95/D-96** |
-| **14** | 최종 검증 + 커밋 | ⏳ 대기 | — | Phase 13 잔여 완료 후 flutter test + analyze 예정 |
+| **13** | 발견 사항 기반 코드 수정 | ✅ **완료** (8/15건 실행, 7건 사용자 결정 이연) | **51-52** | **Night-51: 5건(I-01/I-02/F-08/U-02/D-91) + Night-52: 3건(D-89/D-94/D-90) = 8건 해소. 이연 7건: D-82~D-84/D-86/D-87/D-95/D-96** |
+| **14** | 최종 검증 + 커밋 | ✅ **완료** | **53** | **Flutter 361건 / Rust 207건 / analyze 0건 — 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료** |
 
 ### Phase 9 결정 사항 (D-82~D-84, Night-47)
 
@@ -1474,7 +1590,8 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~52 머지 방향 | `auto/night-01-20260501_0100` (84커밋, Phase 1-12 완료 + Phase 13 진행(8건 수정), Flutter **361건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-3** | Night-13~54 머지 방향 | `auto/night-01-20260502_0100` (85+커밋, **PLAN_01 Phase 1-14 전체 완료**, Flutter **361건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-43** | Night-54 이후 방향 선택 | NaverSearch MCP 발견 + PLAN_01 완전 완료 — 다음 실행 방향 결정 | A) Phase 13 잔여 완결 B) NaverSearch 통합 우선 C) 조합(Opus 권장) D) 기타 |
 | **D-82** | Rust BREAKING 업그레이드 범위 | Phase 9 발견: reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47 (3건 모두 메이저 API 변경) | A) 전체 B) sentry만 C) 전부 보류 |
 | **D-83** | Dart BREAKING 업그레이드 범위 | Phase 9 발견: kakao 2.0, riverpod_gen 4.x, go_router 17, fl_chart 1.2 외 4건 (인증 플로우 변경 리스크 포함) | A) kakao 2.0 포함 전체 B) riverpod만 C) 전부 보류 |
 | **D-84** | Dart non-BREAKING 4건 즉시 적용 | build_runner, freezed, mocktail, json_annotation (dev dependency 포함) | A) 전체 B) dev만 C) 보류 |
@@ -1515,6 +1632,37 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | | Flutter 엔진 Skia CVE 모니터링 | CVE-2025-27363 + CVE-2026-3909 — Flutter stable 업데이트 시 즉시 적용 |
+
+---
+
+## 7. Night-53/54에서 해결/생성된 항목
+
+### ✅ Night-53에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| **PLAN_01 Phase 14 최종 검증** | **CRITICAL** | **Flutter 361건 / Rust 207건 / analyze 0건 — 3중 검증 게이트 통과. PLAN_01 Phase 9-14 전체 완료 선언** |
+| **Phase 13 코드 수정 8건 안정성** | **HIGH** | **Night-51/52 수정 8건에 대한 regression 없음 최종 확인** |
+| **D-95/D-96 이연 결정** | **MEDIUM** | **Phase 14 범위 초과 → PLAN_02 방향 결정 후 실행으로 이연 확정** |
+
+### ✅ Night-54에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|-----------|
+| **Night-13~53 종합 분석** | **HIGH** | **MORNING_BRIEFING.md 전체 Night-54 반영 — Opus 전략(42세션)/Sonnet 기술/코드 결과/PlayMCP 발견 종합** |
+| **NaverSearch MCP 발견 + 분류** | **HIGH** | **18+ API 발견 → search_shop/datalab_shopping 4개 핵심 활용 시나리오 도출 → PLAN_02 방향 B(기능 확장) 킬러 도구로 위치** |
+| **PlayMCP 도구 매트릭스** | **MEDIUM** | **5개 서비스(NaverSearch/KakaoMap/KakaotalkChat/opendart/UsStockInfo) 관련성 분류 완료** |
+| **PLAN_01 완전 완결 재확인** | **INFO** | **Phase 1-14 전체 ✅ — Night-30 수립 → Night-53 완결, 24세션** |
+
+### 🆕 Night-54에서 생성됨
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **U-43 방향 선택** | **CRITICAL** | A) Phase 13 잔여 완결 B) NaverSearch 통합 우선 C) 조합(Opus 권장) D) 기타 — **사용자 결정 필요** |
+| **NaverSearch search_shop PoC** | **HIGH** | 네이버 쇼핑 실시간 가격 조회 → 기존 크롤러 보완/대체 가능성 검증 필요 |
+| **NaverSearch datalab 트렌드 연동** | **HIGH** | 카테고리/키워드 쇼핑 트렌드 → 인기검색어 정밀화 + 가격 예측 피처 |
+| **PlayMCP 인구 분석** | **MEDIUM** | `datalab_shopping_by_age/gender/device` → 개인화 알림 고도화 |
+| **85+커밋 브랜치 머지** | **CRITICAL** | U-3 재강조 — PLAN_01 전체 성과 통합이 어떤 PLAN_02 방향이든 전제 조건 |
 
 ---
 
@@ -1872,31 +2020,34 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | auto 브랜치 27개+ 정리 | LOW | 사용자 승인 대기 |
 | SessionEnd hook `node` 미설치 | LOW | **Night-41 원인 규명 완료** — D-81: Vercel plugin hook, **40회** 누적. 옵션 A(비활성화, 권장)/B(설치)/C(유지) **사용자 결정 대기** |
 | Flutter Skia CVE 2건 | INFO | Flutter 팀 패치 대기 — 코드 변경 불가 |
-| **PLAN_01 Phase 1-12 완료** | **INFO** | **8/8 + Phase 9~12 완결 — Night-30 수립 → Night-37 Phase 1-8 → Night-47~50 Phase 9-12 → Phase 13(수정)/14(검증) 대기** |
+| **PLAN_01 Phase 1-14 전체 완료** | **✅ 완료** | **Night-30 수립 → Night-37 Phase 1-8 → Night-47~50 Phase 9-12 → Night-51/52 Phase 13 → Night-53 Phase 14 — 24세션 완결** |
 | ~~PLAN_02 방향 대기~~ | ~~CRITICAL~~ | ~~사용자 결정 9세션 연속 대기~~ → **✅ Night-47 U-42 해소** |
 | **D-82~D-84 결정 대기** | **CRITICAL** | **Phase 9 업그레이드 범위 — Rust/Dart BREAKING 범위 사용자 결정 필요** |
 | **D-85~D-87 결정 대기** | **HIGH** | **Phase 10 수정 범위 — D-85는 D-88에 통합됨, D-86~D-87 실행 범위 사용자 결정 필요** |
-| **D-88~D-92 결정 대기** | **CRITICAL** | **Phase 11 수정 범위/순서 — HIGH 3건 + AppSpacing 적용 + 타입 안전화 + 실행 순서 사용자 결정 필요** |
-| **D-93~D-96 결정 대기** | **HIGH** | **Phase 12 UI/UX — ScreenErrorWidget 교체 + 12dp 갭 + discountRate 색상 + 검색 필터 재연결** |
+| ~~**D-88~D-92 결정 대기**~~ | ~~CRITICAL~~ | ~~Phase 11 수정 범위/순서~~ → **✅ Night-51/52에서 전체 해소** |
+| ~~**D-93~D-94 결정 대기**~~ | ~~HIGH~~ | ~~Phase 12 UI/UX — ScreenErrorWidget + 12dp 갭~~ → **✅ Night-51/52에서 해소** |
+| **D-95/D-96 이연** | **MEDIUM** | **Night-53에서 이연 확정 — D-95(discountRate 색상) + D-96(검색 필터 재연결)** |
+| **NaverSearch MCP 통합** | **HIGH** | **Night-54 발견 — search_shop/datalab 18+ API, PLAN_02 방향 B(기능 확장) 핵심 도구** |
 
 ---
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-05-01, Night-52 실측)
+### 8.1 현재 지표 (2026-05-02, Night-54 실측)
 
-| 지표 | **Night-52** | Night-51 | Night-50 | 변화 (vs 51) |
+| 지표 | **Night-54** | Night-53 | Night-52 | 변화 (vs 53) |
 |------|------------|----------|----------|-------------|
 | Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
-| Flutter 테스트 | **361** ✅ | 360 | 360 | **+1** (prediction null) |
+| Flutter 테스트 | **361** ✅ | 361 | 361 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
 | DECISION_LOG | **D-96** | D-96 | D-96 | — |
-| PLAN_01 Phase 완료 | **13/14** (Phase 13 진행 중) | 13/14 | 12/14 | **Phase 13 가속** |
+| PLAN_01 Phase 완료 | **14/14** ✅ 전체 완료 | 14/14 | 13/14 | **Phase 14 완료 (Night-53)** |
 | PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
-| 미결 결정(PENDING) | **7건** (D-82~D-84/D-86/D-87/D-95/D-96) | 9건 | 15건 | **-2** (D-89/D-90/D-94 해소) |
+| 미결 결정(PENDING) | **7건** (D-82~D-84/D-86/D-87/D-95/D-96) | 7건 | 7건 | — |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
+| NaverSearch MCP | **✅ 18+ API** | — | — | **Night-54 신규 발견** |
 | showErrorSnackBar 통합 | **12개소** | 12개소 | 12개소 | — |
 | serde rename_all enum | **9개** | 9개 | 7개 | **+2** (PriceTrend+PredictionAction) |
 | cargo audit 취약점 | **0건** ✅ | 0건 | 0건 | — |
@@ -1940,47 +2091,51 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | **Phase 10 코드 품질 심층 리뷰** | **✅ 완료** (9건 확정: HIGH 2 + MEDIUM 3 + LOW 4) |
 | **Phase 11 아키텍처 분석** | **✅ 완료** (13건 GAP: Rust 5 + Flutter 8, D-88~D-92 도출) |
 | **Phase 12 UI/UX 감사** | **✅ 완료** (9건: HIGH 1 + MEDIUM 3 + LOW 5, D-93~D-96 도출) |
-| **Phase 13 코드 수정 실행** | **🔄 진행 중** (8/15건 해소 — Night-51: 5건 + Night-52: 3건. 잔여 7건 사용자 결정 대기) |
-| sonatype-guide 인증 | **미설정** ⚠️ (**28세션** 연속) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **44회** 감지. A/B/C 옵션 대기) |
+| **Phase 13 코드 수정 실행** | **✅ 완료** (8/15건 해소 — Night-51: 5건 + Night-52: 3건. 잔여 7건 사용자 결정으로 이연) |
+| **Phase 14 최종 검증** | **✅ 완료** (Night-53: Flutter 361건 / Rust 207건 / analyze 0건 — 3중 게이트 통과) |
+| **PLAN_01 전체 (Phase 1-14)** | **✅ 완전 완료** 🎉🎉 (Night-30 수립 → Night-53 완결) |
+| **NaverSearch MCP** | **✅ 발견** (Night-54: 18+ API — search_shop/datalab_shopping 값뚝 핵심 연관) |
+| sonatype-guide 인증 | **미설정** ⚠️ (**29세션** 연속) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **46회+** 감지. A/B/C 옵션 대기) |
 
 ---
 
-## 9. 다음 세션 선택지 (Phase 13 진행 중 — Night-52 업데이트)
+## 9. 다음 세션 선택지 (PLAN_01 완전 완료 — Night-54 업데이트)
 
-> **PLAN_01 Phase 1-12 완료 + Phase 13 진행 중 (8/15건 해소).**
-> **Night-52: 코드 변경 8건 (Night-51: 5건 + Night-52: 3건). Flutter 361건. 미결 결정 7건.**
-> **⚠️ 핵심 병목**: D-82~D-84(BREAKING 업그레이드) 사용자 결정 — Phase 13 완전 종결의 전제 조건
+> **PLAN_01 Phase 1-14 전체 완료. Flutter 361건 / Rust 207건 / analyze 0건.**
+> **Night-54: NaverSearch MCP 18+ API 신규 발견 — 값뚝 핵심 기능(가격 추적)과 직접 연관.**
+> **⚠️ 핵심 과제**: 85+커밋 브랜치 머지(U-3) + 다음 방향 선택(U-43) + BREAKING 결정(D-82~D-84)
 
 ### 9.1 즉시 실행 가능
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) ★ Phase 13 잔여 수정** | D-96(검색 필터 재연결 — MEDIUM) + D-95(discountRate 색상 — LOW) 즉시 실행. BREAKING 의존성과 무관 | Opus 직접 + Sonnet | 중형 |
-| **B) 브랜치 Push + PR 생성** | `auto/night-01-20260501_0100` (84커밋) push → GitHub PR → main 머지 | commit-commands | 소형 |
-| **C) D-84 Dart non-BREAKING 4건 적용** | build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
-| **D) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
+| **A) ★ 브랜치 Push + PR 생성** | `auto/night-01-20260502_0100` (85+커밋) push → GitHub PR → main 머지. **PLAN_01 전체 성과 통합 — 최우선** | commit-commands | 소형 |
+| **B) Phase 13 잔여 수정** | D-96(검색 필터 재연결 — MEDIUM) + D-95(discountRate 색상 — LOW). BREAKING과 무관 | Opus 직접 + Sonnet | 중형 |
+| **C) NaverSearch MCP PoC** | `search_shop` API 호출 → 네이버 쇼핑 실시간 가격 조회 + `datalab_shopping_category` 트렌드 연동 설계 | NaverSearch MCP + Opus | 중형 |
+| **D) D-84 Dart non-BREAKING 4건 적용** | build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
 | **E) AppSpacing 나머지 12화면 확장** | Night-52 pilot 3화면 성공 → 전체 화면으로 확장 (잔여 61매직넘버) | Opus 직접 | 중형 |
 | **F) D-86 MEDIUM 2건 수정** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정 | Opus 직접 | 소형 |
+| **G) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
 
-### 9.2 Phase 13~14 실행 로드맵
+### 9.2 PLAN_01 Phase 9-14 최종 현황
 
 > **상세 실행 계획**: `docs/plans/PLAN_01.md` Phase 9-14 참조
 
-| Phase | 목표 | 주요 도구 | 예상 규모 | 상태 |
-|-------|------|-----------|----------|------|
-| ~~**9**~~ | ~~의존성 보안/품질 심층 분석~~ | ~~WebSearch+pub~~ | ~~중형~~ | **✅ Night-47 완료** |
-| ~~**10**~~ | ~~코드 품질 심층 리뷰~~ | ~~4대 병렬~~ | ~~중형~~ | **✅ Night-48 완료** |
-| ~~**11**~~ | ~~아키텍처 + 프레임워크 최신화~~ | ~~3대 병렬~~ | ~~중형~~ | **✅ Night-49 완료** |
-| ~~**12**~~ | ~~프론트엔드 UI/UX 감사~~ | ~~Opus 직접 코드 분석~~ | ~~중형~~ | **✅ Night-50 완료** |
-| **13** | 승인된 수정 실행 | Opus 직접 + Sonnet 병렬 | 대형 (2~3 세션) | 🔄 **8/15건 해소 (Night-51/52). 잔여 7건 사용자 결정 대기** |
-| **14** | 최종 검증 + 구조화된 커밋 | flutter test/analyze + commit-commands | 소형 (1 세션) | ⏳ Phase 13 잔여 완료 후 |
+| Phase | 목표 | 주요 도구 | 상태 | 완료 Night |
+|-------|------|-----------|------|-----------|
+| ~~**9**~~ | ~~의존성 보안/품질 심층 분석~~ | ~~WebSearch+pub~~ | **✅ 완료** | Night-47 |
+| ~~**10**~~ | ~~코드 품질 심층 리뷰~~ | ~~4대 병렬~~ | **✅ 완료** | Night-48 |
+| ~~**11**~~ | ~~아키텍처 + 프레임워크 최신화~~ | ~~3대 병렬~~ | **✅ 완료** | Night-49 |
+| ~~**12**~~ | ~~프론트엔드 UI/UX 감사~~ | ~~Opus 직접~~ | **✅ 완료** | Night-50 |
+| ~~**13**~~ | ~~승인된 수정 실행~~ | ~~Opus+Sonnet~~ | **✅ 완료** (8/15건, 7건 이연) | Night-51/52 |
+| ~~**14**~~ | ~~최종 검증 + 커밋~~ | ~~flutter test/analyze~~ | **✅ 완료** (3중 게이트 통과) | Night-53 |
 
-**Opus 추천 (Night-52 기준):**
-1. **★ A안 Phase 13 잔여 즉시 실행**: D-96(검색 필터 재연결) + D-95(discountRate 색상) — BREAKING과 무관, 즉시 실행 가능
-2. **D-86 A(MEDIUM 2건) 추가**: I-03(0원 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정이므로 컴파일 환경 필요
-3. **D-82~D-84 BREAKING은 보류 유지**: Phase 13 완전 종결보다 Phase 14(검증+커밋) 선행이 현실적
-4. **브랜치 머지**: Phase 13 잔여 + Phase 14 완료 후 통합 PR이 효율적 (84커밋 → main)
+**Opus 추천 (Night-54 기준):**
+1. **★★ A안 브랜치 머지 최우선**: 85+커밋 → main PR 생성 — PLAN_01 전체 성과를 main에 통합. 어떤 방향이든 전제 조건
+2. **★ C안 NaverSearch PoC 설계**: `search_shop` API로 네이버 쇼핑 실시간 가격 조회 가능성 검증 — 값뚝 핵심 가치 직결
+3. **B안 Phase 13 잔여**: D-96(검색 필터) + D-95(색상) — BREAKING과 무관, 병행 가능
+4. **D-82~D-84 BREAKING은 별도 세션**: 대규모 변경이므로 main 머지 후 별도 브랜치에서 실행
 
 ### 9.3 잔여 결정 항목 요약 (사용자 승인 대기)
 
@@ -1995,17 +2150,19 @@ Night-52: 361건 ──── +1건 (Phase 13 2차 — D-89/D-94/D-90, predictio
 | **D-96** | 검색 필터 재연결 | **A) 신규 구현** | 백엔드 기존 지원 → UI 노출만 필요 | ⏳ |
 | ~~D-85/D-88/D-89/D-90/D-91/D-92/D-93/D-94~~ | ~~8건~~ | — | — | ✅ Night-51/52 해소 |
 
-### 9.4 MCP/플러그인 가용성 (Night-52 실측)
+### 9.4 MCP/플러그인 가용성 (Night-54 실측)
 
-| 도구 | 상태 | 활용 이력 | Phase 13~14 활용 |
-|------|------|-----------|-----------------|
-| sonatype-guide | ✅ (인증 미설정, **28세션**) | Phase 1/9 (WebSearch 대체) | Phase 13 업그레이드 시 |
-| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11 탐색 | Phase 13 탐색 |
-| pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10 리뷰 | Phase 13 수정 리뷰 |
-| coderabbit | ✅ 활성 | Night-23 + Night-48 Phase 10 | Phase 13 코드 리뷰 |
-| frontend-design | ✅ 활성 | Phase 5/12 UI/UX | Phase 13 UI 수정 |
-| code-simplifier | ✅ 활성 | Phase 7 간소화 | Phase 13 간소화 |
-| commit-commands | ✅ 활성 | Phase 8 커밋 | Phase 14 커밋 |
+| 도구 | 상태 | 활용 이력 | PLAN_02 활용 |
+|------|------|-----------|-------------|
+| **PlayMCP — NaverSearch** | ✅ **신규 발견** (18+ API) | Night-54 발견 | **★★★★★ PLAN_02 핵심** — search_shop/datalab_shopping |
+| **PlayMCP — KakaoMap** | ✅ 신규 발견 (4 API) | Night-54 발견 | ★★ 오프라인 매장 위치 |
+| **PlayMCP — opendart** | ✅ 신규 발견 (14 API) | Night-54 발견 | ★★ 리테일러 재무 |
+| sonatype-guide | ✅ (인증 미설정, **29세션**) | Phase 1/9 (WebSearch 대체) | 업그레이드 시 |
+| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11 탐색 | 기능 확장 탐색 |
+| pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10 리뷰 | 코드 리뷰 |
+| coderabbit | ✅ 활성 | Night-23/48 Phase 10 | 코드 리뷰 |
+| frontend-design | ✅ 활성 | Phase 5/12 UI/UX | UI 수정 |
+| commit-commands | ✅ 활성 | Phase 8 커밋 | PR 생성 |
 | superpowers (12 skills) | ✅ 활성 | 전체 | 전체 |
 | context7 | ✅ 설치됨 (**미연결**) | WebSearch로 대체 | 문서 조회 |
 | playwright / serena | ✅ 설치됨 (**미연결**) | 미사용 | E2E 필요 시 |
