@@ -1,6 +1,6 @@
 # NIGHT_06_RESULT — 2026-05-03 (Night-55 추가)
 
-> **Night-55 결과**: Flutter **365건** ✅ (+4) | analyze 0건 ✅ — D-96 해소 (커밋 TBD)
+> **Night-55 결과**: Flutter **365건** ✅ (+4) | analyze 0건 ✅ — D-96 해소 (커밋 `157a353`)
 > **Night-53 결과**: Flutter **361건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ — Phase 14 최종 검증 완료 (커밋 `193ba3d`)
 > **Night-52 결과**: Flutter **361건** ✅ (+1) | analyze 0건 ✅
 > **Night-52**: Phase 13 잔여 3건 실행 — D-89/D-94(AppSpacing 3화면 pilot + smMd) + D-90(PredictionResult freezed model)

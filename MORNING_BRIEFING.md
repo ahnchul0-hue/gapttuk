@@ -22,7 +22,8 @@
 > **Night-51 커밋**: `13975b9` (Phase 13 코드 수정 5건 I-01/I-02/F-08/U-02/D-91 + MORNING_BRIEFING Night-51)
 > **Night-52 커밋**: `f1e699b` (Phase 13 잔여 D-89/D-94/D-90 + MORNING_BRIEFING Night-52 반영)
 > **Night-53 커밋**: `193ba3d` (Phase 14 최종 검증 완료 + MORNING_BRIEFING Night-53 반영) + `666c4cf` (해시 갱신)
-> **Night-54 커밋**: TBD (Night-54 종합 분석 + NaverSearch MCP 발견 + MORNING_BRIEFING Night-54 반영)
+> **Night-54 커밋**: `86c8628` (MORNING_BRIEFING Night-54 반영 — NaverSearch MCP 발견 + PLAN_01 완전 완결 재확인)
+> **Night-55 커밋**: `157a353` (D-96 SearchScreen 필터/정렬 재연결 + 테스트 +4건 (361→365))
 
 ---
 
