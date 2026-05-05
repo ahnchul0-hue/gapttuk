@@ -50,4 +50,7 @@ abstract final class ApiEndpoints {
 
   // ── Predictions ──────────────────────────────
   static String prediction(int id) => '$_v1/predictions/$id';
+
+  // ── Naver Trends ─────────────────────────────
+  static const String naverTrends = '$_v1/trends/naver';
 }

@@ -280,7 +280,7 @@ final class ProductPredictionProvider
   }
 }
 
-String _$productPredictionHash() => r'9e186a2a363ff505a134efbab994f3fc171cbb92';
+String _$productPredictionHash() => r'de951debe5e0095ae4c19cc28227e6050715d5e2';
 
 /// AI 가격 예측 — productId별로 캐싱.
 

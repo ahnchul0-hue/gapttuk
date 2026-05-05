@@ -4,6 +4,7 @@ import '../services/alert_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/device_service.dart';
+import '../services/naver_trend_service.dart';
 import '../services/push_service.dart';
 import '../services/notification_service.dart';
 import '../services/prediction_service.dart';
@@ -79,4 +80,11 @@ PushService pushService(Ref ref) {
 RewardService rewardService(Ref ref) {
   final api = ref.watch(apiClientProvider);
   return RewardService(api: api);
+}
+
+/// 네이버 트렌드 서비스.
+@Riverpod(keepAlive: true)
+NaverTrendService naverTrendService(Ref ref) {
+  final api = ref.watch(apiClientProvider);
+  return NaverTrendService(api: api);
 }
