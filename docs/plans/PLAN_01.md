@@ -676,3 +676,277 @@
 5. **코드 기여 요청**: 비즈니스 로직 트레이드오프가 있는 5~10줄은 사용자에게 위임
 6. **MCP degradation**: context7→WebSearch+HF, playwright→feature-dev, serena→code-explorer 대체
 7. **베이스라인 보존**: Flutter ≥360건, analyze 0건 — 매 Phase 종료 시 검증
+
+---
+
+# PLAN_01 확장: Phase 15-19 MCP 총동원 실무 최적화 (Night-56~)
+
+> 작성: 2026-05-04 | **실행: Night-56 시작** | 브랜치: `auto/night-01-20260504_0100`
+> 베이스라인: Flutter **365건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ (2026-05-04 실측)
+> 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정/최종 코드 리뷰 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/기술 실행/진행 추적
+> Ralph-loop 한도: **10회**
+> **목적**: MCP 전체 동원 + 플러그인 전체 활용 → 실행 가능한 코드 생성 → 기술 수준 실질적 상향
+
+---
+
+## 0-F. MCP/플러그인 가용성 실측 (2026-05-04 세션)
+
+### 즉시 사용 가능 MCP (인증 불필요, 5종)
+
+| MCP | API 수 | 핵심 활용 | Phase |
+|-----|--------|----------|-------|
+| **PlayMCP NaverSearch** | 18+ | search_shop(상품검색), datalab_shopping_category(카테고리트렌드), datalab_shopping_keywords(키워드분석), find_category(카테고리코드) | 15 |
+| **PlayMCP CoinInfo** | 6 | get_coin_price(실시간가격), get_market_overview(시장요약), get_kimchi_premium(김프) | 15 |
+| **PlayMCP OpenDart** | 12+ | find_company(기업검색), get_company_info(기업정보), get_financial_index(재무지표) | 15 |
+| **Sonatype Guide** | 3 | getLatestComponentVersion(최신버전), getRecommendedComponentVersions(권장버전) | 16 |
+| **Hugging Face** | 8 | hf_doc_search(문서검색), hub_repo_search(레포검색), paper_search(논문검색) | 17 |
+
+### 즉시 사용 가능 Plugin/Skill (12종)
+
+| 플러그인 | 스킬/에이전트 | Phase |
+|----------|-------------|-------|
+| **superpowers** | brainstorm, write-plan, execute-plan, verification-before-completion | 전체 |
+| **feature-dev** | code-architect, code-explorer, code-reviewer | 17, 18 |
+| **pr-review-toolkit** | code-reviewer, silent-failure-hunter, type-design-analyzer, code-simplifier, pr-test-analyzer | 18, 19 |
+| **coderabbit** | code-review, autofix | 18 |
+| **frontend-design** | frontend-design | 18 |
+| **figma** | figma-create-design-system-rules, figma-generate-design | 18 |
+| **commit-commands** | commit, commit-push-pr | 19 |
+| **ralph-loop** | ralph-loop (모니터링 루프) | 전체 |
+| **code-simplifier** | code-simplifier | 18 |
+| **claude-md-management** | revise-claude-md | 19 |
+
+### 비해당/미연결 (대체 도구 확정)
+
+| 도구 | 상태 | 대체 |
+|------|------|------|
+| mcp-tailwind-gemini | 비해당 (Flutter) | frontend-design 스킬 |
+| shadcn | 비해당 (Flutter) | figma 디자인 시스템 |
+| chatgpt-mcp | 미설치 | Opus 4.6 직접 분석 |
+| sequential-thinking | 미설치 | superpowers:brainstorm |
+| context7 | 세션 미연결 | WebSearch + HuggingFace MCP |
+| playwright | 세션 미연결 | feature-dev:code-architect |
+| serena | 세션 미연결 | feature-dev:code-explorer |
+
+---
+
+## Phase 15: NaverSearch MCP 기반 실시간 데이터 파이프라인 구축
+
+> **목표**: NaverSearch MCP의 search_shop + datalab API를 활용하여 값뚝 핵심 기능(가격 추적)의 실시간 데이터 소스 확보 및 검증 코드 생성
+> **실행자**: Sonnet 4.6 (MCP 호출/데이터 수집) → Opus 4.6 (아키텍처 설계/코드 생성)
+> **산출물**: 직접 실행 가능한 Rust + Flutter 코드
+
+### 15-A. NaverSearch 데이터 수집 (Sonnet 실행)
+
+| # | API | 목적 | 파라미터 |
+|---|-----|------|---------|
+| 15-A1 | `find_category` | 값뚝 카테고리 체계와 네이버 카테고리 매핑 | keyword: "생활용품", "식품", "가전" 등 |
+| 15-A2 | `search_shop` | 실시간 상품 가격 데이터 확보 | query: 앱 인기 검색어 기반, sort: sim/date |
+| 15-A3 | `datalab_shopping_category` | 카테고리별 검색 트렌드 시계열 | 15-A1 카테고리 코드, 최근 6개월 |
+| 15-A4 | `datalab_shopping_keywords` | 핵심 키워드 검색량 트렌드 | 카테고리+키워드 조합 |
+
+### 15-B. 데이터 기반 코드 생성 (Opus 설계)
+
+| # | 생성 대상 | 설명 | 파일 위치 |
+|---|----------|------|----------|
+| 15-B1 | **NaverPriceService (Rust)** | search_shop 응답 구조체 + 가격 파싱 로직 | `server/src/services/naver_price_service.rs` |
+| 15-B2 | **CategoryMapping 테이블** | 값뚝 카테고리↔네이버 카테고리 매핑 | `server/migrations/021_naver_category_mapping.sql` |
+| 15-B3 | **TrendDataService (Rust)** | datalab 응답 파싱 + 트렌드 점수 계산 | `server/src/services/trend_data_service.rs` |
+| 15-B4 | **NaverDataProvider (Flutter)** | 트렌드 데이터 표시용 Riverpod provider | `app/lib/providers/naver_trend_provider.dart` |
+| 15-B5 | **TrendChartWidget (Flutter)** | fl_chart 기반 트렌드 시각화 위젯 | `app/lib/widgets/trend_chart.dart` |
+
+### 15-C. CoinInfo/OpenDart 확장 탐색 (선택적)
+
+| # | API | 잠재 활용 | 사용자 결정 필요 |
+|---|-----|----------|---------------|
+| 15-C1 | CoinInfo `get_coin_price` | 암호화폐 가격 추적 확장 | **D-97**: 값뚝에 암호화폐 카테고리 추가? |
+| 15-C2 | OpenDart `get_financial_index` | 쇼핑 관련 기업 재무 참조 데이터 | **D-98**: OpenDart 활용 범위? |
+
+### ⏸️ Phase 15 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-97** | CoinInfo 암호화폐 가격 추적 확장? | A) 포함 / B) 미포함 (쇼핑 전용) |
+| **D-98** | OpenDart 기업 재무 데이터 연동? | A) 포함 / B) 미포함 |
+| **D-99** | NaverSearch 데이터 수집 대상 카테고리? | A) 생활용품+식품+가전 (3종) / B) 전체 (10종+) / C) 사용자 지정 |
+| **D-100** | 15-B 코드 생성 범위? | A) 전체 (B1-B5) / B) 서버만 (B1-B3) / C) Flutter만 (B4-B5) / D) 선택적 |
+
+---
+
+## Phase 16: 의존성 최신화 실행 (Sonatype MCP)
+
+> **목표**: Sonatype MCP로 전체 의존성 최신 권장 버전 확인 → BREAKING + MINOR 업그레이드 실행
+> **실행자**: Sonnet 4.6 (Sonatype 조회) → Opus 4.6 (영향 분석/결정)
+> **전제**: Phase 15 승인 후
+
+### 16-A. Sonatype 심층 분석 (Sonnet 실행)
+
+| # | 대상 | PURL 배치 | 조회 API |
+|---|------|----------|---------|
+| 16-A1 | Rust crates 12개 | `pkg:cargo/axum@0.8`, `pkg:cargo/tokio@1`, ... | getLatestComponentVersion + getRecommendedComponentVersions |
+| 16-A2 | Dart packages 11개 | `pkg:pub/flutter_riverpod@3.0.2`, ... | getLatestComponentVersion + getRecommendedComponentVersions |
+
+### 16-B. 업그레이드 실행 계획
+
+| 우선순위 | 유형 | 대상 | 위험도 |
+|---------|------|------|--------|
+| 1 | MINOR/PATCH | 즉시 적용 가능 (D-84 잔여) | LOW |
+| 2 | 보안 BREAKING | google_sign_in 7.x (OAuth 강화) | MEDIUM |
+| 3 | 기능 BREAKING | flutter_riverpod 3.3.x + riverpod_generator 4.x | HIGH |
+| 4 | 전체 BREAKING | go_router 17.x, fl_chart 1.x, flutter_secure_storage 10.x | HIGH |
+
+### 16-C. 산출물
+- Sonatype 분석 보고서 (버전별 보안/품질 점수)
+- 업그레이드 실행 diff (pubspec.yaml + Cargo.toml)
+- 호환성 테스트 결과
+
+### ⏸️ Phase 16 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-101** | MINOR/PATCH 즉시 적용? | A) 전체 / B) 선택적 / C) 보류 |
+| **D-102** | BREAKING 업그레이드 범위? | A) 보안만 (google_sign_in) / B) 핵심 (riverpod+google) / C) 전체 / D) 보류 |
+| **D-103** | Rust BREAKING (reqwest 1.x/sentry 0.38) 포함? | A) 예 / B) 보류 |
+
+---
+
+## Phase 17: 아키텍처 고도화 + 문서 품질 (feature-dev + HuggingFace)
+
+> **목표**: Phase 15 신규 서비스 통합에 따른 아키텍처 리팩토링 + HuggingFace MCP로 최신 패턴 문서 조회
+> **실행자**: Sonnet 4.6 (탐색/문서 조회) → Opus 4.6 (설계/코드 생성)
+> **전제**: Phase 16 승인 후
+
+### 17-A. 아키텍처 분석 (feature-dev 3대 병렬)
+
+| # | 에이전트 | 임무 |
+|---|---------|------|
+| 17-A1 | **code-explorer** | Phase 15 신규 서비스의 기존 서비스 의존성 매핑 |
+| 17-A2 | **code-architect** | NaverSearch 통합 아키텍처 청사진 (서비스 계층, 캐시 전략, 에러 폴백) |
+| 17-A3 | **code-reviewer** | Phase 15-16 코드의 품질 검증 |
+
+### 17-B. HuggingFace MCP 문서 조회
+
+| # | API | 검색 쿼리 | 목적 |
+|---|-----|----------|------|
+| 17-B1 | `hf_doc_search` | "axum service layer pattern" | 서비스 계층 모범사례 |
+| 17-B2 | `hf_doc_search` | "riverpod async notifier caching" | 캐시 전략 최신 패턴 |
+| 17-B3 | `hub_repo_search` | "price tracking flutter rust" | 유사 프로젝트 참조 |
+| 17-B4 | `paper_search` | "e-commerce price prediction" | 가격 예측 알고리즘 참조 |
+
+### 17-C. 산출물
+- 통합 아키텍처 다이어그램 (텍스트 기반)
+- 서비스 간 의존성 맵 갱신
+- 캐시 전략 설계서 (moka 확장 vs Redis 도입)
+- 코드 생성: 아키텍처 리팩토링 diff
+
+### ⏸️ Phase 17 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-104** | 캐시 전략? | A) moka 확장 (현행) / B) Redis 도입 / C) 하이브리드 |
+| **D-105** | NaverSearch 호출 빈도? | A) 실시간 (요청당) / B) 배치 (1시간마다) / C) 이벤트 기반 |
+| **D-106** | 서비스 계층 리팩토링 범위? | A) 신규만 / B) 기존 포함 (product_service 통합) |
+
+---
+
+## Phase 18: 프론트엔드 UX 최적화 + 코드 품질 (frontend-design + coderabbit + pr-review-toolkit)
+
+> **목표**: 실시간 데이터 기반 UI 최적화 + 전체 코드 품질 최종 점검
+> **실행자**: Sonnet 4.6 (병렬 에이전트 6대) → Opus 4.6 (UX 결정/최종 리뷰)
+> **전제**: Phase 17 승인 후
+
+### 18-A. 프론트엔드 감사 (병렬 3대)
+
+| # | 도구 | 임무 |
+|---|------|------|
+| 18-A1 | **frontend-design** | NaverSearch 트렌드 데이터 시각화 UX 설계 |
+| 18-A2 | **figma:figma-create-design-system-rules** | 트렌드 차트/배지/카드 디자인 규칙 도출 |
+| 18-A3 | **code-simplifier** | Phase 15-17 Flutter 코드 간소화 |
+
+### 18-B. 코드 품질 최종 점검 (병렬 3대)
+
+| # | 에이전트 | 대상 |
+|---|---------|------|
+| 18-B1 | **coderabbit:code-review** | Phase 15-17 전체 diff |
+| 18-B2 | **pr-review-toolkit:silent-failure-hunter** | 신규 서비스 에러 핸들링 |
+| 18-B3 | **pr-review-toolkit:type-design-analyzer** | 신규 타입 (NaverSearchResult, TrendData 등) 설계 |
+
+### 18-C. 산출물
+- UI/UX 설계서 (트렌드 데이터 표시 방식)
+- 디자인 시스템 규칙 갱신
+- 코드 품질 이슈 목록 + 수정
+- Flutter 코드 간소화 결과
+
+### ⏸️ Phase 18 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-107** | 트렌드 데이터 표시 위치? | A) 상품 상세 내 / B) 별도 탭 / C) 홈 대시보드 |
+| **D-108** | 디자인 시스템 규칙 범위? | A) 신규 위젯만 / B) 기존 위젯 포함 전면 적용 |
+
+---
+
+## Phase 19: 최종 검증 + 구조화 커밋 + 베이스라인 갱신
+
+> **목표**: 전체 Phase 15-18 결과물 통합 검증 → 의미 있는 커밋 단위 구조화
+> **실행자**: Opus 4.6 (최종 판단) + Sonnet 4.6 (테스트 실행)
+> **전제**: Phase 18 승인 후
+
+### 19-A. 검증 항목
+
+| 항목 | 기준 | 도구 |
+|------|------|------|
+| Flutter 테스트 | ≥365건 (증가 기대) | `flutter test` |
+| Flutter analyze | 0건 | `flutter analyze` |
+| Rust 테스트 | ≥207건 (증가 기대) | `cargo test --lib` |
+| 의존성 보안 | CVE 0건 | Sonatype MCP 재확인 |
+| 코드 품질 | CRITICAL 0건 | coderabbit 최종 |
+
+### 19-B. 커밋 전략
+
+| # | 커밋 범위 | 메시지 패턴 |
+|---|----------|------------|
+| 1 | Phase 15 NaverSearch 통합 | `feat(naver): NaverSearch 실시간 가격 파이프라인 + 트렌드 시각화` |
+| 2 | Phase 16 의존성 최신화 | `deps: BREAKING/MINOR 의존성 업그레이드 (Phase 16)` |
+| 3 | Phase 17 아키텍처 | `refactor(arch): 서비스 계층 통합 + 캐시 전략 고도화` |
+| 4 | Phase 18 UX+품질 | `feat(ui): 트렌드 UX + 코드 품질 최종 점검` |
+
+### 19-C. 메모리/문서 갱신
+- MORNING_BRIEFING.md 갱신
+- 프로젝트 메모리 갱신 (테스트 수, Phase 완료 상태)
+- PLAN_01.md Phase 15-19 완료 마킹
+
+### ⏸️ Phase 19 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-109** | 커밋 전략? | A) Phase별 분리 (4건) / B) 기능별 분리 / C) 단일 통합 |
+| **D-110** | main 머지 PR 생성? | A) 예 / B) 아직 보류 |
+| **D-111** | 다음 PLAN_02 방향? | A) 프로덕션 배포 준비 / B) E2E 테스트 / C) 기능 확장 |
+
+---
+
+## 실행 원칙 (Phase 15-19 공통)
+
+1. **단방향 결정 금지**: 모든 변수/대안 경로에 대해 명시적 확인 요청
+2. **Phase 전환 시 필수 확인**: ⏸️ 마크 지점에서 반드시 사용자 승인
+3. **Opus/Sonnet 역할 분리**:
+   - Opus 4.6: 전략 설계, MCP 데이터 해석, 아키텍처 결정, 최종 코드 리뷰
+   - Sonnet 4.6: MCP API 호출, 데이터 수집, 코드 탐색, 테스트 실행, 병렬 에이전트 운용
+4. **Ralph-loop 한도**: 최대 10회 (모니터링/테스트 반복용)
+5. **코드 기여 요청**: 비즈니스 로직 트레이드오프가 있는 5~10줄은 사용자에게 위임
+6. **MCP 활용 원칙**: 실시간 데이터로 코드 생성 → 가상 데이터 절대 사용 금지
+7. **베이스라인 보존**: Flutter ≥365건, Rust ≥207건, analyze 0건 — 매 Phase 종료 시 검증
+8. **직접 실행 가능 코드**: 모든 생성 코드는 컴파일/테스트 즉시 가능해야 함
+
+---
+
+## 예상 산출물 요약 (Phase 15-19)
+
+| Phase | 핵심 산출물 | 예상 영향 | MCP 활용 |
+|-------|-----------|----------|---------|
+| 15 | NaverSearch 가격 파이프라인 코드 | 실시간 가격 검증 + 트렌드 기능 | NaverSearch (4 API) |
+| 16 | 의존성 최신화 | 보안 강화 + 최신 API | Sonatype (2 API) |
+| 17 | 아키텍처 리팩토링 | 서비스 통합 + 캐시 최적화 | HuggingFace (4 API) |
+| 18 | UX 최적화 + 품질 점검 | UI 일관성 + 코드 품질 | feature-dev + coderabbit |
+| 19 | 구조화 커밋 + 검증 | 추적 가능한 이력 | commit-commands |

@@ -1,4 +1,216 @@
-# NIGHT_06_RESULT — 2026-05-03 (Night-55 추가)
+# NIGHT_06_RESULT — 2026-05-06 (Night-58 추가)
+
+> **Night-58 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze 0건 ✅ — N56-01/05 해소 + Phase 16 의존성 분석 + Night-56/57 커밋 구조화
+
+---
+
+## Night-58 (2026-05-06) — N56 잔여 해소 + Phase 16 의존성 분석
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (N56 잔여 + Phase 16 기술 실행) |
+| **브랜치** | `auto/night-01-20260506_0100` |
+| **Flutter 테스트** | **370건** ✅ (베이스라인 완전 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 완전 보존) |
+| **Flutter analyze** | **0건** ✅ |
+
+### 완료된 작업
+
+| ID | 내용 | 상태 |
+|----|------|------|
+| **커밋** | Night-56/57 미커밋 파일 2개 커밋으로 구조화 | ✅ `3004b9e`, `8284cdd` |
+| **N56-01** | datalab_shopping_keywords 중분류 코드 실측 확인 | ✅ **분석 완료 (제약 문서화)** |
+| **N56-05** | ProductDetailScreen에 TrendChartWidget 통합 | ✅ **완료** |
+| **Phase 16** | 의존성 최신화 분석 (WebSearch 대체) | ✅ **분석 완료** |
+
+### N56-01 해소: datalab_shopping_keywords 중분류 코드 실측
+
+**실측 결과 (NaverSearch MCP find_category):**
+
+| 카테고리 | 중분류 코드 | 레벨 | datalab_shopping_keywords 호환 |
+|----------|------------|------|-------------------------------|
+| 디지털/가전 > 노트북 | `50000151` | 중분류 (소분류="" ✅) | ✅ **확인 완료** |
+| 디지털/가전 > 태블릿PC | `50000152` | 중분류 (소분류="" ✅) | ✅ 추론 가능 |
+| 생활/건강 > 생활용품 | N/A | 소분류 이하만 코드 존재 | ❌ API 제약 |
+| 식품 > 라면/면류 | N/A | 소분류 이하만 코드 존재 | ❌ API 제약 |
+
+**결론**: 디지털/가전 중분류 코드(50000151, 50000152, 50000153 등)는 `datalab_shopping_keywords`와 호환됨. 식품·생활/건강은 4단계 계층 구조 특성상 해당 API 미지원 — `datalab_shopping_category`로 대체 유지. N56-01 **분석 완료 (제약 문서화)**.
+
+### N56-05 완료: ProductDetailScreen TrendChartWidget 통합
+
+**변경 파일:**
+- `app/lib/screens/product/product_detail_screen.dart`: categoryTrendsProvider watch + TrendChartWidget 섹션 추가
+- `app/test/screens/product_detail_screen_test.dart`: categoryTrendsProvider override 추가
+
+**설계 결정:**
+- 트렌드 데이터는 보조 정보 → 오류 시 `SizedBox.shrink()` (조용히 숨김)
+- 로딩 시 `LinearProgressIndicator` (경량 표시)
+- trends 빈 목록 시 `SizedBox.shrink()` (트렌드 없으면 섹션 미표시)
+
+### Phase 16: 의존성 최신화 분석 결과 (2026-05-06 실측)
+
+#### Dart Packages
+
+| 패키지 | 현재 | 최신 | 유형 | 권장 |
+|--------|------|------|------|------|
+| flutter_riverpod | ^3.0.2 | **3.3.1** | minor | ⏸️ riverpod_generator 4.x 동반 필요 (BREAKING 세트) |
+| go_router | ^16.0.0 | **17.2.3** | **BREAKING** | ⏸️ Navigation API 변경 — 별도 세션 필요 |
+| fl_chart | ^0.69.0 | **1.2.0** | **BREAKING** | ⏸️ Chart API 대폭 변경 — 별도 세션 필요 |
+| google_sign_in | ^6.2.0 | **7.2.0** | **BREAKING** | ⏸️ OAuth 2.0 강화 — 보안 이점 있으나 대규모 수정 |
+| flutter_secure_storage | ^9.2.0 | **10.0.0** | **BREAKING** | ⏸️ 스토리지 API 변경 — 마이그레이션 가이드 필요 |
+| riverpod_generator | ^3.0.0 | **4.0.3** | **BREAKING** | ⏸️ flutter_riverpod 3.3.x와 동반 업그레이드 필요 |
+
+#### Rust Crates
+
+| 크레이트 | 현재 제약 | 최신 | 상태 |
+|----------|----------|------|------|
+| axum | ^0.8 | 0.8.8 | ✅ semver 범위 내 (최신 자동 포함) |
+| sqlx | ^0.8 | 0.8.x | ✅ 범위 내 |
+| tokio | ^1 | 1.x | ✅ 범위 내 |
+| reqwest | ^0.12 | 0.12.x | ✅ 범위 내 |
+| 기타 Rust | 현재 범위 | — | ✅ CVE 0건 (Night-47 재확인) |
+
+#### Phase 16 결정 사항
+
+| 결정 ID | 질문 | 결과 |
+|---------|------|------|
+| **D-101** | MINOR/PATCH 즉시 적용? | ⏸️ flutter_riverpod minor 업은 riverpod_generator BREAKING 동반 필요 — 별도 세션 |
+| **D-102** | BREAKING 업그레이드 범위? | ⏸️ 전체 5건 → 리스크 높음, 사용자 결정 필요 |
+| **D-103** | Rust BREAKING 포함? | ✅ 불필요 — 모든 Rust crate가 semver 범위 내 최신 |
+
+### 생성/수정 파일
+
+| 파일 | 변경 | 내용 |
+|------|------|------|
+| `app/lib/screens/product/product_detail_screen.dart` | 수정 | TrendChartWidget 섹션 + categoryTrendsProvider watch |
+| `app/test/screens/product_detail_screen_test.dart` | 수정 | categoryTrendsProvider override 추가 |
+
+### 잔여 미결 항목
+
+| ID | 내용 | 우선순위 |
+|----|------|---------|
+| **N56-01** | datalab_shopping_keywords — 가전(가능) vs 식품/생활(불가) 제약 문서화 완료 | ✅ 해소 |
+| **N56-05** | TrendChartWidget ProductDetailScreen 통합 | ✅ 해소 |
+| **D-101~D-103** | Phase 16 BREAKING 업그레이드 결정 | 사용자 결정 필요 |
+| **Phase 17** | 아키텍처 고도화 + HuggingFace 문서 조회 | 다음 세션 |
+
+---
+
+## Night-57 (2026-05-05) — N56 미결 사항 해소 + Phase 15 완결
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (N56 미결 4건 해소) |
+| **브랜치** | `auto/night-01-20260505_0100` |
+| **Flutter 테스트** | **370건** ✅ (+5건: trend_chart_test.dart 신규) |
+| **Rust 테스트** | **216건** ✅ (+2건: trends.rs 직렬화 테스트) |
+| **Flutter analyze** | **0건** ✅ |
+
+### 해소된 미결 사항
+
+| ID | 내용 | 상태 |
+|----|------|------|
+| **N56-02** | 서버 `GET /api/v1/trends/naver` 핸들러 추가 | ✅ **완료** |
+| **N56-03** | NAVER_CLIENT_ID/SECRET `.env.example` 반영 | ✅ **이미 반영됨** (Night-56에서 완료) |
+| **N56-04** | TrendChartWidget 테스트 5건 추가 | ✅ **완료** |
+
+### 생성/수정 파일
+
+| 파일 | 변경 | 내용 |
+|------|------|------|
+| `server/src/api/routes/trends.rs` | **신규** | `GET /api/v1/trends/naver` 핸들러 + 직렬화 테스트 2건 |
+| `server/src/api/routes/mod.rs` | 수정 | `pub mod trends;` 추가 |
+| `server/src/main.rs` | 수정 | `.nest("/api/v1/trends", api::routes::trends::router())` 추가 |
+| `app/test/widgets/trend_chart_test.dart` | **신규** | TrendChartWidget 3건 + TrendSummaryCard 2건 = 5건 |
+
+### 미결 사항 (다음 세션)
+
+| ID | 내용 | 우선순위 |
+|----|------|---------|
+| **N56-01** | `datalab_shopping_keywords` 400 오류 — 중분류 카테고리 코드 확보 필요 | MEDIUM |
+| **N56-05** | ProductDetailScreen 또는 HomeScreen에 TrendChartWidget 통합 | LOW |
+| **Phase 16** | Sonatype MCP 의존성 최신화 실행 | MEDIUM |
+
+---
+
+## Night-56 (2026-05-04) — PLAN_01 Phase 15 실행 결과
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 15 기술 실행) |
+| **브랜치** | `auto/night-01-20260504_0100` |
+| **Flutter 테스트** | **365건** ✅ (기존 베이스라인 완전 보존) |
+| **Rust 테스트** | **214건** ✅ (+7건: naver_price_service 3 + trend_data_service 4) |
+| **Flutter analyze** | **0건** ✅ |
+| **커밋** | TBD (사용자 확인 후) |
+
+### Phase 15-A: NaverSearch MCP 데이터 수집
+
+**실행한 MCP API:**
+
+| API | 결과 | 핵심 데이터 |
+|-----|------|------------|
+| `find_category("생활용품")` | ✅ | 코드: `50001780` |
+| `find_category("식품")` | ✅ | 코드: `50000215` |
+| `find_category("가전")` | ✅ | 코드: `50000151` |
+| `search_shop("라면")` | ✅ | 2,185,748건, 신라면 40개=₩26,250 |
+| `search_shop("무선이어폰")` | ✅ | 786,850건, 갤럭시 버즈4=₩339,000 |
+| `search_shop("세제 대용량")` | ✅ | 192,210건, 세탁세제 9,900~19,600원 |
+| `datalab_shopping_category` | ✅ | 6개월 트렌드: 가전=100, 생활=7.08, 식품=1.78 |
+| `datalab_shopping_keywords` | ❌ 400 | leaf-node 코드 거부 (중분류 코드 필요) |
+
+**트렌드 인사이트:**
+- 디지털/가전: 2026-01 ratio=100 최고, 이후 76까지 감소 (신학기/설 효과)
+- 생활용품: 2026-02 ratio=7.08 (설 명절) → 3~4월 급감
+- 식품: 1.3~1.8 안정적 (계절성 낮음)
+
+### Phase 15-B: 코드 생성 (전체 B1-B5)
+
+**생성 파일 목록:**
+
+| 파일 | 내용 | 테스트 |
+|------|------|--------|
+| `server/src/services/naver_price_service.rs` | NaverShopResponse 구조체, `search_naver_shop()`, HTML 태그 제거, 가격 파싱 | ✅ 3건 |
+| `server/src/services/trend_data_service.rs` | NaverDatalabResponse, `get_category_trends()`, `get_default_category_trends()`, `compute_trend_score()` | ✅ 4건 |
+| `server/migrations/019_naver_category_mapping.up.sql` | `naver_category_mapping` 테이블 + 초기 3개 카테고리 | — |
+| `server/migrations/019_naver_category_mapping.down.sql` | 롤백: DROP TABLE | — |
+| `server/src/services/mod.rs` | `naver_price_service` + `trend_data_service` 추가 | — |
+| `app/lib/models/naver_trend.dart` | `TrendPeriodData` + `CategoryTrend` (freezed) | — |
+| `app/lib/models/naver_trend.freezed.dart` | build_runner 자동 생성 | — |
+| `app/lib/models/naver_trend.g.dart` | build_runner 자동 생성 | — |
+| `app/lib/services/naver_trend_service.dart` | `NaverTrendService.getCategoryTrends()` | — |
+| `app/lib/config/api_endpoints.dart` | `naverTrends = '$_v1/trends/naver'` 추가 | — |
+| `app/lib/providers/service_providers.dart` | `naverTrendServiceProvider` 추가 | — |
+| `app/lib/providers/naver_trend_provider.dart` | `@riverpod categoryTrends()` | — |
+| `app/lib/providers/naver_trend_provider.g.dart` | build_runner 자동 생성 | — |
+| `app/lib/widgets/trend_chart.dart` | `TrendChartWidget` (fl_chart LineChart) + `TrendSummaryCard` | — |
+
+### 결정 사항 (D-97 ~ D-100)
+
+| ID | 결정 | 내용 |
+|----|------|------|
+| D-97 | **B: 미포함** | 암호화폐 → 도메인 외 |
+| D-98 | **B: 미포함** | OpenDart → 쇼핑 가격과 직접 관련 없음 |
+| D-99 | **A: 3종** | 생활용품(50001780) + 식품(50000215) + 가전(50000151) |
+| D-100 | **A: 전체** | B1-B5 전체 생성 |
+
+### 미결 사항 (다음 세션)
+
+| ID | 내용 | 우선순위 |
+|----|------|---------|
+| **N56-01** | `datalab_shopping_keywords` 400 오류 — 중분류 카테고리 코드 별도 확보 필요 | MEDIUM |
+| **N56-02** | 서버에 `GET /api/v1/trends/naver` 핸들러 추가 (Flutter ↔ Rust 연결) | HIGH |
+| **N56-03** | NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 환경변수 `.env.example` 추가 | HIGH |
+| **N56-04** | TrendChartWidget 테스트 추가 (CategoryTrend 모의 데이터) | MEDIUM |
+| **N56-05** | ProductDetailScreen 또는 HomeScreen에 TrendChartWidget 통합 | LOW |
+
+---
 
 > **Night-55 결과**: Flutter **365건** ✅ (+4) | analyze 0건 ✅ — D-96 해소 (커밋 `157a353`)
 > **Night-53 결과**: Flutter **361건** ✅ | Rust **207건** ✅ | analyze 0건 ✅ — Phase 14 최종 검증 완료 (커밋 `193ba3d`)

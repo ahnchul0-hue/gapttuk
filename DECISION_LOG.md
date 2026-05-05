@@ -2,6 +2,59 @@
 
 ---
 
+## Night-58 결정 (2026-05-06) — Phase 16 의존성 분석 + N56 해소
+
+### D-101: Dart MINOR/PATCH 즉시 적용 여부
+
+**현황**: flutter_riverpod 3.0→3.3.1은 minor이나, 이 업그레이드를 하면 riverpod_generator도 3.x→4.x(BREAKING)로 올려야 함. 모든 `@riverpod` 어노테이션과 `.g.dart` 파일 재생성 필요.
+
+**선택지**:
+- A) flutter_riverpod + riverpod_generator BREAKING 세트 즉시 적용
+- B) 별도 전용 세션에서 처리 (테스트 영향 최소화)
+- C) 보류 (현재 버전 정상 동작)
+
+**권장**: B — 370건 테스트 기반이 있지만 BREAKING 변경은 별도 리스크 관리 필요.
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-102: Dart BREAKING 업그레이드 범위 (go_router/fl_chart/google_sign_in/flutter_secure_storage)
+
+**현황**: go_router 16→17.2.3, fl_chart 0.69→1.2.0, google_sign_in 6.2→7.2.0, flutter_secure_storage 9.2→10.0.0 — 모두 BREAKING.
+
+**선택지**:
+- A) 전체 한 번에 (높은 리스크, 대규모 테스트 수정 필요)
+- B) 보안 이점 있는 것만 먼저 (google_sign_in — OAuth 2.0 강화)
+- C) 전부 보류 (현재 버전 기능 정상)
+- D) 패키지별 순차 처리 (세션당 1개)
+
+**권장**: D → 순서: flutter_secure_storage(보안 최우선) → google_sign_in → riverpod 세트 → go_router → fl_chart
+
+**Status**: ⏳ 사용자 결정 대기
+
+---
+
+### D-103: Rust BREAKING 업그레이드 포함 여부
+
+**현황**: Rust crate는 모두 semver 범위(`^0.8`, `^1`, etc.) 내 최신 자동 포함. reqwest 1.x(현재 0.12), sentry 0.38은 BREAKING이나 현재 기능 정상.
+
+**결론**: **불필요** — cargo update만으로 범위 내 최신 유지됨. BREAKING 업그레이드 시기 없음.
+
+**Status**: DECIDED — 현행 유지
+
+---
+
+### N56-01 해소 결정: datalab_shopping_keywords API 제약 문서화
+
+**현황**: 가전(디지털/가전) 중분류 코드(50000151=노트북) → API 작동 확인 ✅. 식품·생활용품은 4단계 계층 구조로 중분류 전용 코드 없음 → API 호환 불가.
+
+**결론**: `datalab_shopping_keywords`는 가전 카테고리에만 사용 가능. 식품·생활은 `datalab_shopping_category`(기존 코드)로 유지. **N56-01 해소 완료**.
+
+**Status**: DECIDED
+
+---
+
 ## Night-50 결정 (2026-04-30) — PLAN_01 Phase 12 UI/UX 감사
 
 ### D-93: U-02 HomeScreen 에러상태 ScreenErrorWidget 교체
@@ -757,6 +810,54 @@ PLAN_01.md was not present; STEP 53 implementation plan found at `docs/plans/202
 **Rationale**: Rust `str::len()`은 바이트 길이를 반환. "GAP-ÄÄ" 같은 멀티바이트 문자 포함 코드가 바이트 수는 10이지만 문자 수는 10 미만일 때 길이 검사를 통과할 수 있음. `chars().all(is_ascii)` 최종 검사가 방어하지만, `chars().count()`가 의도를 명확히 표현. Night-13 서버 수정(chars().count() for keyword search)과 동일한 컨벤션 유지.
 
 **Status**: IMPLEMENTED
+
+---
+
+## Night-56 결정 (2026-05-04) — PLAN_01 Phase 15 NaverSearch 실시간 데이터 파이프라인
+
+> **Sonnet 4.6 Sub-agent** 결정 | Opus Main Agent 검토 필요
+
+### D-97: CoinInfo 암호화폐 가격 추적 확장
+
+**Decision**: **B: 미포함**
+
+**Rationale**: 값뚝은 생활 쇼핑(생활용품/식품/가전) 가격 추적 서비스. 암호화폐는 도메인 외. CoinInfo/cryptoGuardian MCP는 Phase 15 범위 밖.
+
+**Status**: DECIDED — 사용자 확인 시 번복 가능
+
+---
+
+### D-98: OpenDart 기업 재무 데이터 연동
+
+**Decision**: **B: 미포함**
+
+**Rationale**: 기업 재무 지표는 소비자 가격 추적과 직접 관련 없음.
+
+**Status**: DECIDED — 사용자 확인 시 번복 가능
+
+---
+
+### D-99: NaverSearch 수집 카테고리 (A: 3종)
+
+**Decision**: **A: 생활용품+식품+가전**
+
+**실측 카테고리 코드**: 생활용품=50001780, 식품=50000215, 디지털/가전=50000151
+
+**6개월 트렌드**: 디지털/가전 ratio=100(1월), 생활용품=7.08(2월 명절), 식품=1.3~1.8(안정)
+
+**주의**: datalab_shopping_keywords 400 오류 — leaf-node 코드 거부, 중분류 코드 별도 필요.
+
+**Status**: DECIDED
+
+---
+
+### D-100: 15-B 코드 생성 범위 (A: 전체 B1-B5)
+
+**Decision**: **A: 전체**
+
+**생성 파일**: naver_price_service.rs / 019_naver_category_mapping.sql / trend_data_service.rs / naver_trend_provider.dart / trend_chart.dart
+
+**Status**: DECIDED
 
 ---
 
