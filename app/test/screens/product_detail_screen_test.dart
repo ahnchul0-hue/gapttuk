@@ -7,6 +7,8 @@ import 'package:gapttuk_app/config/theme.dart';
 import 'package:gapttuk_app/models/prediction_result.dart';
 import 'package:gapttuk_app/models/price_history.dart';
 import 'package:gapttuk_app/models/product.dart';
+import 'package:gapttuk_app/models/naver_trend.dart';
+import 'package:gapttuk_app/providers/naver_trend_provider.dart';
 import 'package:gapttuk_app/providers/product_provider.dart';
 import 'package:gapttuk_app/screens/product/product_detail_screen.dart';
 import 'package:gapttuk_app/widgets/loading_skeleton.dart';
@@ -31,6 +33,7 @@ void main() {
     Future<Product>? productFuture,
     Future<List<DailyPriceAggregate>>? dailyFuture,
     Future<PredictionResult?>? predictionFuture,
+    Future<List<CategoryTrend>>? trendsFuture,
   }) {
     return ProviderScope(
       overrides: [
@@ -42,6 +45,9 @@ void main() {
         ),
         productPredictionProvider(productId).overrideWith(
           (ref) => predictionFuture ?? Future.value(null),
+        ),
+        categoryTrendsProvider.overrideWith(
+          (ref) => trendsFuture ?? Future.value([]),
         ),
       ],
       child: MaterialApp(

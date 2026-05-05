@@ -10,8 +10,10 @@ import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../providers/naver_trend_provider.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/loading_skeleton.dart';
+import '../../widgets/trend_chart.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final int productId;
@@ -23,6 +25,7 @@ class ProductDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productAsync = ref.watch(productDetailProvider(productId));
+    final trendsAsync = ref.watch(categoryTrendsProvider);
 
     final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
@@ -156,6 +159,19 @@ class ProductDetailScreen extends ConsumerWidget {
             SizedBox(
               height: 250,
               child: PriceChart(productId: productId),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 쇼핑 카테고리 트렌드 (보조 정보 — 오류 시 조용히 숨김)
+            Text('쇼핑 카테고리 트렌드',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.smMd),
+            trendsAsync.when(
+              data: (trends) => trends.isEmpty
+                  ? const SizedBox.shrink()
+                  : TrendChartWidget(trends: trends),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, st) => const SizedBox.shrink(),
             ),
             // FAB와 겹치지 않도록 여백 추가
             const SizedBox(height: 80),
