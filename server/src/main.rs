@@ -520,6 +520,7 @@ async fn main() {
         )
         .nest("/api/v1/predictions", api::routes::predictions::router())
         .nest("/api/v1/rewards", api::routes::rewards::router())
+        .nest("/api/v1/trends", api::routes::trends::router())
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
