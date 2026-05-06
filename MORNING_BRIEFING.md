@@ -82,7 +82,7 @@
 | **56** | **05-04** | **PLAN_01 Phase 15: NaverSearch MCP 실시간 데이터 파이프라인 구축** | **D-97~D-100: Opus 전략(Phase 15-19 설계) + Sonnet 기술(NaverSearch MCP 8회 호출 → Rust 2서비스/Flutter 5파일/migration 019 코드 생성). Rust 214건(+7)/Flutter 365건 보존. N56-01~05 미결 5건** | **`3004b9e`** |
 | **57** | **05-05** | **N56 미결 해소 + Phase 15 기본 파이프라인 완성** | **N56-02: trends.rs 핸들러 + N56-04: TrendChartWidget 테스트 5건 + Rust 직렬화 2건. Flutter 370건(+5)/Rust 216건(+2)** | **`8284cdd`** |
 | **58** | **05-06** | **N56-05 해소 + Phase 16 의존성 분석 + D-101~D-103** | **N56-05: ProductDetailScreen TrendChartWidget 통합(categoryTrendsProvider override). N56-01: datalab_keywords API 제약 문서화(중분류 코드 필요). Phase 16: Sonatype 인증 실패→WebSearch 대체, BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 DECIDED)** | **`abb06a8`, `a62071d`** |
-| **59** | **05-07** | **PLAN_01 Phase 17: 아키텍처 고도화 + 코드 품질 (feature-dev 병렬 + HuggingFace MCP)** | **H-1(캐싱 없음) + M-1(테스트 격리 누락) + M-2(OnceLock 타임아웃 불일치) 발견. M-1 즉시 수정(buildScreen 패턴 통일). D-104~D-106(캐시/배치/공유클라이언트) 도출. naver_price_service 미연결 구조 확인. Flutter 370건/Rust 216건 유지** | **TBD** |
+| **59** | **05-07** | **PLAN_01 Phase 17: 아키텍처 고도화 + 코드 품질 (feature-dev 병렬 + HuggingFace MCP)** | **H-1(캐싱 없음) + M-1(테스트 격리 누락) + M-2(OnceLock 타임아웃 불일치) 발견. M-1 즉시 수정(buildScreen 패턴 통일). D-104~D-106(캐시/배치/공유클라이언트) 도출. naver_price_service 미연결 구조 확인. Flutter 370건/Rust 216건 유지** | **`d619495`** |
 
 ### 1.2 전략적 성숙도 곡선
 
