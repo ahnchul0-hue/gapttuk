@@ -2,6 +2,70 @@
 
 ---
 
+## Night-59 결정 (2026-05-07) — Phase 17 아키텍처 분석 + 코드 품질
+
+> **Sonnet 4.6 Sub-agent** 실행 | feature-dev 3대 병렬 분석 결과 기반
+
+### D-104: 캐시 전략 (NaverSearch 트렌드 데이터)
+
+**현황**: `get_naver_trends()` 핸들러가 매 요청마다 Naver Datalab API를 직접 호출함. `AppCache`에 trend_data 슬롯 없음. 월별 데이터 특성상 24시간 TTL 캐시가 적절.
+
+**선택지**:
+- A) **moka 확장** — `AppCache`에 `trend_data: Cache<String, Vec<CategoryTrendScore>>` 추가, TTL 24h, max 50 entries. 코드 변경 ~15줄, Redis 추가 불필요
+- B) Redis 도입 — 다중 인스턴스 지원, 현재 단일 서버 환경에서 오버엔지니어링
+- C) 하이브리드 (moka + Redis) — 불필요한 복잡도
+
+**권장**: **A — moka 확장** (현재 개발/스테이징 단계에서 최적)
+
+**thundering herd 방어**: `try_get_with("default", ...)` 패턴으로 동시 요청 coalescing 가능 — `ai_prediction_service.rs` 기존 패턴 재사용.
+
+**Status**: ⏳ 사용자 결정 대기 (권장: A)
+
+---
+
+### D-105: NaverSearch 호출 빈도
+
+**현황**: 현재 요청당 실시간 Datalab API 호출. Naver API rate limit(~1,000회/일), 응답 지연 ~500ms.
+
+**선택지**:
+- A) 실시간 (요청당) — 현재 방식, API 쿼터 소진 위험
+- B) **배치 (1시간마다)** — `main.rs` 기존 background task 패턴 재사용, 24회/일(97.6% 여유), 데이터 신선도 1시간 지연(월별 데이터이므로 비즈니스 무해)
+- C) 이벤트 기반 — 복잡도 높음, 적합한 트리거 없음
+
+**권장**: **B — 1시간 배치** + 캐시 웜업(서버 시작 직후 1회 즉시 호출)
+
+**구현 파일**: `server/src/main.rs` — `h_trend` 백그라운드 태스크 추가 (~35줄), `tokio::time::interval(3600s)`, panic watcher 등록
+
+**Status**: ⏳ 사용자 결정 대기 (권장: B)
+
+---
+
+### D-106: 서비스 계층 리팩토링 범위
+
+**현황**: `naver_price_service.rs`(NAVER_CLIENT, 10s)와 `trend_data_service.rs`(TREND_CLIENT, 15s) 각각 독립 OnceLock<reqwest::Client>. `AppState.http_client`(30s)가 이미 존재.
+
+**선택지**:
+- A) 신규 서비스만 — OnceLock 유지, 3개 커넥션 풀 병존
+- B) **AppState.http_client 공유** — OnceLock 제거, 함수 시그니처에 `client: &reqwest::Client` + `config: &Config` 추가, 커넥션 풀 3→1개 통합. `trends.rs`에 `State<AppState>` 추가 (현재 미추출). 변경 파일: `trend_data_service.rs`(+40/-5줄), `trends.rs`(+5줄)
+
+**권장**: **B** — 아키텍처 일관성 + Naver 자격증명을 Config 단일 진실 원천으로 통합
+
+**주의**: `naver_price_service.rs`는 현재 어떤 라우트에서도 호출되지 않음. 리팩토링 후 미연결 상태 유지 (향후 상품별 가격 검증 라우트 연결 시 일관성 확보).
+
+**Status**: ⏳ 사용자 결정 대기 (권장: B)
+
+---
+
+### M-1 즉시 수정 (Night-59 실행)
+
+**버그**: `app/test/screens/product_detail_screen_test.dart:92-110` 에러 상태 테스트에서 `categoryTrendsProvider` override 누락 → CI 환경에서 실제 네트워크 호출 시도 가능성.
+
+**수정**: `buildScreen(productFuture: Future(() async { throw Exception('네트워크 오류'); }))` 패턴으로 교체 — `buildScreen()` 헬퍼의 `categoryTrendsProvider` override 자동 포함.
+
+**Status**: IMPLEMENTED (Night-59)
+
+---
+
 ## Night-58 결정 (2026-05-06) — Phase 16 의존성 분석 + N56 해소
 
 ### D-101: Dart MINOR/PATCH 즉시 적용 여부

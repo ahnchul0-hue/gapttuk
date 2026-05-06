@@ -91,18 +91,8 @@ void main() {
 
     testWidgets('에러 상태 시 오류 메시지 표시', (tester) async {
       // async throw: Riverpod 내부에서 예외 발생 → zone 전파 방지
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          productDetailProvider(productId).overrideWith(
-            (ref) async { throw Exception('네트워크 오류'); },
-          ),
-          dailyPricesProvider(productId).overrideWith((ref) => Future.value([])),
-          productPredictionProvider(productId).overrideWith((ref) => Future.value(null)),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const ProductDetailScreen(productId: productId),
-        ),
+      await tester.pumpWidget(buildScreen(
+        productFuture: Future(() async { throw Exception('네트워크 오류'); }),
       ));
       await tester.pumpAndSettle();
       // friendlyErrorMessage(Exception) → '오류가 발생했습니다: ...'

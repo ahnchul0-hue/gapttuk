@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-05 (Night-13 ~ Night-57 종합 분석)
+# MORNING BRIEFING — 2026-05-06 (Night-13 ~ Night-58 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-57 (2026-03-12 ~ 2026-05-05)
-> **현재 브랜치**: `auto/night-01-20260505_0100`
+> **분석 대상**: Night-13 ~ Night-58 (2026-03-12 ~ 2026-05-06)
+> **현재 브랜치**: `auto/night-01-20260506_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-05 (Night-57 MORNING_BRIEFING 반영 — **N56 미결 해소: trends 핸들러 + TrendChartWidget 테스트, Flutter 370건(+5)/Rust 216건(+2)**)
-> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ (+2) / analyze 0건 ✅ (2026-05-05 Night-57 실측)
+> **최종 업데이트**: 2026-05-06 (Night-58 MORNING_BRIEFING 반영 — **N56-05 해소: ProductDetailScreen TrendChartWidget 통합 + Phase 16 의존성 분석 + D-101~D-103**)
+> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / analyze 0건 ✅ (2026-05-06 Night-58 실측)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -24,8 +24,9 @@
 > **Night-53 커밋**: `193ba3d` (Phase 14 최종 검증 완료 + MORNING_BRIEFING Night-53 반영) + `666c4cf` (해시 갱신)
 > **Night-54 커밋**: `86c8628` (MORNING_BRIEFING Night-54 반영 — NaverSearch MCP 발견 + PLAN_01 완전 완결 재확인)
 > **Night-55 커밋**: `157a353` (D-96 SearchScreen 필터/정렬 재연결 + 테스트 +4건 (361→365)) + `a980657` (해시 갱신 + MORNING_BRIEFING Night-55)
-> **Night-56 커밋**: TBD (Phase 15 NaverSearch 파이프라인 — Rust 2서비스 + Flutter 5파일 + migration 019 + 테스트 Rust +7건)
-> **Night-57 커밋**: TBD (N56 미결 해소 — trends.rs 핸들러 + trend_chart_test.dart 5건 + Rust 직렬화 2건)
+> **Night-56 커밋**: `3004b9e` (Phase 15 NaverSearch 파이프라인 — Rust 2서비스 + Flutter 5파일 + migration 019 + 테스트 Rust +7건)
+> **Night-57 커밋**: `8284cdd` (N56 미결 해소 — trends.rs 핸들러 + trend_chart_test.dart 5건 + Rust 직렬화 2건)
+> **Night-58 커밋**: `abb06a8` (N56-05 ProductDetailScreen TrendChartWidget 통합) + `a62071d` (docs: Phase 16 의존성 분석 + D-101~103)
 
 ---
 
@@ -78,8 +79,10 @@
 | **53** | **05-02** | **PLAN_01 Phase 14: 최종 검증 + 구조화된 커밋** | **코드 변경 0건 — Flutter 361건 / Rust 207건 / analyze 0건 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료. D-95/D-96 이연 결정.** | **`193ba3d`, `666c4cf`** |
 | **54** | **05-02** | **Night-13~53 종합 분석 + NaverSearch MCP 발견** | **코드 변경 0건 — NaverSearch 18+ API 신규 발견(search_shop/datalab), PLAN_01 Phase 9-14 완전 완료 재확인, 84커밋 종합 분석, 사용자 방향 결정 대기** | **`86c8628`** |
 | **55** | **05-03** | **D-96 해소 + MCP 환경 확장 (CoinInfo/cryptoGuardian 신규)** | **D-96: SearchScreen _FilterChipRow 위젯 분리 + DropdownButton 정렬 4종 + service.search(filter/sort) 연결. 테스트 +4건 (361→365). MCP: PlayMCP CoinInfo(7)+cryptoGuardian(6) 신규 발견** | **`157a353`, `a980657`** |
-| **56** | **05-04** | **PLAN_01 Phase 15: NaverSearch MCP 실시간 데이터 파이프라인 구축** | **D-97~D-100: Opus 전략(Phase 15-19 설계) + Sonnet 기술(NaverSearch MCP 8회 호출 → Rust 2서비스/Flutter 5파일/migration 019 코드 생성). Rust 214건(+7)/Flutter 365건 보존. N56-01~05 미결 5건** | **TBD** |
-| **57** | **05-05** | **N56 미결 해소 + Phase 15 기본 파이프라인 완성** | **N56-02: trends.rs 핸들러 + N56-04: TrendChartWidget 테스트 5건 + Rust 직렬화 2건. Flutter 370건(+5)/Rust 216건(+2)** | **TBD** |
+| **56** | **05-04** | **PLAN_01 Phase 15: NaverSearch MCP 실시간 데이터 파이프라인 구축** | **D-97~D-100: Opus 전략(Phase 15-19 설계) + Sonnet 기술(NaverSearch MCP 8회 호출 → Rust 2서비스/Flutter 5파일/migration 019 코드 생성). Rust 214건(+7)/Flutter 365건 보존. N56-01~05 미결 5건** | **`3004b9e`** |
+| **57** | **05-05** | **N56 미결 해소 + Phase 15 기본 파이프라인 완성** | **N56-02: trends.rs 핸들러 + N56-04: TrendChartWidget 테스트 5건 + Rust 직렬화 2건. Flutter 370건(+5)/Rust 216건(+2)** | **`8284cdd`** |
+| **58** | **05-06** | **N56-05 해소 + Phase 16 의존성 분석 + D-101~D-103** | **N56-05: ProductDetailScreen TrendChartWidget 통합(categoryTrendsProvider override). N56-01: datalab_keywords API 제약 문서화(중분류 코드 필요). Phase 16: Sonatype 인증 실패→WebSearch 대체, BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 DECIDED)** | **`abb06a8`, `a62071d`** |
+| **59** | **05-07** | **PLAN_01 Phase 17: 아키텍처 고도화 + 코드 품질 (feature-dev 병렬 + HuggingFace MCP)** | **H-1(캐싱 없음) + M-1(테스트 격리 누락) + M-2(OnceLock 타임아웃 불일치) 발견. M-1 즉시 수정(buildScreen 패턴 통일). D-104~D-106(캐시/배치/공유클라이언트) 도출. naver_price_service 미연결 구조 확인. Flutter 370건/Rust 216건 유지** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -133,9 +136,45 @@ Night 54:    ★★★★★★★★★★★★★★★★★★★★★★�
 Night 55:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 이연 소화 ── D-96 SearchScreen 필터/정렬 재연결(MEDIUM 해소) + CoinInfo/cryptoGuardian MCP 신규 + 365건
 Night 56:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 기능 확장 ── Phase 15 NaverSearch 파이프라인 구축: Rust 2서비스(+7테스트) + Flutter 5파일 + migration 019 + MCP 실측 데이터 기반 코드 생성
 Night 57:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 미결 해소 ── N56-02(trends 핸들러) + N56-04(TrendChartWidget 테스트 5건) + Rust 직렬화 2건 = Phase 15 기본 파이프라인 완성 (370/216건)
+Night 58:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 15 완결+16 진입 ── N56-05 ProductDetailScreen 통합 + N56-01 API 제약 문서화 + Phase 16 의존성 분석(D-101~D-103)
+Night 59:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 17 아키텍처 ── feature-dev 3대 병렬 분석: 구조 갭 5건+캐싱 갭 3건 발견, M-1 즉시 수정, D-104~D-106 도출 (370/216건 유지)
 ```
 
-### 1.3 Night-56/57 종합 전략 분석: Phase 15 NaverSearch 파이프라인 완성
+### 1.3 Night-56/57/58 종합 전략 분석: Phase 15 완결 + Phase 16 진입
+
+#### Night-58 전략적 의의: N56 미결 전량 해소 + Phase 16 의존성 분석 + D-101~D-103
+
+Night-57에서 Phase 15 기본 파이프라인이 완성된 후, **Night-58은 잔여 미결 2건(N56-01/05)을 모두 해소하고 Phase 16으로 전환한 듀얼 세션**. Opus 4.6이 Phase 16 전략(BREAKING 5종 이연 vs 즉시 적용)을 설계하고, Sonnet 4.6이 N56-05 코드 통합 + 의존성 최신 버전 분석을 실행.
+
+**Night-58 실행 요약:**
+
+| 항목 | Night-57까지 | Night-58 | 합산 (Night-56~58) |
+|------|-------------|---------|-------------------|
+| N56 미결 해소 | 3/5 | **+2건 (5/5 전량)** | **5/5 ✅ 완료** |
+| Flutter 테스트 | 370건 | 보존 (370건) | +5 (365→370) |
+| Rust 테스트 | 216건 | 보존 (216건) | +9 (207→216) |
+| 신규 결정 포인트 | D-97~D-100 | **D-101~D-103** | 7개 (D-97~D-103) |
+| Phase 진행 | Phase 15 기본 완료 | **Phase 15 완결 + Phase 16 분석** | Phase 15 ✅ → 16 진행 중 |
+
+**Opus 4.6 전략 (Night-58):**
+- **N56-05 통합 방향 결정**: ProductDetailScreen 내 배치 (HomeScreen이 아닌) — 상품별 카테고리 트렌드는 상세화면에 자연스러움
+- **N56-01 제약 문서화**: `datalab_shopping_keywords` API는 중분류(소분류="") 코드만 허용 → 가전(50000151=노트북) ✅, 식품/생활 불가. 코드 변경 없이 API 제약 사항으로 기록
+- **Phase 16 의존성 분석**: Sonatype MCP 인증 31세션 연속 실패 → WebSearch + `pub outdated` 대체. BREAKING 5종(D-102) 순차 처리 권장, Rust BREAKING 불필요(D-103 확정)
+- **D-101 세트 권장**: flutter_riverpod 3.3 + riverpod_generator 4.x는 별도 전용 세션에서 처리 (370건 테스트 기반이 있으나 모든 `@riverpod` 파일 재생성 필요)
+
+**Sonnet 4.6 기술 실행 (Night-58):**
+- `app/lib/screens/product/product_detail_screen.dart` 수정: `categoryTrendsProvider` watch + `TrendChartWidget` 섹션 추가 (오류 시 `SizedBox.shrink()`, 로딩 시 `LinearProgressIndicator`)
+- `app/test/screens/product_detail_screen_test.dart` 수정: `categoryTrendsProvider` 기본 override 추가 (빈 목록) — 19건 전체 통과
+- Phase 16: WebSearch로 Dart BREAKING 5종(go_router 17.2.3, fl_chart 1.2.0, google_sign_in 7.2.0, flutter_secure_storage 10.0.0, sign_in_with_apple 7.0.1) + Rust 범위 내 최신 확인
+
+**N56 미결 전량 해소:**
+| ID | 내용 | 해소 Night | 방법 |
+|----|------|-----------|------|
+| ~~**N56-02**~~ | trends.rs 핸들러 | Night-57 | `GET /api/v1/trends/naver` + 직렬화 테스트 2건 |
+| ~~**N56-03**~~ | `.env.example` 반영 | Night-56 | 이미 완료 확인 |
+| ~~**N56-04**~~ | TrendChartWidget 테스트 | Night-57 | 위젯 3건 + SummaryCard 2건 = 5건 |
+| ~~**N56-01**~~ | datalab_keywords 400 오류 | **Night-58** | API 제약 문서화 (중분류 코드 필요, 가전만 사용 가능) |
+| ~~**N56-05**~~ | TrendChartWidget UI 통합 | **Night-58** | ProductDetailScreen에 통합 + categoryTrendsProvider override |
 
 #### Night-57 전략적 의의: N56 미결 해소 + Phase 15 기본 파이프라인 완성
 
@@ -160,12 +199,6 @@ Night-56에서 구축한 Rust 2서비스 + Flutter 5파일의 **서버↔클라�
 - `server/src/api/routes/trends.rs` 신규: `GET /api/v1/trends/naver` 핸들러 + 직렬화 테스트 2건
 - `app/test/widgets/trend_chart_test.dart` 신규: 빈목록/정상/범례 3건 + TrendSummaryCard momChange 양수/음수 2건
 - `mod.rs` + `main.rs` 라우터 등록 (기존 Night-56 서비스와 연결)
-
-**미결 잔여 (2건):**
-| ID | 내용 | 우선순위 | 비고 |
-|----|------|---------|------|
-| **N56-01** | `datalab_shopping_keywords` 400 오류 — 중분류 카테고리 코드 확보 | MEDIUM | NaverSearch MCP 추가 탐색 필요 |
-| **N56-05** | HomeScreen/ProductDetailScreen에 TrendChartWidget 통합 | LOW | UX 결정(D-107) 종속 |
 
 ---
 
@@ -903,6 +936,9 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **53** | **Opus 4.6 직접 실행 (Phase 14 검증)** | **프로덕션 코드 변경 0건** | **361건 유지** | **Phase 14: Flutter 361건 + Rust 207건 + analyze 0건 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료 선언. D-95/D-96 이연 확정** |
 | **54** | **Opus 4.6 직접 실행 (종합 분석 + MCP 발견)** | **프로덕션 코드 변경 0건** | **361건 유지** | **Night-13~53 종합 분석: NaverSearch MCP 18+ API 신규 발견(search_shop/datalab_shopping), PLAN_01 완전 완결 재확인, 84커밋 종합 분석, 사용자 방향 결정 대기** |
 | **55** | **Sonnet 4.6 Sub-agent (D-96 코드 수정) + Opus 분석** | **Flutter 2파일 수정** | **+4건 (365건)** | **D-96 해소: SearchScreen _FilterChipRow 위젯 분리 + DropdownButton 정렬 4종 + service.search(filter/sort) 연결 + 테스트 4건. MCP: CoinInfo(7)+cryptoGuardian(6) 신규 발견** |
+| **56** | **Sonnet 4.6 Sub-agent (Phase 15 기술 실행) + Opus 전략 설계** | **Rust 4파일 + Flutter 10파일 + migration 2파일** | **Rust +7건 (214건)** | **Phase 15: NaverSearch MCP 8회 호출 → Rust naver_price_service + trend_data_service 신규 + Flutter 모델/서비스/프로바이더/위젯 5파일 + migration 019 = 14파일 코드 생성. Opus: Phase 15-19 5단계 전략 + D-97~D-111 결정 포인트 15개 설계** |
+| **57** | **Sonnet 4.6 Sub-agent (N56 미결 해소)** | **Rust 3파일 + Flutter 1파일** | **Rust +2건 (216건), Flutter +5건 (370건)** | **N56-02: trends.rs 핸들러 + 직렬화 2건. N56-04: TrendChartWidget 테스트 5건. Phase 15 기본 파이프라인 완성 (Flutter→API→서버→MCP 경로 완전 연결)** |
+| **58** | **Sonnet 4.6 Sub-agent (N56-05 통합 + Phase 16) + Opus 전략** | **Flutter 2파일 수정** | **370건 보존** | **N56-05: ProductDetailScreen TrendChartWidget 통합 + categoryTrendsProvider override. N56-01: API 제약 문서화(DECIDED). Phase 16: Sonatype 실패→WebSearch, BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 DECIDED)** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -1563,26 +1599,34 @@ Night-54: 361건 ──── +0건 (Night-13~53 종합 분석 + NaverSearch MCP
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ NaverSearch MCP 발견: search_shop/datalab 18+API — PLAN_02 방향 B(기능 확장) 핵심 도구. 84커밋 종합 분석
 Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재연결 + _FilterChipRow 위젯 분리 + DropdownButton 정렬)
           ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 이연 소화: D-96 MEDIUM 해소 + MCP 확장(CoinInfo/cryptoGuardian) → 미결 6건→5건. 89커밋 도달
+Night-56: 365건 ──── +0건 Flutter, Rust +7건 (207→214) (Phase 15 NaverSearch 파이프라인 — Rust 코드 생성 주력)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 15: NaverSearch MCP 8회 실측 → Rust 2서비스+Flutter 5파일 14파일 코드 생성. Opus Phase 15-19 전략 설계
+Night-57: 370건 ──── +5건 (TrendChartWidget 테스트 5건) + Rust +2건 (214→216)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ N56-02/04 해소: trends 핸들러+위젯 테스트. Phase 15 기본 파이프라인 완성 (Flutter→API→서버→MCP)
+Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget 통합 + Phase 16 의존성 분석)
+          ↑ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ N56 전량 해소: Phase 15 완결 + Phase 16 진입. D-101~D-103 도출, BREAKING 5종 이연 결정
 ```
 
 ### 3.17 코드베이스 규모
 
-| 항목 | **Night-55** | Night-54 | Night-53 | 변화 (vs 54) |
+| 항목 | **Night-58** | Night-57 | Night-55 | 변화 (vs 57) |
 |------|-------------|----------|----------|-------------|
-| DB 마이그레이션 (main) | 018 | 018 | 018 | — |
-| 서버 API 핸들러 | 37+ | 37+ | 37+ | — |
+| DB 마이그레이션 (브랜치) | **019** | 019 | 018 | — |
+| 서버 API 핸들러 | **38+** | 38+ | 37+ | — |
 | Flutter 화면 | 15+ | 15+ | 15+ | — |
 | Prometheus 메트릭 | 22 | 22 | 22 | — |
-| DECISION_LOG 항목 | **D-97** | D-96 | D-96 | **+1** (D-97 FilterChip 테스트 패턴) |
+| DECISION_LOG 항목 | **D-103** | D-100 | D-97 | **+3** (D-101~D-103 Phase 16) |
 | 순수 함수 추출 누계 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | Silent Failure 수정 | 33건+ (잔존 0건) | 33건+ | 33건+ | — |
-| 프로덕션 코드 수정 (Night-55) | **1파일** (search_screen) | 0건 | 0건 | **+1** |
-| Flutter 테스트 | **365건** | 361건 | 361건 | **+4** |
-| 커밋 (main 대비) | **89** | 85+ | 85 | **+4** |
-| PLAN_01 Phase 완료 | **14/14** ✅ 전체 완료 | 14/14 | 14/14 | — |
-| PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
-| Phase 13 결정 해소 | **9/15** (D-96 해소, 잔여 6건) | 8/15 | 8/15 | **+1** (D-96) |
-| PlayMCP MCP | **8서비스 62+ API** | 6서비스 53+ API | — | **+2서비스** (CoinInfo, cryptoGuardian) |
+| 프로덕션 코드 수정 (Night-58) | **2파일** (product_detail_screen + test) | 4파일 | 1파일 | — |
+| Flutter 테스트 | **370건** ✅ | 370건 | 365건 | — |
+| Rust 테스트 | **216건** ✅ | 216건 | 207건 | — |
+| 커밋 (main 대비) | **93** | 91 | 89 | **+2** (`abb06a8`, `a62071d`) |
+| PLAN_01 Phase 완료 | **14/14** ✅ + **Phase 15 ✅** | 14/14 + Phase 15 기본 | 14/14 | **Phase 15 완결** |
+| PLAN_01 Phase 16 | **분석 완료** (D-101~D-103 도출) | — | — | **신규** |
+| Phase 13 결정 해소 | **9/15** (잔여 6건) | 9/15 | 9/15 | — |
+| PlayMCP MCP | **8서비스 62+ API** | 8서비스 62+ API | 8서비스 62+ API | — |
+| N56 미결 | **5/5 ✅ 전량 해소** | 3/5 | — | **+2** (N56-01, N56-05) |
 
 ### 3.18 순수 함수 추출 목록
 
@@ -1761,8 +1805,10 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~55 머지 방향 | `auto/night-01-20260503_0100` (89커밋, **PLAN_01 Phase 1-14 전체 완료**, Flutter **365건**, Rust 207건, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
-| **U-43** | Night-54 이후 방향 선택 | NaverSearch MCP 발견 + PLAN_01 완전 완료 — 다음 실행 방향 결정 | A) Phase 13 잔여 완결 B) NaverSearch 통합 우선 C) 조합(Opus 권장) D) 기타 |
+| **U-3** | Night-13~58 머지 방향 | `auto/night-01-20260506_0100` (93커밋, **PLAN_01 Phase 1-14 + Phase 15 NaverSearch 완결**, Flutter **370건**, Rust **216건**, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-43** | Night-58 이후 방향 선택 | Phase 15 완결 + Phase 16 분석 완료 — Phase 17 진행 vs BREAKING 업그레이드 우선 | A) Phase 17 아키텍처 B) D-101 Riverpod BREAKING C) D-102 순차 BREAKING D) 기타 |
+| **D-101** | Riverpod BREAKING 세트 | flutter_riverpod 3.3 + riverpod_generator 4.x — 모든 `@riverpod` 파일 재생성 필요 (370건 테스트 영향) | A) 즉시 B) 별도 세션 C) 보류 |
+| **D-102** | Dart BREAKING 5종 범위 | go_router 17 / fl_chart 1.2 / google_sign_in 7 / flutter_secure_storage 10 / sign_in_with_apple 7 | A) 전체 B) 보안만(google_sign_in+secure_storage) C) 순차 D) 보류 |
 | **D-82** | Rust BREAKING 업그레이드 범위 | Phase 9 발견: reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47 (3건 모두 메이저 API 변경) | A) 전체 B) sentry만 C) 전부 보류 |
 | **D-83** | Dart BREAKING 업그레이드 범위 | Phase 9 발견: kakao 2.0, riverpod_gen 4.x, go_router 17, fl_chart 1.2 외 4건 (인증 플로우 변경 리스크 포함) | A) kakao 2.0 포함 전체 B) riverpod만 C) 전부 보류 |
 | **D-84** | Dart non-BREAKING 4건 즉시 적용 | build_runner, freezed, mocktail, json_annotation (dev dependency 포함) | A) 전체 B) dev만 C) 보류 |
@@ -1803,6 +1849,43 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | | Flutter 엔진 Skia CVE 모니터링 | CVE-2025-27363 + CVE-2026-3909 — Flutter stable 업데이트 시 즉시 적용 |
+
+---
+
+## 7. Night-56/57/58에서 해결/생성된 항목
+
+### ✅ Night-58에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|----------|
+| **N56-05** ProductDetailScreen TrendChartWidget 통합 | **LOW** | `categoryTrendsProvider` watch + `TrendChartWidget` 섹션 추가 (오류 시 `SizedBox.shrink()`, 로딩 시 `LinearProgressIndicator`) + 테스트 categoryTrendsProvider override |
+| **N56-01** datalab_shopping_keywords 400 오류 | **MEDIUM** | API 제약 문서화: 중분류(소분류="") 코드만 허용. 가전(50000151=노트북) ✅, 식품/생활 불가. `datalab_shopping_category`(기존 코드)로 유지 |
+
+### 🆕 Night-58에서 생성됨 (D-101~D-103)
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **D-101** | CRITICAL | Riverpod BREAKING 세트 — flutter_riverpod 3.0→3.3.1 (minor) + riverpod_generator 3.x→4.x (BREAKING) 동반. 모든 `@riverpod` 파일 + `.g.dart` 재생성 필요. **Opus 권장: B) 별도 세션** |
+| **D-102** | CRITICAL | Dart BREAKING 5종 범위 — go_router 16→17.2.3 / fl_chart 0.69→1.2.0 / google_sign_in 6→7.2.0 / flutter_secure_storage 9→10.0.0 / sign_in_with_apple 6→7.0.1. **Opus 권장: D) 순차 처리 (보안 우선: secure_storage→google_sign_in→riverpod→go_router→fl_chart)** |
+| **D-103** | INFO | Rust BREAKING 포함 여부 — **DECIDED: 불필요** (cargo update 범위 내 최신 자동 유지, reqwest 1.x/sentry 0.38 업그레이드 시기 없음) |
+
+### ✅ Night-57에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|----------|
+| **N56-02** 서버 trends 핸들러 | **HIGH** | `server/src/api/routes/trends.rs` 신규: `GET /api/v1/trends/naver` + 직렬화 테스트 2건 |
+| **N56-04** TrendChartWidget 테스트 | **MEDIUM** | `app/test/widgets/trend_chart_test.dart` 신규: 빈목록/정상/범례 3건 + TrendSummaryCard 2건 = 5건 |
+| **N56-03** .env.example 반영 | **HIGH** | Night-56에서 이미 완료 확인 |
+
+### 🆕 Night-56에서 생성됨 (Phase 15 코드 + D-97~D-100)
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **Phase 15 코드 14파일** | HIGH | Rust: naver_price_service.rs(+3테스트) + trend_data_service.rs(+4테스트) + migration 019 + mod.rs. Flutter: naver_trend.dart(freezed) + naver_trend_service.dart + naver_trend_provider.dart + trend_chart.dart + api_endpoints.dart + service_providers.dart |
+| **D-97** | INFO | CoinInfo 암호화폐 미포함 — **DECIDED: B** (도메인 외) |
+| **D-98** | INFO | OpenDart 기업재무 미포함 — **DECIDED: B** (쇼핑 가격과 무관) |
+| **D-99** | INFO | NaverSearch 카테고리 3종 — **DECIDED: A** (생활용품+식품+가전) |
+| **D-100** | INFO | 코드 생성 전체 — **DECIDED: A** (B1-B5 전체) |
 
 ---
 
@@ -2229,21 +2312,22 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-05-03, Night-55 실측)
+### 8.1 현재 지표 (2026-05-06, Night-58 실측)
 
-| 지표 | **Night-55** | Night-54 | Night-53 | 변화 (vs 54) |
+| 지표 | **Night-58** | Night-57 | Night-55 | 변화 (vs 57) |
 |------|------------|----------|----------|-------------|
-| Rust 테스트 (lib) | **207** ✅ | 207 | 207 | — |
-| Flutter 테스트 | **365** ✅ | 361 | 361 | **+4** (D-96 필터/정렬) |
+| Rust 테스트 (lib) | **216** ✅ | 216 | 207 | — |
+| Flutter 테스트 | **370** ✅ | 370 | 365 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-97** | D-96 | D-96 | **+1** (FilterChip 패턴) |
-| PLAN_01 Phase 완료 | **14/14** ✅ 전체 완료 | 14/14 | 14/14 | — |
-| PLAN_02 초안 | **✅ 완성** | ✅ 완성 | ✅ 완성 | — |
+| DECISION_LOG | **D-103** | D-100 | D-97 | **+3** (D-101~D-103 Phase 16) |
+| PLAN_01 Phase 완료 | **14/14** ✅ + **Phase 15 ✅** | 14/14 + Phase 15 기본 | 14/14 | **Phase 15 완결** |
+| PLAN_01 Phase 16 | **분석 완료** (D-101~D-103) | — | — | **신규** |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
-| 미결 결정(PENDING) | **6건** (D-82~D-84/D-86/D-87/D-95) | 7건 | 7건 | **-1** (D-96 해소) |
+| 미결 결정(PENDING) | **8건** (D-82~84/D-86/D-87/D-95/D-101/D-102) | 6건 | 6건 | **+2** (D-101/D-102 신규) |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
-| PlayMCP MCP | **8서비스 62+ API** | 6서비스 53+ API | — | **+2서비스** (CoinInfo, cryptoGuardian) |
+| PlayMCP MCP | **8서비스 62+ API** | 8서비스 62+ API | 8서비스 62+ API | — |
+| N56 미결 | **5/5 ✅ 전량 해소** | 3/5 | — | **+2** (N56-01/05 Night-58) |
 | showErrorSnackBar 통합 | **12개소** | 12개소 | 12개소 | — |
 | serde rename_all enum | **9개** | 9개 | 9개 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 | 0건 | — |
@@ -2251,7 +2335,7 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | rollback warn 패턴 | **10곳** | 10곳 | 10곳 | — |
-| 커밋 (main 대비) | **89** | 85+ | 85 | **+4** |
+| 커밋 (main 대비) | **93** | 91 | 89 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -2267,8 +2351,10 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | serde 파급 누락 방지 | **해결됨** ✅ (CI 자동검사) |
 | TOCTOU 경쟁 조건 | **해결됨** ✅ |
 | 의존성 보안 | **해결됨** ✅ (Rust 0건, Dart 0건) |
-| Flutter 테스트 커버리지 | **포화 확정** ✅ (365건) |
+| Flutter 테스트 커버리지 | **포화 확정** ✅ (370건) |
 | **PLAN_01 전체** | **✅ 완료 (8/8 Phase)** 🎉 |
+| **Phase 15 NaverSearch 파이프라인** | **✅ 완결** (Night-56~58: N56 5/5 전량 해소) |
+| **Phase 16 의존성 분석** | **분석 완료** ⚠️ (D-101~D-103 사용자 결정 대기) |
 | 코드 품질 심층 리뷰 | **완료** ✅ (Phase 4: 37건 발견, 5건 수정) |
 | 코드 간소화 | **완료** ✅ (Phase 7: Rust ~125줄 + Flutter ~105줄 감소) |
 | AlertType String→Enum | **완료** ✅ (PD-62, Night-36) |
@@ -2291,28 +2377,29 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | **Phase 14 최종 검증** | **✅ 완료** (Night-53: Flutter 361건 / Rust 207건 / analyze 0건 — 3중 게이트 통과) |
 | **PLAN_01 전체 (Phase 1-14)** | **✅ 완전 완료** 🎉🎉 (Night-30 수립 → Night-53 완결) |
 | **PlayMCP MCP** | **✅ 8서비스 62+ API** (NaverSearch ★★★★★ 핵심 + CoinInfo/cryptoGuardian Night-55 신규) |
-| sonatype-guide 인증 | **미설정** ⚠️ (**30세션** 연속) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **48회+** 감지. A/B/C 옵션 대기) |
+| sonatype-guide 인증 | **미설정** ⚠️ (**31세션** 연속) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **50회+** 감지. A/B/C 옵션 대기) |
 
 ---
 
-## 9. 다음 세션 선택지 (Night-55 업데이트 — D-96 해소 + MCP 확장)
+## 9. 다음 세션 선택지 (Night-58 업데이트 — Phase 15 완결 + Phase 16 분석 + D-101~D-103)
 
-> **PLAN_01 Phase 1-14 전체 완료. Flutter 365건 / Rust 207건 / analyze 0건.**
-> **Night-55: D-96 해소 (미결 7건→6건) + PlayMCP 8서비스 62+ API (CoinInfo/cryptoGuardian 신규).**
-> **⚠️ 핵심 과제**: 89커밋 브랜치 머지(U-3) + 다음 방향 선택(U-43) + BREAKING 결정(D-82~D-84)
+> **PLAN_01 Phase 1-14 전체 완료 + Phase 15 ✅ 완결. Flutter 370건 / Rust 216건 / analyze 0건.**
+> **Night-58: N56 전량 해소 + Phase 16 분석 완료 (D-101~D-103 도출) + BREAKING 5종 이연 결정.**
+> **⚠️ 핵심 과제**: 93커밋 브랜치 머지(U-3) + BREAKING 업그레이드 범위(D-101/D-102) + 기존 이연(D-82~D-84)
 
 ### 9.1 즉시 실행 가능
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) ★★ 브랜치 Push + PR 생성** | `auto/night-01-20260503_0100` (89커밋) push → GitHub PR → main 머지. **PLAN_01 전체 성과 + D-96 해소 통합 — 최우선** | commit-commands | 소형 |
-| **B) NaverSearch MCP PoC** | `search_shop` API 호출 → 네이버 쇼핑 실시간 가격 조회 + `datalab_shopping_category` 트렌드 연동 설계 | NaverSearch MCP + Opus | 중형 |
-| **C) D-95 discountRate 색상 수정** | 다크모드 `AppColors.dark.error` 불일치 해소 (잔여 LOW 1건 해소) | Opus 직접 | 소형 |
-| **D) D-84 Dart non-BREAKING 4건 적용** | build_runner/freezed/mocktail/json_annotation 업그레이드 | pub upgrade | 소형 |
-| **E) AppSpacing 나머지 12화면 확장** | Night-52 pilot 3화면 + Night-55 search_screen 성공 → 전체 화면으로 확장 (잔여 ~57매직넘버) | Opus 직접 | 중형 |
-| **F) D-86 MEDIUM 2건 수정** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정 | Opus 직접 | 소형 |
-| **G) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
+| **A) ★★ 브랜치 Push + PR 생성** | `auto/night-01-20260506_0100` (93커밋) push → GitHub PR → main 머지. **PLAN_01 Phase 1-14 + Phase 15 NaverSearch 전체 통합 — 최우선** | commit-commands | 소형 |
+| **B) Phase 17 아키텍처 고도화** | Phase 15 신규 서비스 통합 아키텍처 리팩토링 + HuggingFace MCP 문서 조회 | feature-dev + HuggingFace | 중형 |
+| **C) D-101 Riverpod BREAKING 세트** | flutter_riverpod 3.3 + riverpod_generator 4.x 업그레이드 (별도 세션 권장) | pub upgrade + 코드 재생성 | 대형 |
+| **D) D-102 BREAKING 순차 처리** | flutter_secure_storage 10 → google_sign_in 7 → go_router 17 → fl_chart 1.2 (패키지별 1개씩) | pub upgrade | 중형 |
+| **E) D-95 discountRate 색상 수정** | 다크모드 `AppColors.dark.error` 불일치 해소 (잔여 LOW 1건 해소) | Opus 직접 | 소형 |
+| **F) AppSpacing 나머지 12화면 확장** | Night-52 pilot 3화면 + Night-55 search_screen 성공 → 전체 화면으로 확장 (잔여 ~57매직넘버) | Opus 직접 | 중형 |
+| **G) D-86 MEDIUM 2건 수정** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정 | Opus 직접 | 소형 |
+| **H) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
 
 ### 9.2 PLAN_01 Phase 9-14 최종 현황
 
@@ -2327,11 +2414,11 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | ~~**13**~~ | ~~승인된 수정 실행~~ | ~~Opus+Sonnet~~ | **✅ 완료** (9/15건, 6건 이연) | Night-51/52/55 |
 | ~~**14**~~ | ~~최종 검증 + 커밋~~ | ~~flutter test/analyze~~ | **✅ 완료** (3중 게이트 통과) | Night-53 |
 
-**Opus 추천 (Night-55 기준):**
-1. **★★ A안 브랜치 머지 최우선**: 89커밋 → main PR 생성 — PLAN_01 전체 성과 + D-96 해소를 main에 통합. 어떤 방향이든 전제 조건
-2. **★ B안 NaverSearch PoC 설계**: `search_shop` API로 네이버 쇼핑 실시간 가격 조회 가능성 검증 — 값뚝 핵심 가치 직결
-3. **C안 D-95 소형 수정**: discountRate 색상 (LOW) — 다크모드 머지 전제 조건. 소형 변경으로 병행 가능
-4. **D-82~D-84 BREAKING은 별도 세션**: 대규모 변경이므로 main 머지 후 별도 브랜치에서 실행
+**Opus 추천 (Night-58 기준):**
+1. **★★ A안 브랜치 머지 최우선**: 93커밋 → main PR 생성 — PLAN_01 Phase 1-14 + Phase 15 NaverSearch 파이프라인 전체를 main에 통합. 모든 후속 작업의 전제 조건
+2. **★ B안 Phase 17 아키텍처 고도화**: Phase 15 신규 3서비스(naver_price_service/trend_data_service/trends 핸들러) 통합 아키텍처 리팩토링 — 캐시 전략(D-104) 등 설계 결정 포함
+3. **D-101/D-102 BREAKING은 별도 세션**: Riverpod 세트(D-101)는 모든 `@riverpod` 파일 재생성, 패키지별 BREAKING(D-102)는 순차 처리 권장
+4. **E안 D-95 소형 수정**: discountRate 색상 (LOW) — 다크모드 머지 전제 조건. 소형 변경으로 병행 가능
 
 ### 9.3 잔여 결정 항목 요약 (사용자 승인 대기)
 
@@ -2343,19 +2430,22 @@ Night-55: 365건 ──── +4건 (D-96 해소: SearchScreen 필터/정렬 재
 | **D-86** | Phase 10 MEDIUM 2건 | **A) 수정** | I-03(0원 캐시) + I-04(NULLS NOT DISTINCT) | ⏳ |
 | **D-87** | Phase 10 LOW 4건 | **B) 제외** | 리스크 낮음, 별도 세션 | ⏳ |
 | **D-95** | discountRate 색상 | **A) 제거** | feat/dark-mode 병합 충돌 방지 | ⏳ |
+| **D-101** | Riverpod BREAKING 세트 | **B) 별도 세션** | flutter_riverpod 3.3 + riverpod_generator 4.x — 모든 @riverpod 파일 재생성 | ⏳ |
+| **D-102** | Dart BREAKING 5종 범위 | **D) 순차 처리** | flutter_secure_storage→google_sign_in→riverpod→go_router→fl_chart | ⏳ |
+| ~~**D-103**~~ | ~~Rust BREAKING 포함 여부~~ | — | cargo update 범위 내 최신 유지됨 | ✅ **DECIDED — 불필요** |
 | ~~**D-96**~~ | ~~검색 필터 재연결~~ | ~~A) 신규 구현~~ | — | ✅ **Night-55 해소** |
 | ~~D-85/D-88/D-89/D-90/D-91/D-92/D-93/D-94~~ | ~~8건~~ | — | — | ✅ Night-51/52 해소 |
 
-### 9.4 MCP/플러그인 가용성 (Night-55 실측)
+### 9.4 MCP/플러그인 가용성 (Night-58 실측)
 
-| 도구 | 상태 | 활용 이력 | PLAN_02 활용 |
+| 도구 | 상태 | 활용 이력 | Phase 15-19 활용 |
 |------|------|-----------|-------------|
-| **PlayMCP — NaverSearch** | ✅ **활성** (18+ API) | Night-54 발견 | **★★★★★ PLAN_02 핵심** — search_shop/datalab_shopping |
+| **PlayMCP — NaverSearch** | ✅ **활성** (18+ API) | Night-54 발견 → **Night-56/57 실전 투입 (8회 호출)** | **★★★★★ Phase 15 핵심** — search_shop/datalab_shopping |
 | **PlayMCP — KakaoMap** | ✅ 활성 (4 API) | Night-54 발견 | ★★ 오프라인 매장 위치 |
 | **PlayMCP — opendart** | ✅ 활성 (14 API) | Night-54 발견 | ★★ 리테일러 재무 |
-| **PlayMCP — CoinInfo** | ✅ **Night-55 신규** (7 API) | Night-55 발견 | ★ 암호화폐 (비해당) |
-| **PlayMCP — cryptoGuardian** | ✅ **Night-55 신규** (6 API) | Night-55 발견 | ★ 보안검증 (비해당) |
-| sonatype-guide | ✅ (인증 미설정, **30세션**) | Phase 1/9 (WebSearch 대체) | 업그레이드 시 |
+| **PlayMCP — CoinInfo** | ✅ 활성 (7 API) | Night-55 발견 | ★ 암호화폐 (비해당, D-97 DECIDED) |
+| **PlayMCP — cryptoGuardian** | ✅ 활성 (6 API) | Night-55 발견 | ★ 보안검증 (비해당) |
+| sonatype-guide | ✅ (인증 미설정, **31세션**) | Phase 1/9/16 (WebSearch 대체) | 업그레이드 시 |
 | feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11 탐색 | 기능 확장 탐색 |
 | pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10 리뷰 | 코드 리뷰 |
 | coderabbit | ✅ 활성 | Night-23/48 Phase 10 | 코드 리뷰 |
