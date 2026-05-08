@@ -119,7 +119,7 @@ class TrendChartWidget extends StatelessWidget {
           reservedSize: 20,
           getTitlesWidget: (value, meta) {
             final index = value.toInt();
-            if (trends.isEmpty || index >= trends.first.periods.length) {
+            if (index >= trends.first.periods.length) {
               return const SizedBox.shrink();
             }
             final period = trends.first.periods[index].period;
@@ -176,9 +176,15 @@ class TrendSummaryCard extends StatelessWidget {
     required this.color,
   });
 
+  static const _colorPositive = Color(0xFF4CAF50);
+  static const _colorNegative = Color(0xFFF44336);
+
   @override
   Widget build(BuildContext context) {
     final isUp = trend.momChange >= 0;
+    final trendColor = isUp ? _colorPositive : _colorNegative;
+    final trendIcon = isUp ? Icons.trending_up : Icons.trending_down;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -197,34 +203,27 @@ class TrendSummaryCard extends StatelessWidget {
                 Text(
                   trend.categoryName,
                   style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600),
+                      fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                Icon(
-                  isUp ? Icons.trending_up : Icons.trending_down,
-                  size: 16,
-                  color: isUp ? const Color(0xFF4CAF50) : const Color(0xFFF44336),
-                ),
-                const SizedBox(width: 4),
+                Icon(trendIcon, size: 16, color: trendColor),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   '${isUp ? '+' : ''}${trend.momChange.toStringAsFixed(1)}%',
                   style: TextStyle(
                     fontSize: 12,
-                    color:
-                        isUp ? const Color(0xFF4CAF50) : const Color(0xFFF44336),
+                    color: trendColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Text(
+                const Text(
                   '전월 대비',
-                  style: const TextStyle(
-                      fontSize: 11, color: Color(0xFF757575)),
+                  style: TextStyle(fontSize: 11, color: Color(0xFF757575)),
                 ),
               ],
             ),

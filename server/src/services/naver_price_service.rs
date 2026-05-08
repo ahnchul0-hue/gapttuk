@@ -9,7 +9,7 @@ use crate::error::AppError;
 /// 실측 구조 (2026-05-04 NaverSearch MCP):
 /// { lastBuildDate, total, start, display, items: [...] }
 #[derive(Debug, Deserialize)]
-pub struct NaverShopResponse {
+pub(crate) struct NaverShopResponse {
     pub total: u64,
     pub start: u32,
     pub display: u32,
@@ -19,7 +19,7 @@ pub struct NaverShopResponse {
 /// 개별 상품 항목 — camelCase JSON.
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct NaverShopItem {
+pub(crate) struct NaverShopItem {
     /// 상품명 (HTML 태그 포함, 예: "농심 <b>신라면</b>")
     pub title: String,
     pub link: String,

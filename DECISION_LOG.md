@@ -2,6 +2,53 @@
 
 ---
 
+## Night-61 결정 (2026-05-09) — Phase 18 코드 품질 점검 + 수정 실행
+
+> **Sonnet 4.6 Sub-agent** 실행 | silent-failure-hunter + type-design-analyzer + code-reviewer 3대 병렬
+
+### D-107: 트렌드 데이터 표시 위치
+
+**현황**: Night-58 N56-05에서 TrendChartWidget이 이미 `ProductDetailScreen`에 통합됨. Phase 18 감사 결과 현재 통합 위치가 맥락상 적절하다고 확인됨 (상품 상세에서 해당 카테고리의 검색 트렌드를 보여주는 것이 자연스러움).
+
+**선택지**:
+- A) **상품 상세 내** (현재 상태) — 카테고리 트렌드가 상품 맥락에서 표시
+- B) 별도 탭 — 앱 구조 변경 필요, 탐색 흐름 분리
+- C) 홈 대시보드 — 홈화면 리팩토링 필요
+
+**결정**: **A — 현재 ProductDetailScreen 유지** (N56-05 통합 결과 확인, 추가 변경 불필요)
+
+**Status**: ✅ CONFIRMED (Night-61) — 현재 구조 확정
+
+---
+
+### D-108: 디자인 시스템 규칙 범위
+
+**현황**: Phase 13(Night-52)에서 HomeScreen/LoginScreen/ProductDetailScreen 3화면에 AppSpacing 파일럿 적용. code-simplifier 분석 결과 `trend_chart.dart`에 AppSpacing.xs(4) 활용 가능한 위치 다수 발견. 단, `AppTextStyles.caption(12px)`과 차트 축 레이블(10px)의 사이즈 불일치로 직접 치환 불가.
+
+**선택지**:
+- A) 신규 위젯만 (trend_chart.dart 내 적용 가능 위치 한정)
+- B) 기존 위젯 포함 전면 적용 (전체 화면 일괄 치환 — 별도 전용 세션 필요)
+
+**결정**: **A — 신규 위젯 한정** (Night-61에서 `TrendSummaryCard` isUp 반복 삼항 제거 + redundant isEmpty 가드 제거로 코드 품질 향상. 전면 AppSpacing 적용은 Phase 19 전용 세션으로 이연)
+
+**Status**: ✅ DECIDED (Night-61) — A 선택, Phase 19에서 B 재검토
+
+---
+
+### Phase 18 수정 5건 (Night-61 실행)
+
+| ID | 대상 | 수정 | 심각도 |
+|----|------|------|--------|
+| **I-03** | `trend_data_service.rs:141` `Duration::days(180)` → `Months::new(6)` | 6개월 날짜 계산 정확도 (최대 6일 오차) | MEDIUM |
+| **I-04** | `main.rs:379` `debug!` → `warn!` (부분 자격증명 미설정 시) | 설정 오류 운영자 인지 보장 | MEDIUM |
+| **I-05** | `naver_price_service.rs` `NaverShopResponse`/`NaverShopItem` `pub` → `pub(crate)` | 내부 DTO 과도한 공개 제한 | LOW |
+| **F-09** | `trend_chart.dart` TrendSummaryCard `isUp` 삼항 반복(4회) → 로컬 변수 추출 | 코드 중복 제거 | LOW |
+| **F-10** | `trend_chart.dart` `_buildTitlesData` 중복 `trends.isEmpty` 가드 제거 | 불필요한 중복 방어 | LOW |
+
+**검증**: Rust 216건 ✅ | Flutter 370건 ✅ | analyze 0건 ✅
+
+---
+
 ## Night-59 결정 (2026-05-07) — Phase 17 아키텍처 분석 + 코드 품질
 
 > **Sonnet 4.6 Sub-agent** 실행 | feature-dev 3대 병렬 분석 결과 기반

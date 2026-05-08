@@ -377,7 +377,7 @@ async fn warmup_trend_cache(state: &AppState) {
         return;
     };
     let Some(client_secret) = state.config.naver_client_secret.as_deref() else {
-        tracing::debug!("NAVER_CLIENT_SECRET 미설정 — trend 캐시 웜업 건너뜀");
+        tracing::warn!("NAVER_CLIENT_ID 설정됨, NAVER_CLIENT_SECRET 미설정 — trend 캐시 웜업 건너뜀 (설정 오류 가능)");
         return;
     };
     match trend_data_service::get_default_category_trends(

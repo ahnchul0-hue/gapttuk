@@ -137,9 +137,9 @@ pub async fn get_default_category_trends(
     naver_client_id: &str,
     naver_client_secret: &str,
 ) -> Result<Vec<CategoryTrendScore>, AppError> {
-    use chrono::{Duration, Utc};
+    use chrono::Utc;
     let today = Utc::now().date_naive();
-    let six_months_ago = today - Duration::days(180);
+    let six_months_ago = today - chrono::Months::new(6);
 
     get_category_trends(client, naver_client_id, naver_client_secret, TrendRequest {
         start_date: six_months_ago,

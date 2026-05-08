@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-08 (Night-13 ~ Night-60 종합 분석)
+# MORNING BRIEFING — 2026-05-09 (Night-13 ~ Night-61 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-60 (2026-03-12 ~ 2026-05-08)
-> **현재 브랜치**: `auto/night-01-20260508_0100`
+> **분석 대상**: Night-13 ~ Night-61 (2026-03-12 ~ 2026-05-09)
+> **현재 브랜치**: `auto/night-01-20260509_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-08 (Night-60 MORNING_BRIEFING 반영 — **Phase 17 코드 구현 완료: D-104(moka trend_data 캐시 TTL 24h) + D-105(warmup_trend_cache 1h 배치) + D-106(OnceLock 제거/http_client 공유), H-1 완전 해소, 커넥션 풀 3→1 통합**)
-> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / 경고 **0건** ✅ (2026-05-08 Night-60 실측)
+> **최종 업데이트**: 2026-05-09 (Night-61 MORNING_BRIEFING 반영 — **Phase 18 코드 품질 점검 완료: 병렬 에이전트 4대(silent-failure-hunter/type-design-analyzer/code-reviewer/code-simplifier) → 수정 5건(I-03/I-04/I-05/F-09/F-10), D-107(트렌드 위치 ProductDetailScreen 확정)/D-108(디자인 시스템 신규 위젯 한정 확정)**)
+> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / analyze **0건** ✅ / 경고 **0건** ✅ (2026-05-09 Night-61 실측)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -28,7 +28,8 @@
 > **Night-57 커밋**: `8284cdd` (N56 미결 해소 — trends.rs 핸들러 + trend_chart_test.dart 5건 + Rust 직렬화 2건)
 > **Night-58 커밋**: `abb06a8` (N56-05 ProductDetailScreen TrendChartWidget 통합) + `a62071d` (docs: Phase 16 의존성 분석 + D-101~103)
 > **Night-59 커밋**: `d619495` (Phase 17 아키텍처 분석 + M-1 테스트 격리 수정) + `236dd9e` (해시 갱신 + MORNING_BRIEFING Night-59)
-> **Night-60 커밋**: TBD (Phase 17 코드 구현 — D-104/D-105/D-106: moka trend_data 캐시 + 1h 배치 웜업 + OnceLock 제거 — 4파일 +350/-83줄)
+> **Night-60 커밋**: `6ae63b3` (Phase 17 코드 구현 — D-104/D-105/D-106: moka trend_data 캐시 + 1h 배치 웜업 + OnceLock 제거 — 4파일 +350/-83줄)
+> **Night-61 커밋**: TBD (Phase 18 코드 품질 점검 — 병렬 에이전트 4대 + 수정 5건(I-03/I-04/I-05/F-09/F-10) + D-107/D-108 결정)
 
 ---
 
@@ -1920,7 +1921,8 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
 | **U-3** | Night-13~60 머지 방향 | `auto/night-01-20260508_0100` (97+커밋, **PLAN_01 Phase 1-14 + Phase 15~17 완결**, Flutter **370건**, Rust **216건**, 경고 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
-| **U-43** | Night-60 이후 방향 선택 | Phase 17 코드 구현 완료 — Phase 18(UX 최적화) vs BREAKING 업그레이드 우선 | A) Phase 18(UX+코드품질) B) D-101 Riverpod BREAKING C) D-102 순차 BREAKING D) 기타 |
+| ~~**U-43**~~ | ~~Night-60 이후 방향 선택~~ | ~~Phase 17 코드 구현 완료~~ | ✅ **Night-61에서 해소 (A안 Phase 18 실행 — 병렬 에이전트 4대 + 수정 5건)** |
+| **U-44** | Night-61 이후 방향 선택 | Phase 18 완료 — Phase 19(최종 검증/커밋) vs D-101 Riverpod BREAKING vs 기타 | A) Phase 19(검증+커밋) B) D-101 Riverpod BREAKING C) D-108-B AppSpacing 전면 롤아웃 D) 기타 |
 | ~~**D-104**~~ | ~~NaverSearch 트렌드 캐시 전략~~ | ~~`get_naver_trends()` 매 요청마다 Naver API 호출~~ | ✅ **Night-60에서 해소 (A안 moka 확장 — TTL 24h, max 50, try_get_with thundering herd 방어)** |
 | ~~**D-105**~~ | ~~NaverSearch 호출 빈도~~ | ~~Naver API rate limit~~ | ✅ **Night-60에서 해소 (B안 1h 배치 — warmup_trend_cache + h_trend 백그라운드 태스크)** |
 | ~~**D-106**~~ | ~~서비스 리팩토링 범위~~ | ~~OnceLock 3개 병존~~ | ✅ **Night-60에서 해소 (B안 AppState.http_client 공유 — OnceLock 제거, 커넥션 풀 3→1)** |
@@ -2553,11 +2555,11 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 
 ---
 
-## 9. 다음 세션 선택지 (Night-60 업데이트 — Phase 17 코드 구현 완료)
+## 9. 다음 세션 선택지 (Night-61 업데이트 — Phase 18 완료)
 
-> **PLAN_01 Phase 1-14 전체 완료 + Phase 15 ✅ + Phase 16 분석 ✅ + Phase 17 ✅ 완결. Flutter 370건 / Rust 216건 / 경고 0건.**
-> **Night-60: D-104(moka 캐시)/D-105(1h 배치)/D-106(OnceLock 제거) 3건 구현 → H-1 해소, 커넥션 풀 3→1.**
-> **⚠️ 핵심 과제**: 97+커밋 브랜치 머지(U-3) + Phase 18 UX 최적화 + BREAKING 업그레이드 범위(D-101/D-102)
+> **PLAN_01 Phase 1-14 전체 완료 + Phase 15 ✅ + Phase 16 분석 ✅ + Phase 17 ✅ + Phase 18 ✅ 완결. Flutter 370건 / Rust 216건 / 경고 0건.**
+> **Night-61: Phase 18 병렬 에이전트 4대 → 수정 5건(I-03/I-04/I-05/F-09/F-10) + D-107/D-108 결정.**
+> **⚠️ 핵심 과제**: 98+커밋 브랜치 머지(U-3) + Phase 19(최종 검증/커밋) + BREAKING 업그레이드 범위(D-101/D-102)
 
 ### 9.1 즉시 실행 가능
 

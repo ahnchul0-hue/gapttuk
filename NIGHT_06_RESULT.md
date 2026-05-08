@@ -1,6 +1,58 @@
-# NIGHT_06_RESULT — 2026-05-08 (Night-60 추가)
+# NIGHT_06_RESULT — 2026-05-09 (Night-61 추가)
 
-> **Night-60 결과**: Rust **216건** ✅ | 경고 0건 ✅ — Phase 17 코드 구현 완료 (D-104/D-105/D-106)
+> **Night-61 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 18 코드 품질 점검 + 수정 5건 완료 (D-107/D-108 결정)
+
+---
+
+## Night-61 (2026-05-09) — Phase 18: 코드 품질 점검 + 프론트엔드 감사
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 18 병렬 에이전트 4대 + 코드 수정 5건) |
+| **브랜치** | `auto/night-01-20260509_0100` |
+| **Flutter 테스트** | **370건** ✅ (베이스라인 완전 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 완전 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **Rust 빌드 경고** | **0건** ✅ |
+
+### 완료된 작업
+
+| 작업 | 상태 |
+|------|------|
+| Night-60 커밋 (D-104/D-105/D-106 Phase 17 코드) | ✅ `6ae63b3` |
+| Phase 18-B 병렬 에이전트: silent-failure-hunter + type-design-analyzer + code-reviewer | ✅ 이슈 발굴 완료 |
+| Phase 18-A 병렬 에이전트: code-simplifier (trend_chart.dart 분석) | ✅ 간소화 기회 식별 |
+| Phase 18 수정 5건 (I-03/I-04/I-05/F-09/F-10) | ✅ 구현 + 검증 완료 |
+| D-107 (트렌드 표시 위치) + D-108 (디자인 시스템 범위) 결정 | ✅ 문서화 완료 |
+
+### Phase 18-B 에이전트 발견 요약
+
+| 에이전트 | 발견 건수 | 확정 수정 | 오탐 제외 |
+|---------|---------|---------|---------|
+| silent-failure-hunter | 3건 (MEDIUM 2 + LOW 1) | 2건 (I-03, I-04) | 1건 (warmup warn 설계 의도적) |
+| type-design-analyzer | 9개 타입 평가 | 1건 (I-05 가시성) | 기타 설계 개선 이연 |
+| code-reviewer (feature-dev) | HIGH 2 + MEDIUM 4 | 1건 (Duration 수정) | 1건 (warmup double insert — 실제 위험 낮음) |
+
+### 수정 5건 상세
+
+| ID | 파일 | 변경 내용 | 검증 |
+|----|------|---------|------|
+| **I-03** | `trend_data_service.rs:141` | `Duration::days(180)` → `chrono::Months::new(6)` | Rust 216건 ✅ |
+| **I-04** | `main.rs:379` | `debug!` → `warn!` (NAVER_CLIENT_SECRET 누락 시) | 빌드 경고 0건 ✅ |
+| **I-05** | `naver_price_service.rs` | `NaverShopResponse`/`NaverShopItem` `pub` → `pub(crate)` | Rust 216건 ✅ |
+| **F-09** | `trend_chart.dart` | TrendSummaryCard `isUp` 삼항 4회 → `trendColor`/`trendIcon` 로컬 변수 추출 | Flutter 370건 ✅ |
+| **F-10** | `trend_chart.dart` | `_buildTitlesData` 중복 `trends.isEmpty` 가드 제거 | TrendChart 5건 ✅ |
+
+### 이연 항목 (사용자 결정 필요)
+
+| ID | 내용 | 우선순위 |
+|----|------|---------|
+| **D-108-B** | AppSpacing/AppTextStyles 전면 롤아웃 (trend_chart.dart 포함 전체 화면) | Phase 19 |
+| **TrendRequest 개선** | 날짜 순서 검증 + 빈 카테고리 방어 생성자 추가 (`TrendRequest::new()`) | 낮음 |
+| **CategoryTrendScore.mom_change** | `mom_change_pct` 필드명 변경 (Flutter 클라이언트 명확성) | 낮음 |
+| **D-101~D-102** | Dart BREAKING 업그레이드 | 사용자 결정 필요 |
 
 ---
 
