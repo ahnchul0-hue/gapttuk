@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::{extract::State, routing::get, Router};
 
 use crate::api::ApiResponse;
 use crate::error::AppError;
@@ -12,8 +12,38 @@ pub fn router() -> Router<AppState> {
 /// GET /api/v1/trends/naver — 네이버 쇼핑 카테고리 트렌드 조회 (최근 6개월)
 ///
 /// 인증 불필요 (공개 트렌드 데이터). NAVER_CLIENT_ID/SECRET 미설정 시 500.
-async fn get_naver_trends() -> Result<ApiResponse<Vec<CategoryTrendScore>>, AppError> {
-    let trends = trend_data_service::get_default_category_trends().await?;
+/// 결과는 24시간 moka 캐시에 저장 — thundering herd 방어.
+async fn get_naver_trends(
+    State(state): State<AppState>,
+) -> Result<ApiResponse<Vec<CategoryTrendScore>>, AppError> {
+    let client_id = state
+        .config
+        .naver_client_id
+        .as_deref()
+        .ok_or_else(|| AppError::Internal("NAVER_CLIENT_ID 미설정".into()))?
+        .to_owned();
+    let client_secret = state
+        .config
+        .naver_client_secret
+        .as_deref()
+        .ok_or_else(|| AppError::Internal("NAVER_CLIENT_SECRET 미설정".into()))?
+        .to_owned();
+    let http_client = state.http_client.clone();
+
+    let trends = state
+        .cache
+        .trend_data
+        .try_get_with("default".to_string(), async move {
+            trend_data_service::get_default_category_trends(
+                &http_client,
+                &client_id,
+                &client_secret,
+            )
+            .await
+        })
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
     Ok(ApiResponse::ok(trends))
 }
 

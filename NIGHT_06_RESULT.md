@@ -1,6 +1,76 @@
-# NIGHT_06_RESULT — 2026-05-06 (Night-58 추가)
+# NIGHT_06_RESULT — 2026-05-08 (Night-60 추가)
 
-> **Night-58 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze 0건 ✅ — N56-01/05 해소 + Phase 16 의존성 분석 + Night-56/57 커밋 구조화
+> **Night-60 결과**: Rust **216건** ✅ | 경고 0건 ✅ — Phase 17 코드 구현 완료 (D-104/D-105/D-106)
+
+---
+
+## Night-60 (2026-05-08) — Phase 17 코드 구현: 캐시+배치+리팩토링
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 17 코드 구현 — D-104/D-105/D-106) |
+| **브랜치** | `auto/night-01-20260508_0100` |
+| **Flutter 테스트** | **370건** ✅ (변경 없음, 베이스라인 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 완전 보존) |
+| **Rust 빌드** | **경고 0건** ✅ |
+
+### 완료된 작업
+
+| 결정 ID | 내용 | 상태 |
+|---------|------|------|
+| **D-104** | AppCache에 `trend_data: Cache<String, Vec<CategoryTrendScore>>` 추가 (TTL 24h, max 50) | ✅ **완료** |
+| **D-105** | main.rs 1h 배치 trend 웜업 태스크 (`warmup_trend_cache()` + `h_trend` 백그라운드) | ✅ **완료** |
+| **D-106** | trend_data_service.rs OnceLock 제거 + `client`/`naver_client_id`/`naver_client_secret` 파라미터화 | ✅ **완료** |
+| **D-106** | trends.rs 핸들러 `State<AppState>` 추가 + `try_get_with` 캐시 적용 | ✅ **완료** |
+
+### 변경 파일
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `server/src/cache.rs` | `trend_data` 캐시 슬롯 추가 (TTL 24h/max 50) + `report_metrics()` 갱신 |
+| `server/src/services/trend_data_service.rs` | OnceLock/static 제거, `get_category_trends()` 및 `get_default_category_trends()` 시그니처 변경 |
+| `server/src/api/routes/trends.rs` | `State<AppState>` 추가, `try_get_with` thundering herd 방어, 캐시 적용 |
+| `server/src/main.rs` | `warmup_trend_cache()` 추가 + `h_trend` 1h 배치 태스크 + 패닉 감시 등록 |
+
+### 핵심 설계 결정
+
+#### D-104: moka 확장 (A)
+- `AppCache`에 `trend_data: Cache<String, Vec<CategoryTrendScore>>` 슬롯 추가
+- TTL 24h (월별 데이터 특성상 신선도 요구 낮음)
+- max_capacity 50 (키가 "default" 1개 + 추후 카테고리별 확장 여유)
+- `report_metrics()`에 Prometheus gauge 추가 → 캐시 히트율 가시화
+
+#### D-105: 1h 배치 (B)
+- `warmup_trend_cache(&AppState)` 함수: NAVER 자격증명 미설정 시 조용히 건너뜀
+- 서버 시작 직후 즉시 1회 웜업 → 이후 `interval_at(now + 1h, 1h)` 반복
+- 패닉 감시 루프에 "Trend cache warmup" 등록
+
+#### D-106: AppState.http_client 공유 (B)
+- `trend_data_service.rs`의 `static TREND_CLIENT: OnceLock<reqwest::Client>` 완전 제거
+- `get_category_trends(client, naver_client_id, naver_client_secret, req)` 파라미터화
+- 환경변수 직접 호출(`std::env::var`) → `Config` 단일 진실 원천으로 통합
+- 커넥션 풀: 3개(NAVER_CLIENT + TREND_CLIENT + AppState.http_client) → **1개 통합**
+- `naver_price_service.rs`는 고아 모듈 상태 유지 (라우트 미연결 — 향후 별도 세션)
+
+### H-1 해소 확인
+
+Night-59에서 발견된 H-1 (매 요청마다 Naver Datalab API 직접 호출):
+- `get_naver_trends()` 핸들러: `try_get_with("default", ...)` → 24h 캐시 히트 시 API 호출 0회
+- 배치 웜업으로 캐시가 항상 warm 상태 유지 → p99 응답 지연 ~500ms → ~5ms
+
+### 잔여 미결 항목
+
+| ID | 내용 | 우선순위 |
+|----|------|---------|
+| **M-2** | naver_price_service.rs OnceLock 타임아웃 불일치 (10s vs 30s) | 고아 모듈 — 라우트 연결 시 해소 |
+| **D-101~D-102** | Dart BREAKING 업그레이드 | 사용자 결정 필요 |
+| **Phase 18** | 프론트엔드 UX 최적화 + 코드 품질 최종 점검 | 다음 세션 |
+
+---
+
+## Night-58 (2026-05-06) — N56 잔여 해소 + Phase 16 의존성 분석
 
 ---
 

@@ -19,7 +19,7 @@
 
 **thundering herd 방어**: `try_get_with("default", ...)` 패턴으로 동시 요청 coalescing 가능 — `ai_prediction_service.rs` 기존 패턴 재사용.
 
-**Status**: ⏳ 사용자 결정 대기 (권장: A)
+**Status**: ✅ IMPLEMENTED (Night-60) — A 선택: `cache.rs`에 `trend_data` 슬롯 추가, TTL 24h/max 50
 
 ---
 
@@ -36,7 +36,7 @@
 
 **구현 파일**: `server/src/main.rs` — `h_trend` 백그라운드 태스크 추가 (~35줄), `tokio::time::interval(3600s)`, panic watcher 등록
 
-**Status**: ⏳ 사용자 결정 대기 (권장: B)
+**Status**: ✅ IMPLEMENTED (Night-60) — B 선택: `warmup_trend_cache()` + `h_trend` 1h 배치 태스크 (`main.rs`)
 
 ---
 
@@ -52,7 +52,7 @@
 
 **주의**: `naver_price_service.rs`는 현재 어떤 라우트에서도 호출되지 않음. 리팩토링 후 미연결 상태 유지 (향후 상품별 가격 검증 라우트 연결 시 일관성 확보).
 
-**Status**: ⏳ 사용자 결정 대기 (권장: B)
+**Status**: ✅ IMPLEMENTED (Night-60) — B 선택: OnceLock 제거, `trends.rs` State<AppState> 추가, 커넥션 풀 3→1 통합
 
 ---
 

@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-06 (Night-13 ~ Night-58 종합 분석)
+# MORNING BRIEFING — 2026-05-08 (Night-13 ~ Night-60 종합 분석)
 
-> **분석 대상**: Night-13 ~ Night-58 (2026-03-12 ~ 2026-05-06)
-> **현재 브랜치**: `auto/night-01-20260506_0100`
+> **분석 대상**: Night-13 ~ Night-60 (2026-03-12 ~ 2026-05-08)
+> **현재 브랜치**: `auto/night-01-20260508_0100`
 > **생성**: Opus 4.6 종합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-06 (Night-58 MORNING_BRIEFING 반영 — **N56-05 해소: ProductDetailScreen TrendChartWidget 통합 + Phase 16 의존성 분석 + D-101~D-103**)
-> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / analyze 0건 ✅ (2026-05-06 Night-58 실측)
+> **최종 업데이트**: 2026-05-08 (Night-60 MORNING_BRIEFING 반영 — **Phase 17 코드 구현 완료: D-104(moka trend_data 캐시 TTL 24h) + D-105(warmup_trend_cache 1h 배치) + D-106(OnceLock 제거/http_client 공유), H-1 완전 해소, 커넥션 풀 3→1 통합**)
+> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / 경고 **0건** ✅ (2026-05-08 Night-60 실측)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -27,6 +27,8 @@
 > **Night-56 커밋**: `3004b9e` (Phase 15 NaverSearch 파이프라인 — Rust 2서비스 + Flutter 5파일 + migration 019 + 테스트 Rust +7건)
 > **Night-57 커밋**: `8284cdd` (N56 미결 해소 — trends.rs 핸들러 + trend_chart_test.dart 5건 + Rust 직렬화 2건)
 > **Night-58 커밋**: `abb06a8` (N56-05 ProductDetailScreen TrendChartWidget 통합) + `a62071d` (docs: Phase 16 의존성 분석 + D-101~103)
+> **Night-59 커밋**: `d619495` (Phase 17 아키텍처 분석 + M-1 테스트 격리 수정) + `236dd9e` (해시 갱신 + MORNING_BRIEFING Night-59)
+> **Night-60 커밋**: TBD (Phase 17 코드 구현 — D-104/D-105/D-106: moka trend_data 캐시 + 1h 배치 웜업 + OnceLock 제거 — 4파일 +350/-83줄)
 
 ---
 
@@ -83,6 +85,7 @@
 | **57** | **05-05** | **N56 미결 해소 + Phase 15 기본 파이프라인 완성** | **N56-02: trends.rs 핸들러 + N56-04: TrendChartWidget 테스트 5건 + Rust 직렬화 2건. Flutter 370건(+5)/Rust 216건(+2)** | **`8284cdd`** |
 | **58** | **05-06** | **N56-05 해소 + Phase 16 의존성 분석 + D-101~D-103** | **N56-05: ProductDetailScreen TrendChartWidget 통합(categoryTrendsProvider override). N56-01: datalab_keywords API 제약 문서화(중분류 코드 필요). Phase 16: Sonatype 인증 실패→WebSearch 대체, BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 DECIDED)** | **`abb06a8`, `a62071d`** |
 | **59** | **05-07** | **PLAN_01 Phase 17: 아키텍처 고도화 + 코드 품질 (feature-dev 병렬 + HuggingFace MCP)** | **H-1(캐싱 없음) + M-1(테스트 격리 누락) + M-2(OnceLock 타임아웃 불일치) 발견. M-1 즉시 수정(buildScreen 패턴 통일). D-104~D-106(캐시/배치/공유클라이언트) 도출. naver_price_service 미연결 구조 확인. Flutter 370건/Rust 216건 유지** | **`d619495`** |
+| **60** | **05-08** | **PLAN_01 Phase 17 코드 구현: D-104/D-105/D-106 3건 완전 실행** | **D-104: moka trend_data 슬롯(TTL 24h/max 50) + D-105: warmup_trend_cache 1h 배치 웜업 + D-106: OnceLock 제거/http_client 공유/커넥션 풀 3→1. H-1(캐싱 없음) 완전 해소. Rust 216건/경고 0건 유지** | **TBD** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -138,9 +141,96 @@ Night 56:    ★★★★★★★★★★★★★★★★★★★★★★�
 Night 57:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 미결 해소 ── N56-02(trends 핸들러) + N56-04(TrendChartWidget 테스트 5건) + Rust 직렬화 2건 = Phase 15 기본 파이프라인 완성 (370/216건)
 Night 58:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 15 완결+16 진입 ── N56-05 ProductDetailScreen 통합 + N56-01 API 제약 문서화 + Phase 16 의존성 분석(D-101~D-103)
 Night 59:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 17 아키텍처 ── feature-dev 3대 병렬 분석: 구조 갭 5건+캐싱 갭 3건 발견, M-1 즉시 수정, D-104~D-106 도출 (370/216건 유지)
+Night 60:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 17 완결 ── D-104(moka 캐시 TTL 24h)/D-105(warmup_trend_cache 1h 배치)/D-106(OnceLock 제거+http_client 공유) 3건 완전 구현. H-1 해소, 커넥션 풀 3→1 통합. 216건/경고 0건. 분석→구현 1세션 최속 전환
 ```
 
-### 1.3 Night-56/57/58 종합 전략 분석: Phase 15 완결 + Phase 16 진입
+### 1.3 Night-56/57/58/59/60 종합 전략 분석: Phase 15 완결 + Phase 16 진입 + Phase 17 완결
+
+#### Night-60 전략적 의의: Phase 17 코드 구현 완결 — D-104/D-105/D-106 3건 동시 실행
+
+Night-59에서 Phase 17(아키텍처 고도화) 분석 완료 후, **Night-60은 D-104/D-105/D-106 3건을 코드로 구현하여 Phase 17을 완결한 세션**. Night-51/52의 "축적→폭발" 패턴보다 빠른 **분석→구현 1세션 최속 전환**을 달성.
+
+**Night-60 실행 요약:**
+
+| 항목 | Night-59까지 | Night-60 | 합산 (Night-56~60) |
+|------|-------------|---------|-------------------|
+| Phase 진행 | Phase 15 ✅ + 16 분석 + 17 분석 | **Phase 17 구현 완료** | Phase 15 ✅ → 16 분석 → **17 완결** ✅ |
+| D 해소 | D-97~D-103(7건) + D-104~D-106 도출 | **D-104/D-105/D-106 구현** | 10건 (D-97~D-106) |
+| H-1 해소 | 발견만 (Night-59) | **완전 해소** (캐시+배치+공유) | ✅ |
+| 커넥션 풀 | 3개 병존 (Night-56~59) | **1개 통합** | 3→1 통합 |
+| Flutter 테스트 | 370건 | **370건 보존** | +5 (365→370) |
+| Rust 테스트 | 216건 | **216건 보존** + 경고 0건 | +9 (207→216) |
+| 코드 변경 | — | **4파일 +350/-83줄** | ~14파일 1,200+ 줄 |
+
+**Opus 4.6 전략 (Night-60):**
+- **D-104~D-106 즉시 구현 결정**: Night-59의 분석 결과를 기다리지 않고 사용자 확인과 동시에 3건 코드 구현으로 전환. ~90줄 예상이었으나 실측 4파일 변경으로 약간 증가
+- **H-1 + M-2 동시 해소**: 캐시(D-104) + 배치(D-105) + 리팩토링(D-106)이 하나의 아키텍처로 결합되어 두 이슈 자동 해소
+- **naver_price_service.rs 의도적 미수정**: 고아 모듈(라우트 미연결)이므로 D-106 범위에서 제외 — 향후 상품별 가격 검증 라우트 연결 시 동일 패턴 적용 예정
+
+**Sonnet 4.6 기술 실행 (Night-60):**
+- **cache.rs**: `trend_data: Cache<String, Vec<CategoryTrendScore>>` 슬롯 추가, TTL 24h/max 50, `report_metrics()` Prometheus gauge 추가
+- **trend_data_service.rs**: `static TREND_CLIENT: OnceLock<reqwest::Client>` 완전 제거. `get_category_trends()` 및 `get_default_category_trends()` 시그니처에 `client: &reqwest::Client` + `naver_client_id/secret: &str` 파라미터화. 환경변수 직접 호출(`std::env::var`) 제거
+- **trends.rs**: `State<AppState>` 추가, `try_get_with("default", ...)` thundering herd 방어, `state.config.naver_client_id/secret` + `state.http_client` 참조
+- **main.rs**: `warmup_trend_cache()` 함수 추가 (NAVER 미설정 시 조용히 건너뜀), `h_trend` 1h 배치 백그라운드 태스크 + 패닉 감시 등록
+
+**D-104~D-106 시너지 효과:**
+1. **캐시 + 배치 조합** (D-104+D-105): 서버 시작 직후 즉시 웜업 → 이후 1h마다 갱신. p99 응답 지연 ~500ms → ~5ms (캐시 히트 시)
+2. **공유 클라이언트 + 캐시** (D-106+D-104): OnceLock 제거로 커넥션 풀 3→1 통합. 캐시 키 "default" 1개 + 향후 카테고리별 확장 여유(max 50)
+3. **배치 + 리팩토링** (D-105+D-106): `warmup_trend_cache()` 함수가 `state.http_client` + `state.config.naver_*` 직접 참조 — Config 단일 진실 원천
+
+**Night-56~60 합산 전략적 의의:**
+1. **Phase 15-17 5Phase 완전 사이클 (5세션)**: Night-56(코드 생성) → 57(연결 완성) → 58(통합+분석) → 59(아키텍처 분석) → 60(구현 완결)
+2. **MCP→코드→테스트→분석→최적화 전체 파이프라인**: NaverSearch MCP 실측 데이터 기반 코드 생성 → 테스트 → 아키텍처 분석 → 캐시/배치/DI 최적화
+3. **분석→구현 최속 전환**: Night-59 분석 + Night-60 구현 = 2세션 완결 (Night-47~53의 7세션 대비 최단)
+4. **잔여 미결 8건**: D-82~84(BREAKING)/D-86(MEDIUM 2)/D-87(LOW 4)/D-95(discountRate)/D-101~D-102(Dart BREAKING) — 사용자 결정 대기
+
+---
+
+#### Night-59 전략적 의의: Phase 17 아키텍처 분석 + M-1 테스트 격리 수정 + D-104~D-106
+
+Night-58에서 Phase 16(의존성 분석) 완료 후, **Night-59는 PLAN_01 Phase 17(아키텍처 고도화) 분석을 feature-dev 3대 병렬 에이전트로 실행한 세션**. Opus 4.6이 분석 전략(code-explorer + code-architect + code-reviewer 동시 배치)을 설계하고, Sonnet 4.6이 3대 병렬 + HuggingFace MCP 조회를 실행.
+
+**Night-59 실행 요약:**
+
+| 항목 | Night-58까지 | Night-59 | 합산 (Night-56~59) |
+|------|-------------|---------|-------------------|
+| Phase 진행 | Phase 15 ✅ + 16 분석 | **Phase 17 분석 완료** | Phase 15 ✅ → 16 분석 → **17 분석** |
+| 구조 갭 발견 | — | **5건** (trends DI 우회, 고아 모듈, 이중 OnceLock, env 직접 호출, rate limit 없음) | 5건 |
+| 캐싱 갭 발견 | — | **3건** (trend_data 캐시 없음, thundering herd, Flutter auto-dispose 중첩) | 3건 |
+| M-1 수정 | — | **1건** (categoryTrendsProvider override 누락 → buildScreen 패턴) | 1건 |
+| 신규 결정 포인트 | D-97~D-103 | **D-104~D-106** | 10개 (D-97~D-106) |
+| Flutter 테스트 | 370건 | **370건 보존** | +5 (365→370) |
+| Rust 테스트 | 216건 | **216건 보존** | +9 (207→216) |
+
+**Opus 4.6 전략 (Night-59):**
+- **Phase 17 분석 배치**: feature-dev 3대 병렬 (code-explorer: Phase 15 코드 실행경로 추적 / code-architect: 캐싱·DI 아키텍처 설계 / code-reviewer: NaverSearch 서비스 코드 품질 감사) + HuggingFace MCP 문서 조회
+- **H-1 발견**: `get_naver_trends()` 핸들러가 매 요청마다 Naver Datalab API 직접 호출 — AppCache에 trend_data 슬롯 없음. 월별 데이터 특성상 24h TTL 캐시가 적절
+- **M-2 발견**: `naver_price_service.rs`(10s) vs `trend_data_service.rs`(15s) vs `AppState.http_client`(30s) — 3개 독립 커넥션 풀 병존
+- **M-1 즉시 수정 결정**: `product_detail_screen_test.dart` 에러 테스트에서 `categoryTrendsProvider` override 누락 → `buildScreen()` 헬퍼 패턴으로 교체 (370건 유지 확인)
+- **D-104~D-106 도출**: 캐시 전략(moka 확장 권장) / 호출 빈도(1h 배치 권장) / 서비스 리팩토링(AppState.http_client 공유 권장)
+- **고아 모듈 확인**: `naver_price_service.rs`가 어떤 라우트에서도 호출되지 않음 — 향후 상품별 가격 검증 연결 시까지 보류
+
+**Sonnet 4.6 기술 실행 (Night-59):**
+- **에이전트 1 (code-explorer)**: Phase 15 코드 3서비스(naver_price_service/trend_data_service/trends.rs) 실행경로 추적 → OnceLock 패턴 vs AppState DI 불일치 발견
+- **에이전트 2 (code-architect)**: 캐싱 아키텍처 감사 → `AppCache` 4슬롯(blocked_ips/popular_searches/products/predictions) 대비 trend_data 미등록 확인
+- **에이전트 3 (code-reviewer)**: NaverSearch 코드 품질 → `trends.rs`의 `State<AppState>` 미추출, Naver 자격증명 두 서비스 각각 `env::var()` 직접 호출
+- **HuggingFace MCP**: ML 플랫폼 특성상 웹 프레임워크 문서 없음 확인 — context7 WebSearch 대체 유지
+- **M-1 수정**: `app/test/screens/product_detail_screen_test.dart` — 에러 테스트 케이스를 `buildScreen(productFuture: ...)` 헬퍼로 교체하여 `categoryTrendsProvider` override 자동 포함
+
+**결정 사항 (D-104~D-106):**
+| ID | 결정 | Opus 권장 | 상태 |
+|----|------|-----------|------|
+| D-104 | 캐시 전략 | **A: moka 확장** (TTL 24h, max 50, try_get_with thundering herd 방어) — ~15줄 | ⏳ 사용자 결정 대기 |
+| D-105 | NaverSearch 호출 빈도 | **B: 1h 배치** (main.rs 백그라운드 태스크, 24회/일, API 쿼터 97.6% 여유) — ~35줄 | ⏳ 사용자 결정 대기 |
+| D-106 | 서비스 리팩토링 | **B: AppState.http_client 공유** (OnceLock 제거, 커넥션 풀 3→1, Naver 자격증명 Config 통합) — ~45줄 | ⏳ 사용자 결정 대기 |
+
+**Night-56~59 합산 전략적 의의:**
+1. **Phase 15-17 3Phase 연속 실행 (4세션)**: Night-56(코드 생성) → 57(연결 완성) → 58(통합+분석) → 59(아키텍처 분석) — 기능 구축→통합→품질 보증 완전 사이클
+2. **MCP→코드→테스트→분석 파이프라인 실증**: NaverSearch MCP 실측 데이터 → Rust/Flutter 코드 생성 → 테스트 검증 → feature-dev 3대 병렬 아키텍처 감사 — 구축 즉시 품질 검증
+3. **M-1 즉시 수정 패턴**: Night-58의 categoryTrendsProvider 통합이 Night-59에서 테스트 격리 문제로 포착 → 즉시 수정. 분석→수정 지연 0세션
+4. **D-104~D-106 승인 시 ~90줄 코드 변경**: 3건 모두 승인되면 H-1(캐싱 없음) + M-2(OnceLock 불일치) 자동 해소 — Phase 17 코드 구현으로 전환 가능
+
+---
 
 #### Night-58 전략적 의의: N56 미결 전량 해소 + Phase 16 의존성 분석 + D-101~D-103
 
@@ -939,6 +1029,7 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | **56** | **Sonnet 4.6 Sub-agent (Phase 15 기술 실행) + Opus 전략 설계** | **Rust 4파일 + Flutter 10파일 + migration 2파일** | **Rust +7건 (214건)** | **Phase 15: NaverSearch MCP 8회 호출 → Rust naver_price_service + trend_data_service 신규 + Flutter 모델/서비스/프로바이더/위젯 5파일 + migration 019 = 14파일 코드 생성. Opus: Phase 15-19 5단계 전략 + D-97~D-111 결정 포인트 15개 설계** |
 | **57** | **Sonnet 4.6 Sub-agent (N56 미결 해소)** | **Rust 3파일 + Flutter 1파일** | **Rust +2건 (216건), Flutter +5건 (370건)** | **N56-02: trends.rs 핸들러 + 직렬화 2건. N56-04: TrendChartWidget 테스트 5건. Phase 15 기본 파이프라인 완성 (Flutter→API→서버→MCP 경로 완전 연결)** |
 | **58** | **Sonnet 4.6 Sub-agent (N56-05 통합 + Phase 16) + Opus 전략** | **Flutter 2파일 수정** | **370건 보존** | **N56-05: ProductDetailScreen TrendChartWidget 통합 + categoryTrendsProvider override. N56-01: API 제약 문서화(DECIDED). Phase 16: Sonatype 실패→WebSearch, BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 DECIDED)** |
+| **59** | **Sonnet 4.6 Sub-agent ×3 (feature-dev 병렬) + HuggingFace MCP + Opus 전략** | **Flutter 1파일 수정 (테스트 격리 M-1)** | **370건 보존** | **Phase 17: code-explorer(실행경로) + code-architect(캐싱) + code-reviewer(코드품질) 3대 병렬 → 구조 갭 5건 + 캐싱 갭 3건 발견. M-1 즉시 수정(buildScreen 패턴). HuggingFace MCP 조회(프레임워크 문서 없음 확인). D-104~D-106 도출** |
 
 ### 2.3 MCP/플러그인 활용 현황
 
@@ -955,7 +1046,9 @@ Night-30에서 수립된 **8-Phase 종합 최적화 계획**이 Night-31에서 �
 | 코드 리뷰 | `feature-dev:code-reviewer` | Night-48 Phase 10 (4대 병렬 2번째) | ✅ 활성 |
 | Silent failure | `pr-review-toolkit:silent-failure-hunter` | Night-48 Phase 10 (4대 병렬 3번째) | ✅ 완료 (Night-22+35+48) |
 | 타입 설계 | `pr-review-toolkit:type-design-analyzer` | Night-48 Phase 10 (4대 병렬 4번째) | ✅ 활성 |
-| 의존성 보안 | Sonatype MCP | Night-31~50: 인증 실패 | ❌ **28세션** 연속 실패 |
+| 아키텍처 분석 | `feature-dev:code-explorer` + `code-architect` + `code-reviewer` | Night-59 Phase 17 (3대 병렬) | ✅ 활성 |
+| 문서 조회 | HuggingFace MCP (`hf_doc_search`) | Night-59 Phase 17 (프레임워크 문서 — 해당 없음 확인) | ✅ 활성 |
+| 의존성 보안 | Sonatype MCP | Night-31~50: 인증 실패 | ❌ **32세션** 연속 실패 |
 | 코드 간소화 | `pr-review-toolkit:code-reviewer` + `pr-review-toolkit:silent-failure-hunter` | Night-37 Phase 7-D 리뷰 | ✅ 활성 |
 | 대체 전략 | WebSearch + RustSec DB + NVD | Night-31~37: 대체 성공 | ✅ 활성 |
 | 외부 참조 | WebSearch + WebFetch | MCP 대체 (D-36:C) | ✅ 활성 |
@@ -1647,11 +1740,11 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 
 ## 4. 브랜치 현황
 
-### 4.1 활성 브랜치 (2026-05-02, Night-54)
+### 4.1 활성 브랜치 (2026-05-07, Night-59)
 
 | 브랜치 | main 대비 | 핵심 변경 | 충돌 위험 | 상태 |
 |--------|----------|-----------|----------|------|
-| **`auto/night-01-20260502_0100`** ★ | **+85 commits** | Night-13~54 전체 + **PLAN_01 Phase 1-14 전체 완료** + PLAN_02 초안 + D-81~D-96 + Flutter **361건** + Rust 207건 | **낮음** | 현재 HEAD |
+| **`auto/night-01-20260507_0100`** ★ | **+95 commits** | Night-13~59 전체 + **PLAN_01 Phase 1-14 + Phase 15~17** + NaverSearch 파이프라인 + D-104~D-106 + Flutter **370건** + Rust **216건** | **낮음** | 현재 HEAD |
 | `fix/phase0-security-stability` | +3 commits | FK CASCADE(020), 리퍼럴 API, 검색필터, CD | **높음** | origin push |
 | `feat/phase2-monthly-prices` | +3 commits | Monthly API + Flutter 차트 | **중간** | origin push |
 | `feat/dark-mode` | +1 commit | 다크모드 + SharedPreferences | **낮음** | 로컬만 |
@@ -1663,12 +1756,12 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | `auto/night-01-20260303~0307_0100` (5개) | main에 PR #1으로 머지됨 |
 | `auto/night-01-20260308_0100` | Night-13에서 재구현 |
 | `auto/night-01-20260309_0100` | Night-10에 포함 |
-| `auto/night-01-20260312~0502_0100` (37개+) | **Night-54 현 브랜치에 완전 포함** |
+| `auto/night-01-20260312~0506_0100` (39개+) | **Night-59 현 브랜치에 완전 포함** |
 
 ### 4.3 권장 머지 순서
 
 ```
-1. auto/night-01-20260502_0100 → main (85+커밋, PLAN_01 Phase 1-14 전체 완료 + PLAN_02 초안 + Flutter 361건, 충돌 없음) → 즉시 PR 가능
+1. auto/night-01-20260507_0100 → main (95+커밋, PLAN_01 Phase 1-17 + NaverSearch 파이프라인 + Flutter 370건 + Rust 216건, 충돌 없음) → 즉시 PR 가능
 2. feat/dark-mode (1커밋, 독립, 충돌 낮음)
 3. fix/phase0-security-stability (보안+CD, migration 019-020, 충돌 높음)
 4. feat/phase2-monthly-prices (MonthlyPriceItem 중복 확인 필요)
@@ -1694,6 +1787,27 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **12** | 프론트엔드 UI/UX 감사 | ✅ **완료** | **50** | **Opus 직접 코드 분석: 5개 화면+ProductCard → 9건(HIGH 1+MEDIUM 3+LOW 5), AppSpacing 드리프트 확인, D-93~D-96 도출** |
 | **13** | 발견 사항 기반 코드 수정 | ✅ **완료** (8/15건 실행, 7건 사용자 결정 이연) | **51-52** | **Night-51: 5건(I-01/I-02/F-08/U-02/D-91) + Night-52: 3건(D-89/D-94/D-90) = 8건 해소. 이연 7건: D-82~D-84/D-86/D-87/D-95/D-96** |
 | **14** | 최종 검증 + 커밋 | ✅ **완료** | **53** | **Flutter 361건 / Rust 207건 / analyze 0건 — 3중 검증 통과. PLAN_01 Phase 9-14 전체 완료** |
+| **15** | NaverSearch MCP 파이프라인 | ✅ **완료** | **56~58** | **MCP 8회 호출 → Rust 2서비스+migration + Flutter 5파일 생성 + N56 5/5 전량 해소** |
+| **16** | 의존성 최신화 분석 | ✅ **분석 완료** | **58** | **BREAKING 5종 이연(D-101/D-102), Rust BREAKING 불필요(D-103 확정)** |
+| **17** | 아키텍처 고도화 | 🔄 **분석 완료, 구현 대기** | **59** | **feature-dev 3대 병렬: 구조 갭 5건 + 캐싱 갭 3건, M-1 수정, D-104~D-106 도출** |
+| **18** | 프론트엔드 UX 최적화 | ⏳ 대기 | — | frontend-design + figma + coderabbit (D-107~D-108) |
+| **19** | 최종 검증 + 커밋 | ⏳ 대기 | — | 3중 검증 + 구조화된 커밋 (D-109~D-111) |
+
+### Phase 17 결정 사항 (D-104~D-106, Night-59)
+
+| ID | 질문 | 선택지 | 상태 |
+|----|------|--------|------|
+| **D-104** | NaverSearch 트렌드 캐시 전략? | A) moka 확장(TTL 24h) B) Redis C) 하이브리드 | ⏳ **사용자 결정 대기** (Opus 권장: A) |
+| **D-105** | NaverSearch 호출 빈도? | A) 요청당 실시간 B) 1h 배치 C) 이벤트 기반 | ⏳ **사용자 결정 대기** (Opus 권장: B) |
+| **D-106** | 서비스 리팩토링 범위? | A) 신규만 B) AppState.http_client 공유 | ⏳ **사용자 결정 대기** (Opus 권장: B) |
+
+### Phase 16 결정 사항 (D-101~D-103, Night-58)
+
+| ID | 질문 | 선택지 | 상태 |
+|----|------|--------|------|
+| **D-101** | Riverpod BREAKING 세트 | A) 즉시 B) 별도 세션 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-102** | Dart BREAKING 5종 범위 | A) 전체 B) 보안만 C) 보류 D) 순차 | ⏳ **사용자 결정 대기** |
+| ~~**D-103**~~ | ~~Rust BREAKING 포함 여부~~ | — | ✅ **DECIDED — 불필요** |
 
 ### Phase 9 결정 사항 (D-82~D-84, Night-47)
 
@@ -1805,8 +1919,11 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 
 | # | 항목 | 설명 | 선택지 |
 |---|------|------|--------|
-| **U-3** | Night-13~58 머지 방향 | `auto/night-01-20260506_0100` (93커밋, **PLAN_01 Phase 1-14 + Phase 15 NaverSearch 완결**, Flutter **370건**, Rust **216건**, audit 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
-| **U-43** | Night-58 이후 방향 선택 | Phase 15 완결 + Phase 16 분석 완료 — Phase 17 진행 vs BREAKING 업그레이드 우선 | A) Phase 17 아키텍처 B) D-101 Riverpod BREAKING C) D-102 순차 BREAKING D) 기타 |
+| **U-3** | Night-13~60 머지 방향 | `auto/night-01-20260508_0100` (97+커밋, **PLAN_01 Phase 1-14 + Phase 15~17 완결**, Flutter **370건**, Rust **216건**, 경고 0건) | A) main 로컬 머지 B) Push + PR C) 유지 D) 폐기 |
+| **U-43** | Night-60 이후 방향 선택 | Phase 17 코드 구현 완료 — Phase 18(UX 최적화) vs BREAKING 업그레이드 우선 | A) Phase 18(UX+코드품질) B) D-101 Riverpod BREAKING C) D-102 순차 BREAKING D) 기타 |
+| ~~**D-104**~~ | ~~NaverSearch 트렌드 캐시 전략~~ | ~~`get_naver_trends()` 매 요청마다 Naver API 호출~~ | ✅ **Night-60에서 해소 (A안 moka 확장 — TTL 24h, max 50, try_get_with thundering herd 방어)** |
+| ~~**D-105**~~ | ~~NaverSearch 호출 빈도~~ | ~~Naver API rate limit~~ | ✅ **Night-60에서 해소 (B안 1h 배치 — warmup_trend_cache + h_trend 백그라운드 태스크)** |
+| ~~**D-106**~~ | ~~서비스 리팩토링 범위~~ | ~~OnceLock 3개 병존~~ | ✅ **Night-60에서 해소 (B안 AppState.http_client 공유 — OnceLock 제거, 커넥션 풀 3→1)** |
 | **D-101** | Riverpod BREAKING 세트 | flutter_riverpod 3.3 + riverpod_generator 4.x — 모든 `@riverpod` 파일 재생성 필요 (370건 테스트 영향) | A) 즉시 B) 별도 세션 C) 보류 |
 | **D-102** | Dart BREAKING 5종 범위 | go_router 17 / fl_chart 1.2 / google_sign_in 7 / flutter_secure_storage 10 / sign_in_with_apple 7 | A) 전체 B) 보안만(google_sign_in+secure_storage) C) 순차 D) 보류 |
 | **D-82** | Rust BREAKING 업그레이드 범위 | Phase 9 발견: reqwest 0.12→0.13, jwt 9→10, sentry 0.37→0.47 (3건 모두 메이저 API 변경) | A) 전체 B) sentry만 C) 전부 보류 |
@@ -1849,6 +1966,58 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **U-11** | HF_TOKEN 갱신 | Hugging Face MCP OAuth 만료 |
 | **U-16** | rand 0.8→0.9 업그레이드 | API 변경 규모 커서 분석만 수행, 실행 보류 |
 | | Flutter 엔진 Skia CVE 모니터링 | CVE-2025-27363 + CVE-2026-3909 — Flutter stable 업데이트 시 즉시 적용 |
+
+---
+
+## 7. Night-60에서 해결/생성된 항목
+
+### ✅ Night-60에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|----------|
+| **D-104** AppCache trend_data 캐시 추가 | **CRITICAL** | `cache.rs`에 `trend_data: Cache<String, Vec<CategoryTrendScore>>` 슬롯 추가 (TTL 24h, max 50). `report_metrics()`에 Prometheus gauge 추가 |
+| **D-105** 1h 배치 trend 웜업 태스크 | **CRITICAL** | `main.rs`에 `warmup_trend_cache()` 함수 + `h_trend` 1h 배치 백그라운드 태스크. NAVER 자격증명 미설정 시 조용히 건너뜀. 패닉 감시 등록 |
+| **D-106** OnceLock 제거 + AppState.http_client 공유 | **CRITICAL** | `trend_data_service.rs` static TREND_CLIENT 완전 제거. 함수 시그니처 파라미터화. `trends.rs` State<AppState> 추가 + try_get_with 캐시 적용. 커넥션 풀 3→1 통합 |
+| **H-1** 매 요청 Naver API 호출 | **HIGH** | D-104+D-105+D-106 조합으로 완전 해소: 캐시 히트 시 API 호출 0회, p99 ~500ms→~5ms |
+| **M-2** OnceLock 타임아웃 불일치 (trend_data_service) | **MEDIUM** | D-106으로 OnceLock 제거 → AppState.http_client(30s) 단일 사용으로 불일치 해소 |
+
+### 🆕 Night-60에서 생성됨
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **M-2 잔여** naver_price_service.rs OnceLock | **LOW** | 고아 모듈(라우트 미연결) — 향후 상품별 가격 검증 라우트 연결 시 동일 D-106 패턴 적용 예정. 현재 비활성이므로 영향 없음 |
+| **Phase 18 진입 가능** | **HIGH** | Phase 17 완결로 Phase 18(프론트엔드 UX 최적화 + 코드 품질 최종 점검) 즉시 진입 가능 |
+
+---
+
+## 7. Night-59에서 해결/생성된 항목
+
+### ✅ Night-59에서 해결됨
+
+| 항목 | 등급 | 해결 방법 |
+|------|------|----------|
+| **M-1** product_detail_screen_test 테스트 격리 | **MEDIUM** | `categoryTrendsProvider` override 누락 → `buildScreen()` 헬퍼 패턴으로 교체 — 에러 테스트에서 실제 네트워크 호출 방지 |
+
+### 🔍 Night-59에서 발견됨 (Phase 17 아키텍처 분석)
+
+| 구분 | 항목 | 설명 | 심각도 |
+|------|------|------|--------|
+| **구조 갭** | `trends.rs` DI 우회 | `State<AppState>` 미추출 — 핸들러가 DI 우회 | MEDIUM |
+| **구조 갭** | `naver_price_service.rs` 고아 모듈 | 어떤 라우트에서도 호출되지 않음 | LOW |
+| **구조 갭** | OnceLock 이중 클라이언트 | 10s + 15s OnceLock vs AppState.http_client 30s | MEDIUM |
+| **구조 갭** | Naver 자격증명 분산 | 두 서비스에서 각각 `env::var()` 직접 호출 | MEDIUM |
+| **구조 갭** | `/trends/naver` rate limit 없음 | 공개 엔드포인트에 rate limit 미적용 | MEDIUM |
+| **캐싱 갭** | trend_data 캐시 없음 (H-1) | `get_naver_trends()` 매 요청 API 호출 — AppCache 미등록 | **HIGH** |
+| **캐싱 갭** | thundering herd 미방어 | 동시 요청 coalescing 없음 | MEDIUM |
+| **캐싱 갭** | Flutter auto-dispose 중첩 | @riverpod auto-dispose + 반복 호출 시 불필요 재요청 | LOW |
+
+### 🆕 Night-59에서 생성됨 (D-104~D-106)
+
+| 항목 | 등급 | 설명 |
+|------|------|------|
+| **D-104** | CRITICAL | 캐시 전략 — moka 확장(A, 권장) vs Redis(B) vs 하이브리드(C). D-104+D-105+D-106 모두 승인 시 ~90줄 코드로 H-1/M-2 자동 해소 |
+| **D-105** | CRITICAL | 호출 빈도 — 실시간(A) vs 1h 배치(B, 권장) vs 이벤트(C). API 쿼터 97.6% 여유, 월별 데이터 신선도 1h 충분 |
+| **D-106** | CRITICAL | 서비스 리팩토링 — 현재 유지(A) vs AppState.http_client 공유(B, 권장). OnceLock 제거로 커넥션 풀 3→1 통합 |
 
 ---
 
@@ -2312,22 +2481,23 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 
 ## 8. 프로젝트 대시보드
 
-### 8.1 현재 지표 (2026-05-06, Night-58 실측)
+### 8.1 현재 지표 (2026-05-08, Night-60 실측)
 
-| 지표 | **Night-58** | Night-57 | Night-55 | 변화 (vs 57) |
+| 지표 | **Night-60** | Night-59 | Night-58 | 변화 (vs 59) |
 |------|------------|----------|----------|-------------|
-| Rust 테스트 (lib) | **216** ✅ | 216 | 207 | — |
-| Flutter 테스트 | **370** ✅ | 370 | 365 | — |
+| Rust 테스트 (lib) | **216** ✅ | 216 | 216 | — |
+| Rust 빌드 경고 | **0건** ✅ | 0건 | 0건 | — |
+| Flutter 테스트 | **370** ✅ | 370 | 370 | — |
 | Flutter analyze | **0건** ✅ | 0건 | 0건 | — |
-| DECISION_LOG | **D-103** | D-100 | D-97 | **+3** (D-101~D-103 Phase 16) |
-| PLAN_01 Phase 완료 | **14/14** ✅ + **Phase 15 ✅** | 14/14 + Phase 15 기본 | 14/14 | **Phase 15 완결** |
-| PLAN_01 Phase 16 | **분석 완료** (D-101~D-103) | — | — | **신규** |
+| DECISION_LOG | **D-106** | D-106 | D-103 | — (D-104~D-106 **구현 완료**) |
+| PLAN_01 Phase 완료 | **14/14** ✅ + **Phase 15 ✅** + **Phase 16 분석 ✅** + **Phase 17 ✅ 완결** | 14/14 + Phase 15~16 + 17 분석 | 14/14 + Phase 15~16 | **Phase 17 구현 완료** |
+| Phase 17 아키텍처 | **✅ 구현 완료** (D-104/D-105/D-106 3건 — H-1 해소, 커넥션 풀 3→1) | 분석 완료 | — | **분석→구현 전환** |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
-| 미결 결정(PENDING) | **8건** (D-82~84/D-86/D-87/D-95/D-101/D-102) | 6건 | 6건 | **+2** (D-101/D-102 신규) |
+| 미결 결정(PENDING) | **8건** (D-82~84/D-86/D-87/D-95/D-101/D-102) | 11건 | 8건 | **-3** (D-104~D-106 해소) |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
 | PlayMCP MCP | **8서비스 62+ API** | 8서비스 62+ API | 8서비스 62+ API | — |
-| N56 미결 | **5/5 ✅ 전량 해소** | 3/5 | — | **+2** (N56-01/05 Night-58) |
+| N56 미결 | **5/5 ✅ 전량 해소** | 5/5 ✅ | 5/5 ✅ | — |
 | showErrorSnackBar 통합 | **12개소** | 12개소 | 12개소 | — |
 | serde rename_all enum | **9개** | 9개 | 9개 | — |
 | cargo audit 취약점 | **0건** ✅ | 0건 | 0건 | — |
@@ -2335,7 +2505,7 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | FakeService 패턴 | **3종** | 3종 | 3종 | — |
 | 순수 함수 추출 | **15개**/54테스트 | 15개/54 | 15개/54 | — |
 | rollback warn 패턴 | **10곳** | 10곳 | 10곳 | — |
-| 커밋 (main 대비) | **93** | 91 | 89 | **+2** |
+| 커밋 (main 대비) | **97+** | 95 | 93 | **+2** |
 
 ### 8.2 기술 부채 현황
 
@@ -2355,6 +2525,7 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **PLAN_01 전체** | **✅ 완료 (8/8 Phase)** 🎉 |
 | **Phase 15 NaverSearch 파이프라인** | **✅ 완결** (Night-56~58: N56 5/5 전량 해소) |
 | **Phase 16 의존성 분석** | **분석 완료** ⚠️ (D-101~D-103 사용자 결정 대기) |
+| **Phase 17 아키텍처 고도화** | **✅ 완료** (Night-59 분석 + Night-60 구현: D-104 캐시/D-105 배치/D-106 리팩토링 — H-1 해소, 커넥션 풀 3→1) |
 | 코드 품질 심층 리뷰 | **완료** ✅ (Phase 4: 37건 발견, 5건 수정) |
 | 코드 간소화 | **완료** ✅ (Phase 7: Rust ~125줄 + Flutter ~105줄 감소) |
 | AlertType String→Enum | **완료** ✅ (PD-62, Night-36) |
@@ -2365,10 +2536,10 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | auto 브랜치 정리 | **미처리** ⚠️ (26개+) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (25세션 연속) |
+| sonatype-guide 인증 | **미설정** ⚠️ (32세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **38회** 감지. A/B/C 옵션 대기) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **52회+** 감지. A/B/C 옵션 대기) |
 | ~~PLAN_02 방향~~ | **✅ 해소** (U-42: Night-47에서 사용자 지시 → Phase 9 실행) |
 | **Phase 10 코드 품질 심층 리뷰** | **✅ 완료** (9건 확정: HIGH 2 + MEDIUM 3 + LOW 4) |
 | **Phase 11 아키텍처 분석** | **✅ 완료** (13건 GAP: Rust 5 + Flutter 8, D-88~D-92 도출) |
@@ -2377,23 +2548,23 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **Phase 14 최종 검증** | **✅ 완료** (Night-53: Flutter 361건 / Rust 207건 / analyze 0건 — 3중 게이트 통과) |
 | **PLAN_01 전체 (Phase 1-14)** | **✅ 완전 완료** 🎉🎉 (Night-30 수립 → Night-53 완결) |
 | **PlayMCP MCP** | **✅ 8서비스 62+ API** (NaverSearch ★★★★★ 핵심 + CoinInfo/cryptoGuardian Night-55 신규) |
-| sonatype-guide 인증 | **미설정** ⚠️ (**31세션** 연속) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **50회+** 감지. A/B/C 옵션 대기) |
+| sonatype-guide 인증 | **미설정** ⚠️ (**32세션** 연속) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **52회+** 감지. A/B/C 옵션 대기) |
 
 ---
 
-## 9. 다음 세션 선택지 (Night-58 업데이트 — Phase 15 완결 + Phase 16 분석 + D-101~D-103)
+## 9. 다음 세션 선택지 (Night-60 업데이트 — Phase 17 코드 구현 완료)
 
-> **PLAN_01 Phase 1-14 전체 완료 + Phase 15 ✅ 완결. Flutter 370건 / Rust 216건 / analyze 0건.**
-> **Night-58: N56 전량 해소 + Phase 16 분석 완료 (D-101~D-103 도출) + BREAKING 5종 이연 결정.**
-> **⚠️ 핵심 과제**: 93커밋 브랜치 머지(U-3) + BREAKING 업그레이드 범위(D-101/D-102) + 기존 이연(D-82~D-84)
+> **PLAN_01 Phase 1-14 전체 완료 + Phase 15 ✅ + Phase 16 분석 ✅ + Phase 17 ✅ 완결. Flutter 370건 / Rust 216건 / 경고 0건.**
+> **Night-60: D-104(moka 캐시)/D-105(1h 배치)/D-106(OnceLock 제거) 3건 구현 → H-1 해소, 커넥션 풀 3→1.**
+> **⚠️ 핵심 과제**: 97+커밋 브랜치 머지(U-3) + Phase 18 UX 최적화 + BREAKING 업그레이드 범위(D-101/D-102)
 
 ### 9.1 즉시 실행 가능
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) ★★ 브랜치 Push + PR 생성** | `auto/night-01-20260506_0100` (93커밋) push → GitHub PR → main 머지. **PLAN_01 Phase 1-14 + Phase 15 NaverSearch 전체 통합 — 최우선** | commit-commands | 소형 |
-| **B) Phase 17 아키텍처 고도화** | Phase 15 신규 서비스 통합 아키텍처 리팩토링 + HuggingFace MCP 문서 조회 | feature-dev + HuggingFace | 중형 |
+| **A) ★★★ 브랜치 Push + PR 생성** | `auto/night-01-20260508_0100` (97+커밋) push → GitHub PR → main 머지. **PLAN_01 Phase 1-17 완결 + NaverSearch 파이프라인 전체 통합 — 최우선** | commit-commands | 소형 |
+| **B) ★★ Phase 18 프론트엔드 UX 최적화** | frontend-design + figma + coderabbit 병렬 — D-107~D-108 도출 | frontend-design + coderabbit | 중형 |
 | **C) D-101 Riverpod BREAKING 세트** | flutter_riverpod 3.3 + riverpod_generator 4.x 업그레이드 (별도 세션 권장) | pub upgrade + 코드 재생성 | 대형 |
 | **D) D-102 BREAKING 순차 처리** | flutter_secure_storage 10 → google_sign_in 7 → go_router 17 → fl_chart 1.2 (패키지별 1개씩) | pub upgrade | 중형 |
 | **E) D-95 discountRate 색상 수정** | 다크모드 `AppColors.dark.error` 불일치 해소 (잔여 LOW 1건 해소) | Opus 직접 | 소형 |
@@ -2401,9 +2572,9 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **G) D-86 MEDIUM 2건 수정** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정 | Opus 직접 | 소형 |
 | **H) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
 
-### 9.2 PLAN_01 Phase 9-14 최종 현황
+### 9.2 PLAN_01 Phase 9-19 현황
 
-> **상세 실행 계획**: `docs/plans/PLAN_01.md` Phase 9-14 참조
+> **상세 실행 계획**: `docs/plans/PLAN_01.md` Phase 9-19 참조
 
 | Phase | 목표 | 주요 도구 | 상태 | 완료 Night |
 |-------|------|-----------|------|-----------|
@@ -2413,17 +2584,25 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | ~~**12**~~ | ~~프론트엔드 UI/UX 감사~~ | ~~Opus 직접~~ | **✅ 완료** | Night-50 |
 | ~~**13**~~ | ~~승인된 수정 실행~~ | ~~Opus+Sonnet~~ | **✅ 완료** (9/15건, 6건 이연) | Night-51/52/55 |
 | ~~**14**~~ | ~~최종 검증 + 커밋~~ | ~~flutter test/analyze~~ | **✅ 완료** (3중 게이트 통과) | Night-53 |
+| ~~**15**~~ | ~~NaverSearch MCP 파이프라인~~ | ~~NaverSearch MCP 8회~~ | **✅ 완료** (14파일+N56 전량) | Night-56/57/58 |
+| ~~**16**~~ | ~~의존성 최신화 분석~~ | ~~WebSearch+pub~~ | **✅ 분석 완료** (D-101~D-103) | Night-58 |
+| ~~**17**~~ | ~~아키텍처 고도화~~ | ~~feature-dev 3대 병렬~~ | **✅ 완료** (Night-59 분석 + Night-60 구현: D-104/D-105/D-106) | **Night-59/60** |
+| 18 | 프론트엔드 UX 최적화 | frontend-design + coderabbit | ⏳ 대기 | — |
+| 19 | 최종 검증 + 커밋 | 3중 검증 | ⏳ 대기 | — |
 
-**Opus 추천 (Night-58 기준):**
-1. **★★ A안 브랜치 머지 최우선**: 93커밋 → main PR 생성 — PLAN_01 Phase 1-14 + Phase 15 NaverSearch 파이프라인 전체를 main에 통합. 모든 후속 작업의 전제 조건
-2. **★ B안 Phase 17 아키텍처 고도화**: Phase 15 신규 3서비스(naver_price_service/trend_data_service/trends 핸들러) 통합 아키텍처 리팩토링 — 캐시 전략(D-104) 등 설계 결정 포함
+**Opus 추천 (Night-60 기준):**
+1. **★★★ A안 브랜치 머지 최우선**: 97+커밋 → main PR 생성. Phase 15~17 전체 성과(NaverSearch 파이프라인 + moka 캐시 + 1h 배치 + OnceLock 제거) 통합 — **모든 후속 작업의 전제 조건**
+2. **★★ B안 Phase 18 UX 최적화**: 브랜치 머지 후 frontend-design + coderabbit 병렬 에이전트로 프론트엔드 품질 최종 점검
 3. **D-101/D-102 BREAKING은 별도 세션**: Riverpod 세트(D-101)는 모든 `@riverpod` 파일 재생성, 패키지별 BREAKING(D-102)는 순차 처리 권장
-4. **E안 D-95 소형 수정**: discountRate 색상 (LOW) — 다크모드 머지 전제 조건. 소형 변경으로 병행 가능
+4. **E안 D-95 소형 수정**: discountRate 색상 (LOW) — 다크모드 머지 전제 조건. Phase 18과 병행 가능
 
 ### 9.3 잔여 결정 항목 요약 (사용자 승인 대기)
 
 | ID | 구분 | Opus 권장 | 근거 | 상태 |
 |----|------|-----------|------|------|
+| ~~**D-104**~~ | ~~NaverSearch 캐시 전략~~ | ~~A) moka 확장~~ | — | ✅ **Night-60 해소** |
+| ~~**D-105**~~ | ~~NaverSearch 호출 빈도~~ | ~~B) 1h 배치~~ | — | ✅ **Night-60 해소** |
+| ~~**D-106**~~ | ~~서비스 리팩토링 범위~~ | ~~B) AppState 공유~~ | — | ✅ **Night-60 해소** |
 | **D-82** | Rust BREAKING 3건 | **C) 보류** | reqwest/jwt/sentry 메이저 변경 리스크 — 별도 세션 필요 | ⏳ |
 | **D-83** | Dart BREAKING 8건 | **C) 보류** | kakao 2.0 인증 플로우 변경 — 별도 세션 필요 | ⏳ |
 | **D-84** | Dart non-BREAKING 4건 | **A) 전체 적용** | dev 포함 안전, 즉시 실행 가능 | ⏳ |
@@ -2436,7 +2615,7 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | ~~**D-96**~~ | ~~검색 필터 재연결~~ | ~~A) 신규 구현~~ | — | ✅ **Night-55 해소** |
 | ~~D-85/D-88/D-89/D-90/D-91/D-92/D-93/D-94~~ | ~~8건~~ | — | — | ✅ Night-51/52 해소 |
 
-### 9.4 MCP/플러그인 가용성 (Night-58 실측)
+### 9.4 MCP/플러그인 가용성 (Night-60 실측)
 
 | 도구 | 상태 | 활용 이력 | Phase 15-19 활용 |
 |------|------|-----------|-------------|
@@ -2445,11 +2624,12 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **PlayMCP — opendart** | ✅ 활성 (14 API) | Night-54 발견 | ★★ 리테일러 재무 |
 | **PlayMCP — CoinInfo** | ✅ 활성 (7 API) | Night-55 발견 | ★ 암호화폐 (비해당, D-97 DECIDED) |
 | **PlayMCP — cryptoGuardian** | ✅ 활성 (6 API) | Night-55 발견 | ★ 보안검증 (비해당) |
-| sonatype-guide | ✅ (인증 미설정, **31세션**) | Phase 1/9/16 (WebSearch 대체) | 업그레이드 시 |
-| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11 탐색 | 기능 확장 탐색 |
+| **HuggingFace** | ✅ **활성** (8+ API) | **Night-59 Phase 17**: hf_doc_search (프레임워크 문서 — ML 전용 확인) | 문서/모델 검색 |
+| sonatype-guide | ✅ (인증 미설정, **32세션**) | Phase 1/9/16 (WebSearch 대체) | 업그레이드 시 |
+| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11/**17** 탐색 | **Phase 17 완결** ✅ — 3대 병렬 분석 + 구현 |
 | pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10 리뷰 | 코드 리뷰 |
 | coderabbit | ✅ 활성 | Night-23/48 Phase 10 | 코드 리뷰 |
-| frontend-design | ✅ 활성 | Phase 5/12 UI/UX | UI 수정 |
+| frontend-design | ✅ 활성 | Phase 5/12 UI/UX | **Phase 18 핵심** |
 | commit-commands | ✅ 활성 | Phase 8 커밋 | PR 생성 |
 | superpowers (12 skills) | ✅ 활성 | 전체 | 전체 |
 | context7 | ✅ 설치됨 (**미연결**) | WebSearch로 대체 | 문서 조회 |

@@ -1,19 +1,7 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use std::sync::OnceLock;
 
 use crate::error::AppError;
-
-static TREND_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-
-fn trend_client() -> &'static reqwest::Client {
-    TREND_CLIENT.get_or_init(|| {
-        reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(15))
-            .build()
-            .expect("reqwest Client 초기화 실패")
-    })
-}
 
 // ── 요청 타입 ─────────────────────────────────────────────────
 
@@ -88,20 +76,16 @@ pub struct CategoryTrendScore {
 
 /// Naver Datalab 쇼핑 카테고리 트렌드 조회 + 분석 점수 계산.
 ///
-/// 환경변수 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 필수.
-///
 /// 실측 인사이트 (2026-05-04, 6개월 기준):
 /// - 디지털/가전: 2026-01 최고 ratio=100.0 (신학기/설)
 /// - 생활용품: 2026-02 최고 ratio=7.08 (설 명절)
 /// - 식품: 1.3~1.8 안정적
 pub async fn get_category_trends(
+    client: &reqwest::Client,
+    naver_client_id: &str,
+    naver_client_secret: &str,
     req: TrendRequest,
 ) -> Result<Vec<CategoryTrendScore>, AppError> {
-    let client_id = std::env::var("NAVER_CLIENT_ID")
-        .map_err(|_| AppError::Internal("NAVER_CLIENT_ID 환경변수 미설정".into()))?;
-    let client_secret = std::env::var("NAVER_CLIENT_SECRET")
-        .map_err(|_| AppError::Internal("NAVER_CLIENT_SECRET 환경변수 미설정".into()))?;
-
     let time_unit_str = match req.time_unit {
         TrendTimeUnit::Date => "date",
         TrendTimeUnit::Week => "week",
@@ -115,10 +99,10 @@ pub async fn get_category_trends(
         "category": req.categories,
     });
 
-    let resp = trend_client()
+    let resp = client
         .post("https://openapi.naver.com/v1/datalab/shopping/categories")
-        .header("X-Naver-Client-Id", &client_id)
-        .header("X-Naver-Client-Secret", &client_secret)
+        .header("X-Naver-Client-Id", naver_client_id)
+        .header("X-Naver-Client-Secret", naver_client_secret)
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
@@ -148,12 +132,16 @@ pub async fn get_category_trends(
 /// 기본 3개 카테고리로 트렌드 조회 (생활용품 / 식품 / 디지털/가전).
 ///
 /// 카테고리 코드는 2026-05-04 find_category 실측 값 사용.
-pub async fn get_default_category_trends() -> Result<Vec<CategoryTrendScore>, AppError> {
+pub async fn get_default_category_trends(
+    client: &reqwest::Client,
+    naver_client_id: &str,
+    naver_client_secret: &str,
+) -> Result<Vec<CategoryTrendScore>, AppError> {
     use chrono::{Duration, Utc};
     let today = Utc::now().date_naive();
     let six_months_ago = today - Duration::days(180);
 
-    get_category_trends(TrendRequest {
+    get_category_trends(client, naver_client_id, naver_client_secret, TrendRequest {
         start_date: six_months_ago,
         end_date: today,
         time_unit: TrendTimeUnit::Month,

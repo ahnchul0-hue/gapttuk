@@ -2,6 +2,7 @@
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use gapttuk_server::cache::AppCache;
+use gapttuk_server::services::trend_data_service;
 use gapttuk_server::{api, config, crawlers, db, health_check, middleware, push, AppState};
 
 use axum::extract::ConnectInfo;
@@ -368,6 +369,36 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     Ok(())
 }
 
+/// 네이버 트렌드 데이터를 moka 캐시에 사전 적재.
+/// NAVER 자격증명 미설정 시 조용히 건너뜀 (선택적 기능).
+async fn warmup_trend_cache(state: &AppState) {
+    let Some(client_id) = state.config.naver_client_id.as_deref() else {
+        tracing::debug!("NAVER_CLIENT_ID 미설정 — trend 캐시 웜업 건너뜀");
+        return;
+    };
+    let Some(client_secret) = state.config.naver_client_secret.as_deref() else {
+        tracing::debug!("NAVER_CLIENT_SECRET 미설정 — trend 캐시 웜업 건너뜀");
+        return;
+    };
+    match trend_data_service::get_default_category_trends(
+        &state.http_client,
+        client_id,
+        client_secret,
+    )
+    .await
+    {
+        Ok(trends) => {
+            state
+                .cache
+                .trend_data
+                .insert("default".to_string(), trends)
+                .await;
+            tracing::info!("Trend cache warmed up successfully");
+        }
+        Err(e) => tracing::warn!(error = %e, "Trend cache warmup failed"),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // 1. tracing 초기화
@@ -633,13 +664,31 @@ async fn main() {
             }
         });
 
-        // 9d. 백그라운드 태스크 패닉 감시 + Sentry 보고
+        // 9d. Naver 트렌드 캐시 웜업 + 1시간 배치 갱신
+        // 시작 직후 1회 즉시 웜업 후 1시간 간격으로 반복.
+        // NAVER 자격증명 미설정 시 warmup_trend_cache()가 조용히 건너뜀.
+        let trend_state = state.clone();
+        let trend_period = std::time::Duration::from_secs(3600);
+        let h_trend = tokio::spawn(async move {
+            warmup_trend_cache(&trend_state).await;
+            let mut interval = tokio::time::interval_at(
+                tokio::time::Instant::now() + trend_period,
+                trend_period,
+            );
+            loop {
+                interval.tick().await;
+                warmup_trend_cache(&trend_state).await;
+            }
+        });
+
+        // 9e. 백그라운드 태스크 패닉 감시 + Sentry 보고
         // 각 태스크는 내부 loop에서 에러를 개별 처리하므로 정상적으로는 종료되지 않음.
         // 패닉 발생 시 로그 + Sentry 보고 + 메트릭 기록.
         for (name, handle) in [
             ("Partition maintenance", h_partition),
             ("Governor GC", h_gc),
             ("Token purge", h_purge),
+            ("Trend cache warmup", h_trend),
         ] {
             tokio::spawn(async move {
                 match handle.await {
