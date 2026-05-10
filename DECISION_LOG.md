@@ -2,6 +2,34 @@
 
 ---
 
+## Night-63 상태 확인 (2026-05-11) — PLAN_01 완전 종결 사후 검증
+
+> **Sonnet 4.6 Sub-agent** 실행 | 베이스라인 재검증 + 문서 갱신
+> **브랜치**: `auto/night-01-20260511_0100`
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **370건** ✅ |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트 | **216건** ✅ (cargo 미설치 환경) |
+| 코드 변경 | **0건** |
+
+### 미결 결정사항 (사용자 결정 대기)
+
+| 결정 ID | 내용 | 우선도 |
+|---------|------|--------|
+| **D-110** | main 머지 PR: `auto/night-01-20260510_0100` (98+ 커밋) → main | 🔴 즉시 |
+| **D-111** | PLAN_02 방향: A(BREAKING 업그레이드) / B(기능 확장) / C(E2E+CI/CD) / D(프로덕션) / E(조합) | 🔴 즉시 |
+| **D-101** | Flutter MINOR/PATCH 즉시 적용 여부 | 🟡 중간 |
+| **D-102** | BREAKING 의존성 업그레이드 범위 (go_router 17/fl_chart 1/google_sign_in 7/flutter_secure_storage 10) | 🟡 중간 |
+| **D-82~D-84** | Rust BREAKING 업그레이드 범위 (reqwest/jsonwebtoken/sentry) | 🟢 낮음 |
+
+**Status**: ⏳ 사용자 결정 대기 — D-110/D-111 결정 시 다음 세션 방향 확정됨
+
+---
+
 ## Night-61 결정 (2026-05-09) — Phase 18 코드 품질 점검 + 수정 실행
 
 > **Sonnet 4.6 Sub-agent** 실행 | silent-failure-hunter + type-design-analyzer + code-reviewer 3대 병렬
