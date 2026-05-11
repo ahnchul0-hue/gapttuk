@@ -1,8 +1,43 @@
-# NIGHT_06_RESULT — 2026-05-11 (Night-63 추가)
+# NIGHT_06_RESULT — 2026-05-12 (Night-64 추가)
 
+> **Night-64 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260512_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-63 결합 분석 커밋. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 지속.
 > **Night-63 결과**: Flutter **370건** ✅ | Rust **216건** ✅ (이전 기준) | analyze **0건** ✅ — PLAN_01 완전 종결 후 첫 사후 검증 세션. 베이스라인 완전 보존. MORNING_BRIEFING Night-62 해시 반영 + Night-63 문서화. D-110(PR)/D-111(PLAN_02) 대기.
 > **Night-62 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 19 최종 검증 완료. PLAN_01 Phase 1~19 전체 종결 선언. D-109(Phase별 분리 확정)/D-110(PR 보류)/D-111(PLAN_02 방향 대기)
 > **Night-61 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 18 코드 품질 점검 + 수정 5건 완료 (D-107/D-108 결정)
+
+---
+
+## Night-64 (2026-05-12) — 신규 브랜치 베이스라인 검증 + 문서 갱신
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (신규 브랜치 검증 + 문서화) |
+| **브랜치** | `auto/night-01-20260512_0100` |
+| **Flutter 테스트** | **370건** ✅ (베이스라인 완전 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 완전 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **코드 변경** | **0건** (검증 + 문서 세션) |
+
+### 완료된 작업
+
+| 작업 | 상태 |
+|------|------|
+| Flutter 370건 재검증 (`flutter test --no-pub`) | ✅ |
+| Flutter analyze 0건 재검증 | ✅ |
+| Rust 216건 재검증 (`~/.cargo/bin/cargo test --lib`) | ✅ |
+| MORNING_BRIEFING.md Night-63 결합 분석 내용 커밋 (`447f3c4`) | ✅ |
+| NIGHT_06_RESULT.md Night-64 섹션 추가 | ✅ |
+| DECISION_LOG.md D-110/D-111 현황 갱신 | 🔄 진행 중 |
+
+### 대기 중 결정사항
+
+| 결정 ID | 내용 | 상태 |
+|---------|------|------|
+| **D-110** | main 머지 PR 생성 여부 (`auto/night-01-20260510_0100` 100+ 커밋) | ⏳ 사용자 결정 대기 |
+| **D-111** | PLAN_02 방향 (A: BREAKING 업그레이드+main 머지 / B: 신규 MCP 기능 확장 / C: 조합) | ⏳ 사용자 결정 대기 |
+| **D-101/D-102** | BREAKING 의존성 업그레이드 (Dart 5종 이연) | ⏳ 사용자 결정 대기 |
 
 ---
 
