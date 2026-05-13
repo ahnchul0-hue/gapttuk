@@ -61,6 +61,10 @@ async fn generate_prediction(pool: &PgPool, product_id: i64) -> Result<AiPredict
     let trend = row.price_trend.as_deref().unwrap_or("stable");
     let days = row.days_since_lowest.unwrap_or(999);
     let current_price = row.current_price.unwrap_or(0);
+    // 가격 데이터 미수집 상품은 예측 생성 불가 — 0원 예측이 24h 캐시되는 것을 방지
+    if current_price <= 0 {
+        return Err(AppError::NotFound("가격 데이터 없음".to_string()));
+    }
 
     let (action, confidence) = predict_action(score, trend, days);
 

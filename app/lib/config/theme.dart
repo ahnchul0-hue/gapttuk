@@ -37,11 +37,10 @@ abstract final class AppTextStyles {
     letterSpacing: -0.5,
   );
 
-  /// 할인율 뱃지 — 붉은 굵은 텍스트
+  /// 할인율 뱃지 — 굵은 텍스트. 색상은 사용처에서 appColors.error 적용
   static const TextStyle discountRate = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w700,
-    color: Color(0xFFD63031),
   );
 
   /// 섹션 헤더 — 카드 내 소제목
