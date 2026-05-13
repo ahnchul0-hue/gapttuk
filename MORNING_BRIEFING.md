@@ -1,10 +1,10 @@
-# MORNING BRIEFING — 2026-05-12 (Night-13 ~ Night-64 결합 분석 + Phase 20+ 전략)
+# MORNING BRIEFING — 2026-05-14 (Night-13 ~ Night-66 결합 분석 + Phase 20+ 전략)
 
-> **분석 대상**: Night-13 ~ Night-64 (2026-03-12 ~ 2026-05-12)
-> **현재 브랜치**: `auto/night-01-20260512_0100`
+> **분석 대상**: Night-13 ~ Night-66 (2026-03-12 ~ 2026-05-14)
+> **현재 브랜치**: `auto/night-01-20260514_0100`
 > **생성**: Opus 4.6 결합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-12 (Night-64 결합 분석 — **Opus 전략 52세션 종합/Sonnet MCP 기술 실행 이력/Phase 15~19 코드 성과 분석. 브랜치 3세대 전환. D-110(PR)/D-111(방향) 사용자 결정 대기 14세션째**)
-> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / analyze **0건** ✅ / 경고 **0건** ✅ (2026-05-12 Night-64 실측)
+> **최종 업데이트**: 2026-05-14 (Night-66 — **D-86(I-03/I-04) + D-84(build_runner/mocktail) + D-95(discountRate) 수정 4건. 베이스라인 보존(370/216/0). D-110(PR)/D-111(방향) 사용자 결정 대기 16세션째**)
+> **검증**: Flutter **370건** ✅ / Rust **216건** ✅ / analyze **0건** ✅ / 경고 **0건** ✅ (2026-05-14 Night-66 실측)
 > **PLAN_01**: Phase 1~19 **전체 종결** (Night-30 수립 → Night-62 종결, 32세션)
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
@@ -34,6 +34,8 @@
 > **Night-62 커밋**: `a283cb0` (Phase 19 최종 검증 완료 + PLAN_01 Phase 1~19 전체 종결 선언)
 > **Night-63 커밋**: `0351800` (베이스라인 재검증 + MORNING_BRIEFING Night-62 해시 갱신 + Night-63 문서화)
 > **Night-64 커밋**: `447f3c4` (MORNING_BRIEFING Night-63 결합 분석 반영) + `cc3e252` (Night-64 결과 문서화 — 베이스라인 3중 검증) + `cc2b5dc` (Night-64 커밋 해시 반영)
+> **Night-65 커밋**: `13597f9` (베이스라인 재검증 + MORNING_BRIEFING Night-65 갱신) + `ea2045c` (Night-65 커밋 해시 반영)
+> **Night-66 커밋**: `3f08862` (D-86(I-03/I-04) + D-84 + D-95 수정 4건 — 베이스라인 보존)
 
 ---
 
@@ -96,6 +98,7 @@
 | **63** | **05-11** | **PLAN_01 완전 종결 사후 검증 + Night-62 결합 분석** | **코드 변경 0건 — 브랜치 전환(auto/night-01-20260511_0100). 3중 검증 통과. MORNING_BRIEFING Night-62 해시 반영. D-110/D-111 대기 지속** | **`0351800`, `807617c`** |
 | **64** | **05-12** | **브랜치 3세대 전환 + Night-63 결합 분석 + MCP 가용성 재실측** | **코드 변경 0건 — 브랜치 전환(auto/night-01-20260512_0100). 3중 검증 통과(370/216/0). MORNING_BRIEFING Night-63 결합 분석. PlayMCP 6종+HuggingFace 활성 확인. D-110/D-111 14세션째 대기** | **`447f3c4`, `cc3e252`, `cc2b5dc`** |
 | **65** | **05-13** | **베이스라인 재검증 + Night-65 문서 갱신** | **코드 변경 0건 — 브랜치(auto/night-01-20260513_0100) 첫 세션. 3중 검증 통과(370/216/0). NIGHT_06_RESULT Night-65 섹션 추가. D-110/D-111 15세션째 대기** | **`13597f9`** |
+| **66** | **05-14** | **D-86(I-03/I-04) + D-84 + D-95 수정 4건 — 베이스라인 보존** | **코드 변경 4건 — I-03(0원 예측 캐시 방지) + I-04(migration 020 NULLS NOT DISTINCT) + D-84(build_runner 2.15.0/mocktail 1.0.5 업그레이드) + D-95(discountRate 하드코딩 색상 제거). 베이스라인 보존(370/216/0). D-110/D-111 16세션째 대기** | **`3f08862`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -2170,14 +2173,14 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 |----|------|--------|------|
 | **D-82** | Rust BREAKING 업그레이드 범위? | A) 전체(reqwest/jwt/sentry) B) sentry만 C) 전부 보류 | ⏳ **사용자 결정 대기** |
 | **D-83** | Dart BREAKING 업그레이드 범위? | A) kakao 2.0 포함 전체 B) riverpod만 C) 전부 보류 | ⏳ **사용자 결정 대기** |
-| **D-84** | Dart non-BREAKING 4건 즉시 적용? | A) 전체 B) dev만 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-84** | Dart non-BREAKING 4건 즉시 적용? | A) 전체 B) dev만 C) 보류 | ⚠️ **Night-66 부분 해소** — build_runner 2.15.0 + mocktail 1.0.5 완료. freezed/json_serializable은 riverpod_generator ^3.0.0 analyzer 충돌로 D-101과 연계 필요 |
 
 ### Phase 10 결정 사항 (D-85~D-87, Night-48)
 
 | ID | 질문 | 선택지 | 상태 |
 |----|------|--------|------|
 | **D-85** | I-01+I-02 HIGH 2건 즉시 수정? | A) Phase 13에서 수정 B) 보류 | ✅ **Night-51에서 해소 (→ D-88에 통합)** |
-| **D-86** | I-03+I-04+PD-67 MEDIUM 3건 수정 범위? | A) 전체 B) PD-67만 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-86** | I-03+I-04+PD-67 MEDIUM 3건 수정 범위? | A) 전체 B) PD-67만 C) 보류 | ✅ **Night-66에서 해소 (I-03/I-04 수정 완료, PD-67은 Night-51 D-91에서 이미 해소)** |
 | **D-87** | LOW 4건 Phase 13 포함? | A) 포함 B) 제외 | ⏳ **사용자 결정 대기** |
 
 ### Phase 11 결정 사항 (D-88~D-92, Night-49)
@@ -2196,8 +2199,8 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 |----|------|--------|------|
 | **D-93** | HomeScreen 에러상태 ScreenErrorWidget 교체? | A) ScreenErrorWidget 교체(4줄, 재시도 추가) B) 보류 | ✅ **Night-51에서 해소 (A안 실행: ScreenErrorWidget 교체)** |
 | **D-94** | AppSpacing 12dp 갭 상수 추가? (6개소 사용) | A) `smMd=12` 추가 B) 기존 sm/md로 통일 C) D-89 보류면 유지 | ✅ **Night-52에서 해소 (A안 실행: smMd=12 추가)** |
-| **D-95** | AppTextStyles.discountRate 색상 제거? (다크모드 불일치) | A) 색상 제거→사용처 copyWith B) 보류(다크모드 미활성) | ⏳ **사용자 결정 대기** |
-| **D-96** | SearchScreen 검색 필터/정렬 재연결? (백엔드 지원 미노출) | A) 신규 구현 B) cherry-pick 검토 C) 보류 | ⏳ **사용자 결정 대기** |
+| **D-95** | AppTextStyles.discountRate 색상 제거? (다크모드 불일치) | A) 색상 제거→사용처 copyWith B) 보류(다크모드 미활성) | ✅ **Night-66에서 해소 (A안 실행: 하드코딩 색상 제거, 사용처에서 appColors.error 적용 패턴)** |
+| **D-96** | SearchScreen 검색 필터/정렬 재연결? (백엔드 지원 미노출) | A) 신규 구현 B) cherry-pick 검토 C) 보류 | ✅ **Night-55에서 해소 (A안 실행: 필터/정렬 UI 재연결 + 테스트 +4건)** |
 
 ### Phase 12 발견 이슈 상세 (Night-50)
 
@@ -2906,7 +2909,7 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | PLAN_01 Phase 완료 | **Phase 1~19 전체 완료 ✅ 종결** | Phase 1~19 ✅ | Phase 15~18 ✅ | — (종결 유지) |
 | Phase 20+ 전략 방향 | **⏳ D-111 사용자 결정 대기** | ⏳ 대기 | — | 신규 |
 | Silent Failure 수정 | **33건+** (잔존 0건) | 33건+ | 33건+ | — |
-| 미결 결정(PENDING) | **10건** (D-82~84/D-86/D-87/D-95/D-101/D-102 + **D-110/D-111**) | 10건 | 8건 | — |
+| 미결 결정(PENDING) | **7건** (D-82/D-83/D-84잔여/D-87/D-101/D-102 + **D-110/D-111**) | 10건 | 8건 | **Night-66: D-86/D-95 해소, D-84 부분 해소** |
 | catch(e,st) 적용 | **28건** | 28건 | 28건 | — |
 | 타입 안전 캐스트 수정 | **20건** | 20건 | 20건 | — |
 | PlayMCP MCP | **8서비스 62+ API** (Night-63: UsStockInfo/KakaoMap/KakaotalkChat 추가 확인) | 8서비스 | 8서비스 | +3 서비스 신규 확인 |
@@ -2952,14 +2955,14 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | auto 브랜치 정리 | **미처리** ⚠️ (26개+) |
 | 통합 테스트 검증 | **미실행** ⚠️ (--lib만) |
 | E2E 테스트 | 미구축 (이연) |
-| sonatype-guide 인증 | **미설정** ⚠️ (32세션 연속) |
+| sonatype-guide 인증 | **미설정** ⚠️ (37세션 연속) |
 | RUSTSEC-2026-0049 | **모니터링** ⚠️ (audit.toml ignore) |
 | Flutter Skia CVE 2건 | **대기** ⚠️ (엔진 패치 필요) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **58회+** 감지. A/B/C 옵션 대기) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **60회+** 감지. A/B/C 옵션 대기) |
 | ~~PLAN_02 방향~~ | **✅ 해소** (U-42: Night-47에서 사용자 지시 → Phase 9 실행) |
-| **Phase 20+ 방향 (D-111)** | **⏳ 대기** — A)BREAKING 업그레이드 / B)MCP 기능 확장 / C)조합(Opus 추천) |
-| **main 머지 PR (D-110)** | **⏳ 대기** — 100+ 커밋 브랜치 → main PR 생성 (Phase 20+ 전제 조건) |
-| **MCP 확장 발견 (Night-63)** | **신규 확인** — UsStockInfo(8+)/KakaoMap(4)/KakaotalkChat(1) (총 8서비스 62+ API) |
+| **Phase 20+ 방향 (D-111)** | **⏳ 대기 15세션째** — A)실측 검증 / B)BREAKING 업그레이드 / C)main 머지 / D)조합(Opus 추천) |
+| **main 머지 PR (D-110)** | **⏳ 대기 15세션째** — 105커밋 브랜치 → main PR 생성 (Phase 20+ 전제 조건) |
+| **MCP 확장 (Night-65 실측)** | **10개 MCP 활성** — NaverSearch(20+)/opendart(13)/UsStockInfo(9)/CoinInfo(7)/HuggingFace(10+) + Sonatype(인증 미설정 37세션) |
 | **Phase 10 코드 품질 심층 리뷰** | **✅ 완료** (9건 확정: HIGH 2 + MEDIUM 3 + LOW 4) |
 | **Phase 11 아키텍처 분석** | **✅ 완료** (13건 GAP: Rust 5 + Flutter 8, D-88~D-92 도출) |
 | **Phase 12 UI/UX 감사** | **✅ 완료** (9건: HIGH 1 + MEDIUM 3 + LOW 5, D-93~D-96 도출) |
@@ -2967,22 +2970,23 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | **Phase 14 최종 검증** | **✅ 완료** (Night-53: Flutter 361건 / Rust 207건 / analyze 0건 — 3중 게이트 통과) |
 | **PLAN_01 전체 (Phase 1-14)** | **✅ 완전 완료** 🎉🎉 (Night-30 수립 → Night-53 완결) |
 | **PlayMCP MCP** | **✅ 8서비스 62+ API** (NaverSearch ★★★★★ 핵심 + CoinInfo/cryptoGuardian Night-55 신규) |
-| sonatype-guide 인증 | **미설정** ⚠️ (**33세션** 연속) |
-| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **54회+** 감지. A/B/C 옵션 대기) |
+| sonatype-guide 인증 | **미설정** ⚠️ (**37세션** 연속) |
+| SessionEnd hook | **원인 규명 완료** (D-81: Vercel plugin. **60회+** 감지. A/B/C 옵션 대기) |
 
 ---
 
-## 9. 다음 세션 선택지 (Night-63 결합 분석 — **PLAN_01 완전 종결 + Phase 20+ 전략 방향 설계**)
+## 9. 다음 세션 선택지 (Night-65 결합 분석 — **PLAN_01 완전 종결 + Phase 20+ 전략 방향 설계**)
 
 > **PLAN_01 Phase 1~19 전체 완료 ✅ 종결. Flutter 370건 / Rust 216건 / 경고 0건.**
-> **Night-63: 베이스라인 재검증 통과(370/216/0건) + MORNING_BRIEFING Night-62 해시 반영 + 문서 갱신.**
-> **⚠️ 핵심 과제**: 98커밋 브랜치 머지 PR(D-110) + Phase 20+ 방향 결정(D-111) + BREAKING 업그레이드(D-101/D-102)
+> **Night-65: 베이스라인 재검증 통과(370/216/0건). MCP 실측 가용성 보고서 전면 갱신. D-110/D-111 15세션째 대기.**
+> **⚠️ 핵심 과제**: 105커밋 브랜치 머지 PR(D-110) + Phase 20+ 방향 결정(D-111) + BREAKING 업그레이드(D-101/D-102)
 
-### 9.0 Night-56~63 결합 분석: Opus 전략 × Sonnet 기술 × MCP 활용 종합
+### 9.0 Night-56~65 결합 분석: Opus 전략 × Sonnet 기술 × MCP 활용 종합
 
 > **PLAN_01 Phase 15~19 완전 사이클 (8세션)**: 전략 설계 → MCP 실측 → 코드 생성 → 테스트 → 아키텍처 분석 → 캐시 최적화 → 품질 점검 → 최종 검증
+> **Night-62~65 (4세션)**: 종결 검증 → 브랜치 전환 → 문서 안정화 → MCP 실측 재점검 (코드 변경 0건, 베이스라인 보존)
 
-#### Opus 4.6 전략 요약 (Night-56~63)
+#### Opus 4.6 전략 요약 (Night-56~65)
 
 | 세션 | Opus 전략적 역할 | 핵심 결정 |
 |------|-----------------|-----------|
@@ -2994,6 +2998,8 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | Night-61 | **4대 에이전트 동시 배치** + 오탐 필터링 전략 | D-107/108 확정, 수정 5건 선별 |
 | Night-62 | **Phase 19 검증 게이트** — 코드 변경 없이 3중 검증 | PLAN_01 전체 종결 선언, D-109~D-111 도출 |
 | Night-63 | **사후 검증 + 문서 안정화** | 베이스라인 보존 확인, D-110/D-111 대기 유지 |
+| Night-64 | **브랜치 3세대 전환 + Night-63 결합 분석** | MCP 6종 활성 재확인, D-110/D-111 14세션 대기 |
+| Night-65 | **MCP 실측 가용성 보고서 갱신 + 베이스라인 보존** | 10개 MCP/10종 플러그인 매트릭스 작성, D-110/D-111 15세션 대기 |
 
 #### Sonnet 4.6 기술 실행 + MCP 활용 요약
 
@@ -3005,14 +3011,14 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | Night-59 | **feature-dev 3대 병렬** + HuggingFace MCP | HuggingFace (hf_doc_search — ML 전용 확인) | Flutter 1파일(M-1 수정) |
 | Night-60 | D-104/105/106 **4파일 +350/-83줄** 구현 | — (기존 패턴 재사용) | cache.rs + trend_data_service.rs + trends.rs + main.rs |
 | Night-61 | **4대 병렬 에이전트** 감사 → 수정 5건 | silent-failure-hunter, type-design-analyzer, code-reviewer, code-simplifier | Rust 3파일 + Flutter 1파일 |
-| Night-62 | 3중 검증 실행 (flutter test/analyze) | — (검증 전용) | 코드 변경 0건 |
-| Night-63 | 베이스라인 재검증 + 문서 갱신 | — (문서 전용) | 코드 변경 0건, 커밋 2건 |
+| Night-62~65 | 3중 검증 실행 + 문서 갱신 (4세션) | — (검증/문서 전용) | 코드 변경 0건 |
 
-**8세션 합산:**
+**10세션 합산 (Night-56~65):**
 - **Rust**: +9건 테스트(207→216), 수정 13건, 경고 0건
 - **Flutter**: +5건 테스트(365→370), 수정 20+파일, analyze 0건
 - **MCP 호출**: NaverSearch 8회 + HuggingFace 1회 + WebSearch 5+회
 - **생성 코드**: 신규 14파일 + 수정 20+파일 = ~1,500줄 순증
+- **검증 세션**: 4회 연속(Night-62~65) 베이스라인 완전 보존 확인
 
 #### 코드 생성 결과 품질 평가
 
@@ -3025,45 +3031,47 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | Duration::days(180) | 최대 6일 오차 | **Months::new(6)** | 달력 정밀도 |
 | pub 가시성 | pub (과도 공개) | **pub(crate)** | 캡슐화 |
 
-### 9.0a Phase 20+ 전략 방향 (D-111 — 사용자 결정 대기)
+### 9.0a Phase 20+ 전략 방향 (D-111 — 사용자 결정 대기 15세션째)
 
-> **전제 조건**: D-110 (98커밋 → main 머지 PR) 선행 필요
+> **전제 조건**: D-110 (105커밋 → main 머지 PR) 선행 필요
 
 | 방향 | 설명 | 핵심 MCP/도구 | 예상 산출물 | Opus 추천 |
 |------|------|-------------|------------|----------|
-| **A) BREAKING 업그레이드 + main 머지** | D-82~84/D-101~102 해소 → 최신 의존성 확보 + PR 생성 | Sonatype, WebSearch | 최신 의존성 + 안정적 main 합류 | ★★ |
-| **B) 신규 MCP 기능 확장** | CoinInfo/KakaoMap/UsStockInfo 등 MCP 활용 → 값뚝 기능 확장 | NaverSearch 심화, KakaoMap, CoinInfo | 쇼핑 트렌드 심화/매장 위치/카테고리 확대 | ★★★ |
-| **C) 조합 (A→B 순차)** | BREAKING 업그레이드 우선 → main 안정화 → 신규 기능 확장 | 전체 | 안정성 확보 후 기능 확장 | ★★★★ |
+| **A) 데이터 파이프라인 실측 검증** | NaverSearch MCP로 실제 API 호출 → Rust 서비스 응답 모델 정합성 검증 + 트렌드 분석 로직 보정 | NaverSearch ★★★★★ | API 실측 검증 + 모델 보정 | ★★★ |
+| **B) BREAKING 의존성 업그레이드** | D-101/D-102 해소 → riverpod 3.3/go_router 17/fl_chart 1.x/google_sign_in 7.x 등 | WebSearch, Sonatype | 최신 의존성 + 테스트 370건 통과 보장 | ★★ |
+| **C) main 머지 PR 생성 (D-110)** | 105커밋 → main PR. coderabbit + pr-review-toolkit 병렬 리뷰 | commit-commands, coderabbit, pr-review-toolkit | 깨끗한 main 베이스 | ★★★★★ |
+| **D) 조합: C→A→B 순차** | 먼저 main 안착 → 실측 검증 → BREAKING 업그레이드 | 전체 | 안정성 확보 후 기능 확장 | ★★★★ |
 
-**MCP 확장 가능성 분석 (Night-63 실측 기반):**
+**MCP 확장 가능성 분석 (Night-65 실측 기반):**
 
 | MCP | API 수 | 값뚝 활용 시나리오 | Phase 20+ 우선순위 |
 |-----|--------|-------------------|-------------------|
-| **NaverSearch** | 18+ | 기존 Phase 15 핵심. `datalab_shopping_by_age/gender` → 사용자 세그먼트 개인화 | ★★★★★ (심화) |
+| **NaverSearch** | 20+ | 기존 Phase 15 핵심. `datalab_shopping_by_age/gender/device` → 사용자 세그먼트 개인화 | ★★★★★ (심화) |
 | **KakaoMap** | 4 | `SearchPlaceByKeywordOpen` → 오프라인 매장 최저가 위치 표시 | ★★★ (신규) |
 | **KakaotalkChat** | 1 | `MemoChat` → 가격 알림 카카오톡 메모 전송 (푸시 대안) | ★★ (신규) |
-| **UsStockInfo** | 8+ | 미국 주식 — 값뚝 도메인 외 | ★ (비해당) |
+| **HuggingFace** | 8+ | ML 논문/모델 검색 — 가격 예측 알고리즘 참조 | ★★ (참조) |
+| **UsStockInfo** | 9 | 미국 주식 — 값뚝 도메인 외 | ★ (비해당) |
 | **CoinInfo** | 7 | 암호화폐 — D-97 DECIDED 비포함 | ★ (비해당) |
-| **opendart** | 12+ | 기업 재무 — D-98 DECIDED 비포함 | ★ (참조) |
+| **opendart** | 13+ | 기업 재무 — D-98 DECIDED 비포함 | ★ (참조) |
 
-**Opus 최종 추천 (Night-64 결합 분석):**
-1. **★★★★★ D-110 최우선**: 100+커밋 → main PR 생성 — 모든 후속 작업의 전제. **14세션 대기 — 즉시 결정 권장**
-2. **★★★★ C방향 추천**: A(BREAKING) → B(기능 확장) 순차 실행 — 안정성 확보 후 NaverSearch 심화 + KakaoMap 신규
-3. **BREAKING 순서**: D-84(non-BREAKING 4건 즉시) → D-102 순차(secure_storage→google_sign_in→go_router→fl_chart) → D-101(Riverpod 세트)
-4. **D-95 병행 가능**: discountRate 색상 (LOW) — 머지 PR과 동시 처리 가능
+**Opus 최종 추천 (Night-66 갱신):**
+1. **★★★★★ D-110 최우선**: 106커밋 → main PR 생성 — 모든 후속 작업의 전제. **16세션째 대기 — 즉시 결정 권장**
+2. **★★★★ D방향 추천**: C(머지) → A(실측 검증) → B(업그레이드) 순차 실행
+3. **BREAKING 순서**: D-84잔여(freezed/json_serializable, D-101과 연계) → D-102 순차(secure_storage→google_sign_in→go_router→fl_chart) → D-101(Riverpod 세트)
+4. **Night-66 해소**: D-86(MEDIUM 2건)/D-84(build_runner+mocktail)/D-95(discountRate) 3건 완료
 5. **Phase 20+ MCP 신규 활용**: NaverSearch by_age/gender/device (3 API) + KakaoMap (매장 가격 비교) — 기존 파이프라인 위에 확장
 
-### 9.1 즉시 실행 가능
+### 9.1 즉시 실행 가능 (Night-66 갱신)
 
 | 선택지 | 설명 | 활용 도구 | 예상 규모 |
 |--------|------|-----------|----------|
-| **A) ★★★ 브랜치 머지 PR 생성 (D-110)** | `auto/night-01-20260512_0100` (100+ 커밋) → main PR 생성. **PLAN_01 Phase 1~19 전체 성과 통합 — 최우선 (14세션 대기)** | gh pr create | 소형 |
-| **B) ★★ Phase 20+ 방향 결정 (D-111)** | A)BREAKING 업그레이드 / B)신규 MCP 기능 확장 / C)조합(A→B 순차, **Opus 추천**) | 전략 | — |
+| **A) ★★★★★ 브랜치 머지 PR 생성 (D-110)** | `auto/night-01-20260514_0100` (106 커밋) → main PR 생성. **PLAN_01 Phase 1~19 전체 성과 통합 — 최우선 (16세션 대기)** | gh pr create | 소형 |
+| **B) ★★ Phase 20+ 방향 결정 (D-111)** | A)실측 검증 / B)BREAKING 업그레이드 / C)main 머지 / D)조합(C→A→B 순차, **Opus 추천**) | 전략 | — |
 | **C) D-108-B AppSpacing 전면 롤아웃** | Night-52 pilot 3화면 + Night-55 search_screen 성공 → 잔여 12화면 ~57개 매직넘버 치환 | Opus 직접 | 중형 |
-| **D) D-101 Riverpod BREAKING 세트** | flutter_riverpod 3.3 + riverpod_generator 4.x 업그레이드 (별도 세션 권장) | pub upgrade + 코드 재생성 | 대형 |
+| **D) D-101 Riverpod BREAKING 세트** | flutter_riverpod 3.3 + riverpod_generator 4.x 업그레이드 (별도 세션 권장) — D-84 freezed/json_serializable도 포함 | pub upgrade + 코드 재생성 | 대형 |
 | **E) D-102 BREAKING 순차 처리** | flutter_secure_storage 10 → google_sign_in 7 → go_router 17 → fl_chart 1.2 (패키지별 1개씩) | pub upgrade | 중형 |
-| **F) D-95 discountRate 색상 수정** | 다크모드 `AppColors.dark.error` 불일치 해소 (잔여 LOW 1건 해소) | Opus 직접 | 소형 |
-| **G) D-86 MEDIUM 2건 수정** | I-03(0원 예측 캐시) + I-04(NULL UNIQUE) — Rust 서버 수정 | Opus 직접 | 소형 |
+| ~~**F) D-95 discountRate 색상 수정**~~ | ~~다크모드 `AppColors.dark.error` 불일치 해소~~ | ~~Opus 직접~~ | **✅ Night-66 완료** |
+| ~~**G) D-86 MEDIUM 2건 수정**~~ | ~~I-03(0원 예측 캐시) + I-04(NULL UNIQUE)~~ | ~~Opus 직접~~ | **✅ Night-66 완료** |
 | **H) SessionEnd hook 수정** | D-81 옵션 A(Vercel 비활성화) → `~/.claude/settings.json` 수정 | 설정 변경 | 소형 |
 
 ### 9.2 PLAN_01 Phase 1-19 최종 현황 (전체 완료)
@@ -3092,48 +3100,60 @@ Night-58: 370건 ──── +0건 (N56-05 ProductDetailScreen TrendChartWidget
 | ~~**D-106**~~ | ~~서비스 리팩토링 범위~~ | ~~B) AppState 공유~~ | — | ✅ **Night-60 해소** |
 | **D-82** | Rust BREAKING 3건 | **C) 보류** | reqwest/jwt/sentry 메이저 변경 리스크 — 별도 세션 필요 | ⏳ |
 | **D-83** | Dart BREAKING 8건 | **C) 보류** | kakao 2.0 인증 플로우 변경 — 별도 세션 필요 | ⏳ |
-| **D-84** | Dart non-BREAKING 4건 | **A) 전체 적용** | dev 포함 안전, 즉시 실행 가능 | ⏳ |
-| **D-86** | Phase 10 MEDIUM 2건 | **A) 수정** | I-03(0원 캐시) + I-04(NULLS NOT DISTINCT) | ⏳ |
+| **D-84 잔여** | Dart non-BREAKING 잔여 (freezed/json_serializable) | D-101과 연계 | riverpod_generator ^3.0.0 analyzer 충돌 — D-101 세트와 동시 처리 필요 | ⚠️ **Night-66 부분 해소** (build_runner+mocktail 완료) |
+| ~~**D-86**~~ | ~~Phase 10 MEDIUM 2건~~ | ~~A) 수정~~ | I-03/I-04 수정 완료 | ✅ **Night-66 해소** |
 | **D-87** | Phase 10 LOW 4건 | **B) 제외** | 리스크 낮음, 별도 세션 | ⏳ |
-| **D-95** | discountRate 색상 | **A) 제거** | feat/dark-mode 병합 충돌 방지 | ⏳ |
-| **D-101** | Riverpod BREAKING 세트 | **B) 별도 세션** | flutter_riverpod 3.3 + riverpod_generator 4.x — 모든 @riverpod 파일 재생성 | ⏳ |
+| ~~**D-95**~~ | ~~discountRate 색상~~ | ~~A) 제거~~ | 하드코딩 색상 제거 완료 | ✅ **Night-66 해소** |
+| **D-101** | Riverpod BREAKING 세트 | **B) 별도 세션** | flutter_riverpod 3.3 + riverpod_generator 4.x — 모든 @riverpod 파일 재생성 + D-84 freezed/json_serializable 연계 | ⏳ |
 | **D-102** | Dart BREAKING 5종 범위 | **D) 순차 처리** | flutter_secure_storage→google_sign_in→riverpod→go_router→fl_chart | ⏳ |
 | ~~**D-107**~~ | ~~트렌드 데이터 표시 위치~~ | ~~A) ProductDetailScreen~~ | N56-05 통합 위치 확정 | ✅ **Night-61 CONFIRMED** |
 | ~~**D-108**~~ | ~~디자인 시스템 규칙 범위~~ | ~~A) 신규 위젯 한정~~ | 전면 롤아웃은 Phase 19에서 B 재검토 | ✅ **Night-61 DECIDED** |
 | ~~**D-109**~~ | ~~커밋 구조 전략~~ | ~~A) Phase별 분리~~ | 이미 Night-56~61에서 Phase별 커밋 완료 | ✅ **Night-62 CONFIRMED** |
-| **D-110** | **main 머지 PR 생성** | **A) 즉시 생성** | 100+커밋 브랜치 → main PR — PLAN_02 전제 조건. **14세션째 대기** | **⏳ 사용자 결정 대기** |
+| **D-110** | **main 머지 PR 생성** | **A) 즉시 생성** | 106커밋 브랜치 → main PR — PLAN_02 전제 조건. **16세션째 대기** | **⏳ 사용자 결정 대기** |
 | **D-111** | **PLAN_02 방향** | **C) 조합(A→B)** | A)BREAKING 업그레이드 → B)NaverSearch 심화+KakaoMap 신규 | **⏳ 사용자 결정 대기** |
 | ~~**D-103**~~ | ~~Rust BREAKING 포함 여부~~ | — | cargo update 범위 내 최신 유지됨 | ✅ **DECIDED — 불필요** |
 | ~~**D-96**~~ | ~~검색 필터 재연결~~ | ~~A) 신규 구현~~ | — | ✅ **Night-55 해소** |
 | ~~D-85/D-88/D-89/D-90/D-91/D-92/D-93/D-94~~ | ~~8건~~ | — | — | ✅ Night-51/52 해소 |
 | ~~D-104/D-105/D-106~~ | ~~3건 캐시/배치/리팩토링~~ | — | — | ✅ Night-60 구현 |
 
-### 9.4 MCP/플러그인 가용성 (Night-64 결합 분석 실측)
+### 9.4 MCP/플러그인 가용성 (Night-65 실측 보고서 — 2026-05-13)
 
-| 도구 | 상태 | 활용 이력 | Phase 20+ 활용 가능성 |
-|------|------|-----------|---------------------|
-| **PlayMCP — NaverSearch** | ✅ **활성** (18+ API) | Night-54 발견 → **Night-56/57 실전 8회 호출** | **★★★★★ 핵심** — search_shop/datalab 심화 (by_age/gender 미활용) |
-| **PlayMCP — KakaoMap** | ✅ 활성 (4 API) | Night-54 발견, **Night-63 신규 확인** | **★★★ 신규** — SearchPlaceByKeywordOpen 매장 위치 |
-| **PlayMCP — KakaotalkChat** | ✅ 활성 (1 API) | **Night-63 신규 발견** | **★★ 신규** — MemoChat 가격 알림 전송 |
-| **PlayMCP — opendart** | ✅ 활성 (12+ API) | Night-54 발견 | ★★ 참조 — 리테일러 재무 (D-98 비포함) |
-| **PlayMCP — UsStockInfo** | ✅ 활성 (8+ API) | **Night-63 신규 발견** | ★ 비해당 — 미국 주식 (값뚝 도메인 외) |
-| **PlayMCP — CoinInfo** | ✅ 활성 (7 API) | Night-55 발견 | ★ 비해당 — 암호화폐 (D-97 DECIDED) |
-| **PlayMCP — cryptoGuardian** | ✅ 활성 (6 API) | Night-55 발견 | ★ 비해당 — 보안검증 |
-| **HuggingFace** | ✅ **활성** (8+ API) | Night-59 Phase 17: ML 전용 확인 | 문서/논문 검색 |
-| sonatype-guide | ✅ (인증 미설정, **36세션**) | Phase 1/9/16 (WebSearch 대체) | 업그레이드 시 |
-| feature-dev (3종) | ✅ 활성 | Phase 4/5/7/9/11/**17** | Phase 20+ 아키텍처 분석 |
-| pr-review-toolkit (6종) | ✅ 활성 | Phase 4/7/10/**18** | Phase 20+ 코드 리뷰 |
-| coderabbit | ✅ 활성 | Night-23/48 | 코드 리뷰 |
-| frontend-design | ✅ 활성 | Phase 5/12/**18** | Phase 20+ UI/UX |
-| commit-commands | ✅ 활성 | Phase 8 | PR 생성 |
-| superpowers (12 skills) | ✅ 활성 | 전체 | 전체 |
-| context7 | ✅ 설치됨 (**미연결**) | WebSearch 대체 | 문서 조회 |
-| playwright / serena | ✅ 설치됨 (**미연결**) | 미사용 | E2E 필요 시 |
-| mcp-tailwind-gemini / shadcn | **비해당** | — | Flutter 프로젝트 |
+#### 활성 MCP (이 세션에서 실제 호출 가능)
 
-**비해당/미연결 확정 (Night-64 결합 분석):**
-| 도구 | 사유 |
-|------|------|
-| mcp-tailwind-gemini, shadcn | Flutter 프로젝트 — Tailwind/React 미사용 |
-| chatgpt-mcp, sequential-thinking | 미설치 — superpowers:brainstorm 대체 |
-| context7, playwright, serena | 세션 미연결 — WebSearch + feature-dev 대체 |
+| MCP | 도구 수 | 값뚝 연관성 | 활용 이력 | Phase 20+ 활용 |
+|-----|--------|-----------|-----------|--------------|
+| **PlayMCP — NaverSearch** | ~20 | ★★★★★ 핵심 | Night-56/57 실전 8회 호출 | search_shop/datalab 심화 (by_age/gender/device 미활용 3 API) |
+| **PlayMCP — KakaoMap** | 4 | ★ 낮음 | Night-63 확인 | 참고용 (매장 위치) |
+| **PlayMCP — KakaotalkChat** | 1 | ★★ 보통 | Night-63 발견 | 카카오톡 메모 알림 테스트 |
+| **PlayMCP — opendart** | 13 | ★ 낮음 | Night-54 발견 | 참고용 (D-98 비포함) |
+| **PlayMCP — UsStockInfo** | 9 | ★ 낮음 | Night-63 발견 | 참고용 (도메인 외) |
+| **PlayMCP — CoinInfo** | 7 | ★ 낮음 | Night-55 발견 | 참고용 (D-97 DECIDED) |
+| **HuggingFace** | ~10 | ★★★ 보통 | Night-59 ML 전용 확인 | 문서/논문 검색 |
+| **Sonatype Guide** | 3 | ★★★ 보통 | **인증 필요** ⚠️ (37세션째) | 의존성 보안 |
+| **Google Drive/Calendar/Gmail** | ~20 | ★ 낮음 | — | 참고용 |
+| **Zapier** | ~10 | ★ 낮음 | — | 참고용 |
+
+#### 활성 플러그인/스킬
+
+| 플러그인 | 스킬 | 값뚝 활용 |
+|---------|------|---------|
+| **feature-dev** (3종) | code-architect, code-explorer, code-reviewer | Phase 4/5/7/9/11/**17** 아키텍처 분석 |
+| **pr-review-toolkit** (6종) | silent-failure-hunter, type-design-analyzer, code-reviewer, code-simplifier, comment-analyzer, pr-test-analyzer | Phase 4/7/10/**18** 코드 리뷰 |
+| **coderabbit** | code-review, autofix | Night-23/48 코드 리뷰 |
+| **frontend-design** | frontend-design | Phase 5/12/**18** UI/UX |
+| **figma** | design-system-rules 등 7종 | 디자인 시스템 |
+| **code-simplifier** | code-simplifier | Phase 7 코드 간소화 |
+| **commit-commands** | commit, commit-push-pr, clean_gone | Phase 8 커밋/PR |
+| **superpowers** (12 skills) | brainstorming, debugging 등 | 전체 |
+
+#### 비해당/미연결 확정 (Night-65 실측)
+
+| 도구 | 상태 | 사유 | 대체 수단 |
+|------|------|------|----------|
+| mcp-tailwind-gemini | **비해당** | Flutter 프로젝트 — Tailwind 미사용 | — |
+| shadcn | **비해당** | Flutter 프로젝트 — React/shadcn-ui 미사용 | — |
+| context7 | **미연결** | `.mcp.json` 부재 | WebSearch + WebFetch |
+| sequential-thinking | **미설치** | 환경에 미구성 | superpowers:brainstorming |
+| playwright | **미연결** | `.mcp.json` 부재 | feature-dev:code-architect |
+| serena | **미연결** | `.mcp.json` 부재 | feature-dev:code-explorer |
+| chatgpt-mcp | **미설치** | 환경에 미구성 | HuggingFace MCP + WebSearch |

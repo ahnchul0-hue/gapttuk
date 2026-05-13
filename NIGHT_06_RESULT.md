@@ -1,5 +1,6 @@
-# NIGHT_06_RESULT — 2026-05-13 (Night-65 추가)
+# NIGHT_06_RESULT — 2026-05-14 (Night-66 추가)
 
+> **Night-66 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-86 Phase 10 MEDIUM 2건 해소(I-03 0원 예측 캐시 방지 + I-04 migration 020 NULLS NOT DISTINCT) + D-84 non-BREAKING 부분 업그레이드(build_runner 2.15.0 + mocktail 1.0.5) + D-95 discountRate 하드코딩 색상 제거. 커밋 `3f08862`.
 > **Night-65 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260513_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-65 섹션 추가. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 15세션째 지속.
 > **Night-64 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260512_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-63 결합 분석 커밋. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 지속.
 > **Night-63 결과**: Flutter **370건** ✅ | Rust **216건** ✅ (이전 기준) | analyze **0건** ✅ — PLAN_01 완전 종결 후 첫 사후 검증 세션. 베이스라인 완전 보존. MORNING_BRIEFING Night-62 해시 반영 + Night-63 문서화. D-110(PR)/D-111(PLAN_02) 대기.
