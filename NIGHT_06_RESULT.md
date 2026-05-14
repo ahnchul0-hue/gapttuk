@@ -1,6 +1,6 @@
 # NIGHT_06_RESULT — 2026-05-15 (Night-67 추가)
 
-> **Night-67 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-87 Phase 10 LOW 2건 해소(I-06 product_service Sentry 스택트레이스 보존 + I-07 price_chart dayOfWeek x좌표 정확도). 커밋 TBD.
+> **Night-67 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-87 Phase 10 LOW 2건 해소(I-06 product_service Sentry 스택트레이스 보존 + I-07 price_chart dayOfWeek x좌표 정확도). 커밋 `f55d0ed`.
 > **Night-66 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-86 Phase 10 MEDIUM 2건 해소(I-03 0원 예측 캐시 방지 + I-04 migration 020 NULLS NOT DISTINCT) + D-84 non-BREAKING 부분 업그레이드(build_runner 2.15.0 + mocktail 1.0.5) + D-95 discountRate 하드코딩 색상 제거. 커밋 `3f08862`.
 > **Night-65 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260513_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-65 섹션 추가. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 15세션째 지속.
 > **Night-64 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260512_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-63 결합 분석 커밋. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 지속.
@@ -22,7 +22,7 @@
 | **Rust 테스트** | **216건** ✅ (베이스라인 보존) |
 | **Flutter analyze** | **0건** ✅ |
 | **코드 변경** | **2건** (2파일, +4/-5줄) |
-| **커밋** | TBD |
+| **커밋** | `f55d0ed` (코드) + `9e8adee` (문서) |
 
 ### "고아 수정" 전략 (Night-67 계속)
 
