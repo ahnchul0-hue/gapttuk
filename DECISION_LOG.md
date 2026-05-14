@@ -2,6 +2,42 @@
 
 ---
 
+## Night-67 상태 확인 (2026-05-15) — 5세대 브랜치 첫 세션 + D-87 I-06/I-07 수정
+
+> **Sonnet 4.6 Sub-agent** 실행 | 5세대 브랜치(20260515) 첫 세션 + 고아 수정 2건
+> **브랜치**: `auto/night-01-20260515_0100`
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **370건** ✅ |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트 | **216건** ✅ |
+| 코드 변경 | **2건** (I-06 + I-07) |
+
+### 수정 내역
+
+| ID | 파일 | 수정 내용 |
+|----|------|---------|
+| **I-06** | `server/src/services/product_service.rs:121` | `AppError::Internal` fallback에 `tracing::error!` 추가 — Sentry 스택트레이스 보존 |
+| **I-07** | `app/lib/widgets/price_chart.dart:33-38,62-69` | 요일 x좌표 `e.key` → `e.dayOfWeek`, 레이블 `sorted[idx]` → `_dayLabels[dow]` |
+
+### 미결 결정사항 (사용자 결정 대기 지속)
+
+| 결정 ID | 내용 | 우선도 | 대기 세션 |
+|---------|------|--------|----------|
+| **D-110** | main 머지 PR: 108 커밋 → main | 🔴 즉시 | **17세션** |
+| **D-111** | PLAN_02 방향 선택 | 🔴 즉시 | **17세션** |
+| **D-87 PD-65** | `CheckinResult.reward_amount: i16` → `bool rewarded` API 변경 | 🟡 중간 | — |
+| **D-87 PD-66** | `PointsInfo` pub 필드 → private + 불변식 생성자 | 🟡 중간 | — |
+| **D-101** | Riverpod MINOR 업그레이드 (riverpod_generator 4.x) | 🟡 중간 | — |
+| **D-102** | BREAKING 의존성 업그레이드 5종 | 🟡 중간 | — |
+
+**Status**: ⏳ D-87 LOW 2건(I-06/I-07) 해소. 잔여 PD-65/PD-66는 API 설계 결정 필요. D-110/D-111 결정 시 방향 확정.
+
+---
+
 ## Night-64 상태 확인 (2026-05-12) — 신규 브랜치 베이스라인 검증
 
 > **Sonnet 4.6 Sub-agent** 실행 | 신규 브랜치 첫 세션 + 베이스라인 3중 재검증

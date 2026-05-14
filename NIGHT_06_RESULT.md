@@ -1,11 +1,206 @@
-# NIGHT_06_RESULT — 2026-05-14 (Night-66 추가)
+# NIGHT_06_RESULT — 2026-05-15 (Night-67 추가)
 
+> **Night-67 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-87 Phase 10 LOW 2건 해소(I-06 product_service Sentry 스택트레이스 보존 + I-07 price_chart dayOfWeek x좌표 정확도). 커밋 TBD.
 > **Night-66 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — D-86 Phase 10 MEDIUM 2건 해소(I-03 0원 예측 캐시 방지 + I-04 migration 020 NULLS NOT DISTINCT) + D-84 non-BREAKING 부분 업그레이드(build_runner 2.15.0 + mocktail 1.0.5) + D-95 discountRate 하드코딩 색상 제거. 커밋 `3f08862`.
 > **Night-65 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260513_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-65 섹션 추가. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 15세션째 지속.
 > **Night-64 결과**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze **0건** ✅ — 신규 브랜치(`auto/night-01-20260512_0100`) 첫 세션. 베이스라인 3중 검증 통과. MORNING_BRIEFING Night-63 결합 분석 커밋. D-110(PR)/D-111(PLAN_02) 사용자 결정 대기 지속.
 > **Night-63 결과**: Flutter **370건** ✅ | Rust **216건** ✅ (이전 기준) | analyze **0건** ✅ — PLAN_01 완전 종결 후 첫 사후 검증 세션. 베이스라인 완전 보존. MORNING_BRIEFING Night-62 해시 반영 + Night-63 문서화. D-110(PR)/D-111(PLAN_02) 대기.
 > **Night-62 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 19 최종 검증 완료. PLAN_01 Phase 1~19 전체 종결 선언. D-109(Phase별 분리 확정)/D-110(PR 보류)/D-111(PLAN_02 방향 대기)
 > **Night-61 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 18 코드 품질 점검 + 수정 5건 완료 (D-107/D-108 결정)
+
+---
+
+## Night-67 (2026-05-15) — D-87 I-06/I-07 수정 2건 + 5세대 브랜치 첫 세션
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (베이스라인 검증 + 고아 수정 2건) |
+| **브랜치** | `auto/night-01-20260515_0100` (5세대) |
+| **Flutter 테스트** | **370건** ✅ (베이스라인 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **코드 변경** | **2건** (2파일, +4/-5줄) |
+| **커밋** | TBD |
+
+### "고아 수정" 전략 (Night-67 계속)
+
+**Night-66 전략 연속**: D-110(PR)/D-111(방향) 미결정 상태에서 모든 Phase 20+ 방향에서 반드시 필요한 수정만 선별.
+
+**선별 기준 (I-06, I-07)**:
+| 수정 | 왜 방향 무관인가 |
+|------|-----------------|
+| I-06 (Sentry 로그 보존) | 운영 관측성 — 방향 무관 디버그 품질 향상 |
+| I-07 (차트 x좌표 정확도) | 데이터 시각화 정확성 — 모든 방향에서 올바른 UI 필요 |
+
+**미선택 항목 (PD-65/PD-66)**:
+- PD-65: `CheckinResult.reward_amount → bool rewarded` — API 파단 변경, 협의 필요
+- PD-66: `PointsInfo` pub→private — 타입 아키텍처 결정, 방향 결정 후 처리
+
+### 기술 실행 상세
+
+#### I-06: product_service.rs — Sentry 스택트레이스 보존
+
+```rust
+// server/src/services/product_service.rs (변경 전)
+other => AppError::Internal(other.to_string()),
+
+// 변경 후
+other => {
+    tracing::error!(error = %other, "product cache retrieval failed");
+    AppError::Internal(other.to_string())
+}
+```
+
+- **원리**: moka `try_get_with`가 `Arc<AppError>`를 래핑하여 반환. `.to_string()`으로 변환 시 원본 에러 타입과 구조화 컨텍스트 소실
+- **효과**: Sentry에 `error` 필드로 원본 에러 전파 → 프로덕션 디버깅 정확도 향상
+- **범위**: 에러 반환 타입 동일 — 호환성 변경 없음
+
+#### I-07: price_chart.dart — 요일 x좌표 정확도
+
+```dart
+// 변경 전: 배열 인덱스(0~N)를 x좌표로 사용 → 비연속 요일 시 시각적 오류
+final spots = sorted.asMap().entries
+    .where((e) => e.value.avgPrice != null)
+    .map((e) => FlSpot(e.key.toDouble(), e.value.avgPrice!.toDouble()))
+    .toList();
+
+// 변경 후: 실제 dayOfWeek(0~6)를 x좌표로 사용 → 요일 간격 정확 표현
+final spots = sorted
+    .where((e) => e.avgPrice != null)
+    .map((e) => FlSpot(e.dayOfWeek.toDouble(), e.avgPrice!.toDouble()))
+    .toList();
+
+// 레이블: sorted[idx] → _dayLabels[dow] 직접 참조
+getTitlesWidget: (value, meta) {
+  final dow = value.toInt();
+  if (dow < 0 || dow > 6) return const SizedBox.shrink();
+  return Text(_dayLabels[dow], style: const TextStyle(fontSize: 10));
+},
+```
+
+- **원리**: 데이터가 월/수/금(dayOfWeek=1,3,5)만 있을 때 이전 코드는 x=0,1,2(연속)로 렌더 → 화요일/목요일 누락 오해 유발
+- **효과**: 실제 요일 위치(x=1,3,5)로 렌더 → fl_chart가 x=2,4 간격을 자동으로 빈 공간 처리
+- **코드 감소**: 레이블 위젯 5줄 → 4줄 (`sorted[idx]` 룩업 제거)
+
+### 해소된 결정 항목
+
+| ID | 내용 | 결과 |
+|----|------|------|
+| ~~D-87 I-06~~ | product_service Sentry 로그 | ✅ `product_service.rs` |
+| ~~D-87 I-07~~ | price_chart dayOfWeek x좌표 | ✅ `price_chart.dart` |
+
+### 잔여 대기 항목 (D-87 일부 + 사용자 결정 필요)
+
+| ID | 내용 | 대기 세션 | 우선도 |
+|----|------|----------|--------|
+| **D-110** | main 머지 PR (108 커밋) | **17세션** | 🔴 즉시 |
+| **D-111** | Phase 20+ 방향 | **17세션** | 🔴 즉시 |
+| **D-87 PD-65** | CheckinResult.reward_amount → bool rewarded | — | 🟡 API 협의 필요 |
+| **D-87 PD-66** | PointsInfo pub→private 불변식 강제 | — | 🟡 타입 결정 필요 |
+| **D-101** | Riverpod BREAKING 세트 | — | ★★★ 별도 세션 |
+| **D-102** | Dart BREAKING 5종 | — | ★★★ 순차 처리 |
+
+---
+
+## Night-66 (2026-05-14) — D-86(I-03/I-04) + D-84 + D-95 수정 4건 + 결합 분석
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Opus 4.6 결합 분석 + Sonnet 4.6 코드 실행 |
+| **브랜치** | `auto/night-01-20260514_0100` |
+| **Flutter 테스트** | **370건** ✅ (베이스라인 보존) |
+| **Rust 테스트** | **216건** ✅ (베이스라인 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **코드 변경** | **4건** (6파일, +26/-8줄) — 4세션 만의 코드 변경 |
+| **커밋** | `3f08862` (코드) + `09f84c4` (문서) |
+
+### Opus 4.6 전략 (Night-66)
+
+**"고아 수정(Orphan Fix)" 전략 도입:**
+- Night-63~65 (3세션 검증 전용) 후 **방향 무관 안전 수정** 재개
+- D-110(PR)/D-111(방향) 미결정 상태에서도 가치를 창출하되, BREAKING·아키텍처 변경은 여전히 자제
+- 선별 기준: "모든 Phase 20+ 방향에서 반드시 필요한 수정"만 실행
+
+**선별 논리:**
+| 수정 | 왜 방향 무관인가 |
+|------|-----------------|
+| I-03 (0원 예측 차단) | 데이터 정합성 — 모든 방향에서 캐시 오염 차단 필요 |
+| I-04 (NULLS NOT DISTINCT) | DB 무결성 — 모든 방향에서 중복 삽입 방지 필요 |
+| D-84 (build_runner/mocktail) | 개발 도구 — 모든 방향에서 빌드/테스트 안정성 개선 |
+| D-95 (discountRate 색상) | 테마 정합 — 다크모드 방향 A/B/C/D/E 무관하게 필요 |
+
+### Sonnet 4.6 기술 실행 상세
+
+#### I-03: ai_prediction_service — 0원 상품 예측 차단
+
+```rust
+// server/src/services/ai_prediction_service.rs
+if current_price <= 0 {
+    return Err(AppError::BadRequest("무효 가격"));
+}
+```
+- **원리**: `moka::try_get_with`는 `Err` 반환 시 캐시에 저장하지 않음
+- **효과**: 0원 상품의 무의미 예측이 24h 캐시에 노출되지 않으며, 가격 업데이트 후 자동 재시도
+
+#### I-04: migration 020 — UNIQUE NULLS NOT DISTINCT
+
+```sql
+ALTER TABLE products
+ADD CONSTRAINT uq_products_vendor_item
+UNIQUE NULLS NOT DISTINCT (store_id, vendor_item_id);
+```
+- **원리**: PostgreSQL 15+ 전용. 기존 SQL 표준에서 `NULL ≠ NULL`이므로 UNIQUE 위반 불가 → 이 구문으로 `NULL = NULL`로 취급
+- **효과**: `vendor_item_id IS NULL`인 동일 store의 중복 삽입 방지
+
+#### D-84: 의존성 업그레이드 (non-BREAKING 부분)
+
+| 패키지 | 이전 | 이후 | 변경 유형 |
+|--------|------|------|----------|
+| build_runner | 2.4.7 | **2.15.0** | MINOR (빌드 도구) |
+| mocktail | 1.0.4 | **1.0.5** | PATCH (테스트 도구) |
+| ~~freezed~~ | 3.2.3 | **보류** | D-101 연계 (analyzer 충돌) |
+| ~~json_serializable~~ | 6.11.2 | **보류** | D-101 연계 (analyzer 충돌) |
+
+#### D-95: discountRate 하드코딩 색상 제거
+
+```dart
+// 변경 전: color: const Color(0xFFD63031) — 다크모드 무시
+// 변경 후: color 제거 → 사용처에서 appColors.error 적용
+static const discountRate = TextStyle(
+  fontSize: 13, fontWeight: FontWeight.w700,
+);
+```
+
+### MCP/에이전트 사용 현황 (Night-66)
+
+| 도구 | 호출 수 | 사유 |
+|------|--------|------|
+| PlayMCP NaverSearch | 0 | 이연 소화 세션 — 기존 분석 결과 구현 |
+| feature-dev/pr-review-toolkit | 0 | 소형 수정 — 에이전트 투입 비효율 |
+| HuggingFace | 0 | 코드 구현 세션 |
+| **합계** | **0회** | Night-66은 "분석→구현" 사이클의 순수 구현 세션 |
+
+### 해소된 결정 항목
+
+| ID | 내용 | 결과 |
+|----|------|------|
+| ~~D-86 I-03~~ | 0원 예측 캐시 방지 | ✅ `ai_prediction_service.rs` |
+| ~~D-86 I-04~~ | NULLS NOT DISTINCT | ✅ `migration 020` |
+| ~~D-84 일부~~ | build_runner + mocktail | ✅ `pubspec.yaml` |
+| ~~D-95~~ | discountRate 색상 | ✅ `theme.dart` |
+
+### 잔여 대기 항목 (사용자 결정 필요)
+
+| ID | 내용 | 대기 세션 | Opus 권장 |
+|----|------|----------|-----------|
+| **D-110** | main 머지 PR (107 커밋) | **16세션** | ★★★★★ 즉시 생성 |
+| **D-111** | Phase 20+ 방향 | **16세션** | ★★★★ D방향(조합) |
+| **D-101** | Riverpod BREAKING 세트 | — | ★★★ 별도 세션 |
+| **D-102** | Dart BREAKING 5종 | — | ★★★ 순차 처리 |
 
 ---
 
