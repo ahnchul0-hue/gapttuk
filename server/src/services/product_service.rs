@@ -118,7 +118,10 @@ pub async fn get_product(pool: &PgPool, cache: &AppCache, id: i64) -> Result<Pro
         .await
         .map_err(|e| match e.as_ref() {
             AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
-            other => AppError::Internal(other.to_string()),
+            other => {
+                tracing::error!(error = %other, "product cache retrieval failed");
+                AppError::Internal(other.to_string())
+            }
         })
 }
 

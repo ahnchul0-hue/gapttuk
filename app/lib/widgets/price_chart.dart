@@ -30,11 +30,11 @@ class PriceChart extends ConsumerWidget {
         final sorted = List.of(prices)
           ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
 
-        final spots = sorted.asMap().entries
-            .where((e) => e.value.avgPrice != null)
+        final spots = sorted
+            .where((e) => e.avgPrice != null)
             .map((e) {
           return FlSpot(
-              e.key.toDouble(), e.value.avgPrice!.toDouble());
+              e.dayOfWeek.toDouble(), e.avgPrice!.toDouble());
         }).toList();
 
         if (spots.isEmpty) {
@@ -60,13 +60,10 @@ class PriceChart extends ConsumerWidget {
                   showTitles: true,
                   interval: 1,
                   getTitlesWidget: (value, meta) {
-                    final idx = value.toInt();
-                    if (idx < 0 || idx >= sorted.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final dow = sorted[idx].dayOfWeek;
+                    final dow = value.toInt();
+                    if (dow < 0 || dow > 6) return const SizedBox.shrink();
                     return Text(
-                      _dayLabels[dow.clamp(0, 6)],
+                      _dayLabels[dow],
                       style: const TextStyle(fontSize: 10),
                     );
                   },
