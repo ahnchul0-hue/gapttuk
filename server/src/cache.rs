@@ -2,6 +2,7 @@ use moka::future::Cache;
 use std::time::Duration;
 
 use crate::models::{AiPrediction, PopularSearch, Product};
+use crate::services::demographic_trend_service::DemographicTrendScore;
 use crate::services::trend_data_service::CategoryTrendScore;
 
 /// 애플리케이션 인메모리 캐시 (moka).
@@ -22,6 +23,9 @@ pub struct AppCache {
 
     /// 네이버 트렌드 데이터 — TTL 24h, 최대 50건 (월별 데이터라 신선도 요구 낮음)
     pub trend_data: Cache<String, Vec<CategoryTrendScore>>,
+
+    /// 인구통계 트렌드 데이터 — TTL 1h, 최대 100건 (카테고리코드 키)
+    pub demographic_data: Cache<String, Vec<DemographicTrendScore>>,
 }
 
 impl AppCache {
@@ -51,6 +55,11 @@ impl AppCache {
                 .time_to_live(Duration::from_secs(86400)) // 24시간 (월별 데이터 — 신선도 요구 낮음)
                 .max_capacity(50)
                 .build(),
+
+            demographic_data: Cache::builder()
+                .time_to_live(Duration::from_secs(3600)) // 1시간 (D-116: moka 확장 전략)
+                .max_capacity(100)
+                .build(),
         }
     }
 
@@ -75,6 +84,8 @@ impl AppCache {
             .set(self.predictions.entry_count() as f64);
         metrics::gauge!("cache_entries", "name" => "trend_data")
             .set(self.trend_data.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "demographic_data")
+            .set(self.demographic_data.entry_count() as f64);
     }
 }
 

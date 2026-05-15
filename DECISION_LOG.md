@@ -2,6 +2,59 @@
 
 ---
 
+## Night-68 Phase 20+21 실행 (2026-05-16) — MCP 검증 + 인구통계 파이프라인 구축
+
+> **Sonnet 4.6 Sub-agent** 실행 | Phase 20(MCP 전수 실측) + Phase 21(인구통계 분석 파이프라인)
+> **브랜치**: `auto/night-01-20260516_0100`
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **380건** ✅ (+10) |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트 | **221건** ✅ (+5) |
+| 신규 파일 | **5개** (Rust 1 + Flutter 4) |
+
+### Phase 20: MCP 전수 실측 결과
+
+| 항목 | 결과 |
+|------|------|
+| `naver_price_service.rs` NaverShopItem 14필드 | **0 불일치** ✅ |
+| `trend_data_service.rs` TrendResult/TrendPeriodData | **0 불일치** ✅ |
+| migration 019 카테고리 코드 | 50001780/50000215/50000151 **확인** ✅ |
+| CoinInfo/OpenDart/UsStockInfo | 쇼핑앱 비해당 (D-113/D-114) |
+
+### Phase 21: 인구통계 파이프라인 신규 파일
+
+| 파일 | 유형 | 설명 |
+|------|------|------|
+| `server/src/services/demographic_trend_service.rs` | NEW | 연령/성별/기기 5회 병렬 API 호출, compute_score, 단위테스트 4건 |
+| `app/lib/models/demographic_trend.dart` | NEW | freezed DemographicTrend + DemographicPeriodData |
+| `app/lib/providers/demographic_trend_provider.dart` | NEW | @riverpod demographicTrends family provider |
+| `app/lib/services/naver_trend_service.dart` | MOD | getDemographicTrends() 메서드 추가 |
+| `app/lib/widgets/demographic_chart.dart` | NEW | fl_chart BarChart(age) + LinearProgressIndicator(gender/device) |
+
+### 결정 기록
+
+| 결정 ID | 내용 | 결정 | 근거 |
+|---------|------|------|------|
+| **D-112** | Phase 20 필드 불일치 수정 필요 여부 | A) 수정 불필요 | 실측 결과 0건 불일치 |
+| **D-113** | CoinInfo MCP 활용 방안 | B) 보류 | 가격추적 쇼핑앱과 암호화폐 무관 |
+| **D-114** | OpenDart/UsStockInfo MCP 활용 방안 | B) 비해당 | 상장사 분석 기능 없음 |
+| **D-115** | DemographicChartWidget 배치 위치 | A) ProductDetailScreen 내 탭 | D-107 결정과 일관성 |
+| **D-116** | 인구통계 moka 캐시 전략 | A) 신규 슬롯 1h TTL max 100 | 카테고리 수 제한적, API 비용 절감 |
+| **D-117** | Phase 21 코드 생성 범위 | A) 전체 생성 (B1-B6) | 베이스라인 유지 + 완전한 파이프라인 |
+
+### Rust 수정 상세
+
+| 오류 | 파일 | 내용 |
+|------|------|------|
+| `AppColors.brand` 미존재 | `demographic_chart.dart:104` | `brand` → `success` 수정 |
+| E0716 임시값 수명 | `demographic_trend_service.rs:104,141` | `serde_json::json!` → `let` 바인딩으로 수명 연장 |
+
+---
+
 ## Night-67 상태 확인 (2026-05-15) — 5세대 브랜치 첫 세션 + D-87 I-06/I-07 수정
 
 > **Sonnet 4.6 Sub-agent** 실행 | 5세대 브랜치(20260515) 첫 세션 + 고아 수정 2건

@@ -1,8 +1,8 @@
 # PLAN_01: 값뚝(gapttuk) 종합 실무 최적화
 
-> 작성: 2026-03-31 | **실행: 2026-04-01 ~ 2026-05-10** | 브랜치: `auto/night-01-20260510_0100`
+> 작성: 2026-03-31 | **실행: 2026-04-01 ~ 진행 중** | 브랜치: `auto/night-01-20260516_0100`
 > 베이스라인: Flutter 296건 ✅ | Rust 207건 ✅ | analyze 0 issues
-> **Night-62 현재**: Flutter **370건** ✅ | Rust **216건** ✅ | analyze 0건 ✅ | **Phase 1~19 전체 완료**
+> **Night-68 현재**: Flutter **380건** ✅ | Rust **221건** ✅ | analyze 0건 ✅ | **Phase 1~21 완료, Phase 22-25 대기**
 > 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/실행
 > Ralph-loop 한도: **10회**
 >
@@ -28,6 +28,12 @@
 > | 17 | ✅ 완료 | Night-60 | 아키텍처 고도화(moka 캐시+1h 배치+OnceLock 제거) |
 > | 18 | ✅ 완료 | Night-61 | 코드 품질 점검 5건 수정(I-03/I-04/I-05/F-09/F-10) |
 > | **19** | **✅ 완료** | **Night-62** | **3중 검증 통과(370건/216건/0건) + PLAN_01 전체 종결 선언** |
+> | **20** | **✅ 완료** | **Night-68** | **MCP 전수 실측: 0 불일치, CoinInfo/OpenDart 비해당** |
+> | **21** | **✅ 완료** | **Night-68** | **인구통계 파이프라인: Rust 1서비스+Flutter 4파일, 테스트 380/221건** |
+> | **22** | ⏳ 대기 | — | 의존성 최신화 + 미결 결정 해소 (D-82~D-84, D-101~D-103) |
+> | **23** | ⏳ 대기 | — | 코드 품질 + 아키텍처 종합 감사 (병렬 에이전트 6대) |
+> | **24** | ⏳ 대기 | — | 프론트엔드 UX + 디자인 시스템 강화 (D-95/D-96 해소) |
+> | **25** | ⏳ 대기 | — | 최종 검증 + 구조화 커밋 + 베이스라인 갱신 |
 
 ---
 
@@ -970,3 +976,381 @@
 | 17 | 아키텍처 리팩토링 | 서비스 통합 + 캐시 최적화 | HuggingFace (4 API) |
 | 18 | UX 최적화 + 품질 점검 | UI 일관성 + 코드 품질 | feature-dev + coderabbit |
 | 19 | 구조화 커밋 + 검증 | 추적 가능한 이력 | commit-commands |
+
+---
+
+# PLAN_01 확장: Phase 20-25 MCP 전수 동원 종합 실무 최적화 (Night-68~)
+
+> 작성: 2026-05-16 | **실행: Night-68 시작** | 브랜치: `auto/night-01-20260516_0100`
+> 베이스라인: Flutter **370건** ✅ | Rust **216건** ✅ (Night-67 기준) | analyze 0건 ✅
+> 역할: **Opus 4.6 (Main Agent)** = 전략/의사결정/최종 코드 리뷰 | **Sonnet 4.6 (Sub-agent)** = 데이터 수집/기술 실행/진행 추적
+> Ralph-loop 한도: **10회**
+> **목적**: 사용 가능한 MCP 49+ API + 플러그인 12종 전수 동원 → 실시간 데이터 기반 코드 검증 + 직접 실행 가능 코드 생성 → 기술 수준 실질 상향
+
+---
+
+## 0-G. MCP/플러그인 가용성 실측 매트릭스 (2026-05-16 세션)
+
+### 즉시 사용 가능 MCP (6종, 49+ API)
+
+| MCP | API 수 | 핵심 API | Phase |
+|-----|--------|---------|-------|
+| **PlayMCP NaverSearch** | 18+ | search_shop, find_category, datalab_shopping_category, datalab_shopping_keywords, datalab_shopping_by_age/gender/device, datalab_shopping_keyword_by_age/gender/device, datalab_search, search_blog/news/webkr/kin/encyc/academic/book/cafearticle/image/local | 20, 21 |
+| **PlayMCP CoinInfo** | 7 | get_coin_price, get_market_overview, get_kimchi_premium, get_coin_dominance, get_fear_greed_index, get_top_gainers/losers | 20 (탐색) |
+| **PlayMCP OpenDart** | 12+ | find_company, get_company_info, get_financial_account/index/statement, get_dividend_info, get_employees, get_executive_stock, search_disclosures | 20 (탐색) |
+| **PlayMCP UsStockInfo** | 8+ | get_stock_info, get_financial_statement, get_historical_stock_prices, get_recommendations, get_finance_news, get_holder_info | 20 (탐색) |
+| **PlayMCP KakaoMap** | 4 | SearchPlaceByKeywordOpen, GetPublicTransitDirections, GetWalkDirections, GetBikeDirections | 20 (탐색) |
+| **PlayMCP KakaotalkChat** | 1 | MemoChat (나에게 메시지) | 25 (알림) |
+
+### 즉시 사용 가능 Plugin/Skill (12종)
+
+| 플러그인 | 스킬/에이전트 | Phase |
+|----------|-------------|-------|
+| **superpowers** | brainstorm, write-plan, execute-plan, verification-before-completion, systematic-debugging | 전체 |
+| **feature-dev** | code-architect, code-explorer, code-reviewer | 23 |
+| **pr-review-toolkit** | code-reviewer, silent-failure-hunter, type-design-analyzer, code-simplifier, pr-test-analyzer, comment-analyzer | 23, 24 |
+| **coderabbit** | code-review, autofix | 23 |
+| **frontend-design** | frontend-design | 24 |
+| **figma** | figma-create-design-system-rules, figma-generate-design | 24 |
+| **commit-commands** | commit, commit-push-pr, clean_gone | 25 |
+| **ralph-loop** | ralph-loop (모니터링 루프, 한도 10) | 전체 |
+| **code-simplifier** | code-simplifier (간소화) | 23 |
+| **claude-md-management** | revise-claude-md, claude-md-improver | 25 |
+| **hookify** | hookify, configure, list | 25 |
+| **Sonatype Guide** | getLatestComponentVersion, getRecommendedComponentVersions, getComponentVersion | 22 |
+| **HuggingFace** | hf_doc_search, hub_repo_search, paper_search | 23 |
+
+### 비해당/미연결 (대체 도구 확정)
+
+| 도구 | 상태 | 사유 | 대체 |
+|------|------|------|------|
+| **mcp-tailwind-gemini** | 비해당 | Flutter 프로젝트 — Tailwind CSS 미사용 | frontend-design 스킬 |
+| **shadcn** | 비해당 | Flutter 프로젝트 — React/shadcn-ui 미사용 | figma 디자인 시스템 |
+| **chatgpt-mcp** | 미설치 | 환경 미구성 | Opus 4.6 직접 분석 |
+| **sequential-thinking** | 미설치 | 환경 미구성 | superpowers:brainstorm |
+| **context7** | 미연결 | `.mcp.json` 존재, 세션 미활성 | WebSearch + HuggingFace MCP |
+| **playwright** | 미연결 | `.mcp.json` 존재, 세션 미활성 | feature-dev:code-architect |
+| **serena** | 미연결 | `.mcp.json` 존재, 세션 미활성 | feature-dev:code-explorer |
+
+### 미결 결정 현황 (Phase 20-25에서 해소 대상)
+
+| 결정 ID | 출처 | 내용 | 해소 Phase |
+|---------|------|------|-----------|
+| **D-82** | Phase 9 | Rust BREAKING 업그레이드 범위 | 22 |
+| **D-83** | Phase 9 | Dart BREAKING 업그레이드 범위 | 22 |
+| **D-84** | Phase 9 | Dart non-BREAKING 4건 즉시 적용 | 22 |
+| **D-95** | Phase 12 | discountRate 다크모드 대응 | 24 |
+| **D-96** | Phase 12 | SearchScreen 필터 재연결 | 24 |
+| **D-101** | Phase 16 | flutter_riverpod 3.0→3.3 minor | 22 |
+| **D-102** | Phase 16 | BREAKING 5종 (go_router/fl_chart/google_sign_in/flutter_secure_storage/sign_in_with_apple) | 22 |
+| **D-103** | Phase 16 | Rust BREAKING (reqwest 1.x/sentry 0.38) | 22 |
+| **D-110** | Phase 19 | main 머지 PR | 25 |
+| **D-111** | Phase 19 | 다음 PLAN_02 방향 | 25 |
+
+---
+
+## Phase 20: MCP 전수 실측 + 실시간 데이터 기반 코드 검증
+
+> **목표**: 49+ MCP API를 실시간 호출하여 기존 코드(Phase 15 NaverSearch 파이프라인)의 데이터 정합성 검증 + 신규 MCP 활용 기회 발굴
+> **실행자**: Sonnet 4.6 Sub-agent (MCP 호출/데이터 수집) → Opus 4.6 (정합성 분석/코드 수정 결정)
+
+### 20-A. NaverSearch 실시간 데이터 vs 기존 코드 검증 (Sonnet 실행)
+
+| # | API 호출 | 검증 대상 | 파일 |
+|---|---------|----------|------|
+| 20-A1 | `search_shop("세탁세제")` | NaverShopItem 구조체 필드 정합성 | `server/src/services/naver_price_service.rs` |
+| 20-A2 | `find_category("생활용품")` | naver_category_mapping 테이블 코드 정합성 | `server/migrations/019_naver_category_mapping.sql` |
+| 20-A3 | `find_category("식품")` + `find_category("가전")` | 카테고리 코드 3종 검증 | migration 019 |
+| 20-A4 | `datalab_shopping_category` | TrendResult/TrendPeriodData 구조체 검증 | `server/src/services/trend_data_service.rs` |
+| 20-A5 | `datalab_shopping_by_age` | 연령별 데이터 구조 파악 (신규) | — |
+| 20-A6 | `datalab_shopping_by_gender` | 성별 데이터 구조 파악 (신규) | — |
+| 20-A7 | `datalab_shopping_by_device` | 기기별 데이터 구조 파악 (신규) | — |
+
+### 20-B. CoinInfo/OpenDart/UsStockInfo 탐색 (Sonnet 실행)
+
+| # | API 호출 | 목적 |
+|---|---------|------|
+| 20-B1 | `CoinInfo.get_coin_price("BTC")` | 응답 구조 파악 — 향후 암호화폐 가격 추적 확장 가능성 |
+| 20-B2 | `OpenDart.find_company("네이버")` | 응답 구조 파악 — 가격 제공 기업 재무 데이터 활용 |
+| 20-B3 | `UsStockInfo.get_stock_info("AMZN")` | 응답 구조 파악 — 글로벌 가격 비교 기능 참조 |
+
+### 20-C. 산출물
+- NaverSearch 응답 vs 기존 Rust 구조체 정합성 보고서
+- 필드 불일치/누락 목록 (있다면 즉시 수정 대상)
+- 신규 MCP 활용 기회 목록 (연령/성별/기기 데이터)
+- CoinInfo/OpenDart/UsStockInfo 확장 가능성 평가
+
+### ⏸️ Phase 20 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-112** | 필드 불일치 발견 시 즉시 수정? | A) 즉시 수정 / B) Phase 23에서 일괄 |
+| **D-113** | CoinInfo 암호화폐 추적 확장? | A) Phase 21에 포함 / B) 보류 (가격 추적 전용 유지) |
+| **D-114** | OpenDart/UsStockInfo 연동? | A) 향후 Phase / B) 비해당 (쇼핑 전용 유지) |
+
+---
+
+## Phase 21: NaverSearch 인구통계 분석 파이프라인 확장
+
+> **목표**: Phase 20에서 파악한 연령/성별/기기별 데이터 구조를 기반으로 인구통계 분석 파이프라인 구축 → Rust 서비스 + Flutter UI 코드 생성
+> **실행자**: Sonnet 4.6 (MCP 데이터 수집/코드 탐색) → Opus 4.6 (아키텍처 설계/코드 생성)
+> **전제**: Phase 20 승인 후
+
+### 21-A. 실시간 데이터 수집 (Sonnet MCP 호출)
+
+| # | API | 파라미터 | 목적 |
+|---|-----|---------|------|
+| 21-A1 | `datalab_shopping_by_age` | category: Phase 20 검증 코드, ages: ["10","20","30","40","50","60"] | 연령대별 쇼핑 관심도 시계열 |
+| 21-A2 | `datalab_shopping_by_gender` | 동일 카테고리, gender: "f"/"m" | 성별 쇼핑 관심도 시계열 |
+| 21-A3 | `datalab_shopping_by_device` | 동일 카테고리, device: "pc"/"mo" | PC vs 모바일 비율 시계열 |
+| 21-A4 | `datalab_shopping_keyword_by_age` | 인기 키워드 + 카테고리 | 키워드별 연령 반응 |
+| 21-A5 | `datalab_shopping_keyword_by_gender` | 인기 키워드 + 카테고리 | 키워드별 성별 반응 |
+| 21-A6 | `datalab_search` | keywordGroups: 인기 검색어 3~5개, 최근 6개월 | 일반 검색 트렌드 비교 |
+
+### 21-B. 코드 생성 (Opus 설계)
+
+| # | 생성 대상 | 설명 | 파일 위치 |
+|---|----------|------|----------|
+| 21-B1 | **DemographicTrendService (Rust)** | 연령/성별/기기별 API 응답 파싱 + 인구통계 트렌드 점수 | `server/src/services/demographic_trend_service.rs` |
+| 21-B2 | **DemographicTrend 모델 (Flutter)** | freezed 모델 — AgeTrend, GenderTrend, DeviceTrend | `app/lib/models/demographic_trend.dart` |
+| 21-B3 | **DemographicTrendProvider (Flutter)** | @riverpod 프로바이더 — 인구통계 데이터 fetch | `app/lib/providers/demographic_trend_provider.dart` |
+| 21-B4 | **DemographicChartWidget (Flutter)** | fl_chart 기반 연령/성별 시각화 (막대+파이) | `app/lib/widgets/demographic_chart.dart` |
+| 21-B5 | **API 핸들러 (Rust)** | GET /trends/demographic/:category | `server/src/handlers/trends.rs` 확장 |
+| 21-B6 | **테스트 (Rust + Flutter)** | 서비스 + 위젯 테스트 | 각 테스트 파일 |
+
+### 21-C. 산출물
+- Rust: DemographicTrendService + 핸들러 + 테스트
+- Flutter: 모델 + 프로바이더 + 위젯 + 테스트
+- MCP 실시간 데이터 기반 검증 완료
+
+### ⏸️ Phase 21 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-115** | 인구통계 데이터 표시 위치? | A) ProductDetailScreen 내 탭 / B) 별도 DemographicScreen / C) HomeScreen 카드 |
+| **D-116** | 인구통계 API 캐시 전략? | A) moka 확장 (1h TTL, 현행 패턴) / B) DB 저장 + 배치 갱신 |
+| **D-117** | 코드 생성 범위? | A) 전체 (B1-B6) / B) 서버만 (B1+B5+B6) / C) Flutter만 (B2-B4+B6) |
+
+---
+
+## Phase 22: 의존성 최신화 + 미결 결정 해소 (Sonatype + WebSearch)
+
+> **목표**: Sonatype MCP + WebSearch로 D-82~D-84, D-101~D-103 데이터 확보 → 업그레이드 실행
+> **실행자**: Sonnet 4.6 (Sonatype PURL 조회 + WebSearch) → Opus 4.6 (영향 분석/결정)
+> **전제**: Phase 21 승인 후
+
+### 22-A. Sonatype 심층 조회 (Sonnet 실행)
+
+| # | 대상 | PURL | 조회 항목 |
+|---|------|------|----------|
+| 22-A1 | flutter_riverpod | `pkg:pub/flutter_riverpod@3.0.3` | 최신 3.3.x 보안/품질 점수 |
+| 22-A2 | go_router | `pkg:pub/go_router@16.3.0` | 17.x 호환성/보안 |
+| 22-A3 | fl_chart | `pkg:pub/fl_chart@0.69.2` | 1.x BREAKING 범위 |
+| 22-A4 | google_sign_in | `pkg:pub/google_sign_in@6.3.0` | 7.x OAuth 강화 |
+| 22-A5 | flutter_secure_storage | `pkg:pub/flutter_secure_storage@9.2.4` | 10.x 마이그레이션 |
+| 22-A6 | sign_in_with_apple | `pkg:pub/sign_in_with_apple@6.1.4` | 7.x 변경 범위 |
+| 22-A7 | riverpod_generator | `pkg:pub/riverpod_generator@3.0.3` | 4.x BREAKING 호환 |
+| 22-A8 | reqwest (Rust) | `pkg:cargo/reqwest@0.12.28` | 1.x 변경 범위 |
+| 22-A9 | sentry (Rust) | `pkg:cargo/sentry@0.37.0` | 0.38.x 변경 범위 |
+
+### 22-B. WebSearch 영향 분석 (Sonnet 실행)
+
+| # | 검색 주제 | 목적 |
+|---|----------|------|
+| 22-B1 | "go_router 17 migration guide" | ShellRoute 변경점 확인 |
+| 22-B2 | "fl_chart 1.0 breaking changes" | API 변경 범위 확인 |
+| 22-B3 | "riverpod_generator 4.0 migration" | 코드젠 변경점 확인 |
+| 22-B4 | "flutter_secure_storage 10 migration" | 스토리지 마이그레이션 확인 |
+
+### 22-C. 업그레이드 실행 계획 (Opus 결정)
+
+| 우선순위 | 유형 | 대상 | 위험도 | 미결 결정 |
+|---------|------|------|--------|----------|
+| 1 | MINOR/PATCH | D-84 잔여 (json_annotation, freezed 등) | LOW | D-84 |
+| 2 | MINOR | flutter_riverpod 3.0→3.3 | LOW-MEDIUM | D-101 |
+| 3 | BREAKING (보안) | google_sign_in 7.x | MEDIUM | D-102 일부 |
+| 4 | BREAKING (기능) | go_router 17.x, fl_chart 1.x | HIGH | D-102 |
+| 5 | BREAKING (Rust) | reqwest 1.x, sentry 0.38 | MEDIUM | D-82, D-103 |
+
+### ⏸️ Phase 22 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-84** (재확인) | Dart non-BREAKING 잔여 즉시 적용? | A) 전체 / B) 선택적 / C) 보류 |
+| **D-101** (재확인) | flutter_riverpod 3.0→3.3? | A) 예 / B) 보류 |
+| **D-102** (재확인) | BREAKING 5종 범위? | A) 보안만 / B) 핵심 / C) 전체 / D) 보류 |
+| **D-103** (재확인) | Rust BREAKING? | A) 예 / B) 보류 |
+| **D-118** | 업그레이드 후 regression 발생 시? | A) 롤백 / B) 수정 시도 (1시간 내) |
+
+---
+
+## Phase 23: 코드 품질 + 아키텍처 종합 감사 (병렬 에이전트 6대)
+
+> **목표**: Phase 20-22 신규 코드 포함 전체 코드베이스 품질 종합 감사 + HuggingFace 기술 문서 참조
+> **실행자**: Sonnet 4.6 Sub-agent 6대 동시 (병렬) → Opus 4.6 (결과 종합/우선순위 결정)
+> **전제**: Phase 22 승인 후
+
+### 23-A. 병렬 에이전트 배치 (Sonnet 6대)
+
+| # | 에이전트 | 대상 | 검사 항목 |
+|---|---------|------|----------|
+| 1 | **coderabbit:code-reviewer** | Phase 20-22 전체 diff | 버그, 보안, 로직 |
+| 2 | **pr-review-toolkit:silent-failure-hunter** | server/src/ 전체 | 에러 억제, catch 누락 |
+| 3 | **pr-review-toolkit:type-design-analyzer** | 신규 타입 (DemographicTrend 등) | 타입 설계 품질 |
+| 4 | **feature-dev:code-reviewer** | app/lib/ 전체 | Flutter 코드 품질 |
+| 5 | **feature-dev:code-explorer** | server/src/ 서비스 간 의존성 | 아키텍처 결합도 |
+| 6 | **pr-review-toolkit:code-simplifier** | 전체 | 코드 간소화 기회 |
+
+### 23-B. HuggingFace MCP 기술 문서 조회 (Sonnet 실행)
+
+| # | API | 검색 쿼리 | 목적 |
+|---|-----|----------|------|
+| 23-B1 | `hf_doc_search` | "rust axum service layer caching pattern" | 캐시 전략 최적화 참조 |
+| 23-B2 | `hf_doc_search` | "flutter riverpod async notifier error handling" | 에러 핸들링 최신 패턴 |
+| 23-B3 | `hub_repo_search` | "naver shopping price tracker" | 유사 프로젝트 참조 |
+| 23-B4 | `paper_search` | "e-commerce price prediction machine learning" | 가격 예측 알고리즘 |
+
+### 23-C. 판정 기준 (Opus 적용)
+- **CRITICAL**: 데이터 손실, 보안 취약, 비즈니스 로직 오류 → 즉시 수정
+- **HIGH**: 성능 저하, 에러 핸들링 미흡 → Phase 24에서 수정
+- **MEDIUM**: 코드 스타일, 타입 설계 → 선별 수정
+- **LOW/오탐**: 건너뜀
+
+### 23-D. 산출물
+- 이슈 목록 (등급별)
+- 아키텍처 개선 권고
+- 기술 문서 기반 최적화 제안
+- 코드 간소화 목록
+
+### ⏸️ Phase 23 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-119** | CRITICAL/HIGH 수정 범위? | A) 전체 즉시 / B) CRITICAL만 / C) 선별 |
+| **D-120** | 아키텍처 리팩토링 범위? | A) 권고 전체 / B) 신규 서비스만 / C) 보류 |
+| **D-121** | HuggingFace 참조 기반 최적화? | A) 적용 / B) 참고만 |
+
+---
+
+## Phase 24: 프론트엔드 UX + 디자인 시스템 강화 (frontend-design + figma)
+
+> **목표**: Flutter 앱 전체 UI/UX 감사 + 디자인 시스템 규칙 도출 + D-95/D-96 미결 해소
+> **실행자**: Sonnet 4.6 Sub-agent (감사/분석) → Opus 4.6 (UX 결정/코드 생성)
+> **전제**: Phase 23 승인 후
+
+### 24-A. 프론트엔드 감사 (Sonnet 병렬 3대)
+
+| # | 스킬/에이전트 | 임무 |
+|---|-------------|------|
+| 24-A1 | **frontend-design** | 10개 화면 UI 패턴 감사 (일관성/접근성/반응성) |
+| 24-A2 | **figma:figma-create-design-system-rules** | AppColors/AppSpacing/AppTextStyles 기반 디자인 시스템 규칙 |
+| 24-A3 | **pr-review-toolkit:comment-analyzer** | Flutter 위젯 문서/주석 품질 |
+
+### 24-B. 미결 결정 해소
+
+| # | 결정 ID | 내용 | 실행 내용 |
+|---|---------|------|----------|
+| 24-B1 | **D-95** | discountRate 다크모드 대응 | AppColors.discountRate 다크모드 색상 추가 |
+| 24-B2 | **D-96** | SearchScreen 필터 재연결 | 백엔드 기존 4필터+4정렬 → Flutter UI 완전 연결 검증 |
+
+### 24-C. NaverSearch 기반 UX 검증 (Sonnet MCP 호출)
+
+| # | API | 목적 |
+|---|-----|------|
+| 24-C1 | `search_shop` | 실제 상품 데이터로 ProductCard 렌더링 검증 |
+| 24-C2 | `search_blog` + `search_news` | 상품 관련 리뷰/뉴스 UI 표시 가능성 평가 |
+| 24-C3 | `datalab_search` | 검색 트렌드 데이터로 SearchScreen 개선점 도출 |
+
+### 24-D. 산출물
+- UI/UX 이슈 목록 + 수정 코드
+- 디자인 시스템 규칙 문서
+- D-95/D-96 해소 코드
+- 접근성 강화 코드 (Semantics 확장)
+
+### ⏸️ Phase 24 확인점
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-122** | 디자인 시스템 규칙 적용 범위? | A) 전체 화면 / B) 신규 위젯만 / C) 참고만 |
+| **D-123** | 접근성 강화 범위? | A) 전체 10화면 / B) 미적용 화면만 / C) 보류 |
+| **D-124** | 블로그/뉴스 리뷰 UI 기능 추가? | A) Phase 21 확장 / B) 향후 PLAN_02 / C) 비해당 |
+
+---
+
+## Phase 25: 최종 검증 + 구조화 커밋 + 베이스라인 갱신
+
+> **목표**: Phase 20-24 전체 결과물 통합 검증 → 구조화 커밋 → 베이스라인 갱신 → PLAN_01 최종 종결
+> **실행자**: Opus 4.6 (최종 판단) + Sonnet 4.6 (검증 실행)
+> **전제**: Phase 24 승인 후
+
+### 25-A. 검증 항목
+
+| 항목 | 기준 | 도구 |
+|------|------|------|
+| Flutter 테스트 | ≥370건 (증가 기대) | `flutter test` |
+| Flutter analyze | 0건 | `flutter analyze` |
+| Rust 테스트 | ≥216건 (증가 기대) | Sonatype 재확인 |
+| 의존성 보안 | CVE 0건 | Sonatype + `cargo audit` |
+| 코드 품질 | CRITICAL 0건 | coderabbit 최종 |
+
+### 25-B. 커밋 전략
+
+| # | 커밋 범위 | 메시지 패턴 |
+|---|----------|------------|
+| 1 | Phase 20 데이터 검증 수정 | `fix(naver): MCP 실측 기반 NaverSearch 응답 구조 정합 수정` |
+| 2 | Phase 21 인구통계 파이프라인 | `feat(demographic): 연령/성별/기기별 트렌드 분석 파이프라인` |
+| 3 | Phase 22 의존성 최신화 | `deps: BREAKING/MINOR 의존성 업그레이드 (Phase 22)` |
+| 4 | Phase 23 품질 수정 | `fix(quality): 코드 품질 + 아키텍처 개선 (Phase 23)` |
+| 5 | Phase 24 UX + 디자인 | `feat(ui): UX 감사 + 디자인 시스템 강화 + D-95/D-96 해소` |
+
+### 25-C. 최종 결정
+
+| 결정 ID | 질문 | 선택지 |
+|---------|------|--------|
+| **D-110** (재확인) | main 머지 PR 생성? | A) 예 / B) 보류 |
+| **D-111** (재확인) | PLAN_02 방향? | A) 프로덕션 준비 / B) 기능 확장 / C) E2E 테스트 / D) 조합 |
+| **D-125** | KakaotalkChat 완료 알림? | A) 예 (MemoChat으로 결과 요약 전송) / B) 불필요 |
+
+### 25-D. 메모리/문서 갱신
+- MORNING_BRIEFING.md Night-68 결과 기록
+- 프로젝트 메모리 갱신 (테스트 수, Phase 완료 상태, 신규 서비스)
+- PLAN_01.md Phase 20-25 완료 마킹
+
+---
+
+## 실행 원칙 (Phase 20-25 공통)
+
+1. **단방향 결정 금지**: 모든 변수/대안 경로에 대해 ⏸️ 확인점에서 명시적 사용자 승인
+2. **Phase 전환 시 필수 확인**: ⏸️ 마크 지점에서 반드시 사용자 승인 획득 후 다음 Phase 진입
+3. **Opus/Sonnet 역할 분리**:
+   - Opus 4.6 (Main Agent): 전략 설계, MCP 데이터 해석, 아키텍처 결정, 트레이드오프 분석, 오탐 필터링, 최종 코드 리뷰
+   - Sonnet 4.6 (Sub-agent): MCP API 호출, 데이터 수집, 코드 탐색, 테스트 실행, 병렬 에이전트 운용
+4. **Ralph-loop 한도**: 최대 **10회** (모니터링/반복 작업용)
+5. **코드 기여 요청**: 비즈니스 로직 트레이드오프가 있는 5~10줄은 사용자에게 위임
+6. **MCP 활용 원칙**:
+   - 실시간 데이터로 코드 생성/검증 → 가상 데이터 절대 사용 금지
+   - NaverSearch/CoinInfo/OpenDart: 실시간 API 호출로 데이터 정합성 보장
+   - Sonatype: 의존성 보안/품질 점수 기반 업그레이드 결정
+   - HuggingFace: 기술 문서 참조 기반 최적화
+7. **MCP 대체 원칙**:
+   - context7 → WebSearch + HuggingFace MCP
+   - playwright → feature-dev:code-architect
+   - serena → feature-dev:code-explorer
+   - sequential-thinking → superpowers:brainstorm
+   - mcp-tailwind-gemini/shadcn → frontend-design + figma (Flutter 프로젝트)
+   - chatgpt-mcp → Opus 4.6 직접 분석
+8. **베이스라인 보존**: Flutter ≥370건, Rust ≥216건, analyze 0건 — 매 Phase 종료 시 검증
+9. **직접 실행 가능 코드**: 모든 생성 코드는 컴파일/테스트 즉시 가능해야 함
+
+---
+
+## 예상 산출물 요약 (Phase 20-25)
+
+| Phase | 핵심 산출물 | 예상 영향 | MCP 활용 |
+|-------|-----------|----------|---------|
+| 20 | 실시간 데이터 검증 보고서 + 코드 수정 | 데이터 정합성 보장 | NaverSearch(7)+CoinInfo(1)+OpenDart(1)+UsStockInfo(1) |
+| 21 | 인구통계 분석 파이프라인 (Rust+Flutter) | 사용자 분석 기능 추가 | NaverSearch(6) |
+| 22 | 의존성 최신화 (BREAKING+MINOR) | 보안 강화 + 최신 API | Sonatype(3)+WebSearch |
+| 23 | 코드 품질 감사 + 아키텍처 개선 | 기술 부채 해소 | HuggingFace(4)+병렬 에이전트 6대 |
+| 24 | UX 감사 + 디자인 시스템 + D-95/D-96 | UI 일관성 + 미결 해소 | NaverSearch(3)+frontend-design+figma |
+| 25 | 구조화 커밋 + 최종 검증 | 추적 가능한 이력 | KakaotalkChat(1)+commit-commands |

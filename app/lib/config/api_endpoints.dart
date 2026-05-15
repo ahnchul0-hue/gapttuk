@@ -53,4 +53,6 @@ abstract final class ApiEndpoints {
 
   // ── Naver Trends ─────────────────────────────
   static const String naverTrends = '$_v1/trends/naver';
+  static String demographicTrends(String categoryCode) =>
+      '$_v1/trends/demographic/$categoryCode';
 }
