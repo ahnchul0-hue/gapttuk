@@ -1,3 +1,7 @@
+# NIGHT_06_RESULT — 2026-05-17 (Night-69 추가)
+
+> **Night-69 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 22(의존성 최신화): 트랜지티브 24개 업그레이드(pubspec.lock) + BREAKING 분석 D-101/D-102 + 신규 D-119(kakao 2.x)/D-120(apple 8.x) 발견. D-84 잔여분 D-101 의존 재분류.
+
 # NIGHT_06_RESULT — 2026-05-16 (Night-68 추가)
 
 > **Night-68 결과**: Flutter **380건** ✅ (+10) | Rust **221건** ✅ (+5) | analyze **0건** ✅ — Phase 20(MCP 전수 실측: 0 불일치) + Phase 21(인구통계 파이프라인: Rust+Flutter 5파일 신규). D-112~D-117 결정 완료. demographic_chart_test.dart 10건 신규.
@@ -11,6 +15,79 @@
 > **Night-63 결과**: Flutter **370건** ✅ | Rust **216건** ✅ (이전 기준) | analyze **0건** ✅ — PLAN_01 완전 종결 후 첫 사후 검증 세션. 베이스라인 완전 보존. MORNING_BRIEFING Night-62 해시 반영 + Night-63 문서화. D-110(PR)/D-111(PLAN_02) 대기.
 > **Night-62 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 19 최종 검증 완료. PLAN_01 Phase 1~19 전체 종결 선언. D-109(Phase별 분리 확정)/D-110(PR 보류)/D-111(PLAN_02 방향 대기)
 > **Night-61 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 18 코드 품질 점검 + 수정 5건 완료 (D-107/D-108 결정)
+
+---
+
+## Night-69 (2026-05-17) — Phase 22 의존성 최신화 분석
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 22 의존성 최신화) |
+| **브랜치** | `auto/night-01-20260517_0100` |
+| **Flutter 테스트** | **380건** ✅ (베이스라인 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **Rust 테스트** | **221건** ✅ (베이스라인 보존) |
+| **코드 변경** | `pubspec.lock` 트랜지티브 24개 업그레이드 |
+
+### Phase 22-A: WebSearch 데이터 수집 결과
+
+| 패키지 | 현재 | 최신 | 유형 | 상태 |
+|--------|------|------|------|------|
+| flutter_riverpod | 3.0.3 | 3.3.1 | D-101 연동 BREAKING | ⏸️ |
+| riverpod_generator | 3.0.3 | 4.0.3 | D-101 BREAKING | ⏸️ |
+| go_router | 16.3.0 | 17.2.3 | D-102 BREAKING | ⏸️ |
+| fl_chart | 0.69.2 | 1.2.0 | D-102 BREAKING | ⏸️ |
+| flutter_secure_storage | 9.2.4 | 10.2.0 | D-102 BREAKING | ⏸️ |
+| google_sign_in | 6.3.0 | 7.2.0 | D-102 BREAKING | ⏸️ |
+| sign_in_with_apple | 6.1.4 | **8.0.0** | D-120 신규 (+2 major!) | ⏸️ |
+| kakao_flutter_sdk_user | 1.10.0 | **2.0.0+1** | D-119 신규 발견! | ⏸️ |
+| freezed | 3.2.3 | 3.2.5 | D-84 잔여 — **BLOCKED** | → D-101 |
+| json_serializable | 6.11.2 | 6.14.0 | D-84 잔여 — **BLOCKED** | → D-101 |
+| json_annotation | 4.9.0 | 4.12.0 | D-84 잔여 — **BLOCKED** | → D-101 |
+
+### D-84 재분류: analyzer 데드락 발견
+
+```
+현재: riverpod_generator 3.x → analyzer <9.0.0 강제
+문제: freezed 3.2.5 / json_serializable 6.14.0 → analyzer >=9.0.0 요구
+결론: D-84 잔여분은 D-101(riverpod_generator 4.x) 실행 시 함께 자동 해제
+     → D-84 완전 해소 = D-101 선행 조건
+```
+
+### Phase 22-C: 트랜지티브 24개 업그레이드 (즉시 적용)
+
+> `flutter pub upgrade` — pubspec.yaml 무변경, pubspec.lock만 갱신
+
+| 주요 항목 | 이전 → 이후 |
+|----------|------------|
+| async | 2.13.0 → 2.13.1 |
+| build | 4.0.4 → 4.0.6 |
+| flutter_svg | 2.2.3 → 2.3.0 |
+| mockito | 5.6.3 → 5.6.4 |
+| path_provider_android | 2.2.22 → 2.3.1 |
+| shared_preferences | 2.5.4 → 2.5.5 |
+| source_gen | 4.2.0 → 4.2.3 |
+| vector_graphics | 1.1.19 → 1.2.1 |
+| vm_service | 15.0.2 → 15.2.0 |
+| jni / jni_flutter | (신규) → 1.0.0 / 1.0.1 |
+
+### 신규 발견 사항 (D-119, D-120)
+
+| ID | 내용 | 위험도 |
+|----|------|--------|
+| **D-119** | `kakao_flutter_sdk_user` 1.10→2.0 — D-102 미포함, 카카오 SDK 전면 개편 | HIGH |
+| **D-120** | `sign_in_with_apple` 6.1→8.0 (7.x 건너뜀) — 2단계 BREAKING | HIGH |
+
+### 다음 세션 결정 사항
+
+| 결정 | 상태 | 권장 |
+|------|------|------|
+| D-101: riverpod_generator 4.x 업그레이드 | ⏸️ 사용자 결정 | ✅ 권장 (D-84 완전 해소 + Flutter 품질) |
+| D-102: BREAKING 5→7종 선별 | ⏸️ 사용자 결정 | 선별 적용 권장 (보안→기능 순서) |
+| D-119: kakao SDK 2.x | ⏸️ 사용자 결정 | 로그인 검증 필수 |
+| D-120: sign_in_with_apple 8.x | ⏸️ 사용자 결정 | CHANGELOG 8.x 별도 확인 |
 
 ---
 

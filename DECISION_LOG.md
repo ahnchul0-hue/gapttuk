@@ -2,6 +2,96 @@
 
 ---
 
+## Night-69 Phase 22 실행 (2026-05-17) — 의존성 최신화 + BREAKING 분석
+
+> **Sonnet 4.6 Sub-agent** 실행 | Phase 22 (의존성 최신화)
+> **브랜치**: `auto/night-01-20260517_0100`
+
+### Phase 22-A: WebSearch 데이터 수집 결과
+
+| 패키지 | 현재 | Latest | 유형 |
+|--------|------|--------|------|
+| flutter_riverpod | 3.0.3 | 3.3.1 | MINOR (but riverpod_generator 4.x 동반 BREAKING) |
+| riverpod_generator | 3.0.3 | 4.0.3 | **BREAKING** (D-101) |
+| riverpod_annotation | 3.0.3 | 4.0.2 | **BREAKING** (D-101 연동) |
+| go_router | 16.3.0 | 17.2.3 | **BREAKING** (D-102) |
+| fl_chart | 0.69.2 | 1.2.0 | **BREAKING** (D-102) |
+| flutter_secure_storage | 9.2.4 | 10.2.0 | **BREAKING** (D-102) |
+| google_sign_in | 6.3.0 | 7.2.0 | **BREAKING** (D-102) |
+| sign_in_with_apple | 6.1.4 | **8.0.0** | **BREAKING ×2** (D-102 — 7.x→8.x 추가 업버전!) |
+| kakao_flutter_sdk_user | 1.10.0 | **2.0.0+1** | **BREAKING** (**신규 발견 — D-102 미포함!**) |
+| json_annotation | 4.9.0 | 4.12.0 | MINOR — **BLOCKED** (analyzer 제약) |
+| freezed | 3.2.3 | 3.2.5 | PATCH — **BLOCKED** (analyzer <9.0.0) |
+| json_serializable | 6.11.2 | 6.14.0 | MINOR — **BLOCKED** (analyzer <9.0.0) |
+
+### Phase 22-C: 트랜지티브 의존성 자동 업그레이드 (24개)
+
+> `flutter pub upgrade` — pubspec.yaml 변경 없이 lock파일 갱신  
+> 검증: Flutter **380건** ✅ | analyze **0건** ✅ | 베이스라인 완전 보존
+
+| 주요 업데이트 | 이전 | 이후 |
+|-------------|------|------|
+| async | 2.13.0 | 2.13.1 |
+| build | 4.0.4 | 4.0.6 |
+| flutter_svg | 2.2.3 | 2.3.0 |
+| mockito | 5.6.3 | 5.6.4 |
+| path_provider_android | 2.2.22 | 2.3.1 |
+| shared_preferences | 2.5.4 | 2.5.5 |
+| source_gen | 4.2.0 | 4.2.3 |
+| url_launcher_android | 6.3.28 | 6.3.29 |
+| vector_graphics | 1.1.19 | 1.2.1 |
+| vm_service | 15.0.2 | 15.2.0 |
+| jni / jni_flutter | (신규) | 1.0.0 / 1.0.1 |
+
+### D-84 잔여분 재분류 (BLOCKED)
+
+> **핵심 발견**: `freezed 3.2.5`, `json_serializable 6.14.0`, `json_annotation 4.12.0` 모두
+> `riverpod_generator 3.x`의 `analyzer <9.0.0` 제약에 막혀 개별 업그레이드 불가.
+> **D-101(riverpod_generator 4.x) 실행 시 함께 해제됨** — D-84는 D-101 의존 결정으로 재분류.
+
+### Phase 22-B: BREAKING 변경 상세 분석
+
+#### D-101: flutter_riverpod 3.0→3.3 + riverpod_generator 3→4 (MEDIUM)
+
+| 항목 | 내용 |
+|------|------|
+| 대상 패키지 | flutter_riverpod 3.3.1 + riverpod_generator 4.0.3 + riverpod_annotation 4.0.2 |
+| 동반 해제 | freezed 3.2.5 + json_serializable 6.14.0 + json_annotation 4.12.0 (D-84 잔여) |
+| 코드 변경 범위 | `@riverpod` 어노테이션 문법 변화 검토 필요 — 파일 수 최대 15개 |
+| analyzer 전환 | 8.x → 9.x (build tool 체인 전체 갱신) |
+| 위험도 | **MEDIUM** — 코드젠 문법 변경 시 regeneration 필요 |
+| 검증 소요 | `flutter pub run build_runner build` + 380건 테스트 |
+| 추천 | ✅ **권장** — Flutter 앱 품질 향상 + D-84 완전 해소 |
+
+#### D-102: BREAKING 5+2종 상세
+
+| 패키지 | 현재→최신 | 핵심 변경점 | 위험도 | 추천 |
+|--------|---------|-----------|--------|------|
+| **go_router** | 16.3→17.2.3 | `BuildContext` 일부 제거, ShellRoute 개선 | HIGH | ⏸️ 분석 후 결정 |
+| **fl_chart** | 0.69→1.2.0 | `tooltipBgColor→getTooltipColor`, `colors→color/gradient`, titles 구조 변경, touch callback 시그니처 변경 | **HIGH** | ⏸️ 회귀 위험 큼 (TrendChart/DemographicChart 영향) |
+| **flutter_secure_storage** | 9.2→10.2.0 | Android: Jetpack→Tink 마이그레이션, min SDK 19→23 | MEDIUM | ⏸️ Android 대상 앱 검증 필요 |
+| **google_sign_in** | 6.3→7.2.0 | platform interface 2.x→3.x, iOS SDK 7.0 | MEDIUM | ⏸️ 소셜 로그인 흐름 검증 필요 |
+| **sign_in_with_apple** | 6.1→**8.0.0** (**+2 major!**) | 7.x + 8.x 두 단계 BREAKING (예상보다 큰 변경) | **HIGH** | ⏸️ 8.x CHANGELOG 별도 확인 필요 |
+| **kakao_flutter_sdk_user** | 1.10→**2.0.0** (**신규 발견!**) | D-102 미포함 — 카카오 SDK 전면 개편 | **HIGH** | ⏸️ 카카오 로그인/사용자 API 재검토 필요 |
+
+### 신규 발견 결정 항목
+
+| 결정 ID | 내용 | 결정 | 비고 |
+|---------|------|------|------|
+| **D-119** | kakao_flutter_sdk_user 2.x 업그레이드 | ⏸️ 사용자 결정 대기 | D-102에 추가, HIGH 위험도 |
+| **D-120** | sign_in_with_apple 8.x (vs 7.x 예상) | ⏸️ 사용자 결정 대기 | CHANGELOG 8.x 별도 검토 필요 |
+
+### 결정 기록
+
+| 결정 ID | 내용 | 결정 | 근거 |
+|---------|------|------|------|
+| **D-84 재분류** | json_annotation/freezed/json_serializable 업그레이드 | D-101 의존으로 재분류 | analyzer <9.0.0 제약 (riverpod_generator 3.x) |
+| **Phase 22-C** | 트랜지티브 24개 업그레이드 | ✅ 즉시 적용 | pubspec.yaml 변경 불필요, 테스트 보존 |
+| **D-101** | riverpod 3.3 + generator 4.x | ⏸️ 사용자 결정 대기 | D-84 해소 효과 포함, 코드 변경 필요 |
+| **D-102** | BREAKING 5→7종 (kakao/apple 추가) | ⏸️ 사용자 결정 대기 | 각 패키지별 선별 적용 권장 |
+
+---
+
 ## Night-68 Phase 20+21 실행 (2026-05-16) — MCP 검증 + 인구통계 파이프라인 구축
 
 > **Sonnet 4.6 Sub-agent** 실행 | Phase 20(MCP 전수 실측) + Phase 21(인구통계 분석 파이프라인)
