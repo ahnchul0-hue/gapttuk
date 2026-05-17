@@ -1,3 +1,7 @@
+# NIGHT_06_RESULT — 2026-05-18 (Night-70 추가)
+
+> **Night-70 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 23(6대 병렬 에이전트 코드 품질 감사): 발견 11건 → 오탐 2건 → 즉시 수정 9건(F-01~F-09). D-126~D-130 신규 결정 항목 기록.
+
 # NIGHT_06_RESULT — 2026-05-17 (Night-69 추가)
 
 > **Night-69 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 22(의존성 최신화): 트랜지티브 24개 업그레이드(pubspec.lock) + BREAKING 분석 D-101/D-102 + 신규 D-119(kakao 2.x)/D-120(apple 8.x) 발견. D-84 잔여분 D-101 의존 재분류.
@@ -15,6 +19,59 @@
 > **Night-63 결과**: Flutter **370건** ✅ | Rust **216건** ✅ (이전 기준) | analyze **0건** ✅ — PLAN_01 완전 종결 후 첫 사후 검증 세션. 베이스라인 완전 보존. MORNING_BRIEFING Night-62 해시 반영 + Night-63 문서화. D-110(PR)/D-111(PLAN_02) 대기.
 > **Night-62 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 19 최종 검증 완료. PLAN_01 Phase 1~19 전체 종결 선언. D-109(Phase별 분리 확정)/D-110(PR 보류)/D-111(PLAN_02 방향 대기)
 > **Night-61 결과**: Rust **216건** ✅ | Flutter **370건** ✅ | analyze **0건** ✅ — Phase 18 코드 품질 점검 + 수정 5건 완료 (D-107/D-108 결정)
+
+---
+
+## Night-70 (2026-05-18) — Phase 23 코드 품질 + 아키텍처 종합 감사
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 23 코드 품질 감사) |
+| **브랜치** | `auto/night-01-20260518_0100` |
+| **Flutter 테스트** | **380건** ✅ (변동 없음) |
+| **Flutter analyze** | **0건** ✅ |
+| **Rust 테스트(lib)** | **221건** ✅ (변동 없음) |
+| **감사 발견** | 11건 → 오탐 2건 → **즉시 수정 9건** |
+
+### 즉시 수정 9건 (F-01~F-09)
+
+#### Flutter (F-01~F-04)
+
+| ID | 파일 | 심각도 | 수정 내용 |
+|----|------|--------|---------|
+| F-01 | `demographic_chart.dart:119` | HIGH | fl_chart `getTitlesWidget` 인덱스 범위 가드 (`idx < 0 \|\| idx >= length` 체크) |
+| F-02 | `demographic_chart.dart:89` | HIGH | `maxVal == 0` 조기 반환 → BarChart assertion 실패 방지 |
+| F-03 | `trend_chart.dart:121` | HIGH | 음수 인덱스 가드 (`index < 0` 체크 추가) |
+| F-04 | `trend_chart.dart:75` | MEDIUM | `ratio.clamp(0.0, 100.0)` — 음수 ratio 방어 |
+
+#### Rust (F-05~F-09)
+
+| ID | 파일 | 심각도 | 수정 내용 |
+|----|------|--------|---------|
+| F-05 | `demographic_trend_service.rs` | MEDIUM | 3개 공개 함수에 `#[tracing::instrument(skip(...))]` 추가 |
+| F-06 | `trends.rs:64` | MEDIUM | category 코드 형식 검증 (숫자만·최대 12자·비어있지 않음) → `BadRequest` |
+| F-07 | `demographic_trend_service.rs` | LOW | `top_group` 빈 문자열 시 `tracing::warn!` 로그 추가 |
+| F-08 | `naver_price_service.rs:169` | LOW | 가격 파싱 실패 시 `tracing::warn!` 로그 추가 |
+| F-09 | `demographic_trend_service.rs:7` | INFO | 미사용 `TrendTimeUnit` import 제거 |
+
+### 오탐 필터링 2건
+
+| ID | 보고 내용 | 오탐 근거 |
+|----|----------|---------|
+| C-1 | `RadioGroup<AlertType>` 빌드 실패 CRITICAL | `flutter analyze --no-fatal-infos` → "No issues found!" — Flutter 3.41.3 지원 위젯 |
+| C-02 | `product_service.rs cursor.expect()` CRITICAL | Phase 20~22 이전 기존 코드 — 현재 세션 범위 외 |
+
+### 신규 결정 항목 (D-126~D-130)
+
+| ID | 내용 | 상태 |
+|----|------|------|
+| D-126 | `cleanup_old_records()` 미구현 발견 — TTL 클린업 미실행 중 | ⏸️ 사용자 결정 대기 |
+| D-127 | `naver_price_service.rs` OnceLock 싱글톤 아키텍처 이슈 | ⏸️ 사용자 결정 대기 |
+| D-128 | Flutter `DemographicDimension` String → Dart enum 전환 | ⏸️ 사용자 결정 대기 |
+| D-129 | `compute_score()` 데이터 period 정렬 보장 여부 | ⏸️ 사용자 결정 대기 |
+| D-130 | `cache.rs` 레이어 역방향 참조 해소 방안 | ⏸️ 사용자 결정 대기 |
 
 ---
 

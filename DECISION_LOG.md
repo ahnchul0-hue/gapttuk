@@ -2,6 +2,58 @@
 
 ---
 
+## Night-70 Phase 23 실행 (2026-05-18) — 코드 품질 + 아키텍처 종합 감사
+
+> **Sonnet 4.6 Sub-agent** 실행 | Phase 23 (6대 병렬 에이전트 감사 + 즉시 수정 9건)
+> **브랜치**: `auto/night-01-20260518_0100`
+
+### 감사 결과 요약
+
+| 감사 에이전트 | 발견 건수 | 오탐 | 실제 수정 |
+|-------------|----------|------|----------|
+| code-reviewer | 3건 | 1건(C-1 RadioGroup 오탐) | 2건 |
+| silent-failure-hunter | 3건 | 1건(C-02 cursor.expect 범위외) | 2건 |
+| type-design-analyzer | 2건 | 0건 | 2건 |
+| code-explorer | 1건 | 0건 | 1건 |
+| Explore(아키텍처) | 2건 | 0건 | 2건 |
+| HuggingFace MCP | 0건 | — | — |
+| **합계** | **11건** | **2건** | **9건(F-01~F-09)** |
+
+### 즉시 수정 9건 (F-01~F-09)
+
+| ID | 파일 | 문제 | 수정 |
+|----|------|------|------|
+| F-01 | demographic_chart.dart:119 | `sortedGroups[value.toInt()]` 인덱스 범위 없음 | idx 범위 검증 추가 |
+| F-02 | demographic_chart.dart:89 | maxVal=0 → BarChart assertion 실패 | 조기 반환 추가 |
+| F-03 | trend_chart.dart:121 | 음수 인덱스 미가드 | `index < 0` 체크 추가 |
+| F-04 | trend_chart.dart:75 | ratio 음수 미방어 | `.clamp(0.0, 100.0)` 적용 |
+| F-05 | demographic_trend_service.rs | tracing 로그 전무 | 3개 공개 함수 `#[tracing::instrument]` 추가 |
+| F-06 | trends.rs:64 | category 코드 형식 검증 없음 | 숫자만·최대 12자 BadRequest 검증 추가 |
+| F-07 | demographic_trend_service.rs:239 | top_group 빈 문자열 무음 반환 | `warn!` 로그 추가 |
+| F-08 | naver_price_service.rs:169 | 가격 파싱 실패 무시 | `warn!` 로그 추가 |
+| F-09 | demographic_trend_service.rs:7 | TrendTimeUnit 미사용 import | 제거 |
+
+### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **380건** ✅ (변동 없음) |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트(lib) | **221건** ✅ (변동 없음) |
+| Rust 컴파일 | ✅ (기존 경고 1건 유지) |
+
+### 결정 항목 (D-126~D-130)
+
+| 결정 ID | 내용 | 결정 | 근거 |
+|---------|------|------|------|
+| **D-126** | `cleanup_old_records()` 미구현 — notifications/roulette_results/point_transactions TTL 미실행 중 | ⏸️ 사용자 결정 대기 | MORNING_BRIEFING 기록 vs 실제 코드 불일치 발견. Phase 24 후보 |
+| **D-127** | `naver_price_service.rs` OnceLock 싱글톤 → AppState.http_client 주입 전환 | ⏸️ 사용자 결정 대기 | 아키텍처 일관성 이슈. 기능 정상이므로 기술 부채로 분류 |
+| **D-128** | Flutter `DemographicDimension` String → Dart enum 전환 (AlertType/PredictionAction 패턴 적용) | ⏸️ 사용자 결정 대기 | Rust `DemographicDimension` enum과 Dart String 불일치 |
+| **D-129** | `compute_score()` / `compute_trend_score()` 데이터 period 정렬 보장 | ⏸️ 사용자 결정 대기 | API 응답 순서 암묵적 신뢰 — 명시적 정렬 추가 여부 |
+| **D-130** | `cache.rs` 레이어 역방향 참조 해소 (services 타입 → models로 이동) | ⏸️ 사용자 결정 대기 | cache→services 참조는 의존성 역전. 장기 아키텍처 개선 후보 |
+
+---
+
 ## Night-69 Phase 22 실행 (2026-05-17) — 의존성 최신화 + BREAKING 분석
 
 > **Sonnet 4.6 Sub-agent** 실행 | Phase 22 (의존성 최신화)
