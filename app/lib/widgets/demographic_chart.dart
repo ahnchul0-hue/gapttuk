@@ -87,6 +87,7 @@ class _AgeChart extends StatelessWidget {
     if (sortedGroups.isEmpty) return const SizedBox.shrink();
 
     final maxVal = avgs.values.fold(0.0, (m, v) => v > m ? v : m);
+    if (maxVal == 0) return const SizedBox.shrink();
 
     return SizedBox(
       height: 160,
@@ -116,7 +117,11 @@ class _AgeChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, _) {
-                  final group = sortedGroups[value.toInt()];
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= sortedGroups.length) {
+                    return const SizedBox.shrink();
+                  }
+                  final group = sortedGroups[idx];
                   return Text(
                     _ageLabels[group] ?? group,
                     style: const TextStyle(fontSize: 10),

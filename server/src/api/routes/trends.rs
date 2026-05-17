@@ -63,6 +63,12 @@ async fn get_demographic_trends(
     State(state): State<AppState>,
     Path(category): Path<String>,
 ) -> Result<ApiResponse<Vec<DemographicTrendScore>>, AppError> {
+    if !category.chars().all(|c| c.is_ascii_digit()) || category.len() > 12 || category.is_empty()
+    {
+        return Err(AppError::BadRequest(
+            "올바르지 않은 카테고리 코드 형식 (숫자만, 최대 12자)".into(),
+        ));
+    }
     let client_id = state
         .config
         .naver_client_id

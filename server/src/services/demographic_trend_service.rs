@@ -4,7 +4,6 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::error::AppError;
-use crate::services::trend_data_service::TrendTimeUnit;
 
 // ── Naver Datalab 인구통계 API 응답 구조 ─────────────────────
 
@@ -68,6 +67,7 @@ pub struct DemographicTrendScore {
 // ── 공개 API ─────────────────────────────────────────────────
 
 /// 연령별 트렌드 — 10~60대 전 연령대 한 번에 조회.
+#[tracing::instrument(skip(client, naver_client_id, naver_client_secret))]
 pub async fn get_age_trends(
     client: &reqwest::Client,
     naver_client_id: &str,
@@ -94,6 +94,7 @@ pub async fn get_age_trends(
 }
 
 /// 성별 트렌드 — 남/여 2회 호출 후 병합.
+#[tracing::instrument(skip(client, naver_client_id, naver_client_secret))]
 pub async fn get_gender_trends(
     client: &reqwest::Client,
     naver_client_id: &str,
@@ -129,6 +130,7 @@ pub async fn get_gender_trends(
 }
 
 /// 기기별 트렌드 — 모바일/PC 2회 호출 후 병합.
+#[tracing::instrument(skip(client, naver_client_id, naver_client_secret))]
 pub async fn get_device_trends(
     client: &reqwest::Client,
     naver_client_id: &str,
@@ -236,7 +238,10 @@ fn compute_score(
         .iter()
         .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
         .map(|(k, _)| k.clone())
-        .unwrap_or_default();
+        .unwrap_or_else(|| {
+            tracing::warn!(category_code, "인구통계 데이터 없음 — top_group 빈 문자열 반환");
+            String::new()
+        });
 
     DemographicTrendScore {
         category_code: category_code.to_owned(),

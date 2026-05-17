@@ -166,7 +166,9 @@ fn parse_price_str(s: &str) -> Option<i32> {
     if trimmed.is_empty() {
         return None;
     }
-    trimmed.parse::<i32>().ok()
+    trimmed.parse::<i32>().map_err(|_| {
+        tracing::warn!(value = trimmed, "가격 문자열 파싱 실패");
+    }).ok()
 }
 
 /// HTML 태그 제거 (<b>검색어</b> → 검색어).

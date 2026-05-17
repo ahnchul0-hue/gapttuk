@@ -72,7 +72,7 @@ class TrendChartWidget extends StatelessWidget {
       final color = _lineColors[index % _lineColors.length];
 
       final spots = trend.periods.asMap().entries.map((e) {
-        return FlSpot(e.key.toDouble(), e.value.ratio);
+        return FlSpot(e.key.toDouble(), e.value.ratio.clamp(0.0, 100.0));
       }).toList();
 
       return LineChartBarData(
@@ -119,7 +119,7 @@ class TrendChartWidget extends StatelessWidget {
           reservedSize: 20,
           getTitlesWidget: (value, meta) {
             final index = value.toInt();
-            if (index >= trends.first.periods.length) {
+            if (index < 0 || index >= trends.first.periods.length) {
               return const SizedBox.shrink();
             }
             final period = trends.first.periods[index].period;
