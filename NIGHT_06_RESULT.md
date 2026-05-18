@@ -1,6 +1,82 @@
+# NIGHT_06_RESULT — 2026-05-19 (Night-71 추가)
+
+> **Night-71 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 24(UX+디자인 강화): D-95/D-128/D-129 해소 + D-96 검증. Phase 25(최종 검증): 3중 검증 통과. 수정 4건(D-95/D-128/D-129 코드 + D-96 문서화).
+
 # NIGHT_06_RESULT — 2026-05-18 (Night-70 추가)
 
 > **Night-70 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 23(6대 병렬 에이전트 코드 품질 감사): 발견 11건 → 오탐 2건 → 즉시 수정 9건(F-01~F-09). D-126~D-130 신규 결정 항목 기록.
+
+---
+
+## Night-71 (2026-05-19) — Phase 24 UX + 디자인 시스템 강화 + Phase 25 최종 검증
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (Phase 24+25 실행) |
+| **브랜치** | `auto/night-01-20260519_0100` |
+| **Flutter 테스트** | **380건** ✅ (베이스라인 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **Rust 테스트(lib)** | **221건** ✅ (베이스라인 보존) |
+| **수정 항목** | 4건 (D-95/D-96/D-128/D-129) |
+
+### Phase 24 수정 4건
+
+#### D-95: AppTheme.priceUp 하드코딩 → appColors.error (다크모드 지원)
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `app/lib/screens/product/product_detail_screen.dart` | `AppTheme.priceUp` → `appColors.error` 3곳 (최고가 색상, _TrendChip, _TimingBadge, _PredictionCard) |
+| `app/lib/widgets/product_card.dart` | `AppTheme.priceUp` → `appColors.error` 1곳 (rising 트렌드 아이콘) |
+
+**근거**: `AppColors.light.error = #D63031`, `AppColors.dark.error = #FF7675` — 라이트/다크 모드 자동 전환. `AppTheme.priceUp`은 정적 상수라 다크모드 대응 불가.
+
+#### D-96: SearchScreen 필터/정렬 완전 연결 검증
+
+**결과**: ✅ 이미 완료 — `_filter`/`_sortBy` → `service.search(filter:, sort:)` 완전 연결. 4 FilterChip + 4 DropdownButton 정상 작동. 코드 변경 불필요.
+
+#### D-128: DemographicDimension String → Dart enum 전환
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `app/lib/models/demographic_trend.dart` | `DemographicDimension` enum 추가 (`@JsonValue`) + `DemographicDimensionX` extension + `dimension: String` → `dimension: DemographicDimension` |
+| `app/lib/models/demographic_trend.g.dart` | `$enumDecode` + `_$DemographicDimensionEnumMap` 추가 |
+| `app/lib/models/demographic_trend.freezed.dart` | `String dimension` → `DemographicDimension dimension` 전체 교체 |
+| `app/lib/widgets/demographic_chart.dart` | String switch → enum exhaustive switch (default 제거) |
+| `app/test/widgets/demographic_chart_test.dart` | `dimension: 'age'`→`DemographicDimension.age` + `'unknown'` 테스트 → `.value` 테스트로 교체 |
+
+**근거**: Rust `DemographicDimension { Age, Gender, Device }` (serde rename_all="snake_case") ↔ Dart 1:1 대응. AlertType/PredictionAction 패턴 적용.
+
+#### D-129: trend 서비스 period 정렬 보장
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `server/src/services/demographic_trend_service.rs` | `compute_score()`: `data.sort_by(period→group)` 명시적 정렬 추가 |
+| `server/src/services/trend_data_service.rs` | `compute_trend_score()`: `result.data.sort_by(period)` 추가 |
+
+**근거**: `compute_group_recent_avgs`는 "마지막 3개 = 최근 3개" 가정. API 응답 순서 암묵적 신뢰 제거.
+
+### Phase 25 최종 검증
+
+| 항목 | 결과 | 기준 |
+|------|------|------|
+| Flutter 테스트 | **380건** ✅ | ≥380건 |
+| Flutter analyze | **0건** ✅ | 0건 |
+| Rust 테스트 | **221건** ✅ | ≥221건 |
+
+### 잔여 미결 결정 항목 (사용자 결정 대기)
+
+| 결정 ID | 내용 | 상태 |
+|---------|------|------|
+| D-126 | `cleanup_old_records()` 구현 확인 필요 | ⏸️ |
+| D-127 | OnceLock 싱글톤 → AppState 주입 | ⏸️ |
+| D-130 | `cache.rs` 레이어 역방향 참조 해소 | ⏸️ |
+| D-101 | flutter_riverpod 3.0→3.3 (riverpod_generator BREAKING 동반) | ⏸️ |
+| D-102 | BREAKING 5종 go_router/fl_chart/etc | ⏸️ |
+| D-110 | main 머지 PR 생성 | ⏸️ |
+
+---
 
 # NIGHT_06_RESULT — 2026-05-17 (Night-69 추가)
 

@@ -1,11 +1,11 @@
-# MORNING BRIEFING — 2026-05-18 (Night-13 ~ Night-70 결합 분석 + Phase 23+ 전략)
+# MORNING BRIEFING — 2026-05-19 (Night-13 ~ Night-71 결합 분석 + Phase 25 완결)
 
-> **분석 대상**: Night-13 ~ Night-70 (2026-03-12 ~ 2026-05-18)
-> **현재 브랜치**: `auto/night-01-20260518_0100`
+> **분석 대상**: Night-13 ~ Night-71 (2026-03-12 ~ 2026-05-19)
+> **현재 브랜치**: `auto/night-01-20260519_0100`
 > **생성**: Opus 4.6 결합 분석 + Sonnet 4.6 Sub-agent 실행
-> **최종 업데이트**: 2026-05-18 (Night-70 — **Phase 23(코드 품질 감사): 6대 병렬 에이전트 → 11건 발견 → 오탐 2건 → 즉시 수정 9건(F-01~F-09). D-126~D-130 신규 결정. 베이스라인 380/221/0 완전 보존**)
-> **검증**: Flutter **380건** ✅ / Rust **221건** ✅ / analyze **0건** ✅ / 경고 **0건** ✅ (2026-05-18 Night-70 실측)
-> **PLAN_01**: Phase 1~23 **완료** (Phase 24-25 대기)
+> **최종 업데이트**: 2026-05-19 (Night-71 — **Phase 24(UX+디자인 강화): D-95/D-96/D-128/D-129 해소. Phase 25(최종 검증): 3중 검증 통과. 베이스라인 380/221/0 완전 보존. PLAN_01 Phase 1~25 전체 완료**)
+> **검증**: Flutter **380건** ✅ / Rust **221건** ✅ / analyze **0건** ✅ / 경고 **0건** ✅ (2026-05-19 Night-71 실측)
+> **PLAN_01**: Phase 1~25 **전체 완료** ✅
 > **Night-37 커밋**: `044da3f` (Phase 7 간소화) + `a971acc` (문서) + `9b530f5` (NIGHT_06_RESULT)
 > **Night-38 커밋**: `2dd797f` (MORNING_BRIEFING 종합) + `22a115e` (NIGHT_06_RESULT Night-38)
 > **Night-39 커밋**: `aebf3d5` (MORNING_BRIEFING Night-38) + `8811c00` (D-63 해소 + NIGHT_06_RESULT Night-39)
@@ -39,7 +39,8 @@
 > **Night-67 커밋**: `f55d0ed` (D-87 I-06/I-07 수정 2건 — 베이스라인 보존) + `9e8adee` (문서) + `2e94665` (해시 갱신)
 > **Night-68 커밋**: `1fcfdff` (Phase 20+21 — MCP 실측 검증 + 인구통계 파이프라인 구축) + `351ca80` (문서 갱신)
 > **Night-69 커밋**: `494d59c` (Phase 22 의존성 최신화 — 트랜지티브 24개 업그레이드 + BREAKING 분석 D-119/D-120 신규 발견)
-> **Night-70 커밋**: TBD (Phase 23 코드 품질 감사 — 즉시 수정 9건(F-01~F-09) + D-126~D-130 신규 결정)
+> **Night-70 커밋**: `51fa55e` (Phase 23 코드 품질 감사 — 즉시 수정 9건 F-01~F-09) + `494b7aa` (문서: MORNING_BRIEFING/NIGHT_06_RESULT/DECISION_LOG/PLAN_01 갱신)
+> **Night-71 커밋**: TBD (Phase 24+25 — D-95/D-128/D-129 해소 + 최종 검증 3중 통과)
 
 ---
 
@@ -106,6 +107,7 @@
 | **67** | **05-15** | **D-87 I-06/I-07 수정 2건 — 베이스라인 보존** | **코드 변경 2건 — I-06(product_service Sentry 스택트레이스 보존: tracing::error! 추가) + I-07(price_chart dayOfWeek x좌표 정확도: 배열 인덱스→실제 요일값). 베이스라인 보존(370/216/0). D-110/D-111 17세션째 대기** | **`f55d0ed`** |
 | **68** | **05-16** | **Phase 20(MCP 전수 실측) + Phase 21(인구통계 파이프라인 구축)** | **Phase 20: NaverShopItem 14필드/TrendResult/카테고리 코드 0불일치 ✅. Phase 21: demographic_trend_service.rs(tokio::try_join! 5회 병렬)+GET /trends/demographic/{category}+moka 1h+Flutter DemographicChartWidget+테스트 15건 신규. Flutter 380건(+10)/Rust 221건(+5). D-112~D-117 결정. 16파일 +2108줄** | **`1fcfdff`** |
 | **69** | **05-17** | **Phase 22: 의존성 최신화 — 트랜지티브 24개 업그레이드 + BREAKING 분석** | **Sonatype 인증 실패→pub.dev/crates.io 직접 조회 대체. D-84(non-BREAKING): dio/axum/sqlx/moka. pubspec.lock 24개 트랜지티브 업그레이드. BREAKING 4계층 분류(D-84/D-101/D-102/D-82). D-119(kakao 2.x)/D-120(apple 8.x) 신규 발견. 베이스라인 380/221/0 완전 보존** | **`494d59c`** |
+| **70** | **05-18** | **Phase 23: 코드 품질 + 아키텍처 종합 감사 — 6대 병렬 에이전트 → 9건 즉시 수정** | **code-reviewer/silent-failure-hunter/type-design-analyzer/code-explorer/Explore(아키텍처)/HuggingFace 6대 병렬 → 11건 발견, 오탐 2건 제외 → F-01~F-09 즉시 수정. fl_chart 인덱스 가드(F-01/F-03), ratio clamp(F-04), tracing::instrument 3개(F-05), category BadRequest(F-06), warn 로그 2건(F-07/F-08), 미사용 import(F-09). D-126~D-130 신규 결정 5건. 베이스라인 380/221/0 완전 보존** | **`51fa55e`** |
 
 ### 1.2 전략적 성숙도 곡선
 
@@ -171,9 +173,146 @@ Night 66:    ★★★★★★★★★★★★★★★★★★★★★★�
 Night 67:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 이연 소화 지속 ── D-87 I-06(Sentry 스택트레이스)+I-07(차트 x좌표 정확도) 2건. 베이스라인 보존(370/216/0). 5세대 브랜치(20260515) 첫 세션. D-110/D-111 17세션째 대기.
 Night 68:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ★★ 기능 폭발 ── Phase 20(MCP 전수 실측 0불일치) + Phase 21(인구통계 파이프라인 8파일 신규). Flutter 380건(+10)/Rust 221건(+5). NaverSearch by_age/gender/device 실 호출 기반 코드 생성. 16파일 +2108줄 — 단일 세션 최대 코드 생성량.
 Night 69:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 22 의존성 ── 트랜지티브 24개 업그레이드(pubspec.lock) + BREAKING 4계층 분류(D-84/D-101/D-102/D-82). Sonatype 인증 실패→pub.dev 대체. D-119(kakao 2.x)/D-120(apple 8.x) 신규. 380/221/0 보존. 사용자 결정 5건 요청.
+Night 70:    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Phase 23 종합 감사 ── 6대 병렬 에이전트(code-reviewer/silent-failure-hunter/type-design-analyzer/code-explorer/Explore/HuggingFace) → 11건 발견 → 오탐 2건 → 즉시 수정 9건(F-01~F-09). fl_chart 방어 코드 4건 + tracing 3개 + category 검증 + warn 로그 2건. D-126~D-130 신규 5건. 380/221/0 보존.
 ```
 
-### 1.3 Night-56~69 종합 전략 분석: Phase 15 완결 ~ Phase 22 의존성 최신화 + 사후 검증 4세션 + 고아 수정 2세션 + MCP 기능 확장 2세션
+### 1.3 Night-56~70 종합 전략 분석: Phase 15 완결 ~ Phase 23 종합 감사 + 사후 검증 4세션 + 고아 수정 2세션 + MCP 기능 확장 2세션 + 의존성 1세션 + 감사 1세션
+
+#### Night-70 결합 분석 (2026-05-18) — Opus 4.6 전략 / Sonnet 4.6 기술 실행 / MCP 활용 / 코드 성과
+
+> **분석 범위**: Night-13~70 전체 (58세션, 2026-03-12 ~ 2026-05-18)
+> **분석 실행자**: Opus 4.6 (Night-70 결합 분석, 2026-05-18)
+> **브랜치**: `auto/night-01-20260518_0100` — main 대비 **116 커밋** 앞
+
+##### Opus 4.6 전략 종합 (Night-70)
+
+**전략 진화 8단계:**
+
+| 단계 | 기간 | Night 수 | 핵심 전략 | 코드 변경 밀도 |
+|------|------|---------|----------|--------------|
+| **1단계: 기반 정비** | Night-13~22 | 10 | 보안/성능/구조/API계약/serde자동화 | ★★★★ 높음 |
+| **2단계: 테스트 포화** | Night-23~34 | 12 | FakeService→위젯→화면 테스트 포화, 216→344건 | ★★★★★ 최고 |
+| **3단계: PLAN_01 체계** | Night-30~62 | 32 | 8→14→19 Phase 체계적 실행 | ★★★ 중간 |
+| **4단계: 전환기** | Night-62~65 | 4 | 종결 선언→사후 검증→방향 대기 | ★ 검증/문서 |
+| **5단계: 이연 소화** | Night-66~67 | 2 | "고아 수정" — 방향 무관 안전 수정 선별 실행 | ★★ 선별 |
+| **6단계: MCP 기능 확장** | Night-68 | 1 | 실측 우선 검증 → 인구통계 파이프라인 구축 | ★★★★★ 최고 |
+| **7단계: 의존성 최신화** | Night-69 | 1 | 트랜지티브 안전 업그레이드 + BREAKING 계층 분류 | ★★★ 중간 |
+| **8단계: 종합 품질 감사** | Night-70 | 1 | 6대 병렬 에이전트 → 정밀 방어 코드 + 관측성 보강 | ★★★ 중간 |
+
+**Night-70 전략적 판단:**
+
+1. **"다안목(Multi-Eye) 감사" 전략**: 6종 감사 에이전트(code-reviewer/silent-failure-hunter/type-design-analyzer/code-explorer/Explore/HuggingFace)를 병렬 투입 — 단일 리뷰어가 놓칠 수 있는 교차 영역 결함을 다각도에서 포착
+2. **"오탐 필터링(False Positive Filtering)" 규율**: 11건 발견 중 2건(C-1 RadioGroup 오탐, C-02 cursor.expect 범위외) 즉시 제외 — Night-35(Phase 4) 패턴의 3회차 적용으로 감사 품질 일관성 확보
+3. **입력 경계 방어 우선화**: F-06(category 코드 형식 검증)은 캐시 오염과 외부 API 남용을 동시에 차단하는 입구 방어 — `/trends/demographic/{category}` 핸들러의 경로 매개변수를 `숫자만·최대 12자`로 제한
+4. **라이브러리 계약 명시적 보호**: F-01/F-03(fl_chart 인덱스 범위 가드)과 F-04(ratio clamp)는 fl_chart의 내부 동작 특성(애니메이션 중 범위 외 값 콜백)을 알아야 작성할 수 있는 방어 코드 — 외부 라이브러리의 암묵적 계약을 명시적 가드로 변환
+5. **관측성 체계 완결**: F-05(tracing::instrument 3개) + F-07/F-08(warn 로그 2건)으로 demographic_trend_service와 naver_price_service의 관측 공백 해소 — Night-68에서 구축한 인구통계 파이프라인의 운영 준비도 향상
+
+**Phase 22→23 실행 방식의 전략적 의미:**
+- Night-69의 "인프라 정비"(의존성 업그레이드) 이후 Night-70의 "품질 감사"(코드 방어력 강화) — **안정화→검증의 자연스러운 순서**
+- Night-35(Phase 4) 37건→5건 / Night-70(Phase 23) 11건→9건 — **감사 대비 수정률 향상**(13.5%→81.8%): 코드베이스 성숙으로 오탐 감소, 실제 개선 가능 건의 비율 증가
+- 6대 에이전트 중 HuggingFace MCP는 0건 발견 — ML 플랫폼 특성상 Axum/Flutter 코드 감사에 비적합. 향후 감사에서 제외 고려
+
+##### Sonnet 4.6 기술 실행 (Night-70)
+
+**Phase 23 6대 병렬 에이전트 감사 결과:**
+
+| 감사 에이전트 | 역할 | 발견 | 오탐 | 수정 | MCP 활용 |
+|-------------|------|------|------|------|----------|
+| code-reviewer | 코드 품질 리뷰 | 3건 | 1건(C-1 RadioGroup 오탐) | 2건 | — |
+| silent-failure-hunter | 무음 실패 탐지 | 3건 | 1건(C-02 범위외) | 2건 | — |
+| type-design-analyzer | 타입 설계 분석 | 2건 | 0건 | 2건 | — |
+| code-explorer | 의존성 맵/구조 분석 | 1건 | 0건 | 1건 | — |
+| Explore(아키텍처) | 아키텍처 GAP | 2건 | 0건 | 2건 | — |
+| HuggingFace MCP | AI/ML 문서 조회 | 0건 | — | — | hub_repo_search 등 — ML 플랫폼 비적합 |
+| **합계** | | **11건** | **2건** | **9건** | |
+
+**즉시 수정 9건(F-01~F-09) 기술 상세:**
+
+| ID | 파일 | 문제 | 수정 | 유형 |
+|----|------|------|------|------|
+| F-01 | `demographic_chart.dart:119` | `sortedGroups[value.toInt()]` 인덱스 범위 미검증 | `idx >= sortedGroups.length` 가드 추가 | Flutter 방어 |
+| F-02 | `demographic_chart.dart:89` | maxVal=0 시 BarChart assertion 실패 | 조기 반환 추가 | Flutter 방어 |
+| F-03 | `trend_chart.dart:121` | 음수 인덱스 미가드 | `index < 0` 체크 추가 | Flutter 방어 |
+| F-04 | `trend_chart.dart:75` | ratio 음수/100초과 미방어 | `.clamp(0.0, 100.0)` 적용 | Flutter 방어 |
+| F-05 | `demographic_trend_service.rs` | 3개 공개 함수 tracing 로그 전무 | `#[tracing::instrument]` 추가 | Rust 관측성 |
+| F-06 | `trends.rs:64` | category 코드 형식 검증 없음 (경로 순회 위험) | 숫자만·최대 12자 BadRequest 검증 | Rust 보안 |
+| F-07 | `demographic_trend_service.rs:239` | top_group 빈 문자열 무음 반환 | `warn!` 로그 추가 | Rust 관측성 |
+| F-08 | `naver_price_service.rs:169` | 가격 파싱 실패 무시 | `warn!` 로그 추가 | Rust 관측성 |
+| F-09 | `demographic_trend_service.rs:7` | TrendTimeUnit 미사용 import | 제거 | Rust 위생 |
+
+**MCP/에이전트 사용**: HuggingFace MCP 1+ 호출(비적합 확인). NaverSearch/CoinInfo 등 미사용 (감사 세션 특성). 코드 감사 에이전트 5종 병렬 투입.
+
+##### 생성 코드 결과 (Night-70)
+
+| 파일 | 변경 | 줄 수 | 효과 |
+|------|------|-------|------|
+| `app/lib/widgets/demographic_chart.dart` | MOD | +7/-1 | fl_chart 인덱스 범위 가드 + maxVal=0 조기 반환 |
+| `app/lib/widgets/trend_chart.dart` | MOD | +4/-2 | 음수 인덱스 가드 + ratio clamp |
+| `server/src/api/routes/trends.rs` | MOD | +6 | category 코드 형식 검증(BadRequest) |
+| `server/src/services/demographic_trend_service.rs` | MOD | +9/-2 | tracing::instrument 3개 + warn 로그 + import 정리 |
+| `server/src/services/naver_price_service.rs` | MOD | +4/-1 | 가격 파싱 실패 warn 로그 |
+| **합계** | **5파일** | **+30/-6 = 24줄 순증** | **방어 코드 + 관측성** |
+
+##### 결정 기록 (Night-70)
+
+| ID | 내용 | 상태 | Opus 권고 |
+|----|------|------|-----------|
+| **D-126** | `cleanup_old_records()` 미구현 — TTL 클린업 코드 미실행 | ⏳ 사용자 결정 대기 | 구현 권장 — 데이터 비대화 방지 |
+| **D-127** | `naver_price_service.rs` OnceLock → AppState.http_client 주입 전환 | ⏳ 사용자 결정 대기 | 아키텍처 일관성 — 기능 정상이므로 기술 부채 분류 |
+| **D-128** | Flutter `DemographicDimension` String → Dart enum 전환 | ⏳ 사용자 결정 대기 | AlertType/PredictionAction 패턴 적용 |
+| **D-129** | `compute_score()`/`compute_trend_score()` 데이터 정렬 보장 | ⏳ 사용자 결정 대기 | API 응답 순서 신뢰 vs 명시적 정렬 |
+| **D-130** | `cache.rs` services 타입 참조 → models 이동으로 의존성 역전 해소 | ⏳ 사용자 결정 대기 | 장기 아키텍처 개선 |
+
+##### ⚠️ 사용자 확인 필요 항목 (Night-70 종합 — 20세션째 대기)
+
+| # | 항목 | 긴급도 | 대기 세션 | Opus 권장 | 비고 |
+|---|------|--------|----------|-----------|------|
+| 1 | **D-110: main 머지 PR** | ★★★★★ **CRITICAL** | **20세션** | 즉시 PR 생성 | 116커밋 → main. 모든 후속 작업의 물리적 전제 |
+| 2 | **D-101: Riverpod 세트** | ★★★★ HIGH | 3세션 | A) 세트 전체 | riverpod 3.3 + generator 4.0 + D-84 연쇄 해소 |
+| 3 | **D-102: Dart BREAKING 7종** | ★★★ HIGH | 3세션 | D) 보류 | go_router/fl_chart/kakao/apple/google_sign_in/secure_storage |
+| 4 | **D-111: Phase 24+ 방향** | ★★★ HIGH | **20세션** | Phase 24(UX)+25(검증) | Phase 23 완료로 24 진입 가능 |
+| 5 | **D-126: cleanup_old_records()** | ★★★ HIGH | 신규 | 구현 권장 | 감사에서 발견 — TTL 코드 미실행 |
+| 6 | **D-118: Regression 대응** | ★★ MEDIUM | 2세션 | B) 1h 수정→롤백 | 업그레이드 안전망 전략 |
+| 7 | **D-127~D-130: 아키텍처 개선 4건** | ★★ MEDIUM | 신규 | Phase 24에서 선별 | OnceLock/enum/정렬/의존성역전 |
+| 8 | **D-87 PD-65** | ★★ MEDIUM | — | API 파단 협의 | CheckinResult.reward_amount → bool rewarded |
+| 9 | **D-87 PD-66** | ★★ MEDIUM | — | 타입 아키텍처 | PointsInfo pub→private 불변식 |
+| 10 | **D-81: SessionEnd hook** | ★ LOW | — | Vercel 비활성화 | node 미설치 → 비차단 에러 |
+
+**Night-70 해소 완료:**
+- Phase 23 코드 품질 + 아키텍처 종합 감사 ✅ (6대 에이전트 → 9건 수정)
+- fl_chart 방어 코드 4건 ✅ (인덱스 범위/ratio clamp/maxVal 가드)
+- demographic_trend_service 관측성 완결 ✅ (tracing::instrument 3개 + warn 2건)
+- category 입력 경계 검증 ✅ (경로 순회 방지)
+
+**Night-69→70 진행 요약:**
+- Phase 22(의존성 최신화) → Phase 23(품질 감사) — **인프라→검증** 자연 순서 완료
+- 감사 수정률 81.8%(11건 중 9건) — Night-35(Phase 4)의 13.5%에서 대폭 향상. 코드베이스 성숙도 반영
+- D-126~D-130 신규 결정 5건은 **기능 방해 없는 아키텍처 부채** — Phase 24에서 선별 적용 권장
+
+**Opus 4.6 최종 추천 (Night-70 결합 분석):**
+1. **★★★★★ D-110 최우선**: 116커밋 → main PR 생성 — **20세션 대기. 프로젝트 최대 병목 지속**
+2. **★★★★ D-126 즉시 구현 권장**: `cleanup_old_records()` 미구현은 운영 환경에서 데이터 비대화 직결 — 감사에서 발견된 실질적 운영 리스크
+3. **★★★ Phase 24 진입 가능**: Phase 23 완료로 프론트엔드 UX + 디자인 시스템 강화(D-95/D-96 해소) 차수 진입 조건 충족
+4. **D-127~D-130 선별 권장**: 아키텍처 부채이지만 기능 정상 — Phase 24에서 UX 작업과 병행 가능한 항목만 선별
+5. **HuggingFace MCP 감사 제외 확정**: 2회 투입(Night-59/Night-70) 모두 0건 — ML 플랫폼은 웹 프레임워크 코드 감사에 비적합
+
+##### 활용 가능 도구 매트릭스 (Night-70 실측)
+
+| 도구 | 상태 | 값뚝 관련성 | Night-70 활용 | Phase 24+ 예상 |
+|------|------|------------|--------------|---------------|
+| **NaverSearch** (PlayMCP) | **연결됨** (20+ 도구) | **핵심** | 미사용 (감사 세션) | Phase 24 UX + datalab_search |
+| **CoinInfo** (PlayMCP) | **연결됨** (7 도구) | 낮음 | 미사용 | 미사용 |
+| **UsStockInfo** (PlayMCP) | **연결됨** (10 도구) | 낮음 | 미사용 | 미사용 |
+| **opendart** (PlayMCP) | **연결됨** (13 도구) | 낮음 | 미사용 | 미사용 |
+| **KakaoMap** (PlayMCP) | **연결됨** (4 도구) | 중간 | 미사용 | Phase 24 매장 가격 비교 |
+| **KakaotalkChat** (PlayMCP) | **연결됨** (1 도구) | 중간 | 미사용 | Phase 25 알림 테스트 |
+| **HuggingFace** | **연결됨** (9 도구) | ~~중간~~ → **낮음** | 0건 발견 (2회째 비적합) | **감사 제외** — AI 예측 개선에만 활용 |
+| **Sonatype** | **인증 필요** ❌ | 중간 | 미사용 | WebSearch 대체 확정 |
+| **superpowers** | **활성** | 핵심 | 브레인스토밍/계획 | Phase 24-25 전체 |
+| **feature-dev** | **활성** | 핵심 | code-explorer 감사 투입 | Phase 24 UX 설계 |
+| **pr-review-toolkit** | **활성** | 핵심 | code-reviewer/silent-failure-hunter/type-design-analyzer 3종 투입 | Phase 24 감사 |
+
+---
 
 #### Night-69 결합 분석 (2026-05-17) — Opus 4.6 전략 / Sonnet 4.6 기술 실행 / MCP 활용 / 코드 성과
 

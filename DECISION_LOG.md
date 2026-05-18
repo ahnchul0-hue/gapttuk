@@ -2,6 +2,41 @@
 
 ---
 
+## Night-71 Phase 24+25 실행 (2026-05-19) — UX+디자인 강화 + 최종 검증
+
+> **Sonnet 4.6 Sub-agent** 실행 | Phase 24 (UX+디자인 시스템 강화) + Phase 25 (최종 검증)
+> **브랜치**: `auto/night-01-20260519_0100`
+
+### 결정 항목 해소
+
+| 결정 ID | 내용 | 결정 | 근거 |
+|---------|------|------|------|
+| **D-95** | discountRate 다크모드 대응 | ✅ **해소** — `AppTheme.priceUp` → `appColors.error` 전환 (5개 파일) | `AppColors.error`가 라이트(#D63031)/다크(#FF7675) 자동 전환. 별도 `discountRate` 색상 불필요 |
+| **D-96** | SearchScreen 필터 재연결 검증 | ✅ **검증 완료 — 이미 구현됨** | 4 FilterChip + 4 DropdownButton + `service.search(filter:, sort:)` 완전 연결 확인 |
+| **D-128** | `DemographicDimension` String → Dart enum | ✅ **해소** — AlertType 패턴 적용. `@JsonValue` + exhaustive switch | Rust enum과 1:1 대응. 컴파일 타임 안전성 보장 |
+| **D-129** | trend 서비스 period 정렬 보장 | ✅ **해소** — 명시적 `.sort_by(period)` 추가 | `compute_group_recent_avgs`의 "마지막 3개 = 최근" 가정을 명시적으로 보장 |
+
+### 잔여 결정 (사용자 결정 대기)
+
+| 결정 ID | 내용 |
+|---------|------|
+| **D-126** | `cleanup_old_records()` 구현 확인 — 코드 미실행 여부 조사 필요 |
+| **D-127** | `naver_price_service.rs` OnceLock → AppState 주입 전환 (기술 부채) |
+| **D-130** | `cache.rs` 레이어 역방향 참조 해소 (장기 아키텍처 개선) |
+| **D-101** | flutter_riverpod 3.0→3.3 (riverpod_generator 4.x 동반 BREAKING) |
+| **D-102** | BREAKING 5종 (go_router 17/fl_chart 1.x/google_sign_in 7/flutter_secure_storage 10/sign_in_with_apple 8) |
+| **D-110** | main 머지 PR 생성 여부 |
+
+### 최종 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **380건** ✅ |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트(lib) | **221건** ✅ |
+
+---
+
 ## Night-70 Phase 23 실행 (2026-05-18) — 코드 품질 + 아키텍처 종합 감사
 
 > **Sonnet 4.6 Sub-agent** 실행 | Phase 23 (6대 병렬 에이전트 감사 + 즉시 수정 9건)
