@@ -20,7 +20,7 @@ void main() {
   DemographicTrend makeAgeTrend({String topGroup = '30'}) {
     return DemographicTrend(
       categoryCode: '50000151',
-      dimension: 'age',
+      dimension: DemographicDimension.age,
       data: const [
         DemographicPeriodData(period: '2026-01-01', ratio: 15.0, group: '20'),
         DemographicPeriodData(period: '2026-01-01', ratio: 40.0, group: '30'),
@@ -34,7 +34,7 @@ void main() {
   DemographicTrend makeGenderTrend({String topGroup = 'f'}) {
     return DemographicTrend(
       categoryCode: '50000151',
-      dimension: 'gender',
+      dimension: DemographicDimension.gender,
       data: const [
         DemographicPeriodData(period: '2026-01-01', ratio: 35.0, group: 'm'),
         DemographicPeriodData(period: '2026-01-01', ratio: 65.0, group: 'f'),
@@ -47,7 +47,7 @@ void main() {
   DemographicTrend makeDeviceTrend({String topGroup = 'mo'}) {
     return DemographicTrend(
       categoryCode: '50000151',
-      dimension: 'device',
+      dimension: DemographicDimension.device,
       data: const [
         DemographicPeriodData(period: '2026-01-01', ratio: 78.0, group: 'mo'),
         DemographicPeriodData(period: '2026-01-01', ratio: 22.0, group: 'pc'),
@@ -111,17 +111,10 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
     });
 
-    testWidgets('미지원 dimension → 렌더링 오류 없이 빈 위젯', (tester) async {
-      final unknownTrend = DemographicTrend(
-        categoryCode: '50000151',
-        dimension: 'unknown',
-        data: const [],
-        groupRecentAvg: const {},
-        topGroup: '',
-      );
-      await tester.pumpWidget(buildChart([unknownTrend]));
-      await tester.pumpAndSettle();
-      expect(find.byType(SizedBox), findsWidgets);
+    test('DemographicDimension.value — API 직렬화 문자열 검증', () {
+      expect(DemographicDimension.age.value, 'age');
+      expect(DemographicDimension.gender.value, 'gender');
+      expect(DemographicDimension.device.value, 'device');
     });
 
     testWidgets('3개 차원 모두 → 섹션 헤더 3개 모두 표시', (tester) async {

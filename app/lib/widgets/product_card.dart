@@ -101,7 +101,7 @@ class ProductCard extends StatelessWidget {
                   color: product.priceTrend == PriceTrend.falling
                       ? AppTheme.priceDown
                       : product.priceTrend == PriceTrend.rising
-                          ? AppTheme.priceUp
+                          ? appColors.error
                           : appColors.neutral,
                 )),
             ],

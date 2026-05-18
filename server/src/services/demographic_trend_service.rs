@@ -231,8 +231,10 @@ async fn call_demographic_api(
 fn compute_score(
     category_code: &str,
     dimension: DemographicDimension,
-    data: Vec<DemographicPeriodData>,
+    mut data: Vec<DemographicPeriodData>,
 ) -> DemographicTrendScore {
+    // API 응답 순서를 명시적으로 보장 — period → group 정렬
+    data.sort_by(|a, b| a.period.cmp(&b.period).then(a.group.cmp(&b.group)));
     let group_recent_avg = compute_group_recent_avgs(&data);
     let top_group = group_recent_avg
         .iter()

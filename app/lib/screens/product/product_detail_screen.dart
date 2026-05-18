@@ -140,7 +140,7 @@ class ProductDetailScreen extends ConsumerWidget {
                       value: product.highestPrice != null
                           ? '₩${_priceFormat.format(product.highestPrice)}'
                           : '-',
-                      color: AppTheme.priceUp,
+                      color: appColors.error,
                     ),
                   ],
                 ),
@@ -296,7 +296,7 @@ class _TrendChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final (icon, color, label) = switch (trend) {
-      PriceTrend.rising => (Icons.trending_up, AppTheme.priceUp, '상승'),
+      PriceTrend.rising => (Icons.trending_up, appColors.error, '상승'),
       PriceTrend.falling => (Icons.trending_down, AppTheme.priceDown, '하락'),
       PriceTrend.stable => (Icons.trending_flat, appColors.neutral, '안정'),
     };
@@ -319,7 +319,7 @@ class _TimingBadge extends StatelessWidget {
         ? AppTheme.secondary
         : score >= 40
             ? appColors.warning
-            : AppTheme.priceUp;
+            : appColors.error;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -376,7 +376,7 @@ class _PredictionCard extends ConsumerWidget {
         final appColors = Theme.of(context).extension<AppColors>()!;
         final (icon, iconColor, actionText) = switch (result.predictedAction) {
           PredictionAction.buyNow => (Icons.shopping_cart, AppTheme.priceDown, '지금 구매'),
-          PredictionAction.wait => (Icons.hourglass_top, AppTheme.priceUp, '대기'),
+          PredictionAction.wait => (Icons.hourglass_top, appColors.error, '대기'),
           PredictionAction.neutral => (Icons.trending_flat, appColors.neutral, '보합'),
         };
 

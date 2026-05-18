@@ -284,8 +284,8 @@ as String,
 /// @nodoc
 mixin _$DemographicTrend {
 
-@JsonKey(name: 'category_code') String get categoryCode;/// 차원: 'age' | 'gender' | 'device'
- String get dimension; List<DemographicPeriodData> get data;/// 그룹별 최근 3개월 평균 ratio
+@JsonKey(name: 'category_code') String get categoryCode;
+ DemographicDimension get dimension; List<DemographicPeriodData> get data;/// 그룹별 최근 3개월 평균 ratio
 @JsonKey(name: 'group_recent_avg') Map<String, double> get groupRecentAvg;/// 가장 높은 관심도를 가진 그룹
 @JsonKey(name: 'top_group') String get topGroup;
 /// Create a copy of DemographicTrend
@@ -320,7 +320,7 @@ abstract mixin class $DemographicTrendCopyWith<$Res>  {
   factory $DemographicTrendCopyWith(DemographicTrend value, $Res Function(DemographicTrend) _then) = _$DemographicTrendCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'category_code') String categoryCode, String dimension, List<DemographicPeriodData> data,@JsonKey(name: 'group_recent_avg') Map<String, double> groupRecentAvg,@JsonKey(name: 'top_group') String topGroup
+@JsonKey(name: 'category_code') String categoryCode, DemographicDimension dimension, List<DemographicPeriodData> data,@JsonKey(name: 'group_recent_avg') Map<String, double> groupRecentAvg,@JsonKey(name: 'top_group') String topGroup
 });
 
 
@@ -341,7 +341,7 @@ class _$DemographicTrendCopyWithImpl<$Res>
   return _then(_self.copyWith(
 categoryCode: null == categoryCode ? _self.categoryCode : categoryCode // ignore: cast_nullable_to_non_nullable
 as String,dimension: null == dimension ? _self.dimension : dimension // ignore: cast_nullable_to_non_nullable
-as String,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+as DemographicDimension,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as List<DemographicPeriodData>,groupRecentAvg: null == groupRecentAvg ? _self.groupRecentAvg : groupRecentAvg // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,topGroup: null == topGroup ? _self.topGroup : topGroup // ignore: cast_nullable_to_non_nullable
 as String,
@@ -429,7 +429,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'category_code')  String categoryCode,  String dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'category_code')  String categoryCode,  DemographicDimension dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DemographicTrend() when $default != null:
 return $default(_that.categoryCode,_that.dimension,_that.data,_that.groupRecentAvg,_that.topGroup);case _:
@@ -450,7 +450,7 @@ return $default(_that.categoryCode,_that.dimension,_that.data,_that.groupRecentA
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'category_code')  String categoryCode,  String dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'category_code')  String categoryCode,  DemographicDimension dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)  $default,) {final _that = this;
 switch (_that) {
 case _DemographicTrend():
 return $default(_that.categoryCode,_that.dimension,_that.data,_that.groupRecentAvg,_that.topGroup);case _:
@@ -470,7 +470,7 @@ return $default(_that.categoryCode,_that.dimension,_that.data,_that.groupRecentA
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'category_code')  String categoryCode,  String dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'category_code')  String categoryCode,  DemographicDimension dimension,  List<DemographicPeriodData> data, @JsonKey(name: 'group_recent_avg')  Map<String, double> groupRecentAvg, @JsonKey(name: 'top_group')  String topGroup)?  $default,) {final _that = this;
 switch (_that) {
 case _DemographicTrend() when $default != null:
 return $default(_that.categoryCode,_that.dimension,_that.data,_that.groupRecentAvg,_that.topGroup);case _:
@@ -489,8 +489,7 @@ class _DemographicTrend implements DemographicTrend {
   factory _DemographicTrend.fromJson(Map<String, dynamic> json) => _$DemographicTrendFromJson(json);
 
 @override@JsonKey(name: 'category_code') final  String categoryCode;
-/// 차원: 'age' | 'gender' | 'device'
-@override final  String dimension;
+@override final  DemographicDimension dimension;
  final  List<DemographicPeriodData> _data;
 @override List<DemographicPeriodData> get data {
   if (_data is EqualUnmodifiableListView) return _data;
@@ -543,7 +542,7 @@ abstract mixin class _$DemographicTrendCopyWith<$Res> implements $DemographicTre
   factory _$DemographicTrendCopyWith(_DemographicTrend value, $Res Function(_DemographicTrend) _then) = __$DemographicTrendCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'category_code') String categoryCode, String dimension, List<DemographicPeriodData> data,@JsonKey(name: 'group_recent_avg') Map<String, double> groupRecentAvg,@JsonKey(name: 'top_group') String topGroup
+@JsonKey(name: 'category_code') String categoryCode, DemographicDimension dimension, List<DemographicPeriodData> data,@JsonKey(name: 'group_recent_avg') Map<String, double> groupRecentAvg,@JsonKey(name: 'top_group') String topGroup
 });
 
 
@@ -564,7 +563,7 @@ class __$DemographicTrendCopyWithImpl<$Res>
   return _then(_DemographicTrend(
 categoryCode: null == categoryCode ? _self.categoryCode : categoryCode // ignore: cast_nullable_to_non_nullable
 as String,dimension: null == dimension ? _self.dimension : dimension // ignore: cast_nullable_to_non_nullable
-as String,data: null == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
+as DemographicDimension,data: null == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
 as List<DemographicPeriodData>,groupRecentAvg: null == groupRecentAvg ? _self._groupRecentAvg : groupRecentAvg // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,topGroup: null == topGroup ? _self.topGroup : topGroup // ignore: cast_nullable_to_non_nullable
 as String,

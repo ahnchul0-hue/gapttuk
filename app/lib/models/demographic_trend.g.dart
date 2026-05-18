@@ -22,10 +22,16 @@ Map<String, dynamic> _$DemographicPeriodDataToJson(
   'group': instance.group,
 };
 
+const _$DemographicDimensionEnumMap = {
+  DemographicDimension.age: 'age',
+  DemographicDimension.gender: 'gender',
+  DemographicDimension.device: 'device',
+};
+
 _DemographicTrend _$DemographicTrendFromJson(Map<String, dynamic> json) =>
     _DemographicTrend(
       categoryCode: json['category_code'] as String,
-      dimension: json['dimension'] as String,
+      dimension: $enumDecode(_$DemographicDimensionEnumMap, json['dimension']),
       data: (json['data'] as List<dynamic>)
           .map((e) => DemographicPeriodData.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -38,7 +44,7 @@ _DemographicTrend _$DemographicTrendFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$DemographicTrendToJson(_DemographicTrend instance) =>
     <String, dynamic>{
       'category_code': instance.categoryCode,
-      'dimension': instance.dimension,
+      'dimension': _$DemographicDimensionEnumMap[instance.dimension]!,
       'data': instance.data,
       'group_recent_avg': instance.groupRecentAvg,
       'top_group': instance.topGroup,

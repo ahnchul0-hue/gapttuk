@@ -46,18 +46,17 @@ class DemographicChartWidget extends StatelessWidget {
 
   Widget _buildChart(BuildContext context, DemographicTrend trend) {
     return switch (trend.dimension) {
-      'age' => _AgeChart(trend: trend),
-      'gender' => _GenderBar(trend: trend),
-      'device' => _DeviceBar(trend: trend),
-      _ => const SizedBox.shrink(),
+      DemographicDimension.age => _AgeChart(trend: trend),
+      DemographicDimension.gender => _GenderBar(trend: trend),
+      DemographicDimension.device => _DeviceBar(trend: trend),
     };
   }
 
-  static String _sectionTitle(String dimension) => switch (dimension) {
-        'age' => '연령대별 관심도',
-        'gender' => '성별 관심도',
-        'device' => '기기별 관심도',
-        _ => dimension,
+  static String _sectionTitle(DemographicDimension dimension) =>
+      switch (dimension) {
+        DemographicDimension.age => '연령대별 관심도',
+        DemographicDimension.gender => '성별 관심도',
+        DemographicDimension.device => '기기별 관심도',
       };
 }
 

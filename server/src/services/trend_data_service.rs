@@ -165,7 +165,9 @@ pub async fn get_default_category_trends(
 
 // ── 내부 헬퍼 ────────────────────────────────────────────────
 
-fn compute_trend_score(result: TrendResult) -> CategoryTrendScore {
+fn compute_trend_score(mut result: TrendResult) -> CategoryTrendScore {
+    // API 응답 순서를 명시적으로 보장 — period 오름차순 정렬
+    result.data.sort_by(|a, b| a.period.cmp(&b.period));
     let data = &result.data;
 
     let recent_avg = if data.len() >= 3 {
