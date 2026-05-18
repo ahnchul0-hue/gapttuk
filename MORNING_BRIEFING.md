@@ -40,7 +40,7 @@
 > **Night-68 커밋**: `1fcfdff` (Phase 20+21 — MCP 실측 검증 + 인구통계 파이프라인 구축) + `351ca80` (문서 갱신)
 > **Night-69 커밋**: `494d59c` (Phase 22 의존성 최신화 — 트랜지티브 24개 업그레이드 + BREAKING 분석 D-119/D-120 신규 발견)
 > **Night-70 커밋**: `51fa55e` (Phase 23 코드 품질 감사 — 즉시 수정 9건 F-01~F-09) + `494b7aa` (문서: MORNING_BRIEFING/NIGHT_06_RESULT/DECISION_LOG/PLAN_01 갱신)
-> **Night-71 커밋**: TBD (Phase 24+25 — D-95/D-128/D-129 해소 + 최종 검증 3중 통과)
+> **Night-71 커밋**: `6f97136` (Phase 24+25 — D-95/D-128/D-129 해소 + 최종 검증 3중 통과) + `dcf1081` (문서 갱신)
 
 ---
 
