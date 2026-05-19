@@ -1,9 +1,7 @@
 use moka::future::Cache;
 use std::time::Duration;
 
-use crate::models::{AiPrediction, PopularSearch, Product};
-use crate::services::demographic_trend_service::DemographicTrendScore;
-use crate::services::trend_data_service::CategoryTrendScore;
+use crate::models::{AiPrediction, CategoryTrendScore, DemographicTrendScore, PopularSearch, Product};
 
 /// 애플리케이션 인메모리 캐시 (moka).
 /// 각 캐시는 고유 TTL과 최대 용량을 가진다.

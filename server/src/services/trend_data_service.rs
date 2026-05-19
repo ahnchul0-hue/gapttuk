@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::error::AppError;
+pub use crate::models::{CategoryTrendScore, TrendPeriodData};
 
 // ── 요청 타입 ─────────────────────────────────────────────────
 
@@ -48,28 +49,6 @@ pub struct TrendResult {
     pub title: String,
     pub category: Vec<String>,
     pub data: Vec<TrendPeriodData>,
-}
-
-/// 기간별 검색 트렌드 점수 (0.0 ~ 100.0, 기간 내 최고값이 100).
-#[derive(Debug, Deserialize, Clone, Serialize)]
-pub struct TrendPeriodData {
-    /// "2025-11-01" 형식
-    pub period: String,
-    /// 0.0 ~ 100.0 (기간 최고값 = 100 기준)
-    pub ratio: f64,
-}
-
-// ── 내부 분석 결과 ────────────────────────────────────────────
-
-/// 카테고리 트렌드 분석 점수 (서버 내부 계산).
-#[derive(Debug, Clone, Serialize)]
-pub struct CategoryTrendScore {
-    pub category_name: String,
-    pub periods: Vec<TrendPeriodData>,
-    /// 최근 3개월 평균 ratio
-    pub recent_avg: f64,
-    /// 직전월 대비 변화율 (%)
-    pub mom_change: f64,
 }
 
 // ── 공개 API ─────────────────────────────────────────────────

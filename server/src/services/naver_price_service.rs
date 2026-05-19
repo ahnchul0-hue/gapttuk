@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::sync::OnceLock;
 
 use crate::error::AppError;
 
@@ -71,35 +70,23 @@ pub struct NaverCategory {
     pub level4: String,
 }
 
-// ── HTTP 클라이언트 싱글톤 ────────────────────────────────────
-
-/// OnceLock으로 reqwest::Client 전역 싱글톤 — 연결 풀 재사용.
-static NAVER_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-
-fn naver_client() -> &'static reqwest::Client {
-    NAVER_CLIENT.get_or_init(|| {
-        reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .expect("reqwest Client 초기화 실패")
-    })
-}
-
 // ── 공개 API ─────────────────────────────────────────────────
 
 /// Naver Shopping 상품 검색.
 ///
+/// `http_client`: AppState의 공유 reqwest::Client.
 /// 환경변수 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 필수.
 /// `display`: 반환 결과 수 (기본 10, 최대 100)
 /// `start`: 시작 위치 (기본 1, 최대 1000)
 pub async fn search_naver_shop(
+    http_client: &reqwest::Client,
     query: &str,
     display: Option<u32>,
     start: Option<u32>,
 ) -> Result<Vec<ParsedNaverPrice>, AppError> {
     let (client_id, client_secret) = naver_credentials()?;
 
-    let resp = naver_client()
+    let resp = http_client
         .get("https://openapi.naver.com/v1/search/shop.json")
         .header("X-Naver-Client-Id", &client_id)
         .header("X-Naver-Client-Secret", &client_secret)

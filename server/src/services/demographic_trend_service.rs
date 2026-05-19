@@ -1,21 +1,12 @@
 use std::collections::HashMap;
 
 use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::error::AppError;
+pub use crate::models::{DemographicDimension, DemographicPeriodData, DemographicTrendScore};
 
 // ── Naver Datalab 인구통계 API 응답 구조 ─────────────────────
-
-/// 인구통계 데이터 포인트 — 카테고리 트렌드와 달리 group 필드 포함.
-/// 실측 구조 (2026-05-16 NaverSearch MCP):
-/// age: group = "10"~"60" | gender: group = "m"/"f" | device: group = "mo"/"pc"
-#[derive(Debug, Deserialize, Clone, Serialize)]
-pub struct DemographicPeriodData {
-    pub period: String,
-    pub ratio: f64,
-    pub group: String,
-}
 
 /// 인구통계 결과 항목.
 /// by_age/gender/device: category 필드 사용.
@@ -38,30 +29,6 @@ pub struct NaverDemographicResponse {
     pub end_date: String,
     pub time_unit: String,
     pub results: Vec<DemographicResult>,
-}
-
-// ── 분석 결과 ────────────────────────────────────────────────
-
-/// 인구통계 차원.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum DemographicDimension {
-    Age,
-    Gender,
-    Device,
-}
-
-/// 인구통계 트렌드 분석 점수 — 단일 카테고리·단일 차원.
-#[derive(Debug, Clone, Serialize)]
-pub struct DemographicTrendScore {
-    pub category_code: String,
-    pub dimension: DemographicDimension,
-    /// 모든 그룹·모든 기간 데이터 (정렬: period → group 순)
-    pub data: Vec<DemographicPeriodData>,
-    /// 그룹별 최근 3개월 평균 ratio
-    pub group_recent_avg: HashMap<String, f64>,
-    /// 가장 높은 최근 평균을 가진 그룹
-    pub top_group: String,
 }
 
 // ── 공개 API ─────────────────────────────────────────────────

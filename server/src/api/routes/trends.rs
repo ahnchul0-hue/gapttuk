@@ -6,8 +6,8 @@ use axum::{
 
 use crate::api::ApiResponse;
 use crate::error::AppError;
-use crate::services::demographic_trend_service::{self, DemographicTrendScore};
-use crate::services::trend_data_service::{self, CategoryTrendScore};
+use crate::models::{CategoryTrendScore, DemographicTrendScore};
+use crate::services::{demographic_trend_service, trend_data_service};
 use crate::AppState;
 
 pub fn router() -> Router<AppState> {
@@ -105,7 +105,7 @@ async fn get_demographic_trends(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::trend_data_service::{CategoryTrendScore, TrendPeriodData};
+    use crate::models::{CategoryTrendScore, TrendPeriodData};
 
     fn sample_trends() -> Vec<CategoryTrendScore> {
         vec![
@@ -162,9 +162,7 @@ mod tests {
 
     #[test]
     fn demographic_trend_score_serializes() {
-        use crate::services::demographic_trend_service::{
-            DemographicDimension, DemographicPeriodData, DemographicTrendScore,
-        };
+        use crate::models::{DemographicDimension, DemographicPeriodData};
         use std::collections::HashMap;
 
         let score = DemographicTrendScore {

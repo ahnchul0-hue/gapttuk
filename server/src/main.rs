@@ -369,6 +369,50 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     Ok(())
 }
 
+/// 오래된 레코드 TTL 삭제 — notifications/roulette_results/point_transactions.
+/// 각 테이블별 보존 기간을 초과한 데이터를 단일 트랜잭션 없이 독립 DELETE로 처리.
+async fn cleanup_old_records(pool: &sqlx::PgPool) {
+    // notifications: 90일 초과 삭제
+    match sqlx::query("DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '90 days'")
+        .execute(pool)
+        .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old notifications cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "notifications cleanup failed"),
+    }
+
+    // roulette_results: 180일 초과 삭제
+    match sqlx::query(
+        "DELETE FROM roulette_results WHERE created_at < NOW() - INTERVAL '180 days'",
+    )
+    .execute(pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old roulette_results cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "roulette_results cleanup failed"),
+    }
+
+    // point_transactions: 365일 초과 삭제
+    match sqlx::query(
+        "DELETE FROM point_transactions WHERE created_at < NOW() - INTERVAL '365 days'",
+    )
+    .execute(pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old point_transactions cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "point_transactions cleanup failed"),
+    }
+}
+
 /// 네이버 트렌드 데이터를 moka 캐시에 사전 적재.
 /// NAVER 자격증명 미설정 시 조용히 건너뜀 (선택적 기능).
 async fn warmup_trend_cache(state: &AppState) {
@@ -664,7 +708,22 @@ async fn main() {
             }
         });
 
-        // 9d. Naver 트렌드 캐시 웜업 + 1시간 배치 갱신
+        // 9d. TTL 레코드 정리 (24시간 주기)
+        // notifications(90일)/roulette_results(180일)/point_transactions(365일) 초과분 삭제.
+        let cleanup_pool = pool.clone();
+        let cleanup_period = std::time::Duration::from_secs(86400);
+        let h_cleanup = tokio::spawn(async move {
+            let mut interval = tokio::time::interval_at(
+                tokio::time::Instant::now() + cleanup_period,
+                cleanup_period,
+            );
+            loop {
+                interval.tick().await;
+                cleanup_old_records(&cleanup_pool).await;
+            }
+        });
+
+        // 9e. Naver 트렌드 캐시 웜업 + 1시간 배치 갱신
         // 시작 직후 1회 즉시 웜업 후 1시간 간격으로 반복.
         // NAVER 자격증명 미설정 시 warmup_trend_cache()가 조용히 건너뜀.
         let trend_state = state.clone();
@@ -681,13 +740,14 @@ async fn main() {
             }
         });
 
-        // 9e. 백그라운드 태스크 패닉 감시 + Sentry 보고
+        // 9f. 백그라운드 태스크 패닉 감시 + Sentry 보고
         // 각 태스크는 내부 loop에서 에러를 개별 처리하므로 정상적으로는 종료되지 않음.
         // 패닉 발생 시 로그 + Sentry 보고 + 메트릭 기록.
         for (name, handle) in [
             ("Partition maintenance", h_partition),
             ("Governor GC", h_gc),
             ("Token purge", h_purge),
+            ("Old records cleanup", h_cleanup),
             ("Trend cache warmup", h_trend),
         ] {
             tokio::spawn(async move {
