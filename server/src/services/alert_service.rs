@@ -44,17 +44,15 @@ impl AlertTypeInput {
     }
 }
 
-// ── CRUD ─────────────────────────────────────────────────
+// ── 검증 순수 함수 ─────────────────────────────────────────
 
-/// 가격 알림 생성.
-pub async fn create_price_alert(
-    pool: &PgPool,
-    user_id: i64,
-    req: &CreatePriceAlertRequest,
-) -> Result<PriceAlert, AppError> {
-    // TargetPrice는 target_price 필수 + 양수 검증
-    if matches!(req.alert_type, AlertTypeInput::TargetPrice) {
-        match req.target_price {
+/// TargetPrice 알림 유형의 target_price 필수/양수 검증.
+pub fn validate_target_price(
+    alert_type: &AlertTypeInput,
+    target_price: Option<i32>,
+) -> Result<(), AppError> {
+    if matches!(alert_type, AlertTypeInput::TargetPrice) {
+        match target_price {
             None => {
                 return Err(AppError::BadRequest(
                     "target_price는 target_price 알림 유형에 필수입니다".to_string(),
@@ -68,8 +66,36 @@ pub async fn create_price_alert(
             _ => {}
         }
     }
+    Ok(())
+}
 
-    // 상품 존재 확인
+/// 키워드 알림의 키워드 trim + 길이 검증. 정제된 키워드 반환.
+pub fn validate_keyword(raw: &str) -> Result<String, AppError> {
+    let trimmed = raw.trim().to_string();
+    if trimmed.is_empty() {
+        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
+    }
+    if trimmed.chars().count() > 100 {
+        return Err(AppError::BadRequest(
+            "키워드는 100자 이하로 입력해주세요".to_string(),
+        ));
+    }
+    Ok(trimmed)
+}
+
+// ── CRUD ─────────────────────────────────────────────────
+
+/// 가격 알림 생성.
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
+pub async fn create_price_alert(
+    pool: &PgPool,
+    user_id: i64,
+    req: &CreatePriceAlertRequest,
+) -> Result<PriceAlert, AppError> {
+    // TargetPrice는 target_price 필수 + 양수 검증
+    validate_target_price(&req.alert_type, req.target_price)?;
+
+    // 상품 존재 확인 (트랜잭션 밖: products는 거의 삭제되지 않으므로 허용)
     let exists =
         sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)")
             .bind(req.product_id)
@@ -80,13 +106,8 @@ pub async fn create_price_alert(
         return Err(AppError::NotFound("상품".to_string()));
     }
 
-    // 사용자당 전체 알림 개수 제한 (최대 50개, 모든 유형 합산)
-    let count = count_all_user_alerts(pool, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    // 한도 체크 + INSERT를 단일 트랜잭션으로 묶어 TOCTOU 방지
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, PriceAlert>(
         r#"
@@ -99,9 +120,10 @@ pub async fn create_price_alert(
     .bind(req.product_id)
     .bind(req.alert_type.as_str())
     .bind(req.target_price)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 
@@ -163,8 +185,11 @@ pub async fn toggle_price_alert(
 
 // ── 전체 알림 개수 카운트 ────────────────────────────────
 
-/// 사용자의 전체 알림 개수 합산 (price + category + keyword)
-async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {
+/// 사용자의 전체 알림 개수 합산 (price + category + keyword) — 트랜잭션 내 실행.
+async fn count_all_user_alerts_in_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    user_id: i64,
+) -> Result<i64, AppError> {
     let count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT
@@ -174,23 +199,52 @@ async fn count_all_user_alerts(pool: &PgPool, user_id: i64) -> Result<i64, AppEr
         "#,
     )
     .bind(user_id)
-    .fetch_one(pool)
+    .fetch_one(&mut **tx)
     .await?;
 
     Ok(count)
 }
 
+// ── 트랜잭션 헬퍼 ───────────────────────────────────────
+
+/// 알림 트랜잭션 시작 + users 행 잠금 + 한도 체크.
+/// 한도 초과 시 롤백 후 Err 반환; 정상 시 사용 가능한 트랜잭션을 반환.
+/// 반환된 트랜잭션은 호출자가 commit 또는 rollback 해야 한다.
+async fn begin_alert_tx_checked(
+    pool: &PgPool,
+    user_id: i64,
+) -> Result<sqlx::Transaction<'static, sqlx::Postgres>, AppError> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("SELECT id FROM users WHERE id = $1 FOR UPDATE")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let count = count_all_user_alerts_in_tx(&mut tx, user_id).await?;
+    if count >= MAX_ALERTS_PER_USER {
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "begin_alert_tx_checked 한도초과 rollback 실패");
+        }
+        return Err(AppError::BadRequest(format!(
+            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
+        )));
+    }
+
+    Ok(tx)
+}
+
 // ── 카테고리 알림 CRUD ──────────────────────────────────
 
 /// 카테고리 알림 생성.
-///
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
 /// `alert_condition`은 NOT NULL 제약조건이 있으므로 기본값 `"any_drop"`을 사용한다.
 pub async fn create_category_alert(
     pool: &PgPool,
     user_id: i64,
     category_id: i32,
 ) -> Result<CategoryAlert, AppError> {
-    // 카테고리 존재 확인
+    // 카테고리 존재 확인 (트랜잭션 밖: 허용)
     let exists =
         sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)")
             .bind(category_id)
@@ -201,13 +255,7 @@ pub async fn create_category_alert(
         return Err(AppError::NotFound("카테고리".to_string()));
     }
 
-    // 전체 알림 개수 제한 확인
-    let count = count_all_user_alerts(pool, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, CategoryAlert>(
         r#"
@@ -219,9 +267,10 @@ pub async fn create_category_alert(
     )
     .bind(user_id)
     .bind(category_id)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 
@@ -284,29 +333,16 @@ pub async fn toggle_category_alert(
 // ── 키워드 알림 CRUD ────────────────────────────────────
 
 /// 키워드 알림 생성.
+/// 한도 체크 + INSERT를 단일 트랜잭션으로 실행하여 동시성 초과를 방지한다 (TOCTOU 방어).
 pub async fn create_keyword_alert(
     pool: &PgPool,
     user_id: i64,
     keyword: String,
 ) -> Result<KeywordAlert, AppError> {
     // 키워드 길이 검증 (DB VARCHAR(100) 제약조건 반영)
-    let keyword = keyword.trim().to_string();
-    if keyword.is_empty() {
-        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
-    }
-    if keyword.chars().count() > 100 {
-        return Err(AppError::BadRequest(
-            "키워드는 100자 이하로 입력해주세요".to_string(),
-        ));
-    }
+    let keyword = validate_keyword(&keyword)?;
 
-    // 전체 알림 개수 제한 확인
-    let count = count_all_user_alerts(pool, user_id).await?;
-    if count >= MAX_ALERTS_PER_USER {
-        return Err(AppError::BadRequest(format!(
-            "알림은 최대 {MAX_ALERTS_PER_USER}개까지 설정할 수 있습니다"
-        )));
-    }
+    let mut tx = begin_alert_tx_checked(pool, user_id).await?;
 
     let alert = sqlx::query_as::<_, KeywordAlert>(
         r#"
@@ -318,9 +354,10 @@ pub async fn create_keyword_alert(
     )
     .bind(user_id)
     .bind(&keyword)
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await?;
 
+    tx.commit().await?;
     Ok(alert)
 }
 
@@ -417,15 +454,7 @@ pub async fn update_keyword_alert(
     alert_id: i64,
     keyword: &str,
 ) -> Result<(), AppError> {
-    let keyword = keyword.trim();
-    if keyword.is_empty() {
-        return Err(AppError::BadRequest("키워드를 입력해주세요".to_string()));
-    }
-    if keyword.chars().count() > 100 {
-        return Err(AppError::BadRequest(
-            "키워드는 100자 이하여야 합니다".to_string(),
-        ));
-    }
+    let keyword = validate_keyword(keyword)?;
     let result = sqlx::query(
         "UPDATE keyword_alerts SET keyword = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3",
     )
@@ -546,6 +575,9 @@ pub async fn evaluate_price_alerts(
         let push = std::sync::Arc::clone(&push);
         let deep_link = deep_link.clone();
         let devices = devices_by_user.get(&user_id).cloned().unwrap_or_default();
+        if devices.is_empty() {
+            tracing::warn!(user_id = %user_id, alert_id = %alert_id, product_id = %product_id, "알림 대상 사용자에 등록된 디바이스 없음 — push 전송 건너뜀");
+        }
 
         push_tasks.spawn(async move {
             if let Err(e) = notification_service::create_notification_and_push(
@@ -573,13 +605,18 @@ pub async fn evaluate_price_alerts(
         });
     }
 
-    // 모든 푸시 완료 대기
-    while push_tasks.join_next().await.is_some() {}
+    // 모든 푸시 완료 대기 — 태스크 패닉 감지
+    while let Some(result) = push_tasks.join_next().await {
+        if let Err(e) = result {
+            tracing::error!(error = %e, "Push notification task panicked");
+        }
+    }
 
     let triggered = claimed_ids.len();
     if triggered > 0 {
         tracing::info!(product_id, triggered, "Price alerts evaluated");
-        metrics::counter!("alerts_triggered_total").increment(triggered as u64);
+        metrics::counter!("alerts_triggered_total")
+            .increment(u64::try_from(triggered).unwrap_or(u64::MAX));
     }
 
     Ok(triggered)
@@ -600,7 +637,12 @@ fn evaluate_condition(
         AlertType::NearLowest => {
             // 역대 최저가의 NEAR_LOWEST_THRESHOLD(105%) 이내
             lowest_price.is_some_and(|lowest| {
-                let threshold = (lowest as f64 * NEAR_LOWEST_THRESHOLD) as i32;
+                let threshold = i32::try_from(
+                    (f64::from(lowest) * NEAR_LOWEST_THRESHOLD)
+                        .round()
+                        .clamp(0.0, f64::from(i32::MAX)) as i64,
+                )
+                .unwrap_or(i32::MAX);
                 new_price <= threshold
             })
         }
@@ -621,7 +663,12 @@ fn format_alert_body(alert_type: &AlertType, new_price: i32, target_price: Optio
     let formatted = format_price(new_price);
     match alert_type {
         AlertType::TargetPrice => {
-            let target = target_price.map(format_price).unwrap_or_default();
+            let target = target_price.map(format_price).unwrap_or_else(|| {
+                tracing::warn!(
+                    "TargetPrice alert has no target_price — notification body will be malformed"
+                );
+                String::new()
+            });
             format!("현재가 {formatted}원 — 목표가 {target}원 이하로 떨어졌어요!")
         }
         AlertType::AllTimeLow => {
@@ -759,6 +806,71 @@ mod tests {
         assert_eq!(format_price(999), "999");
         assert_eq!(format_price(1_000_000), "1,000,000");
         assert_eq!(format_price(10), "10");
+    }
+
+    #[test]
+    fn test_format_price_negative_preserved() {
+        // 음수는 실제 가격 데이터에 존재하지 않지만, char 역순 처리 방식 덕분에
+        // 부호가 올바르게 보존됨을 문서화한다 (회귀 방지)
+        assert_eq!(format_price(-1_000), "-1,000");
+        assert_eq!(format_price(-1_000_000), "-1,000,000");
+    }
+
+    // --- validate_target_price ---
+    #[test]
+    fn test_validate_target_price_required_for_target_type() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, None).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_zero_rejected() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(0)).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_negative_rejected() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(-1)).is_err());
+    }
+
+    #[test]
+    fn test_validate_target_price_positive_ok() {
+        assert!(validate_target_price(&AlertTypeInput::TargetPrice, Some(1)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_target_price_not_required_for_other_types() {
+        assert!(validate_target_price(&AlertTypeInput::AllTimeLow, None).is_ok());
+        assert!(validate_target_price(&AlertTypeInput::BelowAverage, None).is_ok());
+        assert!(validate_target_price(&AlertTypeInput::NearLowest, None).is_ok());
+    }
+
+    // --- validate_keyword ---
+    #[test]
+    fn test_validate_keyword_empty_rejected() {
+        assert!(validate_keyword("").is_err());
+    }
+
+    #[test]
+    fn test_validate_keyword_whitespace_only_rejected() {
+        assert!(validate_keyword("   ").is_err());
+    }
+
+    #[test]
+    fn test_validate_keyword_trim_applied() {
+        let result = validate_keyword("  맥북  ").unwrap();
+        assert_eq!(result, "맥북");
+    }
+
+    #[test]
+    fn test_validate_keyword_100_chars_ok() {
+        let keyword = "가".repeat(100);
+        assert!(validate_keyword(&keyword).is_ok());
+    }
+
+    #[test]
+    fn test_validate_keyword_101_chars_rejected() {
+        let keyword = "가".repeat(101);
+        assert!(validate_keyword(&keyword).is_err());
     }
 
     // --- format_alert_title ---

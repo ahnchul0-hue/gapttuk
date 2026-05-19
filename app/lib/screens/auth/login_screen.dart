@@ -76,12 +76,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.go('/');
         }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+    } catch (e, st) {
+      debugPrint('LoginScreen._login: $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -132,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -146,21 +143,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: AppTheme.primary,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 '값뚝',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 '최저가 추적의 시작',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: appColors.neutral,
                     ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: AppSpacing.xxl),
 
               // 카카오 로그인
               _SocialLoginButton(
@@ -171,7 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 isLoading: _isLoading,
                 onPressed: () => _login('kakao'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.smMd),
 
               // 구글 로그인
               _SocialLoginButton(
@@ -182,7 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 isLoading: _isLoading,
                 onPressed: () => _login('google'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.smMd),
 
               // 애플 로그인
               _SocialLoginButton(
@@ -193,7 +190,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 isLoading: _isLoading,
                 onPressed: () => _login('apple'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.smMd),
 
               // 네이버 로그인
               _SocialLoginButton(
@@ -205,14 +202,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: () => _login('naver'),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
               TextButton(
                 onPressed: _isLoading ? null : () => context.go('/'),
                 child: const Text('둘러보기'),
               ),
 
               if (_isLoading) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 const CircularProgressIndicator(
                   semanticsLabel: '로그인 중',
                 ),

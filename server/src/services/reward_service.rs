@@ -53,9 +53,11 @@ pub async fn add_points_and_record(
     .execute(&mut **tx)
     .await?;
 
-    // 비즈니스 메트릭: 포인트 발행 추적
-    metrics::counter!("points_issued_total", "reason" => transaction_type.to_string())
-        .increment(amount as u64);
+    // 비즈니스 메트릭: 포인트 발행 추적 (amount는 validate_point_amount에서 양수 검증됨)
+    if let Ok(n) = u64::try_from(amount) {
+        metrics::counter!("points_issued_total", "reason" => transaction_type.to_string())
+            .increment(n);
+    }
 
     Ok(())
 }
@@ -142,8 +144,16 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
             .bind(user_id)
             .fetch_optional(&mut *tx)
             .await?
-            .unwrap_or(0);
-        tx.rollback().await?;
+            .unwrap_or_else(|| {
+                tracing::warn!(
+                    user_id,
+                    "user_points 행 없음 (출석 중복 확인) — 잔액 0으로 처리"
+                );
+                0
+            });
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, user_id, "daily_checkin 이미출석 rollback 실패");
+        }
         metrics::counter!("checkins_total", "result" => "already").increment(1);
         return Ok(CheckinResult {
             reward_amount: 0,
@@ -171,7 +181,13 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         .bind(user_id)
         .fetch_optional(&mut *tx)
         .await?
-        .unwrap_or(false);
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                user_id,
+                "users 행 없음 — 신규 유저 여부 확인 불가, 일반 유저로 처리"
+            );
+            false
+        });
         let cap = assign_monthly_cap(is_new_user);
 
         let new_id: i64 = sqlx::query_scalar(
@@ -207,7 +223,7 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         add_points_and_record(
             &mut tx,
             user_id,
-            reward as i32,
+            i32::from(reward),
             "daily_checkin",
             "일일 출석 룰렛 보상",
             None,
@@ -231,7 +247,13 @@ pub async fn daily_checkin(pool: &PgPool, user_id: i64) -> Result<CheckinResult,
         .bind(user_id)
         .fetch_optional(pool)
         .await?
-        .unwrap_or(0);
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                user_id,
+                "user_points 행 없음 (커밋 후 잔액 조회) — 잔액 0으로 처리"
+            );
+            0
+        });
 
     // 비즈니스 메트릭: 출석 체크인 결과
     let result_label = if reward > 0 { "reward" } else { "miss" };
@@ -253,7 +275,13 @@ pub async fn get_points(pool: &PgPool, user_id: i64) -> Result<PointsInfo, AppEr
     .fetch_optional(pool)
     .await?;
 
-    let (balance, total_earned, total_spent) = row.unwrap_or((0, 0, 0));
+    let (balance, total_earned, total_spent) = row.unwrap_or_else(|| {
+        tracing::warn!(
+            user_id,
+            "user_points 행 없음 (get_points) — 데이터 무결성 문제 가능성"
+        );
+        (0, 0, 0)
+    });
     Ok(PointsInfo {
         balance,
         total_earned,
@@ -300,9 +328,25 @@ pub async fn get_history(
         .await?
     };
 
-    let has_more = items.len() as i64 > effective_limit;
+    let has_more = items.len() > effective_limit as usize;
     let result: Vec<PointHistoryItem> = items.into_iter().take(effective_limit as usize).collect();
     Ok((result, has_more))
+}
+
+/// 추천 보상 단계에 따른 보상 금액을 계산한다.
+///
+/// 반환: `Some((next_stage, referrer_reward, referred_reward))` 또는
+/// - `None` — 이미 Stage 2 완료(no-op)
+///
+/// # 보상 규칙
+/// - Stage 0 → 1 (첫 구매): 초대자 +2¢, 피초대자 +1¢
+/// - Stage 1 → 2 (두번째 구매): 초대자 +3¢, 피초대자 +1¢
+pub fn compute_referral_rewards(reward_stage: i16) -> Option<(i16, i32, i32)> {
+    match reward_stage {
+        0 => Some((1i16, 2i32, 1i32)),
+        1 => Some((2i16, 3i32, 1i32)),
+        _ => None,
+    }
 }
 
 /// 추천 보상 단계 처리 — 구매 확인 이벤트 발생 시 호출
@@ -334,19 +378,23 @@ pub async fn process_referral_purchase(
     let (referral_id, referrer_id, reward_stage) = match referral {
         Some(r) => r,
         None => {
-            tx.rollback().await?;
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(error = %rb_err, "rollback failed after referral-not-found");
+            }
             return Ok(()); // 추천인 없음
         }
     };
 
-    let (next_stage, referrer_reward, referred_reward) = match reward_stage {
-        0 => (1i16, 2i32, 1i32), // Stage 0→1: 초대자 2¢, 피초대자 1¢
-        1 => (2i16, 3i32, 1i32), // Stage 1→2: 초대자 3¢, 피초대자 1¢
-        _ => {
-            tx.rollback().await?;
-            return Ok(()); // 이미 Stage 2 완료
-        }
-    };
+    let (next_stage, referrer_reward, referred_reward) =
+        match compute_referral_rewards(reward_stage) {
+            Some(r) => r,
+            None => {
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(error = %rb_err, "rollback failed after stage-2-complete");
+                }
+                return Ok(()); // 이미 Stage 2 완료
+            }
+        };
 
     // reward_stage 업데이트
     sqlx::query("UPDATE referrals SET reward_stage = $1 WHERE id = $2")
@@ -489,5 +537,34 @@ mod tests {
         assert!(validate_point_amount(0).is_err());
         assert!(validate_point_amount(1).is_ok());
         assert!(validate_point_amount(100).is_ok());
+    }
+
+    // ── compute_referral_rewards 테스트 ───────────────────────
+
+    #[test]
+    fn compute_referral_rewards_stage0_gives_correct_amounts() {
+        // Stage 0 → 1: 초대자 2¢, 피초대자 1¢
+        let result = compute_referral_rewards(0);
+        assert_eq!(result, Some((1i16, 2i32, 1i32)));
+    }
+
+    #[test]
+    fn compute_referral_rewards_stage1_gives_correct_amounts() {
+        // Stage 1 → 2: 초대자 3¢, 피초대자 1¢
+        let result = compute_referral_rewards(1);
+        assert_eq!(result, Some((2i16, 3i32, 1i32)));
+    }
+
+    #[test]
+    fn compute_referral_rewards_stage2_returns_none() {
+        // Stage 2 완료 — no-op
+        assert!(compute_referral_rewards(2).is_none());
+    }
+
+    #[test]
+    fn compute_referral_rewards_invalid_stage_returns_none() {
+        // 예상치 못한 값 → None (안전한 no-op)
+        assert!(compute_referral_rewards(-1).is_none());
+        assert!(compute_referral_rewards(99).is_none());
     }
 }

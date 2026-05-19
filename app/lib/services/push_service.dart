@@ -24,9 +24,9 @@ class PushService {
         deviceToken: token,
         platform: platform,
       );
-    } catch (e) {
+    } catch (e, st) {
       // Firebase 미설정 또는 네트워크 오류 — 무시
-      debugPrint('PushService: 디바이스 등록 실패 — $e');
+      debugPrint('PushService: 디바이스 등록 실패 — $e\n$st');
     }
   }
 

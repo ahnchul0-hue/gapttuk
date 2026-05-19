@@ -1,0 +1,21 @@
+# cargo audit 설정
+# https://docs.rs/cargo-audit/latest/cargo_audit/config/struct.AuditConfig.html
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071: rsa crate Marvin Attack (timing side-channel)
+    # 이 취약점은 MySQL RSA 키 교환에만 적용됩니다.
+    # 우리 프로젝트는 PostgreSQL만 사용하며 MySQL을 전혀 사용하지 않습니다.
+    # rsa는 sqlx-mysql의 전이 의존성으로 Cargo.lock에 포함되지만
+    # 실제 코드 경로에서는 사용되지 않습니다.
+    # 수정 버전이 없으므로(No fix available) 현재로선 예외 처리합니다.
+    "RUSTSEC-2023-0071",
+
+    # RUSTSEC-2026-0049: rustls-webpki 0.102.8 CRL 분배 지점 매칭 버그
+    # 해결책: >=0.103.10 (이미 rustls-webpki 0.103.x는 업데이트됨)
+    # 잔존 경로: a2 0.10.0 (APNs) → rustls 0.22.x → rustls-webpki 0.102.8
+    # a2 upstream이 rustls 0.23으로 아직 미이전. 최신 버전 = 0.10.0
+    # 실제 위험: APNs(Apple 서버)는 신뢰할 수 있는 엔드포인트 → CRL 검증 로직 버그 영향 없음
+    # 조치: a2 업스트림 업데이트 대기. 현재 예외 처리.
+    "RUSTSEC-2026-0049",
+]

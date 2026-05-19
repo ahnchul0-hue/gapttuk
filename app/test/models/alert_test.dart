@@ -17,7 +17,7 @@ void main() {
       final alert = PriceAlert.fromJson(json);
 
       expect(alert.id, 1);
-      expect(alert.alertType, 'target_price');
+      expect(alert.alertType, AlertType.targetPrice);
       expect(alert.targetPrice, 25000);
       expect(alert.isActive, true);
     });
@@ -32,7 +32,7 @@ void main() {
 
       final alert = PriceAlert.fromJson(json);
 
-      expect(alert.alertType, 'below_average');
+      expect(alert.alertType, AlertType.belowAverage);
       expect(alert.targetPrice, isNull);
       expect(alert.isActive, true); // @Default(true)
     });

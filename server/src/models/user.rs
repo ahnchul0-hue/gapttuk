@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 /// 소셜 인증 제공자
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum AuthProvider {
     Kakao,
@@ -13,11 +14,47 @@ pub enum AuthProvider {
 
 /// 디바이스 플랫폼
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum Platform {
     Android,
     Ios,
     Web,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auth_provider_serde_snake_case() {
+        assert_eq!(
+            serde_json::to_string(&AuthProvider::Kakao).unwrap(),
+            "\"kakao\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AuthProvider::Google).unwrap(),
+            "\"google\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AuthProvider::Apple).unwrap(),
+            "\"apple\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AuthProvider::Naver).unwrap(),
+            "\"naver\""
+        );
+    }
+
+    #[test]
+    fn platform_serde_snake_case() {
+        assert_eq!(
+            serde_json::to_string(&Platform::Android).unwrap(),
+            "\"android\""
+        );
+        assert_eq!(serde_json::to_string(&Platform::Ios).unwrap(), "\"ios\"");
+        assert_eq!(serde_json::to_string(&Platform::Web).unwrap(), "\"web\"");
+    }
 }
 
 /// users 테이블

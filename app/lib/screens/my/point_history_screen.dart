@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
@@ -44,17 +45,24 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
         }
         _error = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('PointHistoryScreen._loadMore: $e\n$st');
       if (mounted) setState(() => _error = friendlyErrorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  static final _dateFormat = DateFormat('yyyy.MM.dd');
+
+  static String _formatDate(DateTime dt) =>
+      _dateFormat.format(dt.toLocal());
+
   String _transactionLabel(String type) {
     return switch (type) {
       'daily_checkin' => '일일 출석 룰렛',
       'referral_welcome' => '추천 가입 보상',
+      'referral_welcome_referrer' => '추천인 웰컴 보상',
       'referral_purchase_referred' => '추천 구매 보상',
       'referral_purchase_referrer' => '추천인 보상',
       'signup_bonus' => '가입 보너스',
@@ -103,9 +111,20 @@ class _PointHistoryScreenState extends ConsumerState<PointHistoryScreen> {
                           color: isPositive ? appColors.success : appColors.error,
                         ),
                         title: Text(_transactionLabel(item.transactionType)),
-                        subtitle: item.description != null
-                            ? Text(item.description!)
-                            : null,
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.description != null)
+                              Text(item.description!),
+                            Text(
+                              _formatDate(item.createdAt),
+                              style:
+                                  Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: appColors.neutral,
+                                      ),
+                            ),
+                          ],
+                        ),
                         trailing: Text(
                           '${isPositive ? '+' : ''}${item.amount}${AppConstants.rewardUnit}',
                           style: TextStyle(

@@ -4,11 +4,33 @@ use serde::Serialize;
 
 /// AI 예측 행동
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum PredictedAction {
     BuyNow,
     Wait,
     Neutral,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn predicted_action_serde_snake_case() {
+        assert_eq!(
+            serde_json::to_string(&PredictedAction::BuyNow).unwrap(),
+            "\"buy_now\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PredictedAction::Wait).unwrap(),
+            "\"wait\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PredictedAction::Neutral).unwrap(),
+            "\"neutral\""
+        );
+    }
 }
 
 /// ai_predictions 테이블

@@ -8,6 +8,8 @@ import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/alert_type_badge.dart';
+import '../../widgets/screen_error_widget.dart';
 
 /// 즐겨찾기 화면 — 가격 알림이 설정된 상품 그리드.
 class FavoritesScreen extends ConsumerStatefulWidget {
@@ -54,8 +56,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               final product =
                   await ref.read(productDetailProvider(id).future);
               products[id] = product;
-            } catch (_) {
-              // 개별 상품 로드 실패 시 건너뜀
+            } catch (e, st) {
+              debugPrint('FavoritesScreen: product $id load failed — $e\n$st');
+              // 개별 상품 로드 실패 시 건너뜀 (로드된 상품만 표시)
             }
           }),
         );
@@ -70,45 +73,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('FavoritesScreen._loadData: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);
           _isLoading = false;
         });
       }
-    }
-  }
-
-  // ─── 알림 타입 뱃지 ────────────────────────────────────────────────────────
-
-  String _alertTypeBadge(String type) {
-    switch (type) {
-      case 'target_price':
-        return '목표가';
-      case 'below_average':
-        return '평균 이하';
-      case 'near_lowest':
-        return '최저가 근접';
-      case 'all_time_low':
-        return '최저가 갱신';
-      default:
-        return type;
-    }
-  }
-
-  Color _alertTypeBadgeColor(String type, AppColors appColors) {
-    switch (type) {
-      case 'target_price':
-        return appColors.info;
-      case 'below_average':
-        return appColors.success;
-      case 'near_lowest':
-        return appColors.warning;
-      case 'all_time_low':
-        return appColors.error;
-      default:
-        return appColors.neutral;
     }
   }
 
@@ -119,7 +91,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     final productName = product?.productName ?? '상품 #${alert.productId}';
     final currentPrice = product?.currentPrice;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: '$productName${currentPrice != null ? ', $currentPrice원' : ''}, ${alertTypeLabel(alert.alertType)} 알림${alert.isActive ? '' : ', 비활성'}',
+      child: GestureDetector(
       onTap: () => context.push('/product/${alert.productId}'),
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -167,10 +142,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: _buildBadge(
-                      _alertTypeBadge(alert.alertType),
-                      _alertTypeBadgeColor(alert.alertType, appColors),
-                    ),
+                    child: AlertTypeBadge(alertType: alert.alertType),
                   ),
                 ],
               ),
@@ -215,6 +187,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -225,24 +198,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         Icons.shopping_bag_outlined,
         size: 48,
         color: appColors.neutral,
-      ),
-    );
-  }
-
-  Widget _buildBadge(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withAlpha(230),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }
@@ -314,30 +269,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: appColors.error),
-            const SizedBox(height: 12),
-            const Text(
-              '즐겨찾기를 불러오지 못했습니다',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: appColors.neutral, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return ScreenErrorWidget(
+        message: '즐겨찾기를 불러오지 못했습니다',
+        detail: _error!,
+        onRetry: _loadData,
       );
     }
 

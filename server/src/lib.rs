@@ -53,7 +53,7 @@ pub struct HealthResponse {
 pub async fn health_check(State(state): State<AppState>) -> axum::response::Response {
     let start = std::time::Instant::now();
     let db_ok = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
-    let latency_ms = start.elapsed().as_millis() as u64;
+    let latency_ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
 
     let db = DbHealth {
         status: if db_ok { "connected" } else { "disconnected" },

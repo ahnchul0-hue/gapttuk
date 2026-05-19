@@ -6,7 +6,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
-use crate::api::pagination::PaginatedResponse;
+use crate::api::pagination::{parse_cursor, PaginatedResponse};
 use crate::api::{ApiResponse, Created};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
@@ -19,6 +19,7 @@ use crate::AppState;
 /// PaginationParams 필드를 직접 인라인.
 #[derive(Deserialize)]
 pub struct SearchQuery {
+    #[serde(default)]
     pub q: String,
     pub cursor: Option<String>,
     #[serde(default = "default_limit")]
@@ -108,7 +109,7 @@ async fn search(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = parse_cursor(params.cursor.as_deref(), "products list")?;
 
     // 필터 검증
     if let Some(ref f) = params.filter {
@@ -182,7 +183,7 @@ async fn prices(
     }
 
     let limit = params.limit.clamp(1, 100);
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = parse_cursor(params.cursor.as_deref(), "price history")?;
 
     let items =
         product_service::get_price_history(&state.pool, id, params.from, params.to, cursor, limit)

@@ -41,13 +41,19 @@ async fn verify_app_id(
         .bearer_auth(access_token)
         .send()
         .await
-        .map_err(|_| AppError::Unauthorized)?;
+        .map_err(|e| {
+            tracing::warn!(error = %e, "Kakao token_info request failed");
+            AppError::Unauthorized
+        })?;
 
     if !resp.status().is_success() {
         return Err(AppError::Unauthorized);
     }
 
-    let info: TokenInfo = resp.json().await.map_err(|_| AppError::Unauthorized)?;
+    let info: TokenInfo = resp.json().await.map_err(|e| {
+        tracing::warn!(error = %e, "Kakao token_info parse failed");
+        AppError::Unauthorized
+    })?;
 
     if info.app_id.to_string() != expected_app_id {
         tracing::warn!(app_id = info.app_id, "Kakao token from wrong app");

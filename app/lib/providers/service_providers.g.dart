@@ -480,3 +480,55 @@ final class RewardServiceProvider
 }
 
 String _$rewardServiceHash() => r'fd993cc8b3505340a96e2419f9520d7b71d2d579';
+
+/// 네이버 트렌드 서비스.
+
+@ProviderFor(naverTrendService)
+const naverTrendServiceProvider = NaverTrendServiceProvider._();
+
+/// 네이버 트렌드 서비스.
+
+final class NaverTrendServiceProvider
+    extends
+        $FunctionalProvider<
+          NaverTrendService,
+          NaverTrendService,
+          NaverTrendService
+        >
+    with $Provider<NaverTrendService> {
+  /// 네이버 트렌드 서비스.
+  const NaverTrendServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'naverTrendServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$naverTrendServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<NaverTrendService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  NaverTrendService create(Ref ref) {
+    return naverTrendService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(NaverTrendService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<NaverTrendService>(value),
+    );
+  }
+}
+
+String _$naverTrendServiceHash() => r'84109d2cc6ea63d1e2c8ffebb4ea3dde6a8d6b81';

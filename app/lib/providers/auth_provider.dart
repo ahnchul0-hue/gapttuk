@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/user.dart';
@@ -42,7 +44,13 @@ class AuthState extends _$AuthState {
       state = await authService.me();
       // 세션 복원 후 FCM 토큰 등록 시도
       ref.read(pushServiceProvider).registerDeviceIfNeeded();
-    } catch (_) {
+    } on DioException catch (e, st) {
+      // 네트워크 오류 또는 401 — 미인증으로 처리
+      debugPrint('AuthState.refresh: network/auth error — $e\n$st');
+      state = null;
+    } catch (e, st) {
+      // 예상치 못한 오류 (스키마 변경, 타입 오류 등) — 로깅 후 미인증 처리
+      debugPrint('AuthState.refresh: unexpected error — $e\n$st');
       state = null;
     }
   }

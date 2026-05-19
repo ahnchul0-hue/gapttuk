@@ -20,7 +20,9 @@ struct ErrorDetail {
 
 /// 통합 애플리케이션 에러 타입.
 /// 각 variant는 하나의 HTTP 상태 코드 + 에러 코드에 매핑된다.
+/// `#[non_exhaustive]`로 외부 크레이트/테스트가 모든 variant를 직접 매칭하는 것을 방지.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum AppError {
     // --- 인증 (M1-4) ---
     #[error("토큰이 만료되었습니다")]

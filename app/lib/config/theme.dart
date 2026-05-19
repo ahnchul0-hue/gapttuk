@@ -1,5 +1,62 @@
 import 'package:flutter/material.dart';
 
+/// 여백/간격 상수 — 화면 전체 일관된 스페이싱.
+///
+/// 사용법: `SizedBox(height: AppSpacing.md)`
+abstract final class AppSpacing {
+  /// 4dp — 아이콘과 레이블 사이 등 최소 간격
+  static const double xs = 4;
+
+  /// 8dp — 인접 요소 간 간격
+  static const double sm = 8;
+
+  /// 12dp — sm과 md 중간 (버튼 간격, 소제목 하단 등)
+  static const double smMd = 12;
+
+  /// 16dp — 섹션 내부 여백, 기본 패딩
+  static const double md = 16;
+
+  /// 24dp — 섹션 간 여백
+  static const double lg = 24;
+
+  /// 32dp — 화면 최상단/하단 여백
+  static const double xl = 32;
+
+  /// 48dp — 페이지 레벨 구분
+  static const double xxl = 48;
+}
+
+/// 타이포그래피 스타일 상수 — 디자인 토큰 기반 텍스트.
+///
+/// 사용법: `Text('...', style: AppTextStyles.priceLabel)`
+abstract final class AppTextStyles {
+  /// 가격 레이블 — 굵은 숫자 (상품 카드/상세)
+  static const TextStyle priceLabel = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
+  );
+
+  /// 할인율 뱃지 — 굵은 텍스트. 색상은 사용처에서 appColors.error 적용
+  static const TextStyle discountRate = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// 섹션 헤더 — 카드 내 소제목
+  static const TextStyle sectionHeader = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  );
+
+  /// 보조 설명 — 회색 소문자
+  static const TextStyle caption = TextStyle(
+    fontSize: 12,
+    color: Color(0xFF757575),
+  );
+}
+
 /// 값뚝 라이트/다크 테마 정의.
 abstract final class AppTheme {
   // --- 브랜드 컬러 ---

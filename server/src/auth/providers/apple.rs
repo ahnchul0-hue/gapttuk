@@ -95,7 +95,10 @@ async fn get_apple_jwks(client: &reqwest::Client) -> Result<AppleJwks, AppError>
 /// 서버는 Apple의 공개키(JWKS)로 서명을 검증한다.
 pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, AppError> {
     // 1. id_token 헤더에서 kid 추출
-    let header = jsonwebtoken::decode_header(id_token).map_err(|_| AppError::TokenInvalid)?;
+    let header = jsonwebtoken::decode_header(id_token).map_err(|e| {
+        tracing::debug!(error = %e, "Apple id_token header decode failed");
+        AppError::TokenInvalid
+    })?;
     let kid = header.kid.ok_or(AppError::TokenInvalid)?;
 
     // 2. Apple JWKS 가져오기 (24시간 캐싱)
@@ -109,8 +112,10 @@ pub async fn verify(state: &AppState, id_token: &str) -> Result<SocialUserInfo, 
         .ok_or(AppError::TokenInvalid)?;
 
     // 4. RSA 공개키로 id_token 검증
-    let decoding_key =
-        DecodingKey::from_rsa_components(&jwk.n, &jwk.e).map_err(|_| AppError::TokenInvalid)?;
+    let decoding_key = DecodingKey::from_rsa_components(&jwk.n, &jwk.e).map_err(|e| {
+        tracing::warn!(error = %e, kid = %kid, "Apple RSA key construction failed");
+        AppError::TokenInvalid
+    })?;
 
     let mut validation = Validation::new(Algorithm::RS256);
     // Apple의 id_token audience는 클라이언트 ID — 미설정 시 토큰 재사용 공격 방지를 위해 차단

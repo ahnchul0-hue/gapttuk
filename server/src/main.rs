@@ -2,6 +2,7 @@
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use gapttuk_server::cache::AppCache;
+use gapttuk_server::services::trend_data_service;
 use gapttuk_server::{api, config, crawlers, db, health_check, middleware, push, AppState};
 
 use axum::extract::ConnectInfo;
@@ -73,6 +74,11 @@ async fn metrics_handler(
     }
 }
 
+/// 파티션/suffix 식별자가 안전한지 검증 — alphanumeric + '_' 만 허용 (SQL injection 방어).
+fn is_safe_partition_suffix(s: &str) -> bool {
+    s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
 /// 파티션 유지보수 — api_access_logs + price_history에 현재월 + 3개월 미래 파티션 확보.
 /// 개별 파티션 생성 실패 시 나머지를 계속 시도하고, 전체 실패 건수를 반환한다.
 /// api_access_logs 파티션은 90일(3개월) 초과분을 자동 삭제한다 (price_history는 영구 보존).
@@ -91,10 +97,15 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
         for table in &["api_access_logs", "price_history"] {
             // SAFETY: table은 고정 슬라이스, suffix/start/next는 chrono 날짜 포맷 전용.
             // DDL은 PostgreSQL에서 bind 파라미터 불가하므로 format! 사용.
-            assert!(["api_access_logs", "price_history"].contains(table));
-            assert!(suffix
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_'));
+            if !is_safe_partition_suffix(&suffix) {
+                tracing::warn!(
+                    table = %table,
+                    suffix = %suffix,
+                    "Unexpected partition suffix format, skipping"
+                );
+                errors.push(format!("{table}_{suffix}: invalid suffix format"));
+                continue;
+            }
             let sql = format!(
                 "CREATE TABLE IF NOT EXISTS {table}_{suffix} PARTITION OF {table} \
                  FOR VALUES FROM ('{start}') TO ('{next}')"
@@ -131,10 +142,7 @@ async fn ensure_partitions(pool: &sqlx::PgPool) -> Result<(), String> {
                     continue;
                 };
                 // SAFETY: suffix를 alphanumeric + '_' 로 검증
-                if !suffix
-                    .chars()
-                    .all(|c| c.is_ascii_alphanumeric() || c == '_')
-                {
+                if !is_safe_partition_suffix(suffix) {
                     tracing::warn!(partition = %partition_name, "Unexpected partition name format, skipping");
                     continue;
                 }
@@ -189,6 +197,41 @@ fn extract_partition_to_date(bound_expr: &str) -> Option<chrono::NaiveDate> {
     chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d").ok()
 }
 
+/// price_history 파티션 → price_history_monthly 집계 INSERT SQL 생성.
+fn build_aggregate_sql(partition_name: &str) -> String {
+    format!(
+        "INSERT INTO price_history_monthly \
+             (product_id, year_month, avg_price, min_price, max_price, \
+              first_price, last_price, record_count, had_stockout) \
+         SELECT \
+             product_id, \
+             DATE_TRUNC('month', recorded_at)::DATE, \
+             AVG(price)::INTEGER, \
+             MIN(price), \
+             MAX(price), \
+             (ARRAY_AGG(price ORDER BY recorded_at ASC))[1], \
+             (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
+             COUNT(*)::INTEGER, \
+             BOOL_OR(is_out_of_stock) \
+         FROM \"{}\" \
+         GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
+         ON CONFLICT (product_id, year_month) DO NOTHING",
+        partition_name
+    )
+}
+
+/// 집계 검증 SQL — 파티션 원본 행수와 price_history_monthly 합산 비교.
+fn build_verify_sql(partition_name: &str) -> String {
+    format!(
+        "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
+         FROM price_history_monthly \
+         WHERE product_id IN (SELECT DISTINCT product_id FROM \"{}\") \
+           AND year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\") \
+           AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
+        partition_name, partition_name, partition_name
+    )
+}
+
 /// 2년 이전 price_history 파티션을 price_history_monthly로 집계 후 DROP.
 /// 한 번에 1개 파티션만 처리하여 부하 분산.
 async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
@@ -210,7 +253,11 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     for (partition_name, bound_expr) in rows {
         // 파티션 경계의 TO 날짜 파싱
         let Some(to_date) = extract_partition_to_date(&bound_expr) else {
-            continue; // DEFAULT 파티션 또는 파싱 불가
+            // DEFAULT 파티션은 정상 스킵; 그 외 형식은 경고
+            if !bound_expr.contains("MAXVALUE") && !bound_expr.contains("DEFAULT") {
+                tracing::warn!(partition = %partition_name, bound = %bound_expr, "Unexpected partition bound format — skipping archive");
+            }
+            continue;
         };
 
         if to_date > cutoff {
@@ -218,10 +265,7 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
         }
 
         // 파티션 이름 안전성 검사 (SQL injection 방지)
-        if !partition_name
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_')
-        {
+        if !is_safe_partition_suffix(&partition_name) {
             tracing::warn!(partition = %partition_name, "Unexpected partition name format");
             continue;
         }
@@ -240,59 +284,56 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
             .map_err(|e| format!("BEGIN failed: {e}"))?;
 
         // 1. price_history_monthly로 집계 (멱등: ON CONFLICT DO NOTHING)
-        let aggregate_sql = format!(
-            "INSERT INTO price_history_monthly \
-                 (product_id, year_month, avg_price, min_price, max_price, \
-                  first_price, last_price, record_count, had_stockout) \
-             SELECT \
-                 product_id, \
-                 DATE_TRUNC('month', recorded_at)::DATE, \
-                 AVG(price)::INTEGER, \
-                 MIN(price), \
-                 MAX(price), \
-                 (ARRAY_AGG(price ORDER BY recorded_at ASC))[1], \
-                 (ARRAY_AGG(price ORDER BY recorded_at DESC))[1], \
-                 COUNT(*)::INTEGER, \
-                 BOOL_OR(is_out_of_stock) \
-             FROM \"{}\" \
-             GROUP BY product_id, DATE_TRUNC('month', recorded_at)::DATE \
-             ON CONFLICT (product_id, year_month) DO NOTHING",
-            partition_name
-        );
+        let aggregate_sql = build_aggregate_sql(&partition_name);
         if let Err(e) = sqlx::query(&aggregate_sql).execute(&mut *tx).await {
-            let _ = tx.rollback().await;
             tracing::warn!(partition = %partition_name, error = %e, "Aggregation failed, skipping DROP");
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(partition = %partition_name, error = %rb_err, "집계 오류 후 롤백 실패");
+            }
             return Err(format!("Aggregation of {partition_name} failed: {e}"));
         }
 
         // 2. 행 수 검증 — 해당 파티션의 product만 대상 (CR-2)
         let count_sql = format!("SELECT COUNT(*)::BIGINT FROM \"{}\"", partition_name);
-        let (source_count,): (i64,) = sqlx::query_as(&count_sql)
+        let source_count: i64 = match sqlx::query_as::<_, (i64,)>(&count_sql)
             .fetch_one(&mut *tx)
             .await
-            .map_err(|e| format!("Count query failed: {e}"))?;
+        {
+            Ok((n,)) => n,
+            Err(e) => {
+                tracing::warn!(partition = %partition_name, error = %e, "Count 쿼리 실패");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "Count 실패 후 롤백 실패");
+                }
+                return Err(format!("Count query failed: {e}"));
+            }
+        };
 
-        let verify_sql = format!(
-            "SELECT COALESCE(SUM(record_count), 0)::BIGINT \
-             FROM price_history_monthly \
-             WHERE product_id IN (SELECT DISTINCT product_id FROM \"{}\") \
-               AND year_month >= (SELECT MIN(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\") \
-               AND year_month <= (SELECT MAX(DATE_TRUNC('month', recorded_at)::DATE) FROM \"{}\")",
-            partition_name, partition_name, partition_name
-        );
-        let (aggregated_count,): (i64,) = sqlx::query_as(&verify_sql)
+        let verify_sql = build_verify_sql(&partition_name);
+        let aggregated_count: i64 = match sqlx::query_as::<_, (i64,)>(&verify_sql)
             .fetch_one(&mut *tx)
             .await
-            .map_err(|e| format!("Verify query failed: {e}"))?;
+        {
+            Ok((n,)) => n,
+            Err(e) => {
+                tracing::warn!(partition = %partition_name, error = %e, "Verify 쿼리 실패");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "Verify 실패 후 롤백 실패");
+                }
+                return Err(format!("Verify query failed: {e}"));
+            }
+        };
 
         if aggregated_count < source_count {
-            let _ = tx.rollback().await;
             tracing::warn!(
                 partition = %partition_name,
                 source = source_count,
                 aggregated = aggregated_count,
                 "Row count mismatch — skipping DROP"
             );
+            if let Err(rb_err) = tx.rollback().await {
+                tracing::warn!(partition = %partition_name, error = %rb_err, "검증 불일치 후 롤백 실패");
+            }
             return Err(format!(
                 "{partition_name}: count mismatch {source_count} vs {aggregated_count}"
             ));
@@ -313,8 +354,10 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
                 );
             }
             Err(e) => {
-                let _ = tx.rollback().await;
                 tracing::warn!(partition = %partition_name, error = %e, "Failed to drop archived partition");
+                if let Err(rb_err) = tx.rollback().await {
+                    tracing::warn!(partition = %partition_name, error = %rb_err, "DROP 실패 후 롤백 실패");
+                }
                 return Err(format!("DROP {partition_name} failed: {e}"));
             }
         }
@@ -324,6 +367,80 @@ async fn archive_old_price_history(pool: &sqlx::PgPool) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// 오래된 레코드 TTL 삭제 — notifications/roulette_results/point_transactions.
+/// 각 테이블별 보존 기간을 초과한 데이터를 단일 트랜잭션 없이 독립 DELETE로 처리.
+async fn cleanup_old_records(pool: &sqlx::PgPool) {
+    // notifications: 90일 초과 삭제
+    match sqlx::query("DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '90 days'")
+        .execute(pool)
+        .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old notifications cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "notifications cleanup failed"),
+    }
+
+    // roulette_results: 180일 초과 삭제
+    match sqlx::query(
+        "DELETE FROM roulette_results WHERE created_at < NOW() - INTERVAL '180 days'",
+    )
+    .execute(pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old roulette_results cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "roulette_results cleanup failed"),
+    }
+
+    // point_transactions: 365일 초과 삭제
+    match sqlx::query(
+        "DELETE FROM point_transactions WHERE created_at < NOW() - INTERVAL '365 days'",
+    )
+    .execute(pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() > 0 => {
+            tracing::info!(deleted = r.rows_affected(), "Old point_transactions cleaned up")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "point_transactions cleanup failed"),
+    }
+}
+
+/// 네이버 트렌드 데이터를 moka 캐시에 사전 적재.
+/// NAVER 자격증명 미설정 시 조용히 건너뜀 (선택적 기능).
+async fn warmup_trend_cache(state: &AppState) {
+    let Some(client_id) = state.config.naver_client_id.as_deref() else {
+        tracing::debug!("NAVER_CLIENT_ID 미설정 — trend 캐시 웜업 건너뜀");
+        return;
+    };
+    let Some(client_secret) = state.config.naver_client_secret.as_deref() else {
+        tracing::warn!("NAVER_CLIENT_ID 설정됨, NAVER_CLIENT_SECRET 미설정 — trend 캐시 웜업 건너뜀 (설정 오류 가능)");
+        return;
+    };
+    match trend_data_service::get_default_category_trends(
+        &state.http_client,
+        client_id,
+        client_secret,
+    )
+    .await
+    {
+        Ok(trends) => {
+            state
+                .cache
+                .trend_data
+                .insert("default".to_string(), trends)
+                .await;
+            tracing::info!("Trend cache warmed up successfully");
+        }
+        Err(e) => tracing::warn!(error = %e, "Trend cache warmup failed"),
+    }
 }
 
 #[tokio::main]
@@ -440,8 +557,17 @@ async fn main() {
         let origins: Vec<HeaderValue> = config
             .allowed_origins
             .iter()
-            .filter_map(|o| o.parse().ok())
+            .filter_map(|o| {
+                o.parse().map_err(|e| {
+                    tracing::error!(origin = %o, error = %e, "Invalid ALLOWED_ORIGINS entry — skipping");
+                }).ok()
+            })
             .collect();
+        if origins.is_empty() {
+            tracing::warn!(
+                "All ALLOWED_ORIGINS entries are invalid — cross-origin requests will be blocked"
+            );
+        }
         CorsLayer::new()
             .allow_origin(origins)
             .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
@@ -469,6 +595,7 @@ async fn main() {
         )
         .nest("/api/v1/predictions", api::routes::predictions::router())
         .nest("/api/v1/rewards", api::routes::rewards::router())
+        .nest("/api/v1/trends", api::routes::trends::router())
         // innermost → outermost 순서
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256 KB — Axum 기본 2MB 대신 앱 요구에 맞게 제한
         .layer(global_governor_layer)
@@ -581,13 +708,47 @@ async fn main() {
             }
         });
 
-        // 9d. 백그라운드 태스크 패닉 감시 + Sentry 보고
+        // 9d. TTL 레코드 정리 (24시간 주기)
+        // notifications(90일)/roulette_results(180일)/point_transactions(365일) 초과분 삭제.
+        let cleanup_pool = pool.clone();
+        let cleanup_period = std::time::Duration::from_secs(86400);
+        let h_cleanup = tokio::spawn(async move {
+            let mut interval = tokio::time::interval_at(
+                tokio::time::Instant::now() + cleanup_period,
+                cleanup_period,
+            );
+            loop {
+                interval.tick().await;
+                cleanup_old_records(&cleanup_pool).await;
+            }
+        });
+
+        // 9e. Naver 트렌드 캐시 웜업 + 1시간 배치 갱신
+        // 시작 직후 1회 즉시 웜업 후 1시간 간격으로 반복.
+        // NAVER 자격증명 미설정 시 warmup_trend_cache()가 조용히 건너뜀.
+        let trend_state = state.clone();
+        let trend_period = std::time::Duration::from_secs(3600);
+        let h_trend = tokio::spawn(async move {
+            warmup_trend_cache(&trend_state).await;
+            let mut interval = tokio::time::interval_at(
+                tokio::time::Instant::now() + trend_period,
+                trend_period,
+            );
+            loop {
+                interval.tick().await;
+                warmup_trend_cache(&trend_state).await;
+            }
+        });
+
+        // 9f. 백그라운드 태스크 패닉 감시 + Sentry 보고
         // 각 태스크는 내부 loop에서 에러를 개별 처리하므로 정상적으로는 종료되지 않음.
         // 패닉 발생 시 로그 + Sentry 보고 + 메트릭 기록.
         for (name, handle) in [
             ("Partition maintenance", h_partition),
             ("Governor GC", h_gc),
             ("Token purge", h_purge),
+            ("Old records cleanup", h_cleanup),
+            ("Trend cache warmup", h_trend),
         ] {
             tokio::spawn(async move {
                 match handle.await {

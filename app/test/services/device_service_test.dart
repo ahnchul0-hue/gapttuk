@@ -22,7 +22,7 @@ void main() {
 
   group('getDevices', () {
     test('기기 목록 조회', () async {
-      when(() => mockDio.get('/api/v1/devices/')).thenAnswer(
+      when(() => mockDio.get('/api/v1/devices')).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {
@@ -54,7 +54,7 @@ void main() {
     });
 
     test('기기 없음', () async {
-      when(() => mockDio.get('/api/v1/devices/')).thenAnswer(
+      when(() => mockDio.get('/api/v1/devices')).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(),
           data: {'data': []},
@@ -70,7 +70,7 @@ void main() {
   group('registerDevice', () {
     test('FCM 기기 등록', () async {
       when(() => mockDio.post(
-            '/api/v1/devices/',
+            '/api/v1/devices',
             data: any(named: 'data'),
           )).thenAnswer(
         (_) async => Response(
@@ -98,7 +98,7 @@ void main() {
 
     test('deviceName 없이 등록', () async {
       when(() => mockDio.post(
-            '/api/v1/devices/',
+            '/api/v1/devices',
             data: any(named: 'data'),
           )).thenAnswer(
         (_) async => Response(

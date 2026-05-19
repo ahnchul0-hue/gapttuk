@@ -228,13 +228,13 @@ const productPredictionProvider = ProductPredictionFamily._();
 final class ProductPredictionProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Map<String, dynamic>>,
-          Map<String, dynamic>,
-          FutureOr<Map<String, dynamic>>
+          AsyncValue<PredictionResult?>,
+          PredictionResult?,
+          FutureOr<PredictionResult?>
         >
     with
-        $FutureModifier<Map<String, dynamic>>,
-        $FutureProvider<Map<String, dynamic>> {
+        $FutureModifier<PredictionResult?>,
+        $FutureProvider<PredictionResult?> {
   /// AI 가격 예측 — productId별로 캐싱.
   const ProductPredictionProvider._({
     required ProductPredictionFamily super.from,
@@ -259,12 +259,12 @@ final class ProductPredictionProvider
 
   @$internal
   @override
-  $FutureProviderElement<Map<String, dynamic>> $createElement(
+  $FutureProviderElement<PredictionResult?> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<Map<String, dynamic>> create(Ref ref) {
+  FutureOr<PredictionResult?> create(Ref ref) {
     final argument = this.argument as int;
     return productPrediction(ref, argument);
   }
@@ -280,12 +280,12 @@ final class ProductPredictionProvider
   }
 }
 
-String _$productPredictionHash() => r'9e186a2a363ff505a134efbab994f3fc171cbb92';
+String _$productPredictionHash() => r'de951debe5e0095ae4c19cc28227e6050715d5e2';
 
 /// AI 가격 예측 — productId별로 캐싱.
 
 final class ProductPredictionFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<Map<String, dynamic>>, int> {
+    with $FunctionalFamilyOverride<FutureOr<PredictionResult?>, int> {
   const ProductPredictionFamily._()
     : super(
         retry: null,

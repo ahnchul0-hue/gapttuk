@@ -25,18 +25,17 @@ class AlertService {
   /// 가격 알림 생성.
   ///
   /// POST /api/v1/alerts/price
-  /// [alertType]: 'target_price' | 'below_average' | 'near_lowest' | 'all_time_low'
-  /// [targetPrice]: alertType == 'target_price' 일 때 필수.
+  /// [targetPrice]: alertType == AlertType.targetPrice 일 때 필수.
   Future<PriceAlert> createPriceAlert({
     required int productId,
-    required String alertType,
+    required AlertType alertType,
     int? targetPrice,
   }) async {
     final response = await _api.dio.post(
       ApiEndpoints.alertPrice,
       data: {
         'product_id': productId,
-        'alert_type': alertType,
+        'alert_type': alertType.value,
         'target_price': ?targetPrice,
       },
     );

@@ -17,6 +17,9 @@ import '../services/token_storage.dart';
 /// 인증이 필요한 경로 목록.
 const _authRequiredPaths = {'/alerts', '/favorites', '/my'};
 
+/// 라우터 인증 가드에서 재사용하는 TokenStorage 싱글톤.
+final _routerTokenStorage = TokenStorage();
+
 /// 앱 라우트 정의.
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -30,8 +33,7 @@ final appRouter = GoRouter(
 
     if (!needsAuth) return null;
 
-    final storage = TokenStorage();
-    final token = await storage.getAccessToken();
+    final token = await _routerTokenStorage.getAccessToken();
     if (token == null || token.isEmpty) {
       // from 파라미터로 로그인 후 원래 경로로 복귀 가능하게 저장
       final from = Uri.encodeComponent(path);
@@ -114,9 +116,17 @@ final appRouter = GoRouter(
     // 상품 상세 (탭 외부)
     GoRoute(
       path: '/product/:id',
-      builder: (context, state) => ProductDetailScreen(
-        productId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-      ),
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null || id <= 0) {
+          // 잘못된 productId — 홈으로 리다이렉트
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) context.go('/');
+          });
+          return const SizedBox.shrink();
+        }
+        return ProductDetailScreen(productId: id);
+      },
     ),
     // 로그인
     GoRoute(

@@ -53,12 +53,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
-  void _updateAllAgreedState() {
-    setState(() {
-      _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
-    });
-  }
-
   bool get _canProceedFromPage2 => _termsAgreed && _privacyAgreed;
 
   Future<void> _openUrl(String urlStr) async {
@@ -101,13 +95,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             marketingAgreed: _marketingAgreed,
             referralCode: referralCode.isNotEmpty ? referralCode : null,
           );
-    } catch (e) {
+    } catch (e, st) {
       // 동의 전송 실패해도 앱 사용은 가능 (다음 로그인 시 재시도)
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+      debugPrint('OnboardingScreen._finish: $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     }
     if (mounted) context.go('/');
   }
@@ -127,7 +118,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   setState(() => _currentPage = index);
                 },
                 children: [
-                  _WelcomePage(),
+                  const _WelcomePage(),
                   _TermsPage(
                     allAgreed: _allAgreed,
                     termsAgreed: _termsAgreed,
@@ -136,22 +127,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     referralController: _referralController,
                     onAllAgreedChanged: _onAllAgreedChanged,
                     onTermsChanged: (v) {
-                      setState(() => _termsAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _termsAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onPrivacyChanged: (v) {
-                      setState(() => _privacyAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _privacyAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onMarketingChanged: (v) {
-                      setState(() => _marketingAgreed = v ?? false);
-                      _updateAllAgreedState();
+                      setState(() {
+                        _marketingAgreed = v ?? false;
+                        _allAgreed = _termsAgreed && _privacyAgreed && _marketingAgreed;
+                      });
                     },
                     onReferralChanged: (v) => _referralCode = v,
                     onOpenTerms: () => _openUrl(AppConstants.termsUrl),
                     onOpenPrivacy: () => _openUrl(AppConstants.privacyUrl),
                   ),
-                  _CompletePage(),
+                  const _CompletePage(),
                 ],
               ),
             ),
@@ -175,25 +172,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  /// 브랜드 컬러 ElevatedButton — 온보딩 공통 버튼 스타일.
+  Widget _primaryButton(String label, VoidCallback? onPressed) {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomButtons() {
     switch (_currentPage) {
       case 0:
         return SizedBox(
           width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _goToNextPage,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '다음',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
+          child: _primaryButton('다음', _goToNextPage),
         );
       case 1:
         return Row(
@@ -214,21 +218,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _canProceedFromPage2 ? _goToNextPage : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    '다음',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              child: _primaryButton(
+                '다음',
+                _canProceedFromPage2 ? _goToNextPage : null,
               ),
             ),
           ],
@@ -237,20 +229,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       default:
         return SizedBox(
           width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _finish,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '시작하기',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
+          child: _primaryButton('시작하기', _finish),
         );
     }
   }
@@ -261,6 +240,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 // ---------------------------------------------------------------------------
 
 class _WelcomePage extends StatelessWidget {
+  const _WelcomePage();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -536,6 +517,8 @@ class _TermsItem extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CompletePage extends StatelessWidget {
+  const _CompletePage();
+
   @override
   Widget build(BuildContext context) {
     return Padding(

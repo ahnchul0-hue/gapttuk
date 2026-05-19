@@ -10,18 +10,21 @@ class ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback? onTap;
 
+  // build()마다 생성하는 비용을 줄이기 위해 공유 포맷터 사용
+  static final _priceFormat = NumberFormat('#,###', 'ko_KR');
+
   const ProductCard({super.key, required this.product, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final priceFormat = NumberFormat('#,###', 'ko_KR');
+    final priceFormat = _priceFormat;
     final appColors = Theme.of(context).extension<AppColors>()!;
 
     final trendLabel = switch (product.priceTrend) {
-      'falling' => '가격 하락 중',
-      'rising' => '가격 상승 중',
-      'stable' => '가격 보합',
-      _ => null,
+      PriceTrend.falling => '가격 하락 중',
+      PriceTrend.rising => '가격 상승 중',
+      PriceTrend.stable => '가격 보합',
+      null => null,
     };
 
     return Semantics(
@@ -90,15 +93,15 @@ class ProductCard extends StatelessWidget {
               // 가격 트렌드 아이콘
               if (product.priceTrend != null)
                 ExcludeSemantics(child: Icon(
-                  product.priceTrend == 'falling'
+                  product.priceTrend == PriceTrend.falling
                       ? Icons.trending_down
-                      : product.priceTrend == 'rising'
+                      : product.priceTrend == PriceTrend.rising
                           ? Icons.trending_up
                           : Icons.trending_flat,
-                  color: product.priceTrend == 'falling'
+                  color: product.priceTrend == PriceTrend.falling
                       ? AppTheme.priceDown
-                      : product.priceTrend == 'rising'
-                          ? AppTheme.priceUp
+                      : product.priceTrend == PriceTrend.rising
+                          ? appColors.error
                           : appColors.neutral,
                 )),
             ],

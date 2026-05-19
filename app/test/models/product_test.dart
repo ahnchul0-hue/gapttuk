@@ -37,7 +37,7 @@ void main() {
       expect(product.lowestPrice, 19900);
       expect(product.highestPrice, 39900);
       expect(product.averagePrice, 28000);
-      expect(product.priceTrend, 'falling');
+      expect(product.priceTrend, PriceTrend.falling);
       expect(product.buyTimingScore, 85);
       expect(product.daysSinceLowest, 7);
       expect(product.dropFromAverage, 12);
@@ -67,7 +67,7 @@ void main() {
         id: 3,
         productName: '라운드트립',
         currentPrice: 15000,
-        priceTrend: 'rising',
+        priceTrend: PriceTrend.rising,
       );
 
       final json = original.toJson();

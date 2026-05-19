@@ -20,7 +20,10 @@ pub async fn get_prediction(
             fetch_or_generate(&pool, product_id).await
         })
         .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(|e| match e.as_ref() {
+            AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
+            _ => AppError::Internal(e.to_string()),
+        })?;
 
     Ok(prediction)
 }
@@ -54,10 +57,14 @@ async fn generate_prediction(pool: &PgPool, product_id: i64) -> Result<AiPredict
     .await?
     .ok_or_else(|| AppError::NotFound("상품".to_string()))?;
 
-    let score = row.buy_timing_score.unwrap_or(50) as i32;
+    let score = i32::from(row.buy_timing_score.unwrap_or(50).clamp(0, 100));
     let trend = row.price_trend.as_deref().unwrap_or("stable");
     let days = row.days_since_lowest.unwrap_or(999);
     let current_price = row.current_price.unwrap_or(0);
+    // 가격 데이터 미수집 상품은 예측 생성 불가 — 0원 예측이 24h 캐시되는 것을 방지
+    if current_price <= 0 {
+        return Err(AppError::NotFound("가격 데이터 없음".to_string()));
+    }
 
     let (action, confidence) = predict_action(score, trend, days);
 

@@ -4,6 +4,7 @@ mod notification;
 mod popular_search;
 mod price_history;
 mod product;
+mod trend;
 mod user;
 
 pub use ai_prediction::*;
@@ -12,4 +13,5 @@ pub use notification::*;
 pub use popular_search::*;
 pub use price_history::*;
 pub use product::*;
+pub use trend::*;
 pub use user::*;

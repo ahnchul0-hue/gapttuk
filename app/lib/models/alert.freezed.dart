@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PriceAlert {
 
- int get id;@JsonKey(name: 'user_id') int get userId;@JsonKey(name: 'product_id') int get productId;@JsonKey(name: 'alert_type') String get alertType;@JsonKey(name: 'target_price') int? get targetPrice;@JsonKey(name: 'is_active') bool get isActive;@JsonKey(name: 'last_triggered_at') DateTime? get lastTriggeredAt;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
+ int get id;@JsonKey(name: 'user_id') int get userId;@JsonKey(name: 'product_id') int get productId;@JsonKey(name: 'alert_type') AlertType get alertType;@JsonKey(name: 'target_price') int? get targetPrice;@JsonKey(name: 'is_active') bool get isActive;@JsonKey(name: 'last_triggered_at') DateTime? get lastTriggeredAt;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
 /// Create a copy of PriceAlert
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $PriceAlertCopyWith<$Res>  {
   factory $PriceAlertCopyWith(PriceAlert value, $Res Function(PriceAlert) _then) = _$PriceAlertCopyWithImpl;
 @useResult
 $Res call({
- int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'product_id') int productId,@JsonKey(name: 'alert_type') String alertType,@JsonKey(name: 'target_price') int? targetPrice,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'last_triggered_at') DateTime? lastTriggeredAt,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'product_id') int productId,@JsonKey(name: 'alert_type') AlertType alertType,@JsonKey(name: 'target_price') int? targetPrice,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'last_triggered_at') DateTime? lastTriggeredAt,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -71,7 +71,7 @@ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as int,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as int,alertType: null == alertType ? _self.alertType : alertType // ignore: cast_nullable_to_non_nullable
-as String,targetPrice: freezed == targetPrice ? _self.targetPrice : targetPrice // ignore: cast_nullable_to_non_nullable
+as AlertType,targetPrice: freezed == targetPrice ? _self.targetPrice : targetPrice // ignore: cast_nullable_to_non_nullable
 as int?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,lastTriggeredAt: freezed == lastTriggeredAt ? _self.lastTriggeredAt : lastTriggeredAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -161,7 +161,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  String alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  AlertType alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PriceAlert() when $default != null:
 return $default(_that.id,_that.userId,_that.productId,_that.alertType,_that.targetPrice,_that.isActive,_that.lastTriggeredAt,_that.createdAt,_that.updatedAt);case _:
@@ -182,7 +182,7 @@ return $default(_that.id,_that.userId,_that.productId,_that.alertType,_that.targ
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  String alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  AlertType alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _PriceAlert():
 return $default(_that.id,_that.userId,_that.productId,_that.alertType,_that.targetPrice,_that.isActive,_that.lastTriggeredAt,_that.createdAt,_that.updatedAt);case _:
@@ -202,7 +202,7 @@ return $default(_that.id,_that.userId,_that.productId,_that.alertType,_that.targ
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  String alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id, @JsonKey(name: 'user_id')  int userId, @JsonKey(name: 'product_id')  int productId, @JsonKey(name: 'alert_type')  AlertType alertType, @JsonKey(name: 'target_price')  int? targetPrice, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'last_triggered_at')  DateTime? lastTriggeredAt, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _PriceAlert() when $default != null:
 return $default(_that.id,_that.userId,_that.productId,_that.alertType,_that.targetPrice,_that.isActive,_that.lastTriggeredAt,_that.createdAt,_that.updatedAt);case _:
@@ -223,7 +223,7 @@ class _PriceAlert implements PriceAlert {
 @override final  int id;
 @override@JsonKey(name: 'user_id') final  int userId;
 @override@JsonKey(name: 'product_id') final  int productId;
-@override@JsonKey(name: 'alert_type') final  String alertType;
+@override@JsonKey(name: 'alert_type') final  AlertType alertType;
 @override@JsonKey(name: 'target_price') final  int? targetPrice;
 @override@JsonKey(name: 'is_active') final  bool isActive;
 @override@JsonKey(name: 'last_triggered_at') final  DateTime? lastTriggeredAt;
@@ -263,7 +263,7 @@ abstract mixin class _$PriceAlertCopyWith<$Res> implements $PriceAlertCopyWith<$
   factory _$PriceAlertCopyWith(_PriceAlert value, $Res Function(_PriceAlert) _then) = __$PriceAlertCopyWithImpl;
 @override @useResult
 $Res call({
- int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'product_id') int productId,@JsonKey(name: 'alert_type') String alertType,@JsonKey(name: 'target_price') int? targetPrice,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'last_triggered_at') DateTime? lastTriggeredAt,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ int id,@JsonKey(name: 'user_id') int userId,@JsonKey(name: 'product_id') int productId,@JsonKey(name: 'alert_type') AlertType alertType,@JsonKey(name: 'target_price') int? targetPrice,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'last_triggered_at') DateTime? lastTriggeredAt,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -286,7 +286,7 @@ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as int,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as int,alertType: null == alertType ? _self.alertType : alertType // ignore: cast_nullable_to_non_nullable
-as String,targetPrice: freezed == targetPrice ? _self.targetPrice : targetPrice // ignore: cast_nullable_to_non_nullable
+as AlertType,targetPrice: freezed == targetPrice ? _self.targetPrice : targetPrice // ignore: cast_nullable_to_non_nullable
 as int?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,lastTriggeredAt: freezed == lastTriggeredAt ? _self.lastTriggeredAt : lastTriggeredAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

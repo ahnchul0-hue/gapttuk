@@ -5,20 +5,34 @@ use scraper::{Html, Selector};
 use super::ua;
 
 // --- 정적 CSS 셀렉터 (LazyLock) — 프로세스 수명 동안 1회만 파싱 ---
-static SEL_PRICE_STRONG: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("span.total-price > strong").unwrap());
-static SEL_PRICE_TOTAL: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("span.total-price").unwrap());
-static SEL_PRICE_SALE: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse(".prod-sale-price .total-price").unwrap());
-static SEL_TITLE_H1: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("h1.prod-buy-header__title").unwrap());
-static SEL_TITLE_H2: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("h2.prod-buy-header__title").unwrap());
-static SEL_IMAGE: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("img.prod-image__detail").unwrap());
-static SEL_OOS: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse(".oos-label, .prod-not-find-known__text").unwrap());
+static SEL_PRICE_STRONG: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse("span.total-price > strong")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_PRICE_TOTAL: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse("span.total-price")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_PRICE_SALE: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse(".prod-sale-price .total-price")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_TITLE_H1: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse("h1.prod-buy-header__title")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_TITLE_H2: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse("h2.prod-buy-header__title")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_IMAGE: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse("img.prod-image__detail")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
+static SEL_OOS: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse(".oos-label, .prod-not-find-known__text")
+        .expect("hardcoded CSS selector — invalid selector is a compile-time bug")
+});
 
 /// 크롤링 결과
 pub struct CrawlResult {
@@ -47,6 +61,9 @@ pub enum CrawlError {
     #[error("Possible CAPTCHA or anti-bot page (no product data found)")]
     PossibleCaptcha,
 
+    #[error("Crawl aborted by abort flag (global block detected)")]
+    Aborted,
+
     #[error("Database error: {0}")]
     Db(#[from] sqlx::Error),
 }
@@ -63,9 +80,9 @@ pub async fn scrape_product_page(
     let mut last_err = CrawlError::ParseError("no attempts made".to_string());
 
     for attempt in 0..=max_retries {
-        // abort 확인
+        // abort 확인 (다른 상품에서 403/429 감지 시 전체 중단)
         if abort_flag.load(std::sync::atomic::Ordering::Relaxed) {
-            return Err(CrawlError::Blocked(0));
+            return Err(CrawlError::Aborted);
         }
 
         // 재시도 대기 (첫 시도는 skip)
@@ -230,7 +247,8 @@ mod tests {
             <img class="prod-image__detail" src="//img.coupang.com/test.jpg" />
         </body></html>
         "#;
-        let result = parse_product_html(1, html).unwrap();
+        let result = parse_product_html(1, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.product_name.as_deref(), Some("테스트 상품"));
         assert_eq!(result.price, Some(29900));
         assert_eq!(
@@ -248,7 +266,8 @@ mod tests {
             <div class="oos-label">일시품절</div>
         </body></html>
         "#;
-        let result = parse_product_html(2, html).unwrap();
+        let result = parse_product_html(2, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert!(result.is_out_of_stock);
         assert_eq!(result.price, None);
     }
@@ -256,7 +275,8 @@ mod tests {
     #[test]
     fn parse_html_no_price() {
         let html = r#"<html><body><h1 class="prod-buy-header__title">상품</h1></body></html>"#;
-        let result = parse_product_html(3, html).unwrap();
+        let result = parse_product_html(3, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.price, None);
         assert!(!result.is_out_of_stock);
     }
@@ -268,7 +288,8 @@ mod tests {
             <img class="prod-image__detail" data-img-src="//img.coupang.com/lazy.jpg" />
         </body></html>
         "#;
-        let result = parse_product_html(4, html).unwrap();
+        let result = parse_product_html(4, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(
             result.image_url.as_deref(),
             Some("https://img.coupang.com/lazy.jpg")
@@ -293,7 +314,8 @@ mod tests {
     // --- parse_product_html 추가 엣지케이스 ---
     #[test]
     fn parse_html_empty_document() {
-        let result = parse_product_html(5, "<html><body></body></html>").unwrap();
+        let result = parse_product_html(5, "<html><body></body></html>")
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.price, None);
         assert_eq!(result.product_name, None);
         assert_eq!(result.image_url, None);
@@ -307,7 +329,8 @@ mod tests {
             <h2 class="prod-buy-header__title">h2 제목</h2>
         </body></html>
         "#;
-        let result = parse_product_html(6, html).unwrap();
+        let result = parse_product_html(6, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.product_name.as_deref(), Some("h2 제목"));
     }
 
@@ -318,7 +341,8 @@ mod tests {
             <div class="prod-not-find-known__text">찾을 수 없는 상품</div>
         </body></html>
         "#;
-        let result = parse_product_html(7, html).unwrap();
+        let result = parse_product_html(7, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert!(result.is_out_of_stock);
     }
 
@@ -329,7 +353,8 @@ mod tests {
             <img class="prod-image__detail" src="https://img.coupang.com/full.jpg" />
         </body></html>
         "#;
-        let result = parse_product_html(8, html).unwrap();
+        let result = parse_product_html(8, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(
             result.image_url.as_deref(),
             Some("https://img.coupang.com/full.jpg")
@@ -345,7 +370,8 @@ mod tests {
             </div>
         </body></html>
         "#;
-        let result = parse_product_html(9, html).unwrap();
+        let result = parse_product_html(9, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.price, Some(15900));
     }
 
@@ -358,7 +384,8 @@ mod tests {
             </h1>
         </body></html>
         "#;
-        let result = parse_product_html(10, html).unwrap();
+        let result = parse_product_html(10, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.product_name.as_deref(), Some("공백 포함 제목"));
     }
 
@@ -378,7 +405,8 @@ mod tests {
     #[test]
     fn product_id_preserved() {
         let html = r#"<html><body></body></html>"#;
-        let result = parse_product_html(12345, html).unwrap();
+        let result = parse_product_html(12345, html)
+            .expect("hardcoded CSS selector — invalid selector is a compile-time bug");
         assert_eq!(result.product_id, 12345);
     }
 

@@ -5,3 +5,4 @@ pub mod notifications;
 pub mod predictions;
 pub mod products;
 pub mod rewards;
+pub mod trends;

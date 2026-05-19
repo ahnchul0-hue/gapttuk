@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../models/notification.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/screen_error_widget.dart';
 
 /// 알림 내역 화면 — 커서 페이지네이션 + 무한 스크롤.
 class NotificationListScreen extends ConsumerStatefulWidget {
@@ -75,7 +76,8 @@ class _NotificationListScreenState
           _isLoadingMore = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._loadNotifications: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);
@@ -100,8 +102,9 @@ class _NotificationListScreenState
           }
         });
       }
-    } catch (_) {
-      // 읽음 처리 실패 시 무시 — UX를 위해 조용히 처리
+    } catch (e, st) {
+      debugPrint('NotificationListScreen: markAsRead failed for ${notification.id} — $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 
@@ -122,12 +125,9 @@ class _NotificationListScreenState
           const SnackBar(content: Text('모든 알림을 읽음 처리했습니다.')),
         );
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._markAllAsRead: $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 
@@ -140,11 +140,10 @@ class _NotificationListScreenState
           _notifications.removeWhere((n) => n.id == notification.id);
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('NotificationListScreen._deleteNotification: $e\n$st');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
+        showErrorSnackBar(context, e);
         // 스와이프 복원을 위해 다시 로드
         _loadNotifications(refresh: true);
       }
@@ -157,8 +156,8 @@ class _NotificationListScreenState
     if (deepLink != null && deepLink.isNotEmpty) {
       try {
         context.go(deepLink);
-      } catch (_) {
-        // deepLink가 유효하지 않은 경우 무시
+      } catch (e, st) {
+        debugPrint('NotificationListScreen: invalid deepLink "$deepLink" — $e\n$st');
       }
     }
   }
@@ -188,30 +187,10 @@ class _NotificationListScreenState
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: appColors.error),
-            const SizedBox(height: 12),
-            const Text(
-              '알림 내역을 불러오지 못했습니다.',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: appColors.neutral, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () => _loadNotifications(refresh: true),
-              icon: const Icon(Icons.refresh),
-              label: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return ScreenErrorWidget(
+        message: '알림 내역을 불러오지 못했습니다.',
+        detail: _error!,
+        onRetry: () => _loadNotifications(refresh: true),
       );
     }
 
@@ -282,7 +261,7 @@ class _NotificationTile extends StatelessWidget {
     required this.onDismissed,
   });
 
-  String _formatTime(DateTime? dateTime) {
+  static String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return '';
     final now = DateTime.now();
     final diff = now.difference(dateTime);
@@ -299,22 +278,27 @@ class _NotificationTile extends StatelessWidget {
     final isUnread = !notification.isRead;
     final unreadBg = Theme.of(context).colorScheme.primaryContainer.withAlpha(40);
 
-    return Dismissible(
-      key: ValueKey('notification_${notification.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: appColors.error,
-        child: const Icon(Icons.delete_outline, color: Colors.white),
-      ),
-      onDismissed: (_) => onDismissed(),
-      child: Material(
-        color: isUnread ? unreadBg : null,
-        child: ListTile(
-          onTap: onTap,
-          leading: _buildTypeIcon(notification.notificationType, appColors),
-          title: Text(
+    return Semantics(
+      label: '${notification.title}, ${isUnread ? "읽지 않음" : "읽음"}',
+      child: Dismissible(
+        key: ValueKey('notification_${notification.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: appColors.error,
+          child: Semantics(
+            label: '알림 삭제',
+            child: const Icon(Icons.delete_outline, color: Colors.white),
+          ),
+        ),
+        onDismissed: (_) => onDismissed(),
+        child: Material(
+          color: isUnread ? unreadBg : null,
+          child: ListTile(
+            onTap: onTap,
+            leading: _buildTypeIcon(notification.notificationType, appColors),
+            title: Text(
             notification.title,
             style: TextStyle(
               fontWeight:
@@ -340,33 +324,18 @@ class _NotificationTile extends StatelessWidget {
           isThreeLine: false,
         ),
       ),
+      ),
     );
   }
 
   Widget _buildTypeIcon(String type, AppColors appColors) {
-    IconData icon;
-    Color color;
-    switch (type) {
-      case 'price_alert':
-        icon = Icons.price_change;
-        color = appColors.info;
-        break;
-      case 'keyword_alert':
-        icon = Icons.search;
-        color = appColors.warning;
-        break;
-      case 'category_alert':
-        icon = Icons.category;
-        color = appColors.warning;
-        break;
-      case 'system':
-        icon = Icons.info_outline;
-        color = appColors.neutral;
-        break;
-      default:
-        icon = Icons.notifications_outlined;
-        color = appColors.info;
-    }
+    final (icon, color) = switch (type) {
+      'price_alert' => (Icons.price_change, appColors.info),
+      'keyword_alert' => (Icons.search, appColors.warning),
+      'category_alert' => (Icons.category, appColors.warning),
+      'system' => (Icons.info_outline, appColors.neutral),
+      _ => (Icons.notifications_outlined, appColors.info),
+    };
     return CircleAvatar(
       radius: 20,
       backgroundColor: color.withAlpha(30),

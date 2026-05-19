@@ -4,6 +4,8 @@ import '../../config/theme.dart';
 import '../../models/alert.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
+import '../../widgets/alert_type_badge.dart';
+import '../../widgets/screen_error_widget.dart';
 
 /// 알림 센터 화면 — 가격 알림 / 카테고리 알림 / 키워드 알림 3탭.
 class AlertScreen extends ConsumerStatefulWidget {
@@ -47,7 +49,8 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AlertScreen._loadAlerts: $e\n$st');
       if (mounted) {
         setState(() {
           _error = friendlyErrorMessage(e);
@@ -62,12 +65,9 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   Future<void> _handleAlertAction(Future<void> Function() action) async {
     try {
       await action();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyErrorMessage(e))),
-        );
-      }
+    } catch (e, st) {
+      debugPrint('AlertScreen._handleAlertAction: $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     }
   }
 
@@ -164,38 +164,43 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
 
   Future<void> _showAddKeywordDialog() async {
     final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('키워드 알림 추가'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '알림 받을 키워드 입력',
-            border: OutlineInputBorder(),
+    String? result;
+    try {
+      result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('키워드 알림 추가'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: '알림 받을 키워드 입력',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
           ),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('추가'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('추가'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
+      );
+    } finally {
+      controller.dispose();
+    }
 
     if (result == null || result.isEmpty) return;
+    final keyword = result;
     await _handleAlertAction(() async {
       final created =
-          await ref.read(alertServiceProvider).createKeywordAlert(keyword: result);
+          await ref.read(alertServiceProvider).createKeywordAlert(keyword: keyword);
       if (mounted) {
         setState(() {
           final list =
@@ -251,7 +256,10 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 20),
               color: appColors.error,
-              child: const Icon(Icons.delete_outline, color: Colors.white),
+              child: Semantics(
+                label: '알림 삭제',
+                child: const Icon(Icons.delete_outline, color: Colors.white),
+              ),
             ),
             onDismissed: (_) => onDismissed(alert),
             child: tileBuilder(alert),
@@ -263,33 +271,12 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
 
   // ─── 헬퍼 ─────────────────────────────────────────────────────────────────
 
-  String _alertTypeLabel(String type) {
-    switch (type) {
-      case 'target_price':
-        return '목표 가격';
-      case 'below_average':
-        return '평균 이하';
-      case 'near_lowest':
-        return '최저가 근접';
-      case 'all_time_low':
-        return '최저가 갱신';
-      default:
-        return type;
-    }
-  }
-
-  String _categoryConditionLabel(String condition) {
-    switch (condition) {
-      case 'any_drop':
-        return '어떤 하락이든';
-      case 'threshold':
-        return '특정 비율 할인';
-      case 'below_max':
-        return '최대가 이하';
-      default:
-        return condition;
-    }
-  }
+  String _categoryConditionLabel(String condition) => switch (condition) {
+        'any_drop' => '어떤 하락이든',
+        'threshold' => '특정 비율 할인',
+        'below_max' => '최대가 이하',
+        _ => condition,
+      };
 
   // ─── 빌드 ─────────────────────────────────────────────────────────────────
 
@@ -333,33 +320,16 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
   Widget _buildBody() {
     final appColors = Theme.of(context).extension<AppColors>()!;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Semantics(
+        label: '알림 목록 로딩 중',
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: appColors.error),
-            const SizedBox(height: 12),
-            const Text(
-              '알림 목록을 불러오지 못했습니다',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: appColors.neutral, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _loadAlerts,
-              icon: const Icon(Icons.refresh),
-              label: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return ScreenErrorWidget(
+        message: '알림 목록을 불러오지 못했습니다',
+        detail: _error!,
+        onRetry: _loadAlerts,
       );
     }
 
@@ -392,7 +362,7 @@ class _AlertScreenState extends ConsumerState<AlertScreen>
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_alertTypeLabel(alert.alertType)),
+                Text(alertTypeLabel(alert.alertType)),
                 if (alert.targetPrice != null)
                   Text(
                     '목표가: ${formatPrice(alert.targetPrice!)}',

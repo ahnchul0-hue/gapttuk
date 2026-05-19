@@ -53,4 +53,41 @@ void main() {
       expect(ext!.success, AppColors.dark.success);
     });
   });
+
+  group('AppSpacing', () {
+    test('xs == 4', () => expect(AppSpacing.xs, 4));
+    test('sm == 8', () => expect(AppSpacing.sm, 8));
+    test('md == 16', () => expect(AppSpacing.md, 16));
+    test('lg == 24', () => expect(AppSpacing.lg, 24));
+    test('xl == 32', () => expect(AppSpacing.xl, 32));
+    test('xxl == 48', () => expect(AppSpacing.xxl, 48));
+    test('값이 오름차순', () {
+      final values = [AppSpacing.xs, AppSpacing.sm, AppSpacing.md,
+                      AppSpacing.lg, AppSpacing.xl, AppSpacing.xxl];
+      for (var i = 0; i < values.length - 1; i++) {
+        expect(values[i], lessThan(values[i + 1]));
+      }
+    });
+  });
+
+  group('AppTextStyles', () {
+    test('priceLabel fontSize == 18, bold', () {
+      expect(AppTextStyles.priceLabel.fontSize, 18);
+      expect(AppTextStyles.priceLabel.fontWeight, FontWeight.bold);
+    });
+
+    test('discountRate fontSize == 13, w700', () {
+      expect(AppTextStyles.discountRate.fontSize, 13);
+      expect(AppTextStyles.discountRate.fontWeight, FontWeight.w700);
+    });
+
+    test('sectionHeader fontSize == 14, w600', () {
+      expect(AppTextStyles.sectionHeader.fontSize, 14);
+      expect(AppTextStyles.sectionHeader.fontWeight, FontWeight.w600);
+    });
+
+    test('caption fontSize == 12', () {
+      expect(AppTextStyles.caption.fontSize, 12);
+    });
+  });
 }

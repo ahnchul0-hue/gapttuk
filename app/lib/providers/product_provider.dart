@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../models/prediction_result.dart';
 import '../models/price_history.dart';
 import '../models/product.dart';
 import 'service_providers.dart';
@@ -32,7 +33,7 @@ Future<List<PopularSearch>> popularSearches(Ref ref) async {
 
 /// AI 가격 예측 — productId별로 캐싱.
 @riverpod
-Future<Map<String, dynamic>> productPrediction(
+Future<PredictionResult?> productPrediction(
   Ref ref,
   int productId,
 ) async {

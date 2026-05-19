@@ -5,7 +5,7 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::api::pagination::{PaginatedResponse, PaginationParams};
+use crate::api::pagination::{parse_cursor, PaginatedResponse, PaginationParams};
 use crate::api::{ApiResponse, Deleted};
 use crate::auth::extractor::Auth;
 use crate::error::AppError;
@@ -39,7 +39,7 @@ async fn list_notifications(
     Auth(claims): Auth,
     Query(params): Query<PaginationParams>,
 ) -> Result<PaginatedResponse<Notification>, AppError> {
-    let cursor = params.cursor.as_deref().and_then(|c| c.parse::<i64>().ok());
+    let cursor = parse_cursor(params.cursor.as_deref(), "notifications")?;
     let limit = params.effective_limit();
 
     let notifications =

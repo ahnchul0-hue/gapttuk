@@ -14,6 +14,7 @@ class PriceChart extends ConsumerWidget {
   const PriceChart({super.key, required this.productId});
 
   static const _dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+  static final _priceFormat = NumberFormat('#,###', 'ko_KR');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,18 +30,16 @@ class PriceChart extends ConsumerWidget {
         final sorted = List.of(prices)
           ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
 
-        final spots = sorted.asMap().entries
-            .where((e) => e.value.avgPrice != null)
+        final spots = sorted
+            .where((e) => e.avgPrice != null)
             .map((e) {
           return FlSpot(
-              e.key.toDouble(), e.value.avgPrice!.toDouble());
+              e.dayOfWeek.toDouble(), e.avgPrice!.toDouble());
         }).toList();
 
         if (spots.isEmpty) {
           return const Center(child: Text('평균 가격 데이터가 없습니다'));
         }
-
-        final priceFormat = NumberFormat('#,###', 'ko_KR');
 
         return LineChart(
           LineChartData(
@@ -51,7 +50,7 @@ class PriceChart extends ConsumerWidget {
                   showTitles: true,
                   reservedSize: 60,
                   getTitlesWidget: (value, meta) => Text(
-                    '₩${priceFormat.format(value.toInt())}',
+                    '₩${_priceFormat.format(value.toInt())}',
                     style: const TextStyle(fontSize: 10),
                   ),
                 ),
@@ -61,13 +60,10 @@ class PriceChart extends ConsumerWidget {
                   showTitles: true,
                   interval: 1,
                   getTitlesWidget: (value, meta) {
-                    final idx = value.toInt();
-                    if (idx < 0 || idx >= sorted.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final dow = sorted[idx].dayOfWeek;
+                    final dow = value.toInt();
+                    if (dow < 0 || dow > 6) return const SizedBox.shrink();
                     return Text(
-                      _dayLabels[dow.clamp(0, 6)],
+                      _dayLabels[dow],
                       style: const TextStyle(fontSize: 10),
                     );
                   },
@@ -96,7 +92,7 @@ class PriceChart extends ConsumerWidget {
               touchTooltipData: LineTouchTooltipData(
                 getTooltipItems: (spots) => spots.map((spot) {
                   return LineTooltipItem(
-                    '₩${priceFormat.format(spot.y.toInt())}',
+                    '₩${_priceFormat.format(spot.y.toInt())}',
                     const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

@@ -1,7 +1,7 @@
 use moka::future::Cache;
 use std::time::Duration;
 
-use crate::models::{AiPrediction, PopularSearch, Product};
+use crate::models::{AiPrediction, CategoryTrendScore, DemographicTrendScore, PopularSearch, Product};
 
 /// 애플리케이션 인메모리 캐시 (moka).
 /// 각 캐시는 고유 TTL과 최대 용량을 가진다.
@@ -18,6 +18,12 @@ pub struct AppCache {
 
     /// AI 예측 — TTL 1시간, 최대 1,000건 (thundering herd 방지)
     pub predictions: Cache<i64, AiPrediction>,
+
+    /// 네이버 트렌드 데이터 — TTL 24h, 최대 50건 (월별 데이터라 신선도 요구 낮음)
+    pub trend_data: Cache<String, Vec<CategoryTrendScore>>,
+
+    /// 인구통계 트렌드 데이터 — TTL 1h, 최대 100건 (카테고리코드 키)
+    pub demographic_data: Cache<String, Vec<DemographicTrendScore>>,
 }
 
 impl AppCache {
@@ -42,6 +48,16 @@ impl AppCache {
                 .time_to_live(Duration::from_secs(3600)) // 1시간 (DB TTL 24시간 중 인메모리는 1시간)
                 .max_capacity(1_000)
                 .build(),
+
+            trend_data: Cache::builder()
+                .time_to_live(Duration::from_secs(86400)) // 24시간 (월별 데이터 — 신선도 요구 낮음)
+                .max_capacity(50)
+                .build(),
+
+            demographic_data: Cache::builder()
+                .time_to_live(Duration::from_secs(3600)) // 1시간 (D-116: moka 확장 전략)
+                .max_capacity(100)
+                .build(),
         }
     }
 
@@ -64,6 +80,10 @@ impl AppCache {
             .set(self.products.entry_count() as f64);
         metrics::gauge!("cache_entries", "name" => "predictions")
             .set(self.predictions.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "trend_data")
+            .set(self.trend_data.entry_count() as f64);
+        metrics::gauge!("cache_entries", "name" => "demographic_data")
+            .set(self.demographic_data.entry_count() as f64);
     }
 }
 

@@ -7,6 +7,7 @@ import '../../providers/product_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../utils/error_utils.dart';
 import '../../widgets/loading_skeleton.dart';
+import '../../widgets/screen_error_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -21,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(popularSearchesProvider.future),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             // 검색 바
             GestureDetector(
@@ -37,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     Icon(Icons.search,
                         color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.smMd),
                     Text(
                       '상품명 또는 URL을 검색하세요',
                       style: TextStyle(
@@ -49,7 +50,7 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smMd),
 
             // URL로 상품 추가 카드
             Card(
@@ -61,33 +62,41 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
             // 인기 검색어
             Text('인기 검색어',
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smMd),
             popularAsync.when(
               data: (searches) => searches.isEmpty
                   ? const Center(child: Text('인기 검색어가 없습니다'))
                   : Column(
                       children: searches
                           .take(10)
-                          .map((s) => ListTile(
-                                leading: CircleAvatar(
-                                  child: Text('${s.rank}'),
+                          .map((s) => Semantics(
+                                label:
+                                    '${s.rank}위 ${s.keyword}${s.trend != null ? ", 트렌드 ${s.trend}" : ""}',
+                                excludeSemantics: true,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text('${s.rank}'),
+                                  ),
+                                  title: Text(s.keyword),
+                                  trailing: s.trend != null
+                                      ? _trendIcon(s.trend!, appColors)
+                                      : null,
+                                  dense: true,
                                 ),
-                                title: Text(s.keyword),
-                                trailing: s.trend != null
-                                    ? _trendIcon(s.trend!, appColors)
-                                    : null,
-                                dense: true,
                               ))
                           .toList(),
                     ),
               loading: () => const LoadingSkeleton(itemCount: 5),
-              error: (e, st) =>
-                  Center(child: Text(friendlyErrorMessage(e))),
+              error: (e, st) => ScreenErrorWidget(
+                message: '인기 검색어를 불러오지 못했습니다',
+                detail: friendlyErrorMessage(e),
+                onRetry: () => ref.refresh(popularSearchesProvider),
+              ),
             ),
           ],
         ),
@@ -95,76 +104,72 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddByUrlDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showAddByUrlDialog(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
-    bool isLoading = false;
+    try {
+      bool isLoading = false;
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('URL로 상품 추가'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'https://www.coupang.com/...',
-              labelText: '상품 URL',
+      await showDialog<void>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('URL로 상품 추가'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'https://www.coupang.com/...',
+                labelText: '상품 URL',
+              ),
+              keyboardType: TextInputType.url,
             ),
-            keyboardType: TextInputType.url,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final url = controller.text.trim();
+                        if (url.isEmpty) return;
+                        setState(() => isLoading = true);
+                        try {
+                          final service = ref.read(productServiceProvider);
+                          final result = await service.addByUrl(url);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            context.push('/product/${result.id}');
+                          }
+                        } catch (e, st) {
+                          debugPrint('HomeScreen._showAddByUrlDialog: $e\n$st');
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            showErrorSnackBar(context, e);
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('추가'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      final url = controller.text.trim();
-                      if (url.isEmpty) return;
-                      setState(() => isLoading = true);
-                      try {
-                        final service = ref.read(productServiceProvider);
-                        final result = await service.addByUrl(url);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          context.push('/product/${result.id}');
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(friendlyErrorMessage(e))),
-                          );
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('추가'),
-            ),
-          ],
         ),
-      ),
-    ).then((_) => controller.dispose());
-  }
-
-  Widget _trendIcon(String trend, AppColors appColors) {
-    switch (trend) {
-      case 'up':
-        return Icon(Icons.trending_up, color: appColors.error, size: 18);
-      case 'down':
-        return Icon(Icons.trending_down, color: appColors.info, size: 18);
-      case 'new':
-        return Text('NEW',
-            style: TextStyle(color: appColors.warning, fontSize: 12));
-      default:
-        return Icon(Icons.trending_flat, color: appColors.neutral, size: 18);
+      );
+    } finally {
+      controller.dispose();
     }
   }
+
+  Widget _trendIcon(String trend, AppColors appColors) => switch (trend) {
+    'up' => Icon(Icons.trending_up, color: appColors.error, size: 18),
+    'down' => Icon(Icons.trending_down, color: appColors.info, size: 18),
+    'new' => Text('NEW', style: TextStyle(color: appColors.warning, fontSize: 12)),
+    'stable' || _ => Icon(Icons.trending_flat, color: appColors.neutral, size: 18),
+  };
 }

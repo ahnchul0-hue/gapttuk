@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/api_endpoints.dart';
 import '../config/constants.dart';
@@ -8,6 +9,9 @@ import 'token_storage.dart';
 class ApiClient {
   late final Dio dio;
   final TokenStorage _tokenStorage;
+
+  /// 401 갱신 실패 시 호출되는 콜백 — AuthState.logout() 연결용.
+  static void Function()? onSessionExpired;
 
   ApiClient({required TokenStorage tokenStorage})
       : _tokenStorage = tokenStorage {
@@ -95,12 +99,18 @@ class _AuthInterceptor extends Interceptor {
           try {
             final response = await _client.dio.fetch(err.requestOptions);
             return handler.resolve(response);
-          } on DioException catch (e) {
+          } on DioException catch (e, st) {
+            debugPrint('_AuthInterceptor: retry request failed — $e\n$st');
             return handler.next(e);
           }
+        } else {
+          // 갱신 실패 (refresh_token 만료 등) → 세션 종료 알림
+          ApiClient.onSessionExpired?.call();
         }
-      } catch (_) {
+      } catch (e, st) {
+        debugPrint('_AuthInterceptor: unexpected error during token refresh — $e\n$st');
         await _client._tokenStorage.clearTokens();
+        ApiClient.onSessionExpired?.call();
       }
     }
     handler.next(err);

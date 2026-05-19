@@ -35,7 +35,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).extension<AppColors>()!.error,
+            ),
             child: const Text('로그아웃'),
           ),
         ],
@@ -64,7 +66,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).extension<AppColors>()!.error,
+            ),
             child: const Text('탈퇴'),
           ),
         ],
@@ -76,12 +80,9 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           context.go('/login');
         }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(friendlyErrorMessage(e))),
-          );
-        }
+      } catch (e, st) {
+        debugPrint('SettingsScreen._showDeleteAccountDialog: $e\n$st');
+        if (context.mounted) showErrorSnackBar(context, e);
       }
     }
   }
@@ -94,12 +95,12 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           // ─── 섹션 1: 알림 설정 ────────────────────────────────────────────
-          _SectionHeader(title: '알림 설정'),
-          _PushNotificationTile(),
+          const _SectionHeader(title: '알림 설정'),
+          const _PushNotificationTile(),
           const Divider(height: 1),
 
           // ─── 섹션 2: 앱 정보 ──────────────────────────────────────────────
-          _SectionHeader(title: '앱 정보'),
+          const _SectionHeader(title: '앱 정보'),
           ListTile(
             title: const Text('버전'),
             trailing: Text(
@@ -134,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 1),
 
           // ─── 섹션 3: 계정 ─────────────────────────────────────────────────
-          _SectionHeader(title: '계정'),
+          const _SectionHeader(title: '계정'),
           ListTile(
             leading: Icon(Icons.logout, color: appColors.error),
             title: Text(

@@ -18,6 +18,33 @@ pub struct ConsentInfo {
     pub marketing_agreed: bool,
 }
 
+/// 동의 검증 순수 함수 — DB 없이 단위 테스트 가능.
+/// terms/privacy 모두 동의 필수. marketing은 선택.
+pub fn validate_consent(terms_agreed: bool, privacy_agreed: bool) -> Result<(), AppError> {
+    if !terms_agreed || !privacy_agreed {
+        return Err(AppError::BadRequest(
+            "이용약관 및 개인정보 처리방침 동의가 필요합니다".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+/// 추천 코드 형식 검증 순수 함수 — DB 없이 단위 테스트 가능.
+/// 유효 형식: "GAP-XXXXXX" (접두사 4자 + 영대문자/숫자 6자 = 총 10자).
+/// trim을 수행하지 않음 — 호출자(find_referrer_by_code)가 책임.
+pub fn is_valid_referral_code_format(code: &str) -> bool {
+    if code.chars().count() != 10 {
+        return false;
+    }
+    if !code.starts_with("GAP-") {
+        return false;
+    }
+    let suffix = &code[4..];
+    suffix
+        .chars()
+        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+}
+
 /// 소셜 로그인 사용자 upsert → 신규면 INSERT, 기존이면 UPDATE.
 /// referral_code는 신규 사용자에게만 내부 생성 — 기존 사용자 로그인 시 불필요한 DB 조회 방지.
 /// 신규 사용자는 terms_agreed + privacy_agreed가 필수.
@@ -59,11 +86,7 @@ pub async fn upsert_user(
         Ok((updated, false))
     } else {
         // 신규 사용자 — 동의 검증 필수
-        if !consent.terms_agreed || !consent.privacy_agreed {
-            return Err(AppError::BadRequest(
-                "이용약관 및 개인정보 처리방침 동의가 필요합니다".to_string(),
-            ));
-        }
+        validate_consent(consent.terms_agreed, consent.privacy_agreed)?;
 
         let now = Utc::now();
         let terms_at = Some(now);
@@ -74,28 +97,53 @@ pub async fn upsert_user(
             None
         };
 
-        // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성
-        let referral_code = generate_referral_code(pool).await?;
-        let mut tx = pool.begin().await?;
-
-        let user: User = sqlx::query_as(
-            r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
-                profile_image_url, referral_code, referred_by,
-                terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#,
-        )
-        .bind(&info.email)
-        .bind(&info.nickname)
-        .bind(provider_str)
-        .bind(&info.provider_id)
-        .bind(&info.profile_image_url)
-        .bind(&referral_code)
-        .bind(referred_by)
-        .bind(terms_at)
-        .bind(privacy_at)
-        .bind(marketing_at)
-        .fetch_one(&mut *tx)
-        .await?;
+        // referral_code 생성 후 트랜잭션으로 user + user_points 원자적 생성.
+        // TOCTOU 방어: DB UNIQUE 위반 시 최대 3회 재시도.
+        let mut tx_result: Result<(User, sqlx::Transaction<'_, sqlx::Postgres>), AppError> = Err(
+            AppError::Internal("referral_code 생성 시도 횟수 초과".to_string()),
+        );
+        for _ in 0..3u8 {
+            let referral_code = generate_referral_code(pool).await?;
+            let mut tx = pool.begin().await?;
+            let res: Result<User, sqlx::Error> = sqlx::query_as(
+                r#"INSERT INTO users (email, nickname, auth_provider, auth_provider_id,
+                    profile_image_url, referral_code, referred_by,
+                    terms_agreed_at, privacy_agreed_at, marketing_agreed_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *"#,
+            )
+            .bind(&info.email)
+            .bind(&info.nickname)
+            .bind(provider_str)
+            .bind(&info.provider_id)
+            .bind(&info.profile_image_url)
+            .bind(&referral_code)
+            .bind(referred_by)
+            .bind(terms_at)
+            .bind(privacy_at)
+            .bind(marketing_at)
+            .fetch_one(&mut *tx)
+            .await;
+            match res {
+                Ok(user) => {
+                    tx_result = Ok((user, tx));
+                    break;
+                }
+                Err(e) if is_referral_code_collision(&e) => {
+                    tracing::warn!("referral_code 충돌 감지, 재시도");
+                    if let Err(rb_err) = tx.rollback().await {
+                        tracing::warn!(error = %rb_err, "referral_code 충돌 롤백 실패");
+                    }
+                    tx_result = Err(AppError::from(e));
+                }
+                Err(e) => {
+                    if let Err(rb_err) = tx.rollback().await {
+                        tracing::warn!(error = %rb_err, "upsert_user 트랜잭션 롤백 실패");
+                    }
+                    return Err(AppError::from(e));
+                }
+            }
+        }
+        let (user, mut tx) = tx_result?;
 
         // user_points 초기화 (balance=0, total_earned=0, total_spent=0)
         sqlx::query("INSERT INTO user_points (user_id) VALUES ($1)")
@@ -110,7 +158,7 @@ pub async fn upsert_user(
             )
             .bind(referrer_id)
             .bind(user.id)
-            .bind(&referral_code)
+            .bind(&user.referral_code)
             .execute(&mut *tx)
             .await?;
 
@@ -145,6 +193,17 @@ pub async fn upsert_user(
     }
 }
 
+/// refresh token 만료 시각 계산 — `jwt_refresh_ttl_secs`를 현재 시각에 더한다.
+/// i64 변환 실패 시 AppError::Internal 반환.
+fn refresh_token_expiry(config: &Config) -> Result<chrono::DateTime<Utc>, AppError> {
+    Ok(Utc::now()
+        + Duration::seconds(
+            i64::try_from(config.jwt_refresh_ttl_secs).map_err(|_| {
+                AppError::Internal("jwt_refresh_ttl_secs가 i64 범위를 초과합니다".to_string())
+            })?,
+        ))
+}
+
 /// 새 토큰 쌍 생성 + refresh token DB 저장.
 pub async fn create_token_pair(
     pool: &PgPool,
@@ -155,7 +214,7 @@ pub async fn create_token_pair(
     let refresh_token = generate_refresh_token();
     let token_hash = hash_refresh_token(&refresh_token);
 
-    let expires_at = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
+    let expires_at = refresh_token_expiry(config)?;
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)
@@ -203,7 +262,9 @@ pub async fn rotate_refresh_token(
     // 2. 탈취 감지 — 이미 revoke된 토큰 재사용
     if revoked_at.is_some() {
         // tx를 먼저 롤백 (aborted state 방지)
-        let _ = tx.rollback().await;
+        if let Err(rb_err) = tx.rollback().await {
+            tracing::warn!(error = %rb_err, "탈취 감지 후 트랜잭션 롤백 실패");
+        }
 
         // pool에서 직접 실행 — 멱등 UPDATE이므로 트랜잭션 불필요
         for attempt in 1..=2 {
@@ -258,7 +319,7 @@ pub async fn rotate_refresh_token(
     let (access_token, expires_in) = encode_access_token(user_id, config)?;
     let new_refresh = generate_refresh_token();
     let new_hash = hash_refresh_token(&new_refresh);
-    let new_expires = Utc::now() + Duration::seconds(config.jwt_refresh_ttl_secs as i64);
+    let new_expires = refresh_token_expiry(config)?;
 
     sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
         .bind(user_id)
@@ -288,6 +349,19 @@ pub async fn logout(pool: &PgPool, user_id: i64) -> Result<(), AppError> {
     .execute(pool)
     .await?;
     Ok(())
+}
+
+/// referral_code DB UNIQUE 충돌 여부 판별.
+/// users 테이블의 referral_code UNIQUE 제약 위반인지 확인한다.
+fn is_referral_code_collision(e: &sqlx::Error) -> bool {
+    if let sqlx::Error::Database(db_err) = e {
+        db_err.is_unique_violation()
+            && db_err
+                .constraint()
+                .is_some_and(|c| c.contains("referral_code"))
+    } else {
+        false
+    }
 }
 
 /// 추천 코드 생성: GAP-XXXXXX (영숫자 6자리, 36^6 ≈ 22억 조합).
@@ -392,7 +466,7 @@ pub async fn find_referrer_by_code(
     referral_code: &str,
 ) -> Result<Option<i64>, AppError> {
     let code = referral_code.trim();
-    if code.len() > 20 || code.is_empty() {
+    if !is_valid_referral_code_format(code) {
         return Ok(None);
     }
     let id: Option<i64> =
@@ -401,4 +475,110 @@ pub async fn find_referrer_by_code(
             .fetch_optional(pool)
             .await?;
     Ok(id)
+}
+
+// ─── 단위 테스트 ──────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- validate_consent ---
+
+    #[test]
+    fn consent_both_agreed_ok() {
+        assert!(validate_consent(true, true).is_ok());
+    }
+
+    #[test]
+    fn consent_terms_not_agreed_err() {
+        let result = validate_consent(false, true);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_privacy_not_agreed_err() {
+        let result = validate_consent(true, false);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_neither_agreed_err() {
+        let result = validate_consent(false, false);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn consent_error_message_korean() {
+        let Err(AppError::BadRequest(msg)) = validate_consent(false, false) else {
+            panic!("expected BadRequest");
+        };
+        assert!(
+            msg.contains("동의"),
+            "에러 메시지에 '동의' 포함 필요: {msg}"
+        );
+    }
+
+    // --- is_valid_referral_code_format ---
+
+    #[test]
+    fn referral_code_valid_uppercase_alphanumeric() {
+        assert!(is_valid_referral_code_format("GAP-ABC123"));
+    }
+
+    #[test]
+    fn referral_code_valid_all_digits() {
+        assert!(is_valid_referral_code_format("GAP-123456"));
+    }
+
+    #[test]
+    fn referral_code_valid_all_letters() {
+        assert!(is_valid_referral_code_format("GAP-ABCDEF"));
+    }
+
+    #[test]
+    fn referral_code_invalid_lowercase_prefix() {
+        assert!(!is_valid_referral_code_format("gap-ABC123"));
+    }
+
+    #[test]
+    fn referral_code_invalid_lowercase_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-abc123"));
+    }
+
+    #[test]
+    fn referral_code_invalid_empty() {
+        assert!(!is_valid_referral_code_format(""));
+    }
+
+    #[test]
+    fn referral_code_invalid_no_prefix() {
+        assert!(!is_valid_referral_code_format("ABC12345678"));
+    }
+
+    #[test]
+    fn referral_code_invalid_short_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-AB"));
+    }
+
+    #[test]
+    fn referral_code_invalid_long_suffix() {
+        assert!(!is_valid_referral_code_format("GAP-ABCDEFG"));
+    }
+
+    #[test]
+    fn referral_code_invalid_special_chars() {
+        assert!(!is_valid_referral_code_format("GAP-!@#$%^"));
+    }
+
+    #[test]
+    fn referral_code_invalid_unicode() {
+        assert!(!is_valid_referral_code_format("GAP-한글한글"));
+    }
+
+    #[test]
+    fn referral_code_trims_whitespace_then_validates() {
+        // 공백 포함 시 trim 후 정확히 10자여야 유효
+        assert!(!is_valid_referral_code_format(" GAP-ABC123 "));
+    }
 }

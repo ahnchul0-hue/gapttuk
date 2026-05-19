@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
+import '../../utils/error_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../services/reward_service.dart';
@@ -100,7 +101,9 @@ class MyPageScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).extension<AppColors>()!.error,
+            ),
             child: const Text('로그아웃'),
           ),
         ],
@@ -246,7 +249,8 @@ class _CentsBalanceTile extends ConsumerStatefulWidget {
 
 class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   PointsInfo? _points;
-  bool _loading = false;
+  bool _loading = false;       // 체크인 버튼 로딩
+  bool _loadingBalance = true; // 초기 잔액 로딩
   bool _checkinDone = false;
   bool _error = false;
 
@@ -257,16 +261,19 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   }
 
   Future<void> _loadPoints() async {
+    setState(() => _loadingBalance = true);
     try {
       final info = await ref.read(rewardServiceProvider).getPoints();
       if (mounted) {
         setState(() {
           _points = info;
           _error = false;
+          _loadingBalance = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _error = true);
+    } catch (e, st) {
+      debugPrint('_CentsBalanceTile._loadPoints: $e\n$st');
+      if (mounted) setState(() { _error = true; _loadingBalance = false; });
     }
   }
 
@@ -304,12 +311,9 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
           );
         }
       });
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('출석 체크 중 오류가 발생했습니다.')),
-        );
-      }
+    } catch (e, st) {
+      debugPrint('_CentsBalanceTile._doCheckin: $e\n$st');
+      if (mounted) showErrorSnackBar(context, e);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -319,9 +323,10 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
   Widget build(BuildContext context) {
     final balance = _points?.balance ?? 0;
 
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return ListTile(
       onTap: () => context.push('/my/points'),
-      leading: const Icon(Icons.monetization_on_outlined, color: Colors.amber),
+      leading: Icon(Icons.monetization_on_outlined, color: appColors.warning),
       title: Text(
         '센트(¢) 잔액',
         style: Theme.of(context).textTheme.bodyLarge,
@@ -332,18 +337,24 @@ class _CentsBalanceTileState extends ConsumerState<_CentsBalanceTile> {
               child: Text(
                 '로드 실패 (탭하여 재시도)',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          Theme.of(context).extension<AppColors>()!.error,
+                      color: appColors.error,
                     ),
               ),
             )
-          : Text(
-              '$balance${AppConstants.rewardUnit}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber[700],
-                  ),
-            ),
+          : _loadingBalance
+              ? Text(
+                  '로딩 중...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: appColors.neutral,
+                      ),
+                )
+              : Text(
+                  '$balance${AppConstants.rewardUnit}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: appColors.warning,
+                      ),
+                ),
       trailing: _loading
           ? const SizedBox(
               width: 20,

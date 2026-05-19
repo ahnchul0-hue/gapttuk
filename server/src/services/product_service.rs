@@ -64,8 +64,10 @@ pub fn parse_coupang_url(url_str: &str) -> Result<CoupangUrlInfo, AppError> {
         ));
     }
 
-    let url = reqwest::Url::parse(url_str)
-        .map_err(|_| AppError::BadRequest("유효하지 않은 URL입니다".to_string()))?;
+    let url = reqwest::Url::parse(url_str).map_err(|e| {
+        tracing::debug!(url = url_str, error = %e, "URL 파싱 실패");
+        AppError::BadRequest("유효하지 않은 URL입니다".to_string())
+    })?;
 
     let host = url.host_str().unwrap_or_default();
     if host != "coupang.com" && host != "www.coupang.com" && !host.ends_with(".coupang.com") {
@@ -116,8 +118,24 @@ pub async fn get_product(pool: &PgPool, cache: &AppCache, id: i64) -> Result<Pro
         .await
         .map_err(|e| match e.as_ref() {
             AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
-            other => AppError::Internal(other.to_string()),
+            other => {
+                tracing::error!(error = %other, "product cache retrieval failed");
+                AppError::Internal(other.to_string())
+            }
         })
+}
+
+/// ILIKE 검색에서 와일드카드 문자를 이스케이프한다.
+///
+/// PostgreSQL ILIKE 쿼리에서 `%`, `_`, `\`는 특수 의미를 가지므로
+/// 사용자 입력에 포함된 경우 `\\` 접두사로 이스케이프한다.
+/// 이스케이프된 문자열에 `%{escaped}%` 형식으로 감싸 ILIKE 패턴으로 사용한다.
+pub fn build_search_pattern(query: &str) -> String {
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{}%", escaped)
 }
 
 /// 키워드 검색 (ILIKE, 커서 기반 페이지네이션, 선택적 필터/정렬)
@@ -132,12 +150,7 @@ pub async fn search_products(
     filter: Option<&str>,
     sort: Option<&str>,
 ) -> Result<Vec<ProductSearchItem>, AppError> {
-    // ILIKE 와일드카드 문자 이스케이프 (%, _, \)
-    let escaped = query
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_");
-    let pattern = format!("%{}%", escaped);
+    let pattern = build_search_pattern(query);
     let fetch_limit = limit + 1; // limit+1 패턴
 
     // 필터 조건 SQL 절
@@ -224,6 +237,7 @@ pub async fn search_products(
 /// URL로 상품 추가 (placeholder 등록 — 실제 크롤링은 M1-6)
 ///
 /// `INSERT ON CONFLICT DO NOTHING`으로 TOCTOU 레이스 컨디션 방지.
+#[tracing::instrument(skip(pool, cache))]
 pub async fn add_product_by_url(
     pool: &PgPool,
     cache: &AppCache,
@@ -435,5 +449,51 @@ mod tests {
         // 에러 메시지 확인
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("2048"));
+    }
+
+    // ── build_search_pattern 테스트 ──────────────────────────
+
+    #[test]
+    fn build_search_pattern_escapes_percent() {
+        // '%' → '\%' — SQL 와일드카드 무력화
+        let pattern = build_search_pattern("50%할인");
+        assert_eq!(pattern, "%50\\%할인%");
+    }
+
+    #[test]
+    fn build_search_pattern_escapes_underscore() {
+        // '_' → '\_' — SQL 단일문자 와일드카드 무력화
+        let pattern = build_search_pattern("상품_이름");
+        assert_eq!(pattern, "%상품\\_이름%");
+    }
+
+    #[test]
+    fn build_search_pattern_escapes_backslash() {
+        // '\' → '\\' — 이스케이프 문자 자체 이스케이프 (가장 먼저 처리)
+        let pattern = build_search_pattern("path\\file");
+        assert_eq!(pattern, "%path\\\\file%");
+    }
+
+    #[test]
+    fn build_search_pattern_normal_query_wrapped_with_percent() {
+        // 특수문자 없는 일반 한국어 쿼리 — 앞뒤에 % 추가만
+        let pattern = build_search_pattern("무선이어폰");
+        assert_eq!(pattern, "%무선이어폰%");
+    }
+
+    #[test]
+    fn build_search_pattern_empty_query_returns_wildcard() {
+        // 빈 쿼리 → "%%" (전체 매칭)
+        let pattern = build_search_pattern("");
+        assert_eq!(pattern, "%%");
+    }
+
+    #[test]
+    fn parse_coupang_url_subdomain_accepted() {
+        // m.coupang.com (모바일 서브도메인) 허용 확인
+        let url = "https://m.coupang.com/vp/products/789";
+        let info = parse_coupang_url(url).unwrap();
+        assert_eq!(info.product_id, "789");
+        assert!(info.vendor_item_id.is_none());
     }
 }
