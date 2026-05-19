@@ -2,6 +2,37 @@
 
 ---
 
+## Night-72 실행 (2026-05-20) — 아키텍처 부채 3건 해소 + main PR 생성
+
+> **Sonnet 4.6 Sub-agent** 실행 | D-126/D-127/D-130 구현 + D-110 PR 생성
+> **브랜치**: `auto/night-01-20260520_0100` | **커밋**: `1d3615a`
+
+### 결정 항목 해소
+
+| 결정 ID | 내용 | 결정 | 근거 |
+|---------|------|------|------|
+| **D-126** | `cleanup_old_records()` 구현 | ✅ **해소** — 신규 구현 + 9d 배치 등록 | notifications(90일)/roulette_results(180일)/point_transactions(365일) TTL 미실행 상태 해소 |
+| **D-127** | `naver_price_service.rs` OnceLock 제거 | ✅ **해소** — `NAVER_CLIENT` static 삭제, `&reqwest::Client` 파라미터 주입 | `AppState.http_client` 공유 클라이언트와 독립 풀 2개 문제 해소 |
+| **D-130** | `cache.rs` 레이어 역방향 참조 | ✅ **해소** — 5개 공개 타입 `crate::models::trend`로 이동 | `infrastructure(cache)→services` 역방향 → `infrastructure→models←services` 단방향으로 정합 |
+| **D-110** | main 머지 PR 생성 | ✅ **PR #19 생성** — https://github.com/ahnchul0-hue/gapttuk/pull/19 | 120커밋/PLAN_01 25 Phase 전체 성과. 사용자 머지 승인 대기 |
+
+### 잔여 결정 (사용자 결정 대기)
+
+| 결정 ID | 내용 |
+|---------|------|
+| **D-101** | flutter_riverpod 3.0→3.3 (riverpod_generator 4.x 동반 BREAKING) |
+| **D-102** | BREAKING 7종 순차 처리 (flutter_secure_storage→google_sign_in→go_router→fl_chart→kakao→apple→riverpod_generator) |
+
+### 최종 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| Flutter 테스트 | **380건** ✅ |
+| Flutter analyze | **0건** ✅ |
+| Rust 테스트(lib) | **221건** ✅ |
+
+---
+
 ## Night-71 Phase 24+25 실행 (2026-05-19) — UX+디자인 강화 + 최종 검증
 
 > **Sonnet 4.6 Sub-agent** 실행 | Phase 24 (UX+디자인 시스템 강화) + Phase 25 (최종 검증)

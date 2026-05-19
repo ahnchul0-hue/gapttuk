@@ -1,3 +1,7 @@
+# NIGHT_06_RESULT — 2026-05-20 (Night-72 추가)
+
+> **Night-72 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — 아키텍처 부채 3건 해소(D-126/D-127/D-130) + D-110 main PR #19 생성. 커밋 `1d3615a`.
+
 # NIGHT_06_RESULT — 2026-05-19 (Night-71 추가)
 
 > **Night-71 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 24(UX+디자인 강화): D-95/D-128/D-129 해소 + D-96 검증. Phase 25(최종 검증): 3중 검증 통과. 수정 4건(D-95/D-128/D-129 코드 + D-96 문서화).
@@ -5,6 +9,74 @@
 # NIGHT_06_RESULT — 2026-05-18 (Night-70 추가)
 
 > **Night-70 결과**: Flutter **380건** ✅ (보존) | Rust **221건** ✅ (보존) | analyze **0건** ✅ — Phase 23(6대 병렬 에이전트 코드 품질 감사): 발견 11건 → 오탐 2건 → 즉시 수정 9건(F-01~F-09). D-126~D-130 신규 결정 항목 기록.
+
+---
+
+## Night-72 (2026-05-20) — 아키텍처 부채 3건 해소 + main PR 생성
+
+### 실행 요약
+
+| 항목 | 결과 |
+|------|------|
+| **세션 역할** | Sonnet 4.6 Sub-agent (D-126/D-127/D-130 구현 + D-110 PR) |
+| **브랜치** | `auto/night-01-20260520_0100` |
+| **커밋** | `1d3615a` |
+| **Flutter 테스트** | **380건** ✅ (베이스라인 보존) |
+| **Flutter analyze** | **0건** ✅ |
+| **Rust 테스트(lib)** | **221건** ✅ (베이스라인 보존) |
+| **수정 항목** | 3건 (D-126/D-127/D-130) + PR #19 생성 |
+
+### 수정 3건
+
+#### D-126: cleanup_old_records() 신규 구현
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `server/src/main.rs` | `cleanup_old_records()` 함수 신규 추가 (45줄) + 9d 배치 루프 등록 |
+
+- notifications(90일)/roulette_results(180일)/point_transactions(365일) TTL DELETE 3개 쿼리
+- 24시간 주기(86400s), `interval_at` 패턴으로 시작 후 24h 지연
+- 삭제 건수 > 0 시 `tracing::info!`, 오류 시 `tracing::warn!`
+- `h_cleanup` → 9f 패닉 감시 목록에 포함
+
+**근거**: 기존 `refresh_tokens` 6h 퍼지(9c)와 동일 패턴. notifications/roulette_results/point_transactions는 TTL 클린업 미구현 상태였음 — 프로덕션 데이터 비대화 방지.
+
+#### D-127: naver_price_service.rs OnceLock → &reqwest::Client 파라미터 주입
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `server/src/services/naver_price_service.rs` | `NAVER_CLIENT: OnceLock<reqwest::Client>` static + `naver_client()` 함수 제거. `search_naver_shop()` 파라미터에 `http_client: &reqwest::Client` 추가 |
+
+**근거**: `AppState.http_client` 공유 클라이언트와 독립된 연결 풀이 2개 존재했음. DI 패턴으로 단일 클라이언트 공유.
+
+#### D-130: CategoryTrendScore/DemographicTrendScore → crate::models
+
+| 파일 | 변경 내용 |
+|------|---------|
+| `server/src/models/trend.rs` | **신규**: 5개 공개 타입 — `TrendPeriodData`, `CategoryTrendScore`, `DemographicPeriodData`, `DemographicDimension`, `DemographicTrendScore` |
+| `server/src/models/mod.rs` | `mod trend; pub use trend::*;` 추가 |
+| `server/src/cache.rs` | services 역방향 임포트 → `crate::models` 단방향 의존으로 해소 |
+| `server/src/services/trend_data_service.rs` | 타입 정의 제거 → `pub use crate::models::{CategoryTrendScore, TrendPeriodData}` |
+| `server/src/services/demographic_trend_service.rs` | 타입 정의 제거 → `pub use crate::models::{DemographicDimension, DemographicPeriodData, DemographicTrendScore}` |
+| `server/src/api/routes/trends.rs` | 임포트 경로 갱신 + 테스트 임포트 명시화 |
+
+**근거**: `cache.rs(infrastructure)` → `services` 의존은 레이어드 아키텍처 역방향 참조. 공개 출력 타입을 `models` 레이어로 이동하여 `cache` + `services` 모두 `models`를 단방향 참조.
+
+### D-110: main 머지 PR 생성
+
+| 항목 | 결과 |
+|------|------|
+| **PR URL** | https://github.com/ahnchul0-hue/gapttuk/pull/19 |
+| **PR 제목** | feat: PLAN_01 Phase 1-25 전체 완료 — 값뚝 서버+Flutter 종합 최적화 120커밋 |
+| **커밋 수** | 120커밋 (main → `auto/night-01-20260520_0100`) |
+
+### 잔여 미결 결정 항목
+
+| 결정 ID | 내용 | 상태 |
+|---------|------|------|
+| D-110 | main 머지 PR | ✅ **PR #19 생성 완료** — 사용자 머지 승인 대기 |
+| D-101 | flutter_riverpod 3.0→3.3 (riverpod_generator BREAKING 동반) | ⏸️ |
+| D-102 | BREAKING 7종 순차 처리 | ⏸️ |
 
 ---
 
